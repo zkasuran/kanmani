@@ -1,0 +1,99 @@
+# Kanmani runs its own everything.
+#
+# This machine also hosts an unrelated project with an Envio indexer, and the Envio CLI's
+# default resources collide with it: it looks for Postgres on 5433 and Hasura on 8080, finds
+# the other project's containers there, then fails with "password authentication failed for
+# user postgres" (wrong container, not a bad credential) and "access-denied" against a Hasura
+# whose admin secret is not ours.
+#
+# Sharing a database with another project is also wrong on its own terms. This index has to
+# stay up and queryable through the judging window, Oct 14 to Nov 3, so its lifetime cannot
+# be tied to somebody else's stack being up.
+#
+# Hence: own project name, own network, own volume, own ports, every container kanmani-*.
+# Nothing here is shared with anything else on the host.
+#
+#   docker compose -p kanmani -f deploy/docker-compose.yml up -d
+#
+# Ports are deliberately off the Envio defaults so the two stacks can run side by side.
+
+name: kanmani
+
+services:
+  postgres:
+    image: postgres:17.5
+    container_name: kanmani-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${ENVIO_PG_PASSWORD:-testing}
+      POSTGRES_DB: envio-dev
+    ports:
+      # Bound to loopback. Nothing here should be reachable off the box.
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - kanmani-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d envio-dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  hasura:
+    image: hasura/graphql-engine:v2.43.0
+    container_name: kanmani-hasura
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8081:8080"
+    environment:
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${ENVIO_PG_PASSWORD:-testing}@postgres:5432/envio-dev
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:${ENVIO_PG_PASSWORD:-testing}@postgres:5432/envio-dev
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-testing}
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_CORS_DOMAIN: "*"
+      # Envio's managed Hasura stringifies numerics, so match it or BigInt columns
+      # silently change shape for every consumer.
+      HASURA_GRAPHQL_STRINGIFY_NUMERIC_TYPES: "true"
+      HASURA_GRAPHQL_UNAUTHORIZED_ROLE: public
+
+  indexer:
+    build:
+      context: ..
+      dockerfile: deploy/indexer.Dockerfile
+    container_name: kanmani-indexer
+    # The whole point of this file: the index must survive a terminal closing, a session
+    # ending and a reboot. Muster's index froze for five days because nothing restarted it.
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:9899:9899"
+    # The host's systemd-resolved flakes under load and the symptom is
+    # "failed to lookup address information: Temporary failure in name resolution"
+    # against the HyperSync host. The client retries and recovers, so it looks harmless,
+    # but this index has to stay current for six weeks unattended, so it does not get to
+    # depend on a resolver that intermittently fails. Pin public resolvers instead.
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    environment:
+      ENVIO_PG_HOST: postgres
+      ENVIO_PG_PORT: 5432
+      ENVIO_PG_USER: postgres
+      ENVIO_PG_PASSWORD: ${ENVIO_PG_PASSWORD:-testing}
+      ENVIO_PG_DATABASE: envio-dev
+      ENVIO_PG_SCHEMA: public
+      ENVIO_INDEXER_PORT: 9899
+      # Ours, on port 8080 inside the network. Never the other project's on the host.
+      HASURA_GRAPHQL_ENDPOINT: http://hasura:8080
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-testing}
+      ENVIO_API_TOKEN: ${ENVIO_API_TOKEN:?ENVIO_API_TOKEN is required, see .env.local}
+      TUI_OFF: "true"
+
+volumes:
+  kanmani-pgdata:
+    name: kanmani-pgdata
