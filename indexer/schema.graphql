@@ -1,0 +1,147 @@
+# Retina's schema. The shape here is driven by one measured fact: an agent's evidence and its
+# truth are different things, so they are different entities with different lifecycles.
+#
+# Measured 2026-09-13 over all 10,252 Monad agents and a 500-feedback sample:
+#   8,093 agents (78.94%) share ONE tokenURI, and that URI is a deleted Vercel deployment
+#   2,031 distinct records across 10,252 agents, so 8,221 are duplicates of another record
+#   68 of 68 fetched evidence documents were hash-perfect
+#   68 of 68 declared network: monad, and 2 of those payments exist on Monad
+#
+# So: Record is deduplicated by content hash (storing 8,093 copies of one dead URL is waste and
+# hides the cluster), and Verdict is append-only so a fixed template reads as false -> true
+# rather than as a silent edit.
+
+# NOTE: no entity declares `chainId`. With `disable_default_cross_chain: true` envio adds it to
+# every per-chain entity automatically, and declaring it yourself is a hard codegen error. Add
+# `@crossChain` to an entity if its rows should instead be shared across chains.
+
+type Agent {
+  id: ID! # chainId_agentId
+  agentId: BigInt!
+  owner: String!
+  # From the reserved "agentWallet" metadata key, written on every registration. Distinct from
+  # owner: the owner holds the ERC-721, the wallet is what the agent transacts with.
+  agentWallet: String
+  tokenUri: String
+  # keccak of tokenUri. The join key to Record, and what makes the 78.94% cluster visible.
+  uriHash: String
+  name: String
+  # Absolute http(s) endpoints only. A relative or scheme-less value cannot be probed.
+  endpoints: [String!]!
+  # The operator's own claim that it speaks x402. Both spellings occur in the wild.
+  declaresX402: Boolean!
+  registeredAtBlock: BigInt!
+  registeredAt: BigInt!
+  lastSeenBlock: BigInt!
+  # Rises only on evidence, never falls on a transient failure. See Fovea.
+  rung: String!
+  transferCount: Int!
+  metadataUpdateCount: Int!
+  feedbacks: [Feedback!]! @derivedFrom(field: "agent")
+  validations: [Validation!]! @derivedFrom(field: "agent")
+}
+
+# NAMED AgentRecord, NOT Record. Codegen emits `export type <Entity> = ...` inside the `envio`
+# module, so an entity called `Record` shadows TypeScript's built-in Record<K,V> there. Every
+# internal type using Record<string, ...> then breaks, and the only visible symptom is
+# implicit-any on every handler callback, which points nowhere near the schema.
+#
+# One row per DISTINCT registration document, not per agent. 10,252 agents resolve to ~2,031 of
+# these, and the memberCount on each is what turns "a dead URL" into "7,962 wallets share a dead
+# URL", which is the finding a judge remembers.
+type AgentRecord {
+  id: ID! # uriHash
+  uri: String!
+  # How many agents point at this exact document.
+  memberCount: Int!
+  distinctOwners: Int!
+  kind: String! # data-base64 | data-plain | http | ipfs | inline-json | empty | other
+  # Populated by the enrichment Effect, not by a log. 97.7% of agents point off-chain, so this
+  # is the difference between an indexer that knows names and one that knows ids.
+  fetchedAt: BigInt
+  httpStatus: Int
+  byteLength: Int
+  resolves: Boolean
+  parsedName: String
+  firstSeenBlock: BigInt!
+}
+
+# The load-bearing entity. feedbackURI and feedbackHash exist ONLY in the NewFeedback event, so
+# without Retina there is no way to reach the evidence at all.
+type Feedback {
+  id: ID! # chainId_agentId_client_index
+  agent: Agent!
+  clientAddress: String!
+  feedbackIndex: BigInt!
+  value: BigInt!
+  valueDecimals: Int!
+  tag1: String!
+  tag2: String!
+  endpoint: String!
+  # The evidence pointer. Reachable through logs and nowhere else.
+  feedbackUri: String!
+  # The on-chain commitment. Fovea recomputes keccak256 over the raw fetched bytes and compares.
+  feedbackHash: String!
+  revoked: Boolean!
+  revokedAtBlock: BigInt
+  # An operator's on-chain right of reply, rendered beside our verdict.
+  responseUri: String
+  responseHash: String
+  responder: String
+  blockNumber: BigInt!
+  timestamp: BigInt!
+  txHash: String!
+  verdicts: [Verdict!]! @derivedFrom(field: "feedback")
+}
+
+# Append-only. A re-check writes a NEW row, never an update, so every claim carries its own
+# verification history. That is what makes a correction defensible when an operator fixes a
+# template: it shows as false -> true with both timestamps rather than as a rewrite.
+type Verdict {
+  id: ID! # feedbackId_checkedAtBlock
+  feedback: Feedback!
+  rung: String! # declared | resolvable | intact | true | payable | settled
+  outcome: String! # true | false | unresolvable | unknown
+  # Why, in words a stranger can check. Never a bare boolean.
+  reason: String!
+  # What the document claimed.
+  declaredNetwork: String
+  declaredTx: String
+  # What the chain actually said.
+  foundOnChain: String
+  hashMatches: Boolean
+  checkedAt: BigInt!
+  checkedAtBlock: BigInt!
+}
+
+# Written by Optic. Empty on Monad when sampled 2026-09-13, which is why Kanmani writing here is
+# the first-validator position rather than a claim.
+type Validation {
+  id: ID! # chainId_requestHash
+  agent: Agent
+  validatorAddress: String!
+  requestHash: String!
+  requestUri: String
+  response: Int
+  responseUri: String
+  responseHash: String
+  tag: String
+  requestedAtBlock: BigInt!
+  respondedAtBlock: BigInt
+}
+
+# Population truth, per sweep. The registry is NOT enumerable (totalSupply reverts), so the count
+# comes from a storage slot and is cross-checked against what the logs produced. A gap between
+# the two is the honest signal that the index is behind, and /status shows it rather than hiding
+# it. Muster's index froze for five days while its page reported a number true when written.
+type IndexState {
+  id: ID! # chainId
+  # eth_getStorageAt on the identity registry counter slot.
+  counterSlotCount: BigInt!
+  # Distinct agent ids Retina actually holds.
+  agentsFromLogs: BigInt!
+  atBlock: BigInt!
+  updatedAt: BigInt!
+  feedbackCount: BigInt!
+  recordCount: BigInt!
+}

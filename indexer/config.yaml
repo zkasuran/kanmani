@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=./node_modules/envio/evm.schema.json
+#
+# Retina: the indexer. Captures everything arriving on the ERC-8004 registries and turns it into
+# signal the rest of Kanmani reads.
+#
+# Structure note, learned the hard way: in HyperIndex v3 contract DEFINITIONS (abi, events) live
+# at the TOP level and each chain only references a contract by name plus an address. Inlining
+# events inside a chain parses cleanly and silently generates no per-event types, which surfaces
+# much later as implicit-any in every handler. There is also no per-contract `handler:` key any
+# more: handlers self-register by importing `indexer` from "envio".
+#
+# Events are named rather than spelled out as signatures, because `abi_file_path` is set and the
+# canonical ABIs are vendored under ./abis. That matters: three of these signatures are easy to
+# get wrong from the draft text alone, and the ABI is the authority.
+#
+# Two measured facts shape the event list, both read off the chain on 2026-09-13:
+#
+#   1. The Identity Registry is NOT enumerable. `totalSupply()` reverts, so the population is read
+#      from a storage slot by the `onBlock` handler in src/EventHandlers.ts and published beside
+#      what the logs produced. A gap between the two is honest freshness reporting rather than a
+#      number that was true when it was written.
+#
+#   2. The deployment emits FOUR events per registration, one more than the ERC-8004 draft lists.
+#      Confirmed by querying block 103,845,082 and matching every topic0 with `cast keccak`:
+#        Transfer        0xddf252ad...  ERC-721 mint, and the ONLY source of ownership change
+#        Registered      0xca52e62c...  in the draft
+#        MetadataSet     0x2c149ed5...  in the draft
+#        MetadataUpdate  0xf8e1a15a...  NOT in the draft. ERC-4906.
+#      Indexing only the draft's three loses every transfer and every metadata refresh.
+#
+# HyperSync serves chain 143 and trails the canonical RPC by ~3 blocks, so it is the source.
+# `start_block: 0` is deliberate: HyperSync fast-forwards to the first block carrying registry
+# data, which is the only practical way to find the deployment block when the public RPC keeps a
+# limited state window and caps eth_getLogs at a 100-block span.
+
+name: kanmani-retina
+description: ERC-8004 agent identity and reputation on Monad, indexed with provenance
+
+# Entities are per-chain. Monad is the only chain today, but BSC carries the same registries at
+# identical addresses with a separate population, and Chiasm will index both to merge standing
+# across them. Setting this now avoids a migration later.
+disable_default_cross_chain: true
+
+contracts:
+  - name: IdentityRegistry
+    abi_file_path: ./abis/IdentityRegistry.json
+    events:
+      # ERC-721 mint plus every later ownership change.
+      - event: Transfer
+      # The registration itself. agentURI is EMPTY when the no-argument register() overload is
+      # used, so the URI must come from tokenURI() or a later update, never from here alone.
+      # Verified against the canonical IdentityRegistryUpgradeable.sol.
+      - event: Registered
+      # Arbitrary key/value metadata. The reserved key "agentWallet" is written on every
+      # registration, so this fires at least once per agent and is where the agent's transacting
+      # address comes from.
+      - event: MetadataSet
+      # ERC-4906, absent from the ERC-8004 draft. The signal that an off-chain document changed,
+      # so a cached copy is stale and the record needs re-fetching.
+      - event: MetadataUpdate
+
+  - name: ReputationRegistry
+    abi_file_path: ./abis/ReputationRegistry.json
+    events:
+      # THE load-bearing event for Kanmani. feedbackURI and feedbackHash are non-indexed fields
+      # here and `readFeedback()` does not return them, so this is the ONLY path to the evidence
+      # pointer for all 9,188 Monad feedbacks. With eth_getLogs capped at a 100-block span
+      # against a 104M-block head, an unindexed chain makes the verifier impossible, not slow.
+      - event: NewFeedback
+      # A verdict about revoked feedback is a verdict about something that no longer stands.
+      - event: FeedbackRevoked
+      # The operator's on-chain right of reply, rendered beside our verdict.
+      - event: ResponseAppended
+
+  # The third registry, live on Monad and completely empty when sampled 2026-09-13. Indexing it
+  # from day one proves the before and after once Optic starts writing, rather than us asserting
+  # we were first.
+  - name: ValidationRegistry
+    abi_file_path: ./abis/ValidationRegistry.json
+    events:
+      - event: ValidationRequest
+      - event: ValidationResponse
+
+chains:
+  # Monad mainnet. The registries also exist on Monad testnet at DIFFERENT addresses with 1,829
+  # agents, but the USDC rail and the population that matters are both here.
+  - id: 143
+    start_block: 0
+    contracts:
+      - name: IdentityRegistry
+        address: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+      - name: ReputationRegistry
+        address: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
+      - name: ValidationRegistry
+        address: "0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58"
+
+# `timestamp` is already a default EvmBlock field and declaring it here fails jsonschema
+# validation, so only non-default fields are listed. Per-handler `fields` declarations pick what
+# each individual handler actually reads.
+field_selection:
+  transaction_fields:
+    - hash

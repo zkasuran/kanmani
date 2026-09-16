@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+
+# Envio build output
+.envio/
+generated/
+
+# Envio ships its own Claude skills into the project via `envio skills update`.
+# They are their docs, not ours, and they regenerate on demand. The leading **/
+# matters: a pattern with only a middle slash anchors to the repo root and would
+# miss indexer/.claude/skills/.
+**/.claude/skills/
+
+# Submission and form-fill material carries personal data and never ships
+/submit/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# Render outputs live with the lane, not in the repo
+DEMO-*.mp4
+upload-*/
+
+# OS
+.DS_Store

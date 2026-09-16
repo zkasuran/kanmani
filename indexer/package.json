@@ -1,0 +1,21 @@
+{
+  "name": "kanmani-retina",
+  "version": "0.1.0",
+  "private": true,
+  "license": "LicenseRef-zkasuran-SAND-1.0",
+  "description": "Retina: indexes the ERC-8004 registries on Monad. The eye that captures what arrives.",
+  "type": "module",
+  "scripts": {
+    "codegen": "envio codegen",
+    "dev": "envio dev",
+    "start": "envio start",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.18.1",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "envio": "3.10.0"
+  }
+}
