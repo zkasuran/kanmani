@@ -1,0 +1,13 @@
+Aqueous and its tests are Copyright (c) 2026 zkasuran, licensed under
+LicenseRef-zkasuran-SAND-1.0. See ../LICENSE.
+
+Third-party components, not included in this repository:
+
+  forge-std (https://github.com/foundry-rs/forge-std)
+    Used for tests only, never deployed. Dual licensed MIT and Apache-2.0.
+    Restored with `forge install foundry-rs/forge-std`.
+    MIT grant: "Permission is hereby granted, free of charge, to any person obtaining a copy
+    of this software and associated documentation files (the "Software"), to deal in the
+    Software without restriction".
+
+No third-party code is compiled into the deployed bytecode.

@@ -1,0 +1,17 @@
+[profile.default]
+src = "src"
+out = "out"
+libs = ["lib"]
+solc = "0.8.24"
+# Monad supports the Ethereum precompiles as of the Fusaka fork, but transient storage and
+# other Cancun opcodes are not confirmed on chain 143, so target Shanghai rather than assume.
+# Nothing in Aqueous needs them.
+evm_version = "shanghai"
+optimizer = true
+optimizer_runs = 20000
+# A fund-holding contract gets every warning treated as a problem to look at.
+# every warning gets looked at rather than suppressed
+
+[rpc_endpoints]
+monad = "${MONAD_RPC}"
+monad_testnet = "https://testnet-rpc.monad.xyz"
