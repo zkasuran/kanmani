@@ -50,7 +50,19 @@ Read from `docs.monad.xyz` before writing it, not after:
 
 ## Tests
 
-`forge test` runs 30, including fuzz over value conservation and access control.
+```bash
+forge test                                        # 30 unit tests, fork tests report as skipped
+forge test --fork-url "$MONAD_RPC"                # +5 against real USDC on Monad mainnet
+```
+
+**There is no testnet run of the money path, and that is not laziness.** USDC does not exist on Monad
+testnet: `eth_getCode` at the mainnet address returns `0x` on chain 10143 and there is no testnet
+deployment. A testnet lifecycle could only exercise a mock token.
+
+A mainnet fork is better anyway. The unit suite's mock does **no signature checking at all**, because a
+mock that pretends to verify signatures tests the mock. The fork suite runs against real USDC bytecode,
+its real EIP-712 domain **read from the contract rather than reconstructed**, and its real nonce
+tracking. That is the one part of the relayed path nothing else could prove.
 
 **The suite was mutation tested rather than trusted.** Three deliberate breaks:
 
