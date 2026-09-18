@@ -125,7 +125,7 @@ forge test                                        # 43 pass, the 6 fork tests re
 forge test --fork-url "$MONAD_RPC"                # 49 pass, the 6 against real USDC on mainnet
 ```
 
-**The money path is now exercised three ways, and each answers something the others cannot.**
+**The money path is now exercised three ways. Each answers something the others cannot.**
 
 | | what it proves | what it cannot |
 |---|---|---|
