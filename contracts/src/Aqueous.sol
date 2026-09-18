@@ -20,6 +20,7 @@ interface IERC3009 {
 interface IERC20 {
     function transfer(address to, uint256 amount) external returns (bool);
     function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    function balanceOf(address account) external view returns (uint256);
 }
 
 /// @title Aqueous
@@ -79,12 +80,21 @@ contract Aqueous {
         bytes32 salt;
     }
 
-    /// @dev An EIP-3009 authorisation, exactly as the token expects it.
+    /// @dev An EIP-3009 authorisation, minus the nonce.
+    ///
+    /// **The nonce is NOT supplied by the caller. It is derived from the job terms.** An EIP-3009
+    /// signature only covers `(from, to, value, validAfter, validBefore, nonce)`, so it says nothing
+    /// about which agent gets paid, the deadline, the price or the terms. Letting the submitter choose
+    /// those meant a relayer holding a valid authorisation could name itself as the agent, deliver
+    /// nothing, and claim the buyer's escrow after the dispute window. Refund could not save the buyer
+    /// because delivery moves the job out of `Open`.
+    ///
+    /// Deriving the nonce from the terms binds all of it with no extra signature: change any field and
+    /// the nonce changes, so the token's own signature check rejects it.
     struct Authorization {
         address from;
         uint256 validAfter;
         uint256 validBefore;
-        bytes32 nonce;
         uint8 v;
         bytes32 r;
         bytes32 s;
@@ -185,10 +195,22 @@ contract Aqueous {
 
     /* -------------------------------------------------------------- creation */
 
+    /// @notice The EIP-3009 nonce a buyer must sign for a given set of terms.
+    ///
+    /// Call this, sign a `TransferWithAuthorization` using the result as the nonce, and the
+    /// authorisation is then only usable for exactly these terms. A relayer that alters the agent,
+    /// the deadline, the price or anything else produces a different nonce, so the token rejects the
+    /// signature.
+    function authNonceFor(Terms calldata t) public pure returns (bytes32) {
+        return keccak256(abi.encode("kanmani.aqueous.v1", t));
+    }
+
     /// @notice Create a job, pulling the escrow from the caller. Needs a prior `approve`.
     function createJob(Terms calldata t) external nonReentrant returns (bytes32 jobId) {
         jobId = _open(msg.sender, t);
+        uint256 before = _balance(t.token);
         if (!IERC20(t.token).transferFrom(msg.sender, address(this), t.amount)) revert TransferFailed();
+        _requireExactlyReceived(t.token, before, t.amount);
     }
 
     /// @notice Create a job from a buyer's EIP-3009 authorisation, submitted by anyone.
@@ -198,7 +220,8 @@ contract Aqueous {
     /// for someone who does not already hold MON.
     ///
     /// The buyer is the authorisation's `from`, never `msg.sender`, so the relayer gets no rights
-    /// over the job it paid gas for.
+    /// over the job it paid gas for. **And the nonce is derived from the terms rather than supplied**,
+    /// so the relayer cannot change what the buyer agreed to. See `Authorization`.
     function createJobWithAuthorization(Terms calldata t, Authorization calldata a)
         external
         nonReentrant
@@ -206,11 +229,23 @@ contract Aqueous {
     {
         jobId = _open(a.from, t);
 
+        uint256 before = _balance(t.token);
+
         // The token verifies the signature, the nonce and the window. A bad authorisation reverts
         // in there, which is the correct place for it: we never reimplement signature checking.
         IERC3009(t.token).transferWithAuthorization(
-            a.from, address(this), t.amount, a.validAfter, a.validBefore, a.nonce, a.v, a.r, a.s
+            a.from,
+            address(this),
+            t.amount,
+            a.validAfter,
+            a.validBefore,
+            authNonceFor(t), // binds every term to the signature
+            a.v,
+            a.r,
+            a.s
         );
+
+        _requireExactlyReceived(t.token, before, t.amount);
     }
 
     /* -------------------------------------------------------------- lifecycle */
@@ -326,6 +361,20 @@ contract Aqueous {
         if (refundAmount > 0 && !IERC20(token).transfer(buyer, refundAmount)) revert TransferFailed();
 
         emit Settled(jobId, agent, token, paid, refundAmount, units, msg.sender);
+    }
+
+    function _balance(address token) private view returns (uint256) {
+        return IERC20(token).balanceOf(address(this));
+    }
+
+    /// @dev Refuse any token that does not deliver exactly what was asked for.
+    ///
+    /// A fee-on-transfer or rebasing token credits the contract less than `amount` while the job
+    /// records the full `amount`. Do that twice and the contract owes more than it holds, so the
+    /// last job out is unpayable, and this contract is immutable with no admin recovery. Refusing at
+    /// creation is the only safe answer: a clean revert beats accounting that is quietly wrong.
+    function _requireExactlyReceived(address token, uint256 balanceBefore, uint256 amount) private view {
+        if (_balance(token) - balanceBefore != amount) revert TransferFailed();
     }
 
     /// @dev `upto` semantics: the escrow is a ceiling, the settlement is the actual usage, and

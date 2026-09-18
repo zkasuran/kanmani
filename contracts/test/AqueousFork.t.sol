@@ -2,7 +2,7 @@
 pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
-import {Aqueous, IERC20} from "../src/Aqueous.sol";
+import {Aqueous} from "../src/Aqueous.sol";
 
 interface IUSDC {
     function DOMAIN_SEPARATOR() external view returns (bytes32);
@@ -24,7 +24,7 @@ interface IUSDC {
 ///
 ///   forge test --match-contract AqueousForkTest --fork-url "$MONAD_RPC"
 ///
-/// Skips itself with a clear message when no fork URL is set, rather than passing quietly.
+/// Skips itself rather than passing quietly when no fork URL is set.
 contract AqueousForkTest is Test {
     address internal constant USDC = 0x754704Bc059F8C67012fEd69BC8A327a5aafb603;
 
@@ -44,7 +44,6 @@ contract AqueousForkTest is Test {
     uint128 internal constant AMOUNT = 250_000; // 0.25 USDC at 6 decimals
 
     function setUp() public {
-        // Only run when pointed at a fork. `forge test` without --fork-url leaves this empty.
         if (block.chainid != 143) return;
         buyer = vm.addr(buyerKey);
         esc = new Aqueous(3 days);
@@ -65,30 +64,12 @@ contract AqueousForkTest is Test {
         assertGt(USDC.code.length, 0, "deployed");
     }
 
-    /// The facilitator path, end to end, with a signature the real token verifies.
-    ///
-    /// The buyer signs once and never touches the chain. The relayer pays the gas and receives no
-    /// rights over the job. That is the only shape in which someone who holds no MON can hire.
+    /// The facilitator path, end to end, with a signature real USDC verifies.
     function test_fork_relayedAuthorizationThenRelease() public onlyFork {
         deal(USDC, buyer, AMOUNT);
-        assertEq(IUSDC(USDC).balanceOf(buyer), AMOUNT, "buyer funded");
 
-        bytes32 nonce = keccak256("kanmani-fork-1");
-        uint256 validAfter = 0;
-        uint256 validBefore = block.timestamp + 1 hours;
-
-        Aqueous.Authorization memory a =
-            _sign(buyer, address(esc), AMOUNT, validAfter, validBefore, nonce);
-
-        Aqueous.Terms memory t = Aqueous.Terms({
-            agent: agent,
-            token: USDC,
-            amount: AMOUNT,
-            pricePerUnit: 0,
-            deadline: uint64(block.timestamp + 7 days),
-            termsHash: keccak256("fork terms"),
-            salt: keccak256("fork-job-1")
-        });
+        Aqueous.Terms memory t = _terms(0, keccak256("fork-job-1"));
+        Aqueous.Authorization memory a = _signFor(buyerKey, t);
 
         vm.prank(relayer);
         bytes32 id = esc.createJobWithAuthorization(t, a);
@@ -96,7 +77,7 @@ contract AqueousForkTest is Test {
         assertEq(IUSDC(USDC).balanceOf(address(esc)), AMOUNT, "real USDC is escrowed");
         assertEq(IUSDC(USDC).balanceOf(buyer), 0, "buyer paid");
         assertEq(esc.jobs(id).buyer, buyer, "signer owns it, not the relayer");
-        assertTrue(IUSDC(USDC).authorizationState(buyer, nonce), "token burned the nonce");
+        assertTrue(IUSDC(USDC).authorizationState(buyer, esc.authNonceFor(t)), "token burned the nonce");
 
         vm.prank(agent);
         esc.deliver(id, keccak256("deliverable"));
@@ -108,28 +89,17 @@ contract AqueousForkTest is Test {
         assertEq(IUSDC(USDC).balanceOf(address(esc)), 0, "escrow empty");
     }
 
-    /// The real token rejects a replayed authorisation. Nonce tracking is its job, not ours.
+    /// Real USDC rejects a second use of the same authorisation. Nonce tracking is its job.
     function test_fork_realTokenRejectsReplay() public onlyFork {
         deal(USDC, buyer, AMOUNT * 2);
 
-        bytes32 nonce = keccak256("kanmani-fork-replay");
-        Aqueous.Authorization memory a =
-            _sign(buyer, address(esc), AMOUNT, 0, block.timestamp + 1 hours, nonce);
-
-        Aqueous.Terms memory t = Aqueous.Terms({
-            agent: agent,
-            token: USDC,
-            amount: AMOUNT,
-            pricePerUnit: 0,
-            deadline: uint64(block.timestamp + 7 days),
-            termsHash: keccak256("t"),
-            salt: keccak256("replay-1")
-        });
+        Aqueous.Terms memory t = _terms(0, keccak256("replay-1"));
+        Aqueous.Authorization memory a = _signFor(buyerKey, t);
 
         vm.prank(relayer);
         esc.createJobWithAuthorization(t, a);
 
-        t.salt = keccak256("replay-2"); // different job, same authorisation
+        // Same terms means the same derived nonce, so the token refuses the second use.
         vm.prank(relayer);
         vm.expectRevert();
         esc.createJobWithAuthorization(t, a);
@@ -139,21 +109,9 @@ contract AqueousForkTest is Test {
     function test_fork_forgedSignatureRejected() public onlyFork {
         deal(USDC, buyer, AMOUNT);
 
-        uint256 attackerKey = 0xBADBAD;
-        // signed by the attacker, but claiming `from` is the buyer
-        Aqueous.Authorization memory a = _signWith(
-            attackerKey, buyer, address(esc), AMOUNT, 0, block.timestamp + 1 hours, keccak256("forged")
-        );
-
-        Aqueous.Terms memory t = Aqueous.Terms({
-            agent: agent,
-            token: USDC,
-            amount: AMOUNT,
-            pricePerUnit: 0,
-            deadline: uint64(block.timestamp + 7 days),
-            termsHash: keccak256("t"),
-            salt: keccak256("forged-job")
-        });
+        Aqueous.Terms memory t = _terms(0, keccak256("forged-job"));
+        // signed by an attacker while claiming `from` is the buyer
+        Aqueous.Authorization memory a = _signFor(0xBADBAD, t);
 
         vm.prank(relayer);
         vm.expectRevert();
@@ -162,23 +120,39 @@ contract AqueousForkTest is Test {
         assertEq(IUSDC(USDC).balanceOf(buyer), AMOUNT, "buyer untouched");
     }
 
+    /// THE FIX, against the real token: a relayer cannot alter what the buyer agreed to.
+    ///
+    /// The buyer's EIP-3009 signature covers only (from, to, value, validAfter, validBefore, nonce).
+    /// Before the nonce was derived from the terms, a relayer holding a valid authorisation could
+    /// name itself as the agent, deliver nothing, block refund by moving the job out of Open, and
+    /// claim the whole escrow after the dispute window.
+    function test_fork_relayerCannotAlterTheTerms() public onlyFork {
+        deal(USDC, buyer, AMOUNT);
+
+        Aqueous.Terms memory intended = _terms(0, keccak256("intended"));
+        Aqueous.Authorization memory a = _signFor(buyerKey, intended);
+
+        Aqueous.Terms memory tampered = _copy(intended);
+        tampered.agent = address(0xBAD); // the whole attack, in one line
+
+        vm.prank(address(0xBAD));
+        vm.expectRevert();
+        esc.createJobWithAuthorization(tampered, a);
+
+        assertEq(IUSDC(USDC).balanceOf(buyer), AMOUNT, "buyer's money never moved");
+
+        // Unaltered it still works, so the revert is about tampering rather than a broken helper.
+        vm.prank(relayer);
+        bytes32 id = esc.createJobWithAuthorization(intended, a);
+        assertEq(esc.jobs(id).agent, agent, "the agent the buyer chose");
+    }
+
     /// Metered settlement returns the remainder in real USDC, in the same transaction.
     function test_fork_meteredReturnsRemainder() public onlyFork {
         deal(USDC, buyer, AMOUNT);
 
-        uint128 price = 50_000; // 0.05 USDC per unit, ceiling of 5 units
-        Aqueous.Authorization memory a =
-            _sign(buyer, address(esc), AMOUNT, 0, block.timestamp + 1 hours, keccak256("metered"));
-
-        Aqueous.Terms memory t = Aqueous.Terms({
-            agent: agent,
-            token: USDC,
-            amount: AMOUNT,
-            pricePerUnit: price,
-            deadline: uint64(block.timestamp + 7 days),
-            termsHash: keccak256("t"),
-            salt: keccak256("metered-job")
-        });
+        Aqueous.Terms memory t = _terms(50_000, keccak256("metered-job")); // 0.05 per unit, 5 unit ceiling
+        Aqueous.Authorization memory a = _signFor(buyerKey, t);
 
         vm.prank(relayer);
         bytes32 id = esc.createJobWithAuthorization(t, a);
@@ -193,42 +167,63 @@ contract AqueousForkTest is Test {
 
     /* ---------------------------------------------------------------- helpers */
 
-    function _sign(
-        address from,
-        address to,
-        uint256 value,
-        uint256 validAfter,
-        uint256 validBefore,
-        bytes32 nonce
-    ) internal view returns (Aqueous.Authorization memory) {
-        return _signWith(buyerKey, from, to, value, validAfter, validBefore, nonce);
+    /// @dev `Terms memory b = a` ALIASES in Solidity, it does not copy. Tampering through the
+    ///      alias mutated the original and invalidated a signature made earlier in the test, which
+    ///      looked exactly like the contract rejecting valid terms. Copy explicitly.
+    function _copy(Aqueous.Terms memory t) internal pure returns (Aqueous.Terms memory) {
+        return Aqueous.Terms({
+            agent: t.agent,
+            token: t.token,
+            amount: t.amount,
+            pricePerUnit: t.pricePerUnit,
+            deadline: t.deadline,
+            termsHash: t.termsHash,
+            salt: t.salt
+        });
     }
 
-    /// @dev Domain separator is READ FROM THE TOKEN rather than reconstructed, so this signs against
-    ///      whatever domain USDC actually uses instead of whatever we assumed it uses.
-    function _signWith(
-        uint256 key,
-        address from,
-        address to,
-        uint256 value,
-        uint256 validAfter,
-        uint256 validBefore,
-        bytes32 nonce
-    ) internal view returns (Aqueous.Authorization memory) {
+    function _terms(uint128 pricePerUnit, bytes32 salt)
+        internal
+        view
+        returns (Aqueous.Terms memory)
+    {
+        return Aqueous.Terms({
+            agent: agent,
+            token: USDC,
+            amount: AMOUNT,
+            pricePerUnit: pricePerUnit,
+            deadline: uint64(block.timestamp + 7 days),
+            termsHash: keccak256("terms"),
+            salt: salt
+        });
+    }
+
+    /// @dev Signs the nonce the CONTRACT derives from these exact terms, and against the domain
+    ///      separator READ FROM THE TOKEN rather than reconstructed from assumptions.
+    function _signFor(uint256 key, Aqueous.Terms memory t)
+        internal
+        view
+        returns (Aqueous.Authorization memory)
+    {
+        uint256 validBefore = block.timestamp + 1 hours;
         bytes32 structHash = keccak256(
             abi.encode(
-                TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce
+                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+                buyer,
+                address(esc),
+                uint256(t.amount),
+                uint256(0),
+                validBefore,
+                esc.authNonceFor(t)
             )
         );
         bytes32 digest =
             keccak256(abi.encodePacked("\x19\x01", IUSDC(USDC).DOMAIN_SEPARATOR(), structHash));
         (uint8 v, bytes32 r, bytes32 s) = vm.sign(key, digest);
-
         return Aqueous.Authorization({
-            from: from,
-            validAfter: validAfter,
+            from: buyer,
+            validAfter: 0,
             validBefore: validBefore,
-            nonce: nonce,
             v: v,
             r: r,
             s: s

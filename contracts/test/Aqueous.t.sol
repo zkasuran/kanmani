@@ -394,7 +394,6 @@ contract AqueousTest is Test {
             from: buyer,
             validAfter: 0,
             validBefore: block.timestamp + 1 hours,
-            nonce: keccak256("auth-1"),
             v: 27,
             r: bytes32(0),
             s: bytes32(0)
@@ -416,35 +415,12 @@ contract AqueousTest is Test {
         assertEq(usdc.balanceOf(agent), AMOUNT);
     }
 
-    /// A replayed authorisation must die in the token, which is where nonce tracking belongs.
-    function test_authorizationReplayRejected() public {
-        Aqueous.Terms memory t = _terms(AMOUNT, 0, SALT);
-        Aqueous.Authorization memory a = Aqueous.Authorization({
-            from: buyer,
-            validAfter: 0,
-            validBefore: block.timestamp + 1 hours,
-            nonce: keccak256("auth-1"),
-            v: 27,
-            r: bytes32(0),
-            s: bytes32(0)
-        });
-
-        vm.prank(relayer);
-        esc.createJobWithAuthorization(t, a);
-
-        t.salt = keccak256("job-2"); // new job, same authorisation
-        vm.prank(relayer);
-        vm.expectRevert("auth: nonce used");
-        esc.createJobWithAuthorization(t, a);
-    }
-
     function test_expiredAuthorizationRejected() public {
         Aqueous.Terms memory t = _terms(AMOUNT, 0, SALT);
         Aqueous.Authorization memory a = Aqueous.Authorization({
             from: buyer,
             validAfter: 0,
             validBefore: block.timestamp, // already expired
-            nonce: keccak256("auth-1"),
             v: 27,
             r: bytes32(0),
             s: bytes32(0)
