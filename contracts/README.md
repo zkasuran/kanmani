@@ -6,8 +6,8 @@ Money is held until the work lands and the receipt is emitted by the settlement 
 
 | | address |
 |---|---|
-| **Aqueous** | [`0xAbB85ab157357676eBE7ae17A161168912A3c232`](https://testnet.monadexplorer.com/address/0xAbB85ab157357676eBE7ae17A161168912A3c232) |
-| **tUSDC** (test token) | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://testnet.monadexplorer.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
+| **Aqueous** | [`0xAbB85ab157357676eBE7ae17A161168912A3c232`](https://testnet.monadscan.com/address/0xAbB85ab157357676eBE7ae17A161168912A3c232) |
+| **tUSDC** (test token) | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://testnet.monadscan.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
 
 Chain 10143, `claimWindow` 259200 seconds (3 days), deployed from
 `0xDB6c6340342e71A63cD11Ebac2185204b7777777`.
@@ -44,9 +44,9 @@ cast call 0xAbB85ab157357676eBE7ae17A161168912A3c232 "claimWindow()(uint64)" --r
 ```
 
 The job creation transaction is
-[`0xb28c44c2…e071bc`](https://testnet.monadexplorer.com/tx/0xb28c44c27fec131c3935be18f5502f7053a71dc45b90c59a0f423b4267e071bc)
+[`0xb28c44c2…e071bc`](https://testnet.monadscan.com/tx/0xb28c44c27fec131c3935be18f5502f7053a71dc45b90c59a0f423b4267e071bc)
 and the settlement is
-[`0xdef55b3c…75e6a8`](https://testnet.monadexplorer.com/tx/0xdef55b3c49313895a15a3e91dd7ca9078187102c3b181aa66fbcc7477975e6a8).
+[`0xdef55b3c…75e6a8`](https://testnet.monadscan.com/tx/0xdef55b3c49313895a15a3e91dd7ca9078187102c3b181aa66fbcc7477975e6a8).
 
 **One limitation this does not hide.** The relayed path removes the gas requirement from job
 creation, which is the step a new buyer hits first and the one that otherwise stops them dead. It
