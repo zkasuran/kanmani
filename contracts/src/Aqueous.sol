@@ -113,6 +113,41 @@ contract Aqueous {
     ///      money, because the cost is one slot and the failure mode is losing escrowed funds.
     uint256 private _entered;
 
+    /* -------------------------------------------------------------- EIP-712 */
+
+    /// The buyer signs these instead of sending a transaction, so a buyer who holds no MON can
+    /// finish a job as well as start one. See the `*WithAuthorization` functions.
+    ///
+    /// **No nonce, on purpose.** Every action these authorise moves the job to a terminal state,
+    /// so the state machine is already the replay guard: a second submission of the same signature
+    /// finds the job Settled or Refunded and reverts with `WrongState`. A nonce would be a second
+    /// mechanism for a property the first one already has, plus a storage slot per buyer.
+
+    bytes32 private constant EIP712_DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+
+    bytes32 private constant RELEASE_TYPEHASH =
+        keccak256("Release(bytes32 jobId,uint256 validBefore)");
+
+    bytes32 private constant SETTLE_METERED_TYPEHASH =
+        keccak256("SettleMetered(bytes32 jobId,uint256 units,uint256 validBefore)");
+
+    bytes32 private constant REFUND_TYPEHASH =
+        keccak256("Refund(bytes32 jobId,uint256 validBefore)");
+
+    /// @dev Cached, plus the chain id it was built for. A separator baked in at deploy is wrong
+    ///      after a chain splits and rebuilding costs a comparison, so do it rather than assume.
+    bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
+    uint256 private immutable _CACHED_CHAIN_ID;
+
+    /// @dev Half the secp256k1 curve order. A signature with `s` above this is the second, equally
+    ///      valid encoding of the same signature. Rejecting it is not load-bearing here, because
+    ///      nothing stores or keys on a signature, but a fund-holding contract should not accept
+    ///      two spellings of one authorisation when refusing one costs a comparison.
+    uint256 private constant SECP256K1_HALF_N =
+        0x7FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF5D576E7357A4501DDFE92F46681B20A0;
+
+
     /* ---------------------------------------------------------------- events */
 
     event JobCreated(
@@ -158,6 +193,8 @@ contract Aqueous {
     error ZeroAgent();
     error TransferFailed();
     error Reentrancy();
+    error AuthorizationExpired();
+    error InvalidSignature();
 
     /* ------------------------------------------------------------- modifiers */
 
@@ -170,12 +207,49 @@ contract Aqueous {
 
     constructor(uint64 claimWindow_) {
         claimWindow = claimWindow_;
+        _CACHED_CHAIN_ID = block.chainid;
+        _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator();
     }
 
     /* ----------------------------------------------------------------- views */
 
     function jobs(bytes32 jobId) external view returns (Job memory) {
         return _jobs[jobId];
+    }
+
+    /// @notice The EIP-712 domain for this deployment. It binds `chainId` and this contract's own
+    ///         address, so a signature made for the testnet deployment is useless on mainnet and
+    ///         vice versa.
+    function DOMAIN_SEPARATOR() public view returns (bytes32) {
+        if (block.chainid == _CACHED_CHAIN_ID) return _CACHED_DOMAIN_SEPARATOR;
+        return _buildDomainSeparator();
+    }
+
+    /// @notice The exact digest to sign for a gasless release. Sign this, hand it to any relayer.
+    ///
+    /// **`releaseWithAuthorization` calls this same function**, rather than rebuilding the digest
+    /// from the same parts. Two copies of an EIP-712 layout drift and when they do the symptom is
+    /// every valid signature being rejected, which reads like a broken signer rather than a broken
+    /// contract. Mutation testing found exactly that gap here: the units field was removed from one
+    /// copy and the adversarial test still passed, because it was then failing on a digest mismatch
+    /// instead of on the property it claimed to check.
+    function releaseDigest(bytes32 jobId, uint256 validBefore) public view returns (bytes32) {
+        return _digest(keccak256(abi.encode(RELEASE_TYPEHASH, jobId, validBefore)));
+    }
+
+    /// @notice The digest for a gasless metered settlement. `units` is inside it, so a relayer
+    ///         cannot settle for a different number than the buyer signed for.
+    function settleMeteredDigest(bytes32 jobId, uint256 units, uint256 validBefore)
+        public
+        view
+        returns (bytes32)
+    {
+        return _digest(keccak256(abi.encode(SETTLE_METERED_TYPEHASH, jobId, units, validBefore)));
+    }
+
+    /// @notice The digest for a gasless refund.
+    function refundDigest(bytes32 jobId, uint256 validBefore) public view returns (bytes32) {
+        return _digest(keccak256(abi.encode(REFUND_TYPEHASH, jobId, validBefore)));
     }
 
     /// @notice Job ids are derived, never supplied, so one buyer cannot squat another's id.
@@ -267,12 +341,7 @@ contract Aqueous {
 
     /// @notice Buyer accepts and pays the full escrowed amount.
     function release(bytes32 jobId) external nonReentrant {
-        Job storage j = _jobs[jobId];
-        if (j.state == State.None) revert NoSuchJob();
-        if (j.state != State.Open && j.state != State.Delivered) revert WrongState();
-        if (msg.sender != j.buyer) revert NotBuyer();
-
-        _settle(jobId, j, j.amount, 0, 0);
+        _release(jobId, msg.sender);
     }
 
     /// @notice Buyer settles a metered job for the units actually consumed. The unspent remainder
@@ -281,15 +350,55 @@ contract Aqueous {
     /// Returning the remainder is the honesty test of this contract. Keeping it would be invisible
     /// to most buyers and it is exactly the class of thing this project exists to make visible.
     function settleMetered(bytes32 jobId, uint256 units) external nonReentrant {
-        Job storage j = _jobs[jobId];
-        if (j.state == State.None) revert NoSuchJob();
-        if (j.state != State.Open && j.state != State.Delivered) revert WrongState();
-        if (msg.sender != j.buyer) revert NotBuyer();
-        if (j.pricePerUnit == 0) revert NotMetered();
-
-        (uint256 paid, uint256 returned) = _split(j.amount, j.pricePerUnit, units);
-        _settle(jobId, j, paid, returned, units);
+        _settleMetered(jobId, units, msg.sender);
     }
+
+    /* ----------------------------------------------- the same three, gasless */
+
+    /// @notice Release on the strength of the buyer's signature, submitted and paid for by anyone.
+    ///
+    /// **This is the other half of the gasless story and it was missing for a while.**
+    /// `createJobWithAuthorization` let a buyer with no MON start a job. Finishing one still
+    /// needed their own transaction, so a buyer who genuinely held nothing could fund an escrow
+    /// and then not release it, not settle it and not refund it. Their only remaining move was to
+    /// wait out the claim window and let the agent take the whole amount. A gasless entrance with
+    /// no gasless exit is worse than no gasless entrance, because it strands people mid-flow.
+    ///
+    /// Sign the digest from `releaseDigest`. The relayer gets no rights: it pays gas and nothing
+    /// else and the signature only authorises this one job.
+    function releaseWithAuthorization(bytes32 jobId, uint256 validBefore, uint8 v, bytes32 r, bytes32 s)
+        external
+        nonReentrant
+    {
+        _requireNotExpired(validBefore);
+        _release(jobId, _recover(releaseDigest(jobId, validBefore), v, r, s));
+    }
+
+    /// @notice Metered settlement on the buyer's signature. The unit count is signed, so a relayer
+    ///         cannot settle for a different number than the buyer agreed to.
+    function settleMeteredWithAuthorization(
+        bytes32 jobId,
+        uint256 units,
+        uint256 validBefore,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external nonReentrant {
+        _requireNotExpired(validBefore);
+        _settleMetered(jobId, units, _recover(settleMeteredDigest(jobId, units, validBefore), v, r, s));
+    }
+
+    /// @notice Refund on the buyer's signature, after the deadline. Completes the set: a buyer who
+    ///         never holds the gas token can still get their money back from a dead agent.
+    function refundWithAuthorization(bytes32 jobId, uint256 validBefore, uint8 v, bytes32 r, bytes32 s)
+        external
+        nonReentrant
+    {
+        _requireNotExpired(validBefore);
+        _refund(jobId, _recover(refundDigest(jobId, validBefore), v, r, s));
+    }
+
+    /* ------------------------------------------------------------ lifecycle */
 
     /// @notice Agent claims a delivered job the buyer never answered on.
     ///         Without this a silent buyer strands a delivered job forever.
@@ -306,10 +415,39 @@ contract Aqueous {
     /// @notice Buyer reclaims an undelivered job after the deadline. No agent signature needed,
     ///         so a dead agent cannot hold a buyer's money.
     function refund(bytes32 jobId) external nonReentrant {
+        _refund(jobId, msg.sender);
+    }
+
+    /* ---------------------------------------------------------------- internal */
+
+    /// @dev One implementation per buyer action, taking the AUTHORISED party explicitly rather
+    ///      than reading `msg.sender`. That is what lets a signature stand in for a transaction
+    ///      without either path drifting from the other: there is only one set of checks.
+    function _release(bytes32 jobId, address who) private {
+        Job storage j = _jobs[jobId];
+        if (j.state == State.None) revert NoSuchJob();
+        if (j.state != State.Open && j.state != State.Delivered) revert WrongState();
+        if (who != j.buyer) revert NotBuyer();
+
+        _settle(jobId, j, j.amount, 0, 0);
+    }
+
+    function _settleMetered(bytes32 jobId, uint256 units, address who) private {
+        Job storage j = _jobs[jobId];
+        if (j.state == State.None) revert NoSuchJob();
+        if (j.state != State.Open && j.state != State.Delivered) revert WrongState();
+        if (who != j.buyer) revert NotBuyer();
+        if (j.pricePerUnit == 0) revert NotMetered();
+
+        (uint256 paid, uint256 returned) = _split(j.amount, j.pricePerUnit, units);
+        _settle(jobId, j, paid, returned, units);
+    }
+
+    function _refund(bytes32 jobId, address who) private {
         Job storage j = _jobs[jobId];
         if (j.state == State.None) revert NoSuchJob();
         if (j.state != State.Open) revert WrongState();
-        if (msg.sender != j.buyer) revert NotBuyer();
+        if (who != j.buyer) revert NotBuyer();
         if (block.timestamp <= j.deadline) revert DeadlineNotPassed();
 
         address token = j.token;
@@ -322,7 +460,39 @@ contract Aqueous {
         emit Refunded(jobId, buyer, token, amount);
     }
 
-    /* ---------------------------------------------------------------- internal */
+    /* -------------------------------------------------------- signature guts */
+
+    function _requireNotExpired(uint256 validBefore) private view {
+        if (block.timestamp >= validBefore) revert AuthorizationExpired();
+    }
+
+    function _digest(bytes32 structHash) private view returns (bytes32) {
+        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR(), structHash));
+    }
+
+    function _buildDomainSeparator() private view returns (bytes32) {
+        return keccak256(
+            abi.encode(
+                EIP712_DOMAIN_TYPEHASH,
+                keccak256("Aqueous"),
+                keccak256("1"),
+                block.chainid,
+                address(this)
+            )
+        );
+    }
+
+    /// @dev `ecrecover` returns the zero address for a malformed signature rather than reverting,
+    ///      so a caller that forgets to check it treats garbage as a valid signer. Every failure
+    ///      mode is turned into a revert here: bad `v`, the high-`s` twin of a signature and the
+    ///      zero address.
+    function _recover(bytes32 digest, uint8 v, bytes32 r, bytes32 s) private pure returns (address) {
+        if (uint256(s) > SECP256K1_HALF_N) revert InvalidSignature();
+        if (v != 27 && v != 28) revert InvalidSignature();
+        address signer = ecrecover(digest, v, r, s);
+        if (signer == address(0)) revert InvalidSignature();
+        return signer;
+    }
 
     function _open(address buyer, Terms calldata t) private returns (bytes32 jobId) {
         if (t.amount == 0) revert ZeroAmount();

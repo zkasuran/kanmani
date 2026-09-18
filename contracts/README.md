@@ -6,8 +6,8 @@ Money is held until the work lands and the receipt is emitted by the settlement 
 
 | | address |
 |---|---|
-| **Aqueous** | [`0xAbB85ab157357676eBE7ae17A161168912A3c232`](https://testnet.monadscan.com/address/0xAbB85ab157357676eBE7ae17A161168912A3c232) |
-| **tUSDC** (test token) | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://testnet.monadscan.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
+| **Aqueous** | [`0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C`](https://testnet.monadscan.com/address/0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C) |
+| **tUSDC** (test token) | [`0x841057C182b74408628FadAFba01Ad178cDA2E2f`](https://testnet.monadscan.com/address/0x841057C182b74408628FadAFba01Ad178cDA2E2f) |
 
 Chain 10143, `claimWindow` 259200 seconds (3 days), deployed from
 `0xDB6c6340342e71A63cD11Ebac2185204b7777777`.
@@ -24,8 +24,17 @@ can get wrong.
 
 ### One complete job, already run against the live contract
 
-A buyer holding **zero MON** signed one message, a relayer submitted it and paid the gas, the
-agent delivered and the buyer settled a metered job for 2 of 5 units:
+**The buyer never sent a transaction.** Not one. They signed two messages, a relayer paid all the
+gas and they finished with their refund. Read the two numbers that make that checkable:
+
+```bash
+B=0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92
+cast balance $B --rpc-url https://testnet-rpc.monad.xyz --ether   # 0.000000000000000000
+cast nonce   $B --rpc-url https://testnet-rpc.monad.xyz           # 0
+```
+
+A nonce of zero is the whole claim in one integer: that address has never originated a
+transaction on this chain and it still hired an agent and got money back.
 
 | | |
 |---|---|
@@ -38,20 +47,29 @@ Read it back yourself, no key needed:
 
 ```bash
 R=https://testnet-rpc.monad.xyz
-cast call 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 "balanceOf(address)(uint256)" \
+cast call 0x841057C182b74408628FadAFba01Ad178cDA2E2f "balanceOf(address)(uint256)" \
   0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52 --rpc-url $R   # agent, 10000000
-cast call 0xAbB85ab157357676eBE7ae17A161168912A3c232 "claimWindow()(uint64)" --rpc-url $R
+cast call 0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C "claimWindow()(uint64)" --rpc-url $R
 ```
 
 The job creation transaction is
-[`0xb28c44c2…e071bc`](https://testnet.monadscan.com/tx/0xb28c44c27fec131c3935be18f5502f7053a71dc45b90c59a0f423b4267e071bc)
+[`0x675fcf6e…47eb5f`](https://testnet.monadscan.com/tx/0x675fcf6ed72811f90e841936d02a352ef1c565847adf1c55c546746c4047eb5f)
 and the settlement is
-[`0xdef55b3c…75e6a8`](https://testnet.monadscan.com/tx/0xdef55b3c49313895a15a3e91dd7ca9078187102c3b181aa66fbcc7477975e6a8).
+[`0xcb4b8810…4e8223`](https://testnet.monadscan.com/tx/0xcb4b8810d835a2131c169f3385fc2e15b9ece1a4ad2c82dd3f512667704e8223).
 
-**One limitation this does not hide.** The relayed path removes the gas requirement from job
-creation, which is the step a new buyer hits first and the one that otherwise stops them dead. It
-does not remove it from `release` or `settleMetered`, because those are the buyer asserting the
-work is good and that assertion has to come from the buyer's own key.
+**Gasless all the way through, which it was not at first.** The original build made only job
+creation gasless. A buyer who genuinely held no MON could fund an escrow and then be stuck: no
+release, no settle, no refund, with their only remaining move being to wait out the claim window
+and let the agent take everything. A gasless entrance with no gasless exit is worse than no
+gasless entrance, because it strands people mid-flow.
+
+`releaseWithAuthorization`, `settleMeteredWithAuthorization` and `refundWithAuthorization` close
+it. Each takes an EIP-712 signature from the buyer and anyone can submit it. Call
+`releaseDigest`, `settleMeteredDigest` or `refundDigest` to get the exact bytes to sign, so no
+client rebuilds EIP-712 by hand.
+
+The agent still pays for its own `deliver`, deliberately. Agents run infrastructure, so holding
+gas is part of the job. The buyer is the party who should never need to.
 
 ## Deploy it yourself
 

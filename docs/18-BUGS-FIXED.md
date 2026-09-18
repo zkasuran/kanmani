@@ -239,6 +239,37 @@ usage pays the ceiling, because the contract has no independent record of units 
 
 ---
 
+## Found by writing down a limitation and then reading it back
+
+### A gasless entrance with no gasless exit
+
+**Severity: MEDIUM.** `contracts/src/Aqueous.sol`.
+
+This one was documented before it was fixed. The README carried a paragraph headed "one limitation
+this does not hide", explaining that only job creation was gasless and that `release` and
+`settleMetered` still needed the buyer's own gas.
+
+Written out plainly like that, it stopped reading like a limitation and started reading like a
+trap. A buyer who genuinely held no MON could fund an escrow and then reach none of the three
+exits. Their only move was to wait out the claim window and let the agent take everything. **The
+feature built to help a buyer with no gas was the feature that could cost them the lot** and the
+more exactly someone matched the target user the more exposed they were.
+
+Fixed with `releaseWithAuthorization`, `settleMeteredWithAuthorization` and
+`refundWithAuthorization`, each taking an EIP-712 signature that anyone can submit. Write-up in the
+[audit](17-CONTRACT-AUDIT.md#finding-8-a-gasless-entrance-with-no-gasless-exit).
+
+**Guard:** 11 tests, every one asserting `buyer.balance == 0` at the end. On the live testnet
+deployment the demo buyer finished the whole lifecycle with a MON balance of 0 **and a transaction
+count of 0**. All five new checks were mutation tested.
+
+**The transferable part:** if a documented limitation would be unacceptable stated as a user
+outcome rather than as a technical caveat, it is a bug wearing a caveat's clothes. "Release needs
+the buyer's own gas" sounds reasonable. "A buyer with no gas loses their escrow" does not and they
+are the same sentence.
+
+---
+
 ## Still open
 
 Nothing known and unfixed in the escrow.

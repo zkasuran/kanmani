@@ -3,14 +3,14 @@
 **Reviewed 2026-09-18, before deployment.** The escrow has never been deployed, so nothing in it was
 ever live and no user funds were ever at risk. The indexer and the deploy stack were running.
 
-**Seven issues were found and fixed**, across all three components. Two were fund-loss bugs in the
+**Eight issues were found and fixed**, across all three components. Two were fund-loss bugs in the
 escrow, one of them high severity and one that defeated the main feature. Both are published here with
 the exploit, the fix and the proof, because an audit that only lists what it found clean is not
 evidence of anything.
 
 | Component | Reviewed | Found |
 |---|---|---|
-| `contracts/src/Aqueous.sol`, 392 lines | yes | 1 HIGH, 1 MEDIUM |
+| `contracts/src/Aqueous.sol` | yes | 1 HIGH, 2 MEDIUM |
 | `indexer/`, Retina handlers and schema | yes | 4, none exploitable, all publishing wrong numbers |
 | `deploy/`, compose and Hasura tracking | yes | 1 HIGH for the judging window |
 
@@ -22,15 +22,15 @@ field, which took about a minute each.
 |---|---|
 | Method | manual review, then a written exploit or a query for every candidate finding |
 | Reviewer | zkasuran, with AI assistance. See the disclosure at the end |
-| Status after fixes | `2678753` plus the indexer and deploy fixes. 37 contract tests, 0 compiler warnings, indexer typecheck clean |
-| Escrow deployed | **not yet.** This review is why |
+| Status after fixes | 61 contract tests (55 pass, 6 skip without a fork url), 0 compiler errors, indexer typecheck clean |
+| Escrow deployed | Monad testnet `0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C`. Mainnet not yet |
 
 ---
 
 ## Why the findings are stated as exploits
 
 A finding described in prose is an opinion. A finding written as a test that passes against the old
-code is a fact. Both findings below were **first committed as passing exploit tests**, then fixed, then
+code is a fact. The two escrow findings below were **first committed as passing exploit tests**, then fixed, then
 kept as regression tests named `test_FIXED_*` so the reason they exist stays visible to anyone reading
 the suite later.
 
@@ -454,6 +454,93 @@ hiding the absence of the thing it backs up.
 
 `test_stateIsTerminalBeforeAnyTransfer` now asserts the ordering directly, using a token that records
 the job state at the moment it is called back. It fails whether or not the guard is present.
+
+---
+
+## Finding 8: a gasless entrance with no gasless exit
+
+**Severity: MEDIUM.** Not a theft. A design hole that could strand a buyer's whole escrow.
+
+**Location:** the buyer-facing lifecycle, before `releaseWithAuthorization` existed.
+
+### The bug
+
+`createJobWithAuthorization` let a buyer with no MON fund a job on someone else's gas. That was the
+headline feature. Nothing else was gasless.
+
+So a buyer who genuinely held no gas token could escrow their money and then do nothing with it.
+`release` needs their transaction. So does `settleMetered`. So does `refund`. Every exit was shut.
+
+Their only remaining move was to wait out the claim window and let the agent take the entire
+amount through `claimDelivered`. **The feature that existed to help a buyer with no gas was the
+feature that could cost them everything** and the more completely a buyer matched the target user
+the more exposed they were. Someone who held a little MON was fine. Someone who held none was not.
+
+It is worth being precise about why this counts as a finding rather than a missing nice-to-have.
+The contract's stated property is that both sides always have an exit that does not depend on the
+other answering. For a gasless buyer that was false and it was false in the exact configuration
+the product was built to serve.
+
+### The fix
+
+Three signed entry points, mirroring the create path:
+
+```solidity
+function releaseWithAuthorization(bytes32 jobId, uint256 validBefore, uint8 v, bytes32 r, bytes32 s)
+function settleMeteredWithAuthorization(bytes32 jobId, uint256 units, uint256 validBefore, ...)
+function refundWithAuthorization(bytes32 jobId, uint256 validBefore, uint8 v, bytes32 r, bytes32 s)
+```
+
+Each recovers an EIP-712 signature and passes the recovered address into the same internal check
+the direct path uses, so the two cannot drift: there is one set of checks per action, not two.
+`releaseDigest`, `settleMeteredDigest` and `refundDigest` return the exact bytes to sign.
+**The entry points call those same public functions** rather than rebuilding the layout.
+
+Four properties worth naming, because each is a thing that goes wrong in this class of code:
+
+* **`units` is inside the settle digest.** Otherwise a relayer holding a signature for 1 unit could
+  submit 5 and pay the agent the whole ceiling.
+* **No nonce, deliberately.** Every authorised action moves the job to a terminal state, so a
+  replay finds it `Settled` or `Refunded` and reverts. A nonce would be a second mechanism for a
+  property the state machine already has. `test_replayIsBlockedByTerminalState` asserts the reason
+  rather than the outcome, so if someone later makes an action non-terminal the test says a nonce
+  is now required.
+* **The domain binds `chainId` and `address(this)`**, so a signature for the testnet deployment is
+  useless against the mainnet one.
+* **`ecrecover` is wrapped.** It returns the zero address for a malformed signature instead of
+  reverting, so bad `v`, the high-`s` twin of a signature and the zero address are all turned into
+  an explicit revert.
+
+### The proof
+
+Eleven tests in `AqueousGasless.t.sol` and a live run. Every test asserts `buyer.balance == 0` at
+the end, because the moment the buyer needs one wei the claim is gone and a test that only checked
+the token balances would not notice.
+
+On the live testnet deployment, the demo buyer finished the whole lifecycle with
+**a MON balance of 0 and a transaction count of 0.** A nonce of zero is the claim in one integer:
+that address has never originated a transaction on the chain and it still hired an agent, had the
+work delivered and received its refund.
+
+**All five new checks were mutation tested.** Removing the high-`s` check, the zero-address check,
+the expiry check, `units` from the digest or `address(this)` from the domain each makes a specific
+test fail.
+
+### What mutation testing found, which is the part worth reading
+
+The `units` mutation **passed on the first attempt** and the reason is a better finding than the
+mutation was.
+
+The digest was built in two places: once in the public `settleMeteredDigest` view that clients sign
+against and again inside `settleMeteredWithAuthorization`. Mutating one left the other intact, so
+the test passed on a digest mismatch rather than on the property it claimed to check.
+
+That duplication was itself the bug. Two copies of an EIP-712 layout drift and when they do the
+symptom is every valid signature being rejected, which reads like a broken signer rather than a
+broken contract. The entry points now call the same public functions clients call, so there is one
+definition. With that collapsed, the mutation fails the test with
+`next call did not revert as expected`, which is a relayer successfully settling for 5 units
+against a signature for 1.
 
 ---
 
