@@ -24,7 +24,7 @@ interface IERC20 {
 }
 
 /// @title Aqueous
-/// @notice Escrow for agent work. Money is held until the work lands, and the receipt is emitted
+/// @notice Escrow for agent work. Money is held until the work lands and the receipt is emitted
 ///         by the settlement itself rather than written afterwards by something that could disagree.
 ///
 /// The whole point: we measured 68 agent reputation documents on Monad where every one was
@@ -68,7 +68,7 @@ contract Aqueous {
     }
 
     /// @dev Grouped so the create functions stay under the stack limit. Fourteen loose parameters
-    ///      hit "stack too deep", and a struct is the honest fix rather than turning on via-ir to
+    ///      hit "stack too deep" and a struct is the honest fix rather than turning on via-ir to
     ///      paper over a signature that was too wide to read anyway.
     struct Terms {
         address agent;
@@ -86,7 +86,7 @@ contract Aqueous {
     /// signature only covers `(from, to, value, validAfter, validBefore, nonce)`, so it says nothing
     /// about which agent gets paid, the deadline, the price or the terms. Letting the submitter choose
     /// those meant a relayer holding a valid authorisation could name itself as the agent, deliver
-    /// nothing, and claim the buyer's escrow after the dispute window. Refund could not save the buyer
+    /// nothing and claim the buyer's escrow after the dispute window. Refund could not save the buyer
     /// because delivery moves the job out of `Open`.
     ///
     /// Deriving the nonce from the terms binds all of it with no extra signature: change any field and
@@ -197,7 +197,7 @@ contract Aqueous {
 
     /// @notice The EIP-3009 nonce a buyer must sign for a given set of terms.
     ///
-    /// Call this, sign a `TransferWithAuthorization` using the result as the nonce, and the
+    /// Call this, sign a `TransferWithAuthorization` using the result as the nonce and the
     /// authorisation is then only usable for exactly these terms. A relayer that alters the agent,
     /// the deadline, the price or anything else produces a different nonce, so the token rejects the
     /// signature.
@@ -371,13 +371,13 @@ contract Aqueous {
     ///
     /// A fee-on-transfer or rebasing token credits the contract less than `amount` while the job
     /// records the full `amount`. Do that twice and the contract owes more than it holds, so the
-    /// last job out is unpayable, and this contract is immutable with no admin recovery. Refusing at
+    /// last job out is unpayable and this contract is immutable with no admin recovery. Refusing at
     /// creation is the only safe answer: a clean revert beats accounting that is quietly wrong.
     function _requireExactlyReceived(address token, uint256 balanceBefore, uint256 amount) private view {
         if (_balance(token) - balanceBefore != amount) revert TransferFailed();
     }
 
-    /// @dev `upto` semantics: the escrow is a ceiling, the settlement is the actual usage, and
+    /// @dev `upto` semantics: the escrow is a ceiling, the settlement is the actual usage and
     ///      anything unspent is the buyer's. Capped so an over-reported unit count cannot pay out
     ///      more than was escrowed.
     function _split(uint128 amount, uint128 pricePerUnit, uint256 units)

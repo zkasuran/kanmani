@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Track Retina's tables in Kanmani's own Hasura, and open them to anonymous reads.
+# Track Retina's tables in Kanmani's own Hasura and open them to anonymous reads.
 #
 # Why this exists as a script rather than relying on the indexer: envio runs its
 # "Tracking tables in Hasura" step once, during storage init, which happens BEFORE the
 # entity tables exist. On a fresh volume it therefore tracks nothing, reports no error on
-# later runs, and leaves an empty GraphQL surface. Doing it here makes it explicit,
+# later runs and leaves an empty GraphQL surface. Doing it here makes it explicit,
 # repeatable and reviewable instead of a side effect of startup ordering.
 #
 # Anonymous select matters: a judge opening the GraphQL endpoint must not need our admin
@@ -14,9 +14,14 @@
 set -euo pipefail
 
 HASURA="${HASURA_URL:-http://127.0.0.1:8081}"
-SECRET="${HASURA_GRAPHQL_ADMIN_SECRET:-testing}"
+# Required, never defaulted. This used to fall back to "testing", which is the secret the stack
+# itself used to default to, so the pair silently worked and nobody had to set either one.
+SECRET="${HASURA_GRAPHQL_ADMIN_SECRET:?HASURA_GRAPHQL_ADMIN_SECRET is required, see .env.local}"
 
-TABLES=(Agent AgentRecord Feedback Validation Verdict IndexState chain_metadata)
+# Every entity in schema.graphql plus envio's own chain_metadata. A table missing from this list
+# is invisible to anonymous callers, which is the safe default and the reason the list is
+# explicit rather than discovered.
+TABLES=(Agent AgentRecord AgentRecordOwner Feedback Validation Verdict IndexState chain_metadata)
 
 meta() {
   curl -sS --max-time 25 -X POST "$HASURA/v1/metadata" \

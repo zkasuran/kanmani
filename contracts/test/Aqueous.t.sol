@@ -5,7 +5,7 @@ import {Test} from "forge-std/Test.sol";
 import {Aqueous, IERC20, IERC3009} from "../src/Aqueous.sol";
 
 /// @dev A plain ERC-20 with the EIP-3009 surface Aqueous uses. `transferWithAuthorization` here
-///      does no signature checking on purpose: the real token does that, and a mock that pretends
+///      does no signature checking on purpose: the real token does that and a mock that pretends
 ///      to verify signatures tests the mock rather than the contract. What we assert is that
 ///      Aqueous credits the authorisation's `from` rather than `msg.sender`.
 contract MockUSDC is IERC20, IERC3009 {
@@ -81,7 +81,7 @@ contract ReentrantToken is MockUSDC {
     function transfer(address to, uint256 amount) public override returns (bool) {
         if (armed) {
             armed = false; // one shot, so a failed re-entry does not loop
-            target.release(jobId); // should revert, and take the outer call with it
+            target.release(jobId); // should revert and take the outer call with it
         }
         return super.transfer(to, amount);
     }
@@ -517,7 +517,7 @@ contract AqueousTest is Test {
     /* ----------------------------------------------------------------- fuzz */
 
     /// Across any escrow, price and unit count: the agent plus the buyer always receive exactly
-    /// what was escrowed, and the contract keeps nothing.
+    /// what was escrowed and the contract keeps nothing.
     function testFuzz_meteredConservesValue(uint128 amount, uint128 price, uint256 units) public {
         amount = uint128(bound(amount, 1, 1e24));
         price = uint128(bound(price, 1, 1e18));

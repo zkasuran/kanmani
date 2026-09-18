@@ -2,17 +2,17 @@
 # truth are different things, so they are different entities with different lifecycles.
 #
 # Measured 2026-09-13 over all 10,252 Monad agents and a 500-feedback sample:
-#   8,093 agents (78.94%) share ONE tokenURI, and that URI is a deleted Vercel deployment
+#   8,093 agents (78.94%) share ONE tokenURI and that URI is a deleted Vercel deployment
 #   2,031 distinct records across 10,252 agents, so 8,221 are duplicates of another record
 #   68 of 68 fetched evidence documents were hash-perfect
-#   68 of 68 declared network: monad, and 2 of those payments exist on Monad
+#   68 of 68 declared network: monad and 2 of those payments exist on Monad
 #
 # So: Record is deduplicated by content hash (storing 8,093 copies of one dead URL is waste and
-# hides the cluster), and Verdict is append-only so a fixed template reads as false -> true
+# hides the cluster) and Verdict is append-only so a fixed template reads as false -> true
 # rather than as a silent edit.
 
 # NOTE: no entity declares `chainId`. With `disable_default_cross_chain: true` envio adds it to
-# every per-chain entity automatically, and declaring it yourself is a hard codegen error. Add
+# every per-chain entity automatically and declaring it yourself is a hard codegen error. Add
 # `@crossChain` to an entity if its rows should instead be shared across chains.
 
 type Agent {
@@ -23,7 +23,7 @@ type Agent {
   # owner: the owner holds the ERC-721, the wallet is what the agent transacts with.
   agentWallet: String
   tokenUri: String
-  # keccak of tokenUri. The join key to Record, and what makes the 78.94% cluster visible.
+  # keccak of tokenUri. The join key to Record and what makes the 78.94% cluster visible.
   uriHash: String
   name: String
   # Absolute http(s) endpoints only. A relative or scheme-less value cannot be probed.
@@ -43,17 +43,25 @@ type Agent {
 
 # NAMED AgentRecord, NOT Record. Codegen emits `export type <Entity> = ...` inside the `envio`
 # module, so an entity called `Record` shadows TypeScript's built-in Record<K,V> there. Every
-# internal type using Record<string, ...> then breaks, and the only visible symptom is
+# internal type using Record<string, ...> then breaks and the only visible symptom is
 # implicit-any on every handler callback, which points nowhere near the schema.
 #
 # One row per DISTINCT registration document, not per agent. 10,252 agents resolve to ~2,031 of
-# these, and the memberCount on each is what turns "a dead URL" into "7,962 wallets share a dead
-# URL", which is the finding a judge remembers.
+# these. memberCount says how many agents share one, distinctOwners says how many wallets do and
+# together they turn "a dead URL" into "8,093 agents across 7,962 wallets share a dead URL",
+# which is the finding a judge remembers.
 type AgentRecord {
   id: ID! # uriHash
   uri: String!
   # How many agents point at this exact document.
   memberCount: Int!
+  # How many DISTINCT wallets registered those agents, counted at registration time.
+  #
+  # This is a different number from memberCount and that difference is the whole finding: 8,093
+  # agents share the dead Vercel record but only 7,962 wallets do, so a few hundred operators
+  # registered more than one agent against the same document. Deduplicated through
+  # AgentRecordOwner rather than incremented alongside memberCount, which is what an earlier
+  # version did and which made the two fields provably equal. See docs/18-BUGS-FIXED.md.
   distinctOwners: Int!
   kind: String! # data-base64 | data-plain | http | ipfs | inline-json | empty | other
   # Populated by the enrichment Effect, not by a log. 97.7% of agents point off-chain, so this
@@ -63,6 +71,21 @@ type AgentRecord {
   byteLength: Int
   resolves: Boolean
   parsedName: String
+  firstSeenBlock: BigInt!
+  owners: [AgentRecordOwner!]! @derivedFrom(field: "record")
+}
+
+# One row per (record, owner) pair. Exists so distinctOwners is a real count.
+#
+# Counted at REGISTRATION time, deliberately. Agent.owner moves on every Transfer, so a live
+# aggregate over Agent would answer "who holds these agents now" and the published claim is
+# about who registered them. This survives later transfers; an aggregate would not.
+type AgentRecordOwner {
+  id: ID! # uriHash_owner
+  record: AgentRecord!
+  owner: String!
+  # How many agents this owner registered against this one document.
+  agentCount: Int!
   firstSeenBlock: BigInt!
 }
 
@@ -132,16 +155,27 @@ type Validation {
 
 # Population truth, per sweep. The registry is NOT enumerable (totalSupply reverts), so the count
 # comes from a storage slot and is cross-checked against what the logs produced. A gap between
-# the two is the honest signal that the index is behind, and /status shows it rather than hiding
+# the two is the honest signal that the index is behind and /status shows it rather than hiding
 # it. Muster's index froze for five days while its page reported a number true when written.
+#
+# The other half of the cross-check, how many rows Retina actually holds, is NOT stored here.
+# An earlier version declared agentsFromLogs, feedbackCount and recordCount on this entity and
+# never wrote them, so all three were permanently 0 and the gap always read as maximal. They are
+# gone rather than backfilled: a denormalised counter can drift from the table it counts and
+# Hasura already answers it exactly with no write cost.
+#
+#   query { Agent_aggregate { aggregate { count } } }
+#
+# See docs/18-BUGS-FIXED.md.
 type IndexState {
   id: ID! # chainId
   # eth_getStorageAt on the identity registry counter slot.
-  counterSlotCount: BigInt!
-  # Distinct agent ids Retina actually holds.
-  agentsFromLogs: BigInt!
+  #
+  # NULLABLE on purpose and this is load-bearing. A failed RPC read must publish "unknown" and
+  # a non-null BigInt! forces a 0 instead, which is exactly the lie this project exists to call
+  # out. Unknown is never zero, including in our own schema.
+  counterSlotCount: BigInt
   atBlock: BigInt!
+  # Wall clock, written only by PopulationCheck. Freshness on /status, never consensus time.
   updatedAt: BigInt!
-  feedbackCount: BigInt!
-  recordCount: BigInt!
 }

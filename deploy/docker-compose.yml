@@ -1,6 +1,6 @@
 # Kanmani runs its own everything.
 #
-# This machine also hosts an unrelated project with an Envio indexer, and the Envio CLI's
+# This machine also hosts an unrelated project with an Envio indexer and the Envio CLI's
 # default resources collide with it: it looks for Postgres on 5433 and Hasura on 8080, finds
 # the other project's containers there, then fails with "password authentication failed for
 # user postgres" (wrong container, not a bad credential) and "access-denied" against a Hasura
@@ -26,7 +26,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${ENVIO_PG_PASSWORD:-testing}
+      # Required, never defaulted. See the note on HASURA_GRAPHQL_ADMIN_SECRET below.
+      POSTGRES_PASSWORD: ${ENVIO_PG_PASSWORD:?ENVIO_PG_PASSWORD is required, see .env.local}
       POSTGRES_DB: envio-dev
     ports:
       # Bound to loopback. Nothing here should be reachable off the box.
@@ -49,14 +50,25 @@ services:
     ports:
       - "127.0.0.1:8081:8080"
     environment:
-      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${ENVIO_PG_PASSWORD:-testing}@postgres:5432/envio-dev
-      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:${ENVIO_PG_PASSWORD:-testing}@postgres:5432/envio-dev
-      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-testing}
-      HASURA_GRAPHQL_ENABLE_CONSOLE: "true"
+      HASURA_GRAPHQL_DATABASE_URL: postgres://postgres:${ENVIO_PG_PASSWORD:?ENVIO_PG_PASSWORD is required, see .env.local}@postgres:5432/envio-dev
+      HASURA_GRAPHQL_METADATA_DATABASE_URL: postgres://postgres:${ENVIO_PG_PASSWORD:?ENVIO_PG_PASSWORD is required, see .env.local}@postgres:5432/envio-dev
+      # REQUIRED and it used to default to "testing". That default is why this line carries a
+      # comment: the admin secret is the whole authentication story for Hasura and the stack
+      # has to be publicly queryable for judges from Oct 14 to Nov 3. A known secret plus a
+      # public endpoint is admin access to the index for anyone who reads this file and this
+      # file is in a repo that goes public at submission. Compose now refuses to start without
+      # a real value instead of starting insecure. See docs/17-CONTRACT-AUDIT.md.
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:?HASURA_GRAPHQL_ADMIN_SECRET is required, generate one, see .env.local}
+      # Off. The console is an admin surface and nothing needs it on the published endpoint.
+      # Run it locally with `hasura console` against a tunnel when it is actually wanted.
+      HASURA_GRAPHQL_ENABLE_CONSOLE: "false"
       HASURA_GRAPHQL_CORS_DOMAIN: "*"
       # Envio's managed Hasura stringifies numerics, so match it or BigInt columns
       # silently change shape for every consumer.
       HASURA_GRAPHQL_STRINGIFY_NUMERIC_TYPES: "true"
+      # Anonymous reads are intended: a judge queries the index without credentials. What this
+      # role may touch is set by table permissions in track-hasura.sh, never by this line, so
+      # a new table is unreadable until it is granted select explicitly.
       HASURA_GRAPHQL_UNAUTHORIZED_ROLE: public
 
   indexer:
@@ -84,13 +96,13 @@ services:
       ENVIO_PG_HOST: postgres
       ENVIO_PG_PORT: 5432
       ENVIO_PG_USER: postgres
-      ENVIO_PG_PASSWORD: ${ENVIO_PG_PASSWORD:-testing}
+      ENVIO_PG_PASSWORD: ${ENVIO_PG_PASSWORD:?ENVIO_PG_PASSWORD is required, see .env.local}
       ENVIO_PG_DATABASE: envio-dev
       ENVIO_PG_SCHEMA: public
       ENVIO_INDEXER_PORT: 9899
       # Ours, on port 8080 inside the network. Never the other project's on the host.
       HASURA_GRAPHQL_ENDPOINT: http://hasura:8080
-      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-testing}
+      HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:?HASURA_GRAPHQL_ADMIN_SECRET is required, generate one, see .env.local}
       ENVIO_API_TOKEN: ${ENVIO_API_TOKEN:?ENVIO_API_TOKEN is required, see .env.local}
       TUI_OFF: "true"
 

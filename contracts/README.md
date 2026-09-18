@@ -1,6 +1,6 @@
 # Aqueous: the escrow
 
-Money is held until the work lands, and the receipt is emitted by the settlement itself.
+Money is held until the work lands and the receipt is emitted by the settlement itself.
 
 ## Build
 
@@ -10,13 +10,13 @@ forge build
 forge test
 ```
 
-`lib/` is deliberately not committed. forge-std is a dependency rather than our code, and keeping
+`lib/` is deliberately not committed. forge-std is a dependency rather than our code and keeping
 it out of the tree avoids vendoring another project's licence into this one.
 
 ## Why it is shaped this way
 
 We measured 68 agent reputation documents on Monad. Every one was cryptographically perfect, every
-one declared `network: monad`, and 2 of the cited payments existed on Monad. That is a plumbing
+one declared `network: monad` and 2 of the cited payments existed on Monad. That is a plumbing
 problem rather than a lying problem. **If the money moves through this contract, the receipt names
 the chain the money actually moved on, because the same transaction does both.**
 
@@ -55,13 +55,13 @@ forge test                                        # 30 unit tests, fork tests re
 forge test --fork-url "$MONAD_RPC"                # +5 against real USDC on Monad mainnet
 ```
 
-**There is no testnet run of the money path, and that is not laziness.** USDC does not exist on Monad
+**There is no testnet run of the money path and that is not laziness.** USDC does not exist on Monad
 testnet: `eth_getCode` at the mainnet address returns `0x` on chain 10143 and there is no testnet
 deployment. A testnet lifecycle could only exercise a mock token.
 
 A mainnet fork is better anyway. The unit suite's mock does **no signature checking at all**, because a
 mock that pretends to verify signatures tests the mock. The fork suite runs against real USDC bytecode,
-its real EIP-712 domain **read from the contract rather than reconstructed**, and its real nonce
+its real EIP-712 domain **read from the contract rather than reconstructed** and its real nonce
 tracking. That is the one part of the relayed path nothing else could prove.
 
 **The suite was mutation tested rather than trusted.** Three deliberate breaks:

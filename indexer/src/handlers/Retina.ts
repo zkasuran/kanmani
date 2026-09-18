@@ -5,19 +5,19 @@
  * than the spec:
  *
  *   1. `Registered` can carry an EMPTY agentURI. The canonical IdentityRegistryUpgradeable has
- *      three register() overloads, and the no-argument one emits `Registered(agentId, "", sender)`.
+ *      three register() overloads and the no-argument one emits `Registered(agentId, "", sender)`.
  *      An indexer that reads the URI only from this event holds nothing for those agents.
  *
  *   2. The registry is NOT enumerable. `totalSupply()` reverts, so the population lives in a
- *      storage slot. `onBlock` reads it and publishes BOTH that number and what the logs
- *      produced, so a gap reads as "the index is behind" rather than "these agents do not exist".
+ *      storage slot. `onBlock` reads it and publishes it beside what the logs produced, so a
+ *      gap reads as "the index is behind" rather than "these agents do not exist".
  *
  *   3. 8,093 of 10,252 agents (78.94%) share ONE tokenURI, a deleted Vercel deployment. Records
  *      are deduplicated by content so the cluster becomes a first-class number instead of 8,093
  *      copies of a dead string.
  *
  *   4. `feedbackURI` and `feedbackHash` exist ONLY as non-indexed fields of `NewFeedback`.
- *      `readFeedback()` does not return them, and eth_getLogs caps at a 100-block span on free
+ *      `readFeedback()` does not return them and eth_getLogs caps at a 100-block span on free
  *      Monad RPC against a 104M-block head. Without this indexer the verifier is impossible.
  */
 import { indexer, createEffect, S } from "envio";
@@ -69,38 +69,66 @@ function recordKind(uri: string): string {
  * preload pass and then a sequential pass, so a bare fetch would double-execute and serialise
  * the indexer.
  *
- * `cache: false` because the counter changes every time an agent registers, and a cached value
+ * `cache: false` because the counter changes every time an agent registers and a cached value
  * would make the freshness number we publish a lie.
  */
 const readAgentCount = createEffect(
   {
     name: "readAgentCount",
     input: { blockNumber: S.bigint },
-    output: S.union([S.bigint, null]),
+    // `S.nullable(S.bigint)` rather than `S.union([S.bigint, null])`. Same thing at runtime, but
+    // the union spelling passes a bare `null` where every other element is a schema object, which
+    // reads like a mistake even when it is not.
+    output: S.nullable(S.bigint),
     // Required, not optional. The counter changes on every registration, so caching it would
     // make the freshness number we publish a lie.
     cache: false,
     rateLimit: false,
   },
-  async ({ input }) => {
+  async ({ input, context }) => {
     const body = {
       jsonrpc: "2.0",
       id: 1,
       method: "eth_getStorageAt",
-      params: [IDENTITY, COUNTER_SLOT, `0x${input.blockNumber.toString(16)}`],
+      // "latest", NOT the block being indexed. That is the whole fix.
+      //
+      // rpc.monad.xyz is not an archive node. Asking it for state at block 53,010,000 returns
+      // -32602 "Block requested not found. Request might be querying historical state that is
+      // not available", so every sweep during a backfill failed, which is every sweep there is
+      // until the index reaches head. Measured: 5,276 of 5,276 returned no result.
+      //
+      // Reading at head is also what the number is FOR. IndexState is one row that each sweep
+      // overwrites and /status compares "agents that exist now" against "rows we hold now".
+      // Nobody reads a historical population, so nothing was gained by asking for one.
+      params: [IDENTITY, COUNTER_SLOT, "latest"],
     };
     try {
       const res = await fetch("https://rpc.monad.xyz", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
+        // This index runs unattended for six weeks. A hung socket with no timeout stalls the
+        // effect indefinitely. The sweep stalls with it. Fail closed on a slow RPC the same
+        // way we fail closed on a broken one.
+        signal: AbortSignal.timeout(10_000),
       });
       const json = (await res.json()) as { result?: string };
-      if (!json.result) return null;
+      if (!json.result) {
+        context.log.warn(
+          `readAgentCount: no result at block ${input.blockNumber}, publishing unknown`,
+        );
+        return null;
+      }
       return BigInt(json.result);
-    } catch {
+    } catch (err) {
       // Fail closed. A missing count is published as unknown rather than as zero, which is the
       // whole data-quality position of this project.
+      //
+      // But SAY SO. A bare `catch { return null }` here hid a 100% failure rate, because a
+      // silent null is indistinguishable from a chain that has nothing to report.
+      context.log.warn(
+        `readAgentCount failed at block ${input.blockNumber}: ${String(err)}`,
+      );
       return null;
     }
   },
@@ -121,12 +149,31 @@ indexer.onEvent(
     let uriHash: string | undefined = existing?.uriHash;
     if (hasUri) {
       uriHash = uriKey(uri);
+
+      // Has this wallet already registered an agent against this record? That question is the
+      // only thing separating distinctOwners from memberCount. An earlier version incremented
+      // both on every registration, which made them provably equal and published 8,093 where
+      // the real wallet count is 7,962. See docs/18-BUGS-FIXED.md.
+      //
+      // The key relies on Envio normalising addresses the same way every time, which it does
+      // because both sides come out of the same decoder.
+      const ownerRowId = `${uriHash}_${event.params.owner}`;
+      const seenOwner = await context.AgentRecordOwner.get(ownerRowId);
+      context.AgentRecordOwner.set({
+        id: ownerRowId,
+        record_id: uriHash,
+        owner: event.params.owner,
+        agentCount: (seenOwner?.agentCount ?? 0) + 1,
+        firstSeenBlock: seenOwner?.firstSeenBlock ?? BigInt(event.block.number),
+      });
+
       const rec = await context.AgentRecord.get(uriHash);
       if (rec) {
         context.AgentRecord.set({
           ...rec,
           memberCount: rec.memberCount + 1,
-          distinctOwners: rec.distinctOwners + 1,
+          // Only a wallet not already on this record moves this one.
+          distinctOwners: seenOwner ? rec.distinctOwners : rec.distinctOwners + 1,
         });
       } else {
         context.AgentRecord.set({
@@ -167,7 +214,7 @@ indexer.onEvent(
 );
 
 /**
- * Transfer. The mint is where an agent first exists, and this is the ONLY source of ownership
+ * Transfer. The mint is where an agent first exists and this is the ONLY source of ownership
  * change afterwards, so skipping it means reporting stale owners forever.
  */
 indexer.onEvent(
@@ -179,7 +226,7 @@ indexer.onEvent(
 
     if (!existing) {
       // Transfer can arrive before Registered within a block. Create the row so ownership is
-      // never dropped, and let Registered fill in the rest.
+      // never dropped and let Registered fill in the rest.
       context.Agent.set({
         id,
         agentId: event.params.tokenId,
@@ -394,6 +441,11 @@ indexer.onEvent(
  * two different questions with two different answers. Publishing both is what lets /status say
  * the index is behind instead of quietly reporting a number that was true when it was written.
  * Muster's index froze for five days doing exactly that.
+ *
+ * Only the first number is written here. The second is a row count, so Hasura answers it exactly
+ * and for free with `Agent_aggregate { aggregate { count } }`. An earlier version stored it on
+ * IndexState and never incremented it, which pinned it at 0 and made the gap always maximal.
+ * See docs/18-BUGS-FIXED.md.
  */
 indexer.onBlock(
   {
@@ -401,7 +453,22 @@ indexer.onBlock(
     where: ({ chain }) => {
       switch (chain.id) {
         case 143:
-          return { block: { number: { _every: 2000 } } };
+          return {
+            block: {
+              // Every 10,000 blocks and NOT from genesis.
+              //
+              // IndexState is one row keyed by chain, so every sweep overwrites the last and
+              // only the most recent value is ever read. With `start_block: 0` and a stride of
+              // 2,000 this fired about 52,875 times per full resync, almost all of them at
+              // blocks where the registry did not exist yet, each one an uncached call to a
+              // public RPC, to write a row that gets overwritten. The floor is the block the
+              // first agent registered at. See docs/18-BUGS-FIXED.md.
+              //
+              // The stride trades freshness for that: about 2.5 hours at Monad's block time,
+              // against the multi-day freeze this check exists to catch.
+              number: { _every: 10000, _gte: 53000000 },
+            },
+          };
         default: {
           // Exhaustiveness check: adding a chain to config.yaml without handling it here is a
           // type error rather than a silent gap.
@@ -419,16 +486,15 @@ indexer.onBlock(
     const existing = await context.IndexState.get(String(CHAIN));
     context.IndexState.set({
       id: String(CHAIN),
-      // Unknown stays unknown. A failed read must never be published as zero.
-      counterSlotCount: counter ?? existing?.counterSlotCount ?? 0n,
-      agentsFromLogs: existing?.agentsFromLogs ?? 0n,
+      // Unknown stays unknown. The comment here said that before the field could express it:
+      // the schema had `BigInt!`, so this line's `?? 0n` fallback published exactly the zero it
+      // forbids. The field is nullable now. See docs/18-BUGS-FIXED.md.
+      counterSlotCount: counter ?? existing?.counterSlotCount,
       atBlock: BigInt(block.number),
       // onBlock exposes only `block.number`, with no `fields` option to widen it, so the
       // wall-clock stamp is taken here rather than from the block. It is used purely to show
       // freshness on /status, never as consensus time.
       updatedAt: BigInt(Math.floor(Date.now() / 1000)),
-      feedbackCount: existing?.feedbackCount ?? 0n,
-      recordCount: existing?.recordCount ?? 0n,
     });
   },
 );

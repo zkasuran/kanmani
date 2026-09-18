@@ -14,7 +14,7 @@ interface IUSDC {
 /// @notice The whole lifecycle against the REAL USDC contract on Monad mainnet, forked locally.
 ///
 /// This replaces "testnet first", which is not available for the money path: **USDC does not exist
-/// on Monad testnet** (`eth_getCode` returns `0x` at the mainnet address, and there is no testnet
+/// on Monad testnet** (`eth_getCode` returns `0x` at the mainnet address and there is no testnet
 /// deployment). A testnet run could only ever exercise a mock token.
 ///
 /// A fork is strictly better here anyway. The unit suite's mock does no signature checking at all,
@@ -124,7 +124,7 @@ contract AqueousForkTest is Test {
     ///
     /// The buyer's EIP-3009 signature covers only (from, to, value, validAfter, validBefore, nonce).
     /// Before the nonce was derived from the terms, a relayer holding a valid authorisation could
-    /// name itself as the agent, deliver nothing, block refund by moving the job out of Open, and
+    /// name itself as the agent, deliver nothing, block refund by moving the job out of Open and
     /// claim the whole escrow after the dispute window.
     function test_fork_relayerCannotAlterTheTerms() public onlyFork {
         deal(USDC, buyer, AMOUNT);
@@ -198,7 +198,7 @@ contract AqueousForkTest is Test {
         });
     }
 
-    /// @dev Signs the nonce the CONTRACT derives from these exact terms, and against the domain
+    /// @dev Signs the nonce the CONTRACT derives from these exact terms and against the domain
     ///      separator READ FROM THE TOKEN rather than reconstructed from assumptions.
     function _signFor(uint256 key, Aqueous.Terms memory t)
         internal
