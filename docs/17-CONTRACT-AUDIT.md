@@ -1,0 +1,510 @@
+# 17. Security audit
+
+**Reviewed 2026-09-18, before deployment.** The escrow has never been deployed, so nothing in it was
+ever live and no user funds were ever at risk. The indexer and the deploy stack were running.
+
+**Seven issues were found and fixed**, across all three components. Two were fund-loss bugs in the
+escrow, one of them high severity and one that defeated the main feature. Both are published here with
+the exploit, the fix and the proof, because an audit that only lists what it found clean is not
+evidence of anything.
+
+| Component | Reviewed | Found |
+|---|---|---|
+| `contracts/src/Aqueous.sol`, 392 lines | yes | 1 HIGH, 1 MEDIUM |
+| `indexer/`, Retina handlers and schema | yes | 4, none exploitable, all publishing wrong numbers |
+| `deploy/`, compose and Hasura tracking | yes | 1 HIGH for the judging window |
+
+The indexer findings share one shape worth naming up front: **every one of them was a number the build
+published and nobody had checked.** Three of the four were found by grepping for which code writes a
+field, which took about a minute each.
+
+| | |
+|---|---|
+| Method | manual review, then a written exploit or a query for every candidate finding |
+| Reviewer | zkasuran, with AI assistance. See the disclosure at the end |
+| Status after fixes | `2678753` plus the indexer and deploy fixes. 37 contract tests, 0 compiler warnings, indexer typecheck clean |
+| Escrow deployed | **not yet.** This review is why |
+
+---
+
+## Why the findings are stated as exploits
+
+A finding described in prose is an opinion. A finding written as a test that passes against the old
+code is a fact. Both findings below were **first committed as passing exploit tests**, then fixed, then
+kept as regression tests named `test_FIXED_*` so the reason they exist stays visible to anyone reading
+the suite later.
+
+That ordering matters for a second reason. It is how the fix gets checked: once the exploit is a test,
+reverting the fix has to make it fail again. A fix nobody tried to break is a guess.
+
+---
+
+## Finding 1: a relayer could steal the entire escrow
+
+**Severity: HIGH.** Loss of the full escrowed amount, for any buyer who used the relayed path.
+
+**Location:** `createJobWithAuthorization`.
+
+### The bug
+
+An EIP-3009 authorisation signs exactly six fields:
+
+```
+TransferWithAuthorization(address from, address to, uint256 value,
+                          uint256 validAfter, uint256 validBefore, bytes32 nonce)
+```
+
+**It says nothing about which agent gets paid, the deadline, the price or the terms of the work.** In
+the original code every one of those came from the transaction's `Terms` argument, supplied by whoever
+submitted it. The signature authorised a transfer into the escrow. It did not authorise what the escrow
+would then do with the money.
+
+### The exploit
+
+1. The buyer signs an authorisation, intending to hire agent A.
+2. The relayer submits it naming **itself** as the agent. The signature is still valid, because it
+   never covered the agent.
+3. The relayer calls `deliver()` immediately. This moves the job from `Open` to `Delivered` and
+   **`refund()` requires `Open`**, so the buyer's exit is now permanently closed.
+4. The relayer waits out `claimWindow` and calls `claimDelivered()`.
+
+The escrow pays out in full, to the attacker, for work that never existed. The buyer has no recourse at
+any point after step 2.
+
+**This defeated the entire purpose of the relayed path**, which exists so a buyer who holds no MON can
+hire without touching the chain. The feature that made the product usable was the feature that made it
+unsafe.
+
+### The fix
+
+**Derive the nonce from the terms instead of accepting it from the caller.**
+
+```solidity
+function authNonceFor(Terms calldata t) public pure returns (bytes32) {
+    return keccak256(abi.encode("kanmani.aqueous.v1", t));
+}
+```
+
+The contract computes this and passes it to the token. Alter any field of `Terms` and the nonce changes,
+so the digest changes, so **the token's own signature check rejects it.** Verification stays where it
+belongs, inside the token and we never reimplement signature checking.
+
+`Authorization` lost its `nonce` member as a result. **No second signature and no new field were needed:
+the nonce already existed in the standard and was carrying no meaning.**
+
+The buyer's flow is unchanged in effort. They call `authNonceFor(terms)`, sign a standard
+`TransferWithAuthorization` using the result as the nonce and hand it to any relayer.
+
+### The proof
+
+`test_fork_relayerCannotAlterTheTerms`, run against **real USDC on a Monad mainnet fork**, so the
+signature check is the deployed FiatTokenV2 rather than a mock of it. It tampers with the agent and
+asserts the revert, then submits the unaltered terms and asserts success, so the revert is about
+tampering rather than a broken test helper.
+
+`test_FIXED_relayerCannotRedirectJobToItself` covers the same ground against a local token that
+verifies signatures and checks **each** field independently: agent, deadline, price and terms hash.
+
+**And the fix was checked by breaking it.** Making `authNonceFor` ignore the terms reproduces the
+original behaviour and the fork test then fails with `next call did not revert as expected`. That is
+the theft reappearing on demand, which is the only convincing evidence the fix is what stops it.
+
+---
+
+## Finding 2: a fee-on-transfer token permanently locks another user's funds
+
+**Severity: MEDIUM.** Permanent, unrecoverable lockup. Requires a non-standard token, which any caller
+can nominate.
+
+**Location:** `createJob` and `createJobWithAuthorization`.
+
+### The bug
+
+The contract recorded `t.amount` as the escrowed value while the token may have credited less. It never
+checked what actually arrived.
+
+With a token that takes a fee on transfer:
+
+1. Alice creates a job for 100. The contract receives 99 and records 100.
+2. Bob creates a job for 100. The contract receives 99 and records 100.
+3. The contract holds 198 and owes 200.
+4. Alice releases and is paid 100, out of the shared balance.
+5. **Bob can never be paid.** `release` reverts. `refund` reverts. The contract is immutable with no
+   admin function, so nothing can recover it.
+
+Aqueous advertises itself as token agnostic and lets any caller name any token address, so this is
+reachable without any privileged position.
+
+### The fix
+
+Measure the balance delta and refuse anything that does not deliver exactly what was asked:
+
+```solidity
+function _requireExactlyReceived(address token, uint256 balanceBefore, uint256 amount) private view {
+    if (_balance(token) - balanceBefore != amount) revert TransferFailed();
+}
+```
+
+**Refusing at creation is deliberate, rather than recording the amount that arrived.** Recording the
+real amount would work for fee-on-transfer and would then be quietly wrong for rebasing tokens whose
+balance moves after creation. For an immutable contract holding other people's money, a clean revert on
+an unsupported token beats accounting that is subtly wrong in a case nobody tested.
+
+This also rejects rebasing and deflationary tokens by construction. That is the intended outcome and it
+is stated here rather than discovered later.
+
+### The proof
+
+`test_FIXED_feeOnTransferTokenIsRefusedAtCreation` builds a 1% fee token, attempts creation, asserts
+the revert, then asserts the contract holds nothing and the buyer keeps their money.
+
+---
+
+## Finding 3: the deploy stack started with a known admin secret
+
+**Severity: HIGH for the judging window.** Not exploitable as it stood, because every port is bound to
+loopback. It becomes critical the moment the endpoint is published, which the submission requires.
+
+**Location:** `deploy/docker-compose.yml` and `deploy/track-hasura.sh`.
+
+### The bug
+
+```yaml
+HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:-testing}
+POSTGRES_PASSWORD: ${ENVIO_PG_PASSWORD:-testing}
+```
+
+Both defaulted to the literal string `testing` and neither was set anywhere, so the running stack was
+using them. `track-hasura.sh` defaulted to the same value, so the pair worked together and nothing ever
+prompted anyone to set either one.
+
+The admin secret is the entire authentication story for Hasura. It grants the admin role, which is
+schema and metadata access to the database behind it, not just read access to the data.
+
+**Why it matters here specifically:** this index has to be publicly queryable by judges from Oct 14 to
+Nov 3. The submission is a live GraphQL endpoint. So the plan was always to put a public address in
+front of port 8081 and on the day that happened, admin access would have been available to anyone who
+sent `x-hasura-admin-secret: testing`.
+
+**And the default was in a repo that goes public at submission.** The secret was not merely weak, it was
+published in the same artifact that tells you where to send it.
+
+### The fix
+
+Make both required, so compose refuses to start rather than starting insecure:
+
+```yaml
+HASURA_GRAPHQL_ADMIN_SECRET: ${HASURA_GRAPHQL_ADMIN_SECRET:?HASURA_GRAPHQL_ADMIN_SECRET is required, generate one, see .env.local}
+```
+
+`HASURA_GRAPHQL_ENABLE_CONSOLE` went to `false` at the same time, because the console is an admin
+surface and nothing needs it on a published endpoint.
+
+Anonymous reads stay on, deliberately. `HASURA_GRAPHQL_UNAUTHORIZED_ROLE: public` is the feature: a
+judge queries the index with no credentials. What that role may touch is granted table by table in
+`track-hasura.sh`, so a new entity is unreadable until it is listed, rather than exposed by default.
+
+### The proof
+
+Real values were generated, the Postgres role password was rotated on the live volume with `ALTER USER`
+so the running stack matches the file and the stack was restarted. Then, against the live endpoint:
+
+| Request | Result |
+|---|---|
+| `x-hasura-admin-secret: testing` | `access-denied`, `invalid "x-hasura-admin-secret"` |
+| the new secret | 200, `Agent_aggregate` returns 10,252 |
+| no credentials at all | 200, `Agent_aggregate` returns 10,252 |
+
+The third row is the one that matters, because a fix that locked judges out would be its own failure.
+
+---
+
+## Finding 4: `distinctOwners` was a copy of `memberCount` and it is a published number
+
+**Severity: MEDIUM.** No exploit. It published a wrong figure, in the one place this project claims to
+be careful about figures.
+
+**Location:** `indexer/src/handlers/Retina.ts`, the `Registered` handler.
+
+### The bug
+
+```ts
+context.AgentRecord.set({
+  ...rec,
+  memberCount: rec.memberCount + 1,
+  distinctOwners: rec.distinctOwners + 1,   // unconditional
+});
+```
+
+Both incremented on every registration with no owner deduplication anywhere, so the two fields were
+provably equal for every row in the table. `distinctOwners` counted agents, not owners.
+
+**The number it gets wrong is the headline.** The finding this build leads with is that 8,093 agents
+across **7,962 wallets** point at one deleted Vercel deployment. 8,093 is `memberCount`. 7,962 is
+`distinctOwners` and this code could only ever have returned 8,093 for it. The schema comment
+describing the field said the right thing while the code underneath it did not.
+
+A wrong number in a build whose entire thesis is that other people's numbers are unchecked is worse
+than a wrong number somewhere else.
+
+### The fix
+
+Deduplicate through a join entity rather than counting twice:
+
+```ts
+const ownerRowId = `${uriHash}_${event.params.owner}`;
+const seenOwner = await context.AgentRecordOwner.get(ownerRowId);
+// ...
+distinctOwners: seenOwner ? rec.distinctOwners : rec.distinctOwners + 1,
+```
+
+Counted at registration time, deliberately. `Agent.owner` moves on every `Transfer`, so a live aggregate
+would answer "who holds these agents now" when the published claim is about who registered them.
+`AgentRecordOwner` also carries `agentCount`, so "this operator registered 41 agents against one dead
+document" is now a query rather than a guess.
+
+### The proof
+
+A full reindex from block zero, then the two columns compared directly on the largest record. They now
+differ and the difference is the operators who registered more than one agent against the same
+document. Numbers are in [18-BUGS-FIXED.md](18-BUGS-FIXED.md).
+
+---
+
+## Finding 5: three published counters were declared and never written
+
+**Severity: MEDIUM.** The cross-check that the project's own comments call load-bearing was dead.
+
+**Location:** `indexer/schema.graphql` and the `PopulationCheck` block handler.
+
+### The bug
+
+`IndexState` declared `agentsFromLogs`, `feedbackCount` and `recordCount` as non-null. Grep found
+exactly three references, all of them reads:
+
+```ts
+agentsFromLogs: existing?.agentsFromLogs ?? 0n,
+feedbackCount:  existing?.feedbackCount  ?? 0n,
+recordCount:    existing?.recordCount    ?? 0n,
+```
+
+No handler ever set them to anything else, so all three were pinned at 0 forever.
+
+These exist so `/status` can compare the on-chain population counter against what the index actually
+holds and say "the index is behind" instead of quietly reporting a stale number. With the log side
+pinned at 0, the gap always read as maximal. The check could not have reported a healthy index and
+nothing was watching it.
+
+### The fix
+
+Deleted, not backfilled. A denormalised counter can drift from the table it counts and Hasura answers
+the same question exactly, for free, with no write on the hot path:
+
+```graphql
+query { Agent_aggregate { aggregate { count } } }
+```
+
+`/status` asks Hasura for the row counts and the indexer publishes only what Hasura cannot know, which
+is the on-chain counter slot.
+
+### The proof
+
+The aggregate query was run against the live endpoint anonymously and returns 10,252 agents and 9,188
+feedbacks, which matches the counter slot read independently from the chain.
+
+---
+
+## Finding 6: the schema could not express "unknown", in the one field built for it
+
+**Severity: LOW.** Fixed together with Finding 5.
+
+`counterSlotCount` was `BigInt!`, non-nullable. The handler that writes it carried this comment:
+
+```ts
+// Unknown stays unknown. A failed read must never be published as zero.
+counterSlotCount: counter ?? existing?.counterSlotCount ?? 0n,
+```
+
+The comment forbids exactly what the line does. A failed RPC read on the first sweep published `0`,
+because the type system left no other option. "Unknown is never zero" is this project's stated data
+quality position and its own schema could not represent it.
+
+Fixed by making the field nullable and dropping the `?? 0n`. A failed read now publishes null.
+
+The same review added a 10 second `AbortSignal.timeout` to that RPC call. It had none and this index
+runs unattended for six weeks, so a hung socket would have stalled the sweep indefinitely with no error
+to see.
+
+---
+
+## Finding 7: the freeze detector asked a non-archive node for historical state
+
+**Severity: MEDIUM.** The check that exists to catch a frozen index had never once produced a number.
+
+**Location:** `readAgentCount` and `PopulationCheck` in `indexer/src/handlers/Retina.ts`.
+
+### The bug
+
+The population sweep read the registry's counter slot **at the block being indexed**:
+
+```ts
+params: [IDENTITY, COUNTER_SLOT, `0x${input.blockNumber.toString(16)}`],
+```
+
+`rpc.monad.xyz` is not an archive node. Asking it for state at an old block returns:
+
+```
+-32602  Block requested not found. Request might be querying historical state that is not
+        available. If possible, reformulate query to point to more recent blocks
+```
+
+During a backfill every block being indexed is historical, so every sweep failed. Measured on a
+throwaway index built for this review: **5,276 of 5,276 reads returned no result.** Not most of them.
+All of them.
+
+**So both halves of the cross-check were dead at the same time.** Finding 5 pinned the log side at 0,
+this pinned the chain side at nothing and the `?? 0n` from Finding 6 rendered the pair as a confident
+`0` for a registry holding 10,252 agents. The check whose only job was to notice a number had gone
+stale was the stalest number on the page.
+
+Nothing said so, because the failure path was a bare `catch { return null }` with no log. A silent null
+is indistinguishable from a chain with nothing to report.
+
+### The fix
+
+Read at `latest`:
+
+```ts
+params: [IDENTITY, COUNTER_SLOT, "latest"],
+```
+
+Head is also what the number is for. `IndexState` is one row that every sweep overwrites and `/status`
+compares "agents that exist now" against "rows we hold now". Nobody reads a historical population, so
+asking for one bought nothing.
+
+Two supporting changes in the same pass:
+
+* **The failure path logs.** `context.log.warn` on both the empty-result branch and the thrown-error
+  branch, naming the block. The silence is what let a 100% failure rate survive unnoticed.
+* **The sweep stopped firing 52,875 times per resync.** `_every: 2000` from `start_block: 0` swept the
+  whole chain, including the 53 million blocks before the registry existed, each an uncached call to a
+  public endpoint, to write a row the next sweep overwrites. Now `_every: 10000` with a `_gte` floor at
+  the first registration: about 5,275 sweeps on a full resync, one per 2.5 hours in steady state.
+
+### The proof
+
+A clean index built from scratch after the fix. `counterSlotCount` holds **10252**, against **10,252**
+agent rows produced by a completely independent path, the logs. The two agree, which is the comparison
+the field was added for and the first time it has been possible to make it.
+
+### What is still imperfect, stated rather than smoothed over
+
+**About 70% of sweeps still fail during a backfill** and the logs now say so: 2,140 RPC errors and
+1,565 client timeouts out of roughly 5,276. That is volume, not correctness. Thousands of uncached reads
+aimed at a public endpoint inside a few minutes get throttled.
+
+It does not affect the published value, because each sweep overwrites the last and the final one lands,
+which is why the number above is right. In steady state the sweep runs once every 2.5 hours and this
+does not arise. A dedicated RPC endpoint removes it and that is the intended fix rather than a longer
+timeout.
+
+---
+
+## What was checked and came back clean
+
+Stating coverage matters as much as stating findings. Silence about what was examined reads as a claim
+that everything was.
+
+| Area | Result |
+|---|---|
+| Reentrancy on every fund-moving path | Clean. Terminal state is written before any transfer, plus a guard. Both layers tested separately, see below |
+| Double release, double refund, release after refund | Clean. Terminal states reject re-entry into any transition |
+| Access control on `release`, `refund`, `settleMetered`, `claimDelivered`, `deliver` | Clean, including a fuzz over arbitrary callers |
+| Metered split arithmetic and its cap | Clean. Fuzzed over amount, price and unit count: the agent plus the buyer always receive exactly what was escrowed and the payout never exceeds the ceiling |
+| Job id squatting | Clean. Ids are derived from the buyer, so one buyer cannot occupy another's id space |
+| A token that returns `false` rather than reverting | Clean, treated as failure |
+| Buyer stranded by a silent agent | Clean. `refund` needs no counterparty after the deadline |
+| Agent stranded by a silent buyer | Clean and this was a design gap found while writing the contract. `claimDelivered` was added |
+| Unit count overflow in the metered split | Reverts rather than wrapping, under Solidity 0.8 checked arithmetic. The buyer controls the input, so the only party affected is the caller |
+| `block.timestamp` dependence | Accepted. Validator drift is seconds and deadlines are days. Flagged by the linter, left deliberately |
+
+### Reentrancy was tested as two layers, not one
+
+Worth recording because it was nearly missed. The suite originally had one reentrancy test and
+deliberately breaking checks-effects-interactions **left all 28 tests green**, because the
+`nonReentrant` guard caught the attack instead.
+
+The test proved the guard worked. It said nothing about whether the ordering was right. A backstop was
+hiding the absence of the thing it backs up.
+
+`test_stateIsTerminalBeforeAnyTransfer` now asserts the ordering directly, using a token that records
+the job state at the moment it is called back. It fails whether or not the guard is present.
+
+---
+
+## Accepted risks, stated rather than omitted
+
+* **Rebasing and fee-on-transfer tokens are unsupported** and rejected at creation. See Finding 2.
+* **`block.timestamp`** decides deadlines and the claim window. A validator can move it by seconds,
+  which cannot matter at day-scale deadlines.
+* **A buyer may release before delivery** and may release a metered job at its full ceiling instead of
+  settling it by usage. Both are allowed on purpose: overpaying is the buyer's choice to make.
+* **On a metered job, a silent buyer pays the ceiling.** This one deserves stating plainly. The unit
+  count is reported by the buyer in `settleMetered`, so the contract has no independent record of usage.
+  If the buyer never reports, `claimDelivered` pays the agent the whole escrowed ceiling rather than the
+  units actually consumed.
+
+  There is no better answer available on chain. The alternative is stranding a delivered job forever,
+  and a usage oracle is a trusted third party this contract exists to avoid. **What it means in practice
+  is that the claim window is also the buyer's deadline to report usage**, so a buyer running a metered
+  job has to answer within it. That is the trade and it is why the window is public and fixed.
+* **The claim window is fixed at deployment** and public. Neither side can be surprised by it and
+  neither side can change it.
+* **A malicious token can misbehave within its own job.** A job is settled in the token it names and
+  each job records its own token, so a bad token cannot reach another job's balance. Naming a worthless
+  token harms only the buyer who chose it.
+* **Nothing recovers funds sent to the contract outside `createJob`.** There is no sweep function,
+  because a sweep function is also a way to take escrowed money. A stray transfer is stuck and that is
+  the correct trade for an immutable escrow.
+
+---
+
+## One test bug, worth publishing
+
+While writing Finding 1's regression test, it failed with `FiatTokenV2: invalid signature` on a case
+that should have succeeded. That looks exactly like the contract rejecting valid terms.
+
+**The cause was the test, not the contract.** In Solidity `Terms memory b = a` **aliases** rather than
+copies, so tampering through the alias mutated the original struct and invalidated a signature made
+earlier in the same test. Fixed with an explicit copy helper.
+
+It is recorded because the failure shape is misleading: a correct contract looked broken and the
+tempting response is to loosen the contract until the test passes.
+
+---
+
+## Reproduce this
+
+```bash
+cd contracts
+forge install foundry-rs/forge-std
+forge test                                   # 31 unit and regression tests
+forge test --fork-url "$MONAD_RPC"           # +6 against real USDC on Monad mainnet
+```
+
+The fork tests **report as skipped rather than passed** without a fork URL. An earlier version used an
+early return, which forge reports as `[PASS]`, so five tests that never touched a fork read as green.
+The gas figure of roughly 2,400 was the tell.
+
+To re-run the fix verification, make `authNonceFor` ignore `Terms` and confirm
+`test_fork_relayerCannotAlterTheTerms` fails.
+
+---
+
+## AI disclosure
+
+AI assistance (Claude, Anthropic) was used in writing this contract, its tests and this document. The
+design, the review and the decisions are the author's and every finding here was verified by an
+executable exploit rather than accepted as an assertion. Verified before publishing: 37 tests passing
+across two suites, 0 compiler warnings and both fixes confirmed by reverting them and watching the
+regression tests fail.
