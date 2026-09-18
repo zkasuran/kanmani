@@ -385,11 +385,12 @@ asking for one bought nothing.
 Two supporting changes in the same pass:
 
 * **The failure path logs.** `context.log.warn` on both the empty-result branch and the thrown-error
-  branch, naming the block. The silence is what let a 100% failure rate survive unnoticed.
+  branch, naming the block and quoting what the RPC actually said. The silence is what let a 100%
+  failure rate survive unnoticed.
 * **The sweep stopped firing 52,875 times per resync.** `_every: 2000` from `start_block: 0` swept the
   whole chain, including the 53 million blocks before the registry existed, each an uncached call to a
-  public endpoint, to write a row the next sweep overwrites. Now `_every: 10000` with a `_gte` floor at
-  the first registration: about 5,275 sweeps on a full resync, one per 2.5 hours in steady state.
+  public endpoint, to write a row the next sweep immediately overwrites. Now `_every: 10000` with a
+  `_gte` floor at a recent block.
 
 ### The proof
 
@@ -397,16 +398,30 @@ A clean index built from scratch after the fix. `counterSlotCount` holds **10252
 agent rows produced by a completely independent path, the logs. The two agree, which is the comparison
 the field was added for and the first time it has been possible to make it.
 
-### What is still imperfect, stated rather than smoothed over
+### A wrong theory, then the measurement that killed it
 
-**About 70% of sweeps still fail during a backfill** and the logs now say so: 2,140 RPC errors and
-1,565 client timeouts out of roughly 5,276. That is volume, not correctness. Thousands of uncached reads
-aimed at a public endpoint inside a few minutes get throttled.
+This section existed in an earlier draft of this document saying something else. It is worth
+leaving the correction visible rather than quietly editing it.
 
-It does not affect the published value, because each sweep overwrites the last and the final one lands,
-which is why the number above is right. In steady state the sweep runs once every 2.5 hours and this
-does not arise. A dedicated RPC endpoint removes it and that is the intended fix rather than a longer
-timeout.
+After the `latest` fix, **about 70% of sweeps still failed during a backfill**: 2,140 RPC errors and
+1,565 timeouts out of roughly 5,276, with the floor set at the registry's first registration. The
+obvious reading was that the public endpoint throttles, so this document said a dedicated RPC endpoint
+was the fix.
+
+**That was wrong. One experiment showed it.** Wiring a dedicated endpoint through and confirming it
+reached the container changed nothing: **3,705 failures became 3,869.** Slightly worse, well inside
+noise. The endpoint was never the problem.
+
+The cause was the sweep count itself. `IndexState` is a single row, so every historical sweep writes a
+value the next one overwrites and only the last survives. Thousands of calls were being made to
+produce one number. Raising the floor from the registry's deployment block to a recent block cuts a full
+resync from 5,276 sweeps to about 76, because a historical population has no reader.
+
+**Measured after that change: 13 failures, down from 3,869.** A 99.6% reduction, with `counterSlotCount`
+still landing on 10252.
+
+The floor never needs bumping. The chain only moves forward, so any floor below head keeps sweeping
+forever. The value is only meaningful at head anyway.
 
 ---
 

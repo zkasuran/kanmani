@@ -141,8 +141,13 @@ and `/status` compares against now, so a historical population has no reader. Wr
 [audit](17-CONTRACT-AUDIT.md#finding-7-the-freeze-detector-asked-a-non-archive-node-for-historical-state).
 
 **Guard:** a clean index now publishes `counterSlotCount: 10252` against 10,252 rows counted by the
-independent log path. About 70% of backfill sweeps still fail on volume against the public endpoint,
-which is stated in the audit rather than left for someone to find.
+independent log path.
+
+**One wrong theory along the way, kept visible.** After the `latest` fix about 70% of backfill sweeps
+still failed. I assumed the public endpoint was throttling and wrote that a dedicated RPC was the fix.
+Wiring one in turned 3,705 failures into 3,869. The endpoint was never the problem. The sweep count
+was, because every historical sweep overwrites the one before it and only the last survives. Raising
+the floor to a recent block took a full resync from 5,276 sweeps to about 76 and failures to **13**.
 
 **The transferable part and it is the one I would keep:** a bare `catch { return null }` hid a 100%
 failure rate for days. Fail closed, but say so. A silent null reads exactly like a quiet chain.
@@ -238,11 +243,9 @@ usage pays the ceiling, because the contract has no independent record of units 
 
 Nothing known and unfixed in the escrow.
 
-One known-imperfect thing in the indexer, stated here rather than left for someone to find: **roughly
-70% of population sweeps fail during a full backfill**, on volume against a public RPC endpoint and
-the logs now name each one. It does not change the published value, because every sweep overwrites the
-last and the final one lands and in steady state the sweep runs once every 2.5 hours where the problem
-does not arise. A dedicated RPC endpoint is the fix, not a longer timeout.
+Nothing known and unfixed in the indexer either. The population sweep's failure rate went from every
+sweep, to about 70%, to **13 per full resync**. The remaining few are logged with whatever the RPC
+actually said rather than swallowed.
 
 This log is appended to, never rewritten. An entry that turns out to be wrong gets a correction
 underneath it rather than a quiet edit.

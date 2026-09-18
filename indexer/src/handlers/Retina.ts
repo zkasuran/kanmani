@@ -30,6 +30,21 @@ const COUNTER_SLOT =
   "0xa040f782729de4970518741823ec1276cbcd41a0c7493f62d173341566a04e00";
 const IDENTITY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432";
 
+/**
+ * Where the population sweep reads state from.
+ *
+ * Overridable, but NOT because a dedicated endpoint fixes the sweep failures. That was the theory
+ * and it is wrong: swapping the public endpoint for a dedicated one left the failure count
+ * unchanged, 3,705 against 3,869, which is what proved the cause was sweep volume rather than the
+ * endpoint. The `_gte` floor on PopulationCheck is the fix. This stays configurable because
+ * hardcoding one provider's URL is its own problem.
+ *
+ * Kept out of the repo. The URL carries an API key, so it lives in .env.local and arrives through
+ * compose. Falling back to the public endpoint is deliberate: a missing key should degrade, not
+ * break, because this read is a cross-check rather than the indexing path.
+ */
+const RPC_URL = process.env.MONAD_RPC_URL || "https://rpc.monad.xyz";
+
 const agentKey = (agentId: bigint): string => `${CHAIN}_${agentId}`;
 
 const feedbackKey = (
@@ -103,7 +118,7 @@ const readAgentCount = createEffect(
       params: [IDENTITY, COUNTER_SLOT, "latest"],
     };
     try {
-      const res = await fetch("https://rpc.monad.xyz", {
+      const res = await fetch(RPC_URL, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
@@ -115,7 +130,8 @@ const readAgentCount = createEffect(
       const json = (await res.json()) as { result?: string };
       if (!json.result) {
         context.log.warn(
-          `readAgentCount: no result at block ${input.blockNumber}, publishing unknown`,
+          `readAgentCount: no result at block ${input.blockNumber}, publishing unknown. ` +
+            `rpc said: ${JSON.stringify(json).slice(0, 200)}`,
         );
         return null;
       }
@@ -455,18 +471,26 @@ indexer.onBlock(
         case 143:
           return {
             block: {
-              // Every 10,000 blocks and NOT from genesis.
+              // Every 10,000 blocks and only from a RECENT block.
               //
               // IndexState is one row keyed by chain, so every sweep overwrites the last and
               // only the most recent value is ever read. With `start_block: 0` and a stride of
               // 2,000 this fired about 52,875 times per full resync, almost all of them at
               // blocks where the registry did not exist yet, each one an uncached call to a
-              // public RPC, to write a row that gets overwritten. The floor is the block the
-              // first agent registered at. See docs/18-BUGS-FIXED.md.
+              // public RPC, to write a row that gets overwritten.
+              //
+              // The floor is NOT the registry deployment block, which was the first attempt at
+              // this. That left 5,276 sweeps and 3,705 of them still failed. Pointing those at a
+              // dedicated RPC instead of the public one changed nothing measurable, 3,869, which
+              // is how we learned the cause is the volume rather than the endpoint. Only the
+              // newest value survives, so a recent floor is the actual fix.
+              //
+              // It never needs bumping. The chain only moves forward, so any floor below head
+              // keeps sweeping forever. See docs/18-BUGS-FIXED.md.
               //
               // The stride trades freshness for that: about 2.5 hours at Monad's block time,
               // against the multi-day freeze this check exists to catch.
-              number: { _every: 10000, _gte: 53000000 },
+              number: { _every: 10000, _gte: 105000000 },
             },
           };
         default: {
