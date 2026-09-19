@@ -154,3 +154,46 @@ test("a payment-bearing shape is not swallowed by the agent-card matcher", () =>
   if (r.kind === "claim") assert.equal(r.mapping, executionMarket.name);
   assert.ok(executionMarketTransactions.name !== agentCard.name);
 });
+
+/* ------------------------------- prose is a document, not a gap in our atlas */
+
+test("text the author DECLARED as plain text is noClaim, not unparsed", () => {
+  // 66 documents on Monad are exactly this: data:text/plain,Excellent%20service...
+  // They are not broken. They are prose and prose asserts no payment.
+  const r = parseDocument(
+    new TextEncoder().encode("Excellent service - agent 8348 feedback 4 score 93"),
+    ATLAS,
+    "text/plain",
+  );
+  assert.equal(r.kind, "noClaim");
+  if (r.kind === "noClaim") assert.equal(r.mapping, "plain-text-comment.v1");
+});
+
+test("the same bytes declared as JSON stay unparsed, because there the author disagrees with them", () => {
+  // This is the line the media type is doing work on. Same input, different declaration, different
+  // answer and both answers are honest.
+  const r = parseDocument(
+    new TextEncoder().encode("Excellent service - agent 8348 feedback 4 score 93"),
+    ATLAS,
+    "application/json",
+  );
+  assert.equal(r.kind, "unparsed");
+  if (r.kind === "unparsed") assert.match(r.reason, /not valid JSON/);
+});
+
+test("an undeclared media type is not treated as prose by default here", () => {
+  // RFC 2397 defaults a data URI to text/plain and `dataUriMediaType` applies that. parseDocument
+  // itself stays strict, so a caller that forgets to pass the type gets a gap rather than a
+  // silently generous noClaim.
+  const r = parseDocument(new TextEncoder().encode("just words"), ATLAS, undefined);
+  assert.equal(r.kind, "unparsed");
+});
+
+test("valid JSON is still parsed normally even when declared as text", () => {
+  const r = parseDocument(
+    new TextEncoder().encode(JSON.stringify({ proof_of_payment: { payment_tx: "0xabc" } })),
+    ATLAS,
+    "text/plain",
+  );
+  assert.equal(r.kind, "claim", "the declaration does not stop us reading real JSON");
+});

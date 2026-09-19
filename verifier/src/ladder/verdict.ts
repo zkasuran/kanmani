@@ -49,7 +49,8 @@ export type Verdict = {
 export type VerdictInput = {
   feedbackUri: string;
   feedbackHash: string;
-  fetched: FetchOutcome;
+  /** Carries the author's declared media type, which decides whether prose is a gap or a document. */
+  fetched: FetchOutcome & { mediaType?: string };
   readerFor: ReaderFor;
   now?: () => Date;
 };
@@ -90,7 +91,7 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
   }
 
   // parsed
-  const p: ParseOutcome = parseDocument(input.fetched.bytes);
+  const p: ParseOutcome = parseDocument(input.fetched.bytes, undefined, input.fetched.mediaType);
   if (p.kind === "unparsed") {
     return {
       ...base,

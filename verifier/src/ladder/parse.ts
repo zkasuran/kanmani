@@ -160,6 +160,19 @@ export const agentCard: Mapping = {
   },
 };
 
+/**
+ * Prose. Not matched structurally, because it never reaches the atlas: a plain-text document fails
+ * `JSON.parse` first. Declared here so the mapping has a name, a date and a note like every other,
+ * and so coverage reporting can account for it rather than showing a blank.
+ */
+export const plainTextComment: Mapping = {
+  name: "plain-text-comment.v1",
+  induced: "2026-09-19",
+  note: "66 data:text/plain documents on Monad. Free text, asserts no payment",
+  matches: () => false,
+  extract: () => ({ kind: "noClaim", mapping: "plain-text-comment.v1", note: "plain text" }),
+};
+
 /** The atlas. Order matters only in that a claim-bearing shape is tried before the generic ones. */
 export const ATLAS: readonly Mapping[] = [
   executionMarket,
@@ -169,7 +182,11 @@ export const ATLAS: readonly Mapping[] = [
   agentCard,
 ];
 
-export function parseDocument(raw: Uint8Array, atlas: readonly Mapping[] = ATLAS): ParseOutcome {
+export function parseDocument(
+  raw: Uint8Array,
+  atlas: readonly Mapping[] = ATLAS,
+  mediaType?: string,
+): ParseOutcome {
   let text: string;
   try {
     text = new TextDecoder("utf-8", { fatal: true }).decode(raw);
@@ -181,7 +198,23 @@ export function parseDocument(raw: Uint8Array, atlas: readonly Mapping[] = ATLAS
   try {
     doc = JSON.parse(text);
   } catch {
-    return { kind: "unparsed", reason: "not valid JSON" };
+    // Not JSON. Whether that is a gap in our atlas or a perfectly good document depends entirely
+    // on what the author said they were writing.
+    //
+    // 66 documents on Monad are `data:text/plain,Excellent%20service...`. Those are prose somebody
+    // chose to write and prose asserts no payment, so they are noClaim. Counting them as unparsed
+    // would inflate our own published coverage gap with documents that are not broken at all.
+    //
+    // Anything declaring itself JSON and failing to parse stays unparsed, because there the author
+    // and the bytes genuinely disagree.
+    if ((mediaType ?? "").startsWith("text/")) {
+      return {
+        kind: "noClaim",
+        mapping: plainTextComment.name,
+        note: `plain text the author wrote as ${mediaType}, no payment asserted`,
+      };
+    }
+    return { kind: "unparsed", reason: `not valid JSON, declared as ${mediaType ?? "an unstated type"}` };
   }
   if (!isObj(doc)) return { kind: "unparsed", reason: `top level is ${Array.isArray(doc) ? "an array" : typeof doc}` };
 
