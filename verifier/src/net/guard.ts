@@ -25,8 +25,19 @@
 import { lookup as dnsLookup } from "node:dns";
 import net from "node:net";
 
-/** Evidence documents are small. 4 KB is generous for a JSON receipt and cheap to refuse beyond. */
-export const MAX_BYTES = 4096;
+/**
+ * Response cap, set from measurement rather than instinct.
+ *
+ * This was 4 KB on the reasoning that a JSON receipt is small. Run against the real documents on
+ * Monad it refused 10 of 14, because an ERC-8004 agent card is legitimately bigger than a receipt.
+ * Measured over 30 distinct live documents: min 622, median 652, p90 4,398, max 7,268 bytes, with
+ * nothing above 64 KB.
+ *
+ * 64 KB keeps roughly 9x headroom over the largest thing actually observed while still refusing an
+ * unbounded stream, which is what the cap is for. The cap exists to stop a server streaming forever,
+ * not to express an opinion about how long a document ought to be.
+ */
+export const MAX_BYTES = 65_536;
 export const TIMEOUT_MS = 8000;
 export const MAX_REDIRECTS = 3;
 
