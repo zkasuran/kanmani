@@ -40,3 +40,7 @@ contracts/lib/
 /.next/
 /out/
 next-env.d.ts
+
+# The x402 signing helper is a local tool that touches the house key at runtime. It is not part
+# of the product and it never ships.
+/x402sign.mjs
