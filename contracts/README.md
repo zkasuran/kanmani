@@ -2,15 +2,76 @@
 
 Money is held until the work lands and the receipt is emitted by the settlement itself.
 
-## Live on Monad testnet
+## Live on Monad mainnet
+
+| | address |
+|---|---|
+| **Aqueous** | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://monadexplorer.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
+| **USDC** (real) | [`0x754704Bc059F8C67012fEd69BC8A327a5aafb603`](https://monadexplorer.com/address/0x754704Bc059F8C67012fEd69BC8A327a5aafb603) |
+
+Chain 143, `claimWindow` 259200 seconds (3 days), 10,901 bytes of deployed code, from
+`0xDB6c6340342e71A63cD11Ebac2185204b7777777`. No token of its own: mainnet has real USDC, so the
+deploy script picks the shape by chain id rather than by a flag, because a flag is a thing you can
+get wrong.
+
+### One complete job, in real USDC, already settled on mainnet
+
+**The buyer held zero MON at every point in this, start to finish.** Not "started with none and we
+topped it up". Zero, throughout, while creating an escrow and settling it. The script asserts that
+at both ends rather than printing it, so if the claim ever stops being true the run fails instead
+of quietly passing.
+
+| step | transaction | what it did |
+|---|---|---|
+| fund | [`0x441886bf…f615ebe`](https://monadexplorer.com/tx/0x441886bf5f92e4d938f8604f728e968b71b9bcb934b502d7a37988156f615ebe) | 1.40 USDC to the buyer. USDC only, deliberately no MON |
+| escrow | [`0x2b879b52…417b57e`](https://monadexplorer.com/tx/0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e) | `createJobWithAuthorization`, buyer signed, relayer paid |
+| gas | [`0x9b5b16d6…3594ec`](https://monadexplorer.com/tx/0x9b5b16d6d2b19517ff4e6f3738328aef7a6ecd06cf18df27c9af6d8f723594ec) | 0.05 MON to the **agent**, which pays for its own work |
+| deliver | [`0xc259c7a6…82a6724`](https://monadexplorer.com/tx/0xc259c7a6067c051c01ed75a2b12d5c64380216275a43417ddf407913582a6724) | the agent delivers, from its own wallet |
+| settle | [`0x10d03f31…c9fce6c5`](https://monadexplorer.com/tx/0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5) | `settleMeteredWithAuthorization`, buyer signed, relayer paid |
+
+The shape is a metered API at 2 cents a call. 1.40 USDC escrowed is a ceiling of 70 calls, 30 were
+used, so 0.60 is earned and **0.80 goes back in the same transaction that pays**.
+
+| | |
+|---|---|
+| escrowed | 1.40 USDC |
+| paid to agent | 0.60 USDC (30 units at 0.02) |
+| returned to buyer | 0.80 USDC |
+| retained by the contract | 0 |
+| **MON spent by the buyer** | **0** |
+
+Read every one of those back yourself, no key needed:
+
+```bash
+R=https://rpc.monad.xyz
+U=0x754704Bc059F8C67012fEd69BC8A327a5aafb603
+B=0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92   # buyer
+A=0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52   # agent
+
+cast balance $B --rpc-url $R                                  # 0, the whole claim
+cast call $U "balanceOf(address)(uint256)" $B --rpc-url $R     # 800000
+cast call $U "balanceOf(address)(uint256)" $A --rpc-url $R     # 600000
+cast call $U "balanceOf(address)(uint256)" \
+  0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 --rpc-url $R      # 0, retained nothing
+```
+
+**What this does not prove**, said here so it never gets blurred in a writeup: the agent in this
+run is ours, so this is evidence the settlement machinery works on mainnet in real USDC. It is not
+evidence that an agent did useful work for a stranger.
+
+The escrow ceiling is 1.40 rather than a round 2.00 because that is what the funding wallet held
+(1.434081 USDC, one transfer, block 106,352,992). The per-call price is the load-bearing number
+and it is unchanged. A script that asserts a precondition its wallet cannot meet is not a safety
+check, it is a script that never runs.
+
+## Also live on Monad testnet
 
 | | address |
 |---|---|
 | **Aqueous** | [`0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C`](https://testnet.monadscan.com/address/0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C) |
 | **tUSDC** (test token) | [`0x841057C182b74408628FadAFba01Ad178cDA2E2f`](https://testnet.monadscan.com/address/0x841057C182b74408628FadAFba01Ad178cDA2E2f) |
 
-Chain 10143, `claimWindow` 259200 seconds (3 days), deployed from
-`0xDB6c6340342e71A63cD11Ebac2185204b7777777`.
+Chain 10143, same `claimWindow`, same deployer.
 
 **Why a test token.** There is no USDC on Monad testnet. `eth_getCode` returns `0x` at USDC's
 address on chain 10143 and so does AUSD and so do all three ERC-8004 registries. An escrow
@@ -18,44 +79,11 @@ there has nothing to escrow, so `TestUSDC` ships with it: 6 decimals like the re
 `ecrecover` on `transferWithAuthorization`, an open mint so anyone can get some and a
 constructor that **refuses to deploy on chain 143** so it can never be confused with real money.
 
-Mainnet uses real USDC at `0x754704Bc059F8C67012fEd69BC8A327a5aafb603` and deploys no token of
-its own. The deploy script picks by chain id rather than by a flag, because a flag is a thing you
-can get wrong.
-
-### One complete job, already run against the live contract
-
-**The buyer never sent a transaction.** Not one. They signed two messages, a relayer paid all the
-gas and they finished with their refund. Read the two numbers that make that checkable:
-
-```bash
-B=0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92
-cast balance $B --rpc-url https://testnet-rpc.monad.xyz --ether   # 0.000000000000000000
-cast nonce   $B --rpc-url https://testnet-rpc.monad.xyz           # 0
-```
-
-A nonce of zero is the whole claim in one integer: that address has never originated a
-transaction on this chain and it still hired an agent and got money back.
-
-| | |
-|---|---|
-| escrowed | 25 tUSDC |
-| paid to agent | 10 tUSDC (2 units at 5) |
-| returned to buyer | 15 tUSDC |
-| retained by the contract | 0 |
-
-Read it back yourself, no key needed:
-
-```bash
-R=https://testnet-rpc.monad.xyz
-cast call 0x841057C182b74408628FadAFba01Ad178cDA2E2f "balanceOf(address)(uint256)" \
-  0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52 --rpc-url $R   # agent, 10000000
-cast call 0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C "claimWindow()(uint64)" --rpc-url $R
-```
-
-The job creation transaction is
+The testnet job that ran first is
 [`0x675fcf6e…47eb5f`](https://testnet.monadscan.com/tx/0x675fcf6ed72811f90e841936d02a352ef1c565847adf1c55c546746c4047eb5f)
-and the settlement is
-[`0xcb4b8810…4e8223`](https://testnet.monadscan.com/tx/0xcb4b8810d835a2131c169f3385fc2e15b9ece1a4ad2c82dd3f512667704e8223).
+and its settlement is
+[`0xcb4b8810…4e8223`](https://testnet.monadscan.com/tx/0xcb4b8810d835a2131c169f3385fc2e15b9ece1a4ad2c82dd3f512667704e8223):
+25 tUSDC escrowed, 10 paid, 15 returned, and a buyer nonce that is still zero.
 
 **Gasless all the way through, which it was not at first.** The original build made only job
 creation gasless. A buyer who genuinely held no MON could fund an escrow and then be stuck: no
@@ -82,6 +110,9 @@ forge script script/Deploy.s.sol:Deploy --rpc-url monad_testnet --broadcast \
 forge script script/Demo.s.sol:Demo --rpc-url monad_testnet --broadcast \
   --private-key "$HOUSE_WALLET_PRIVATE_KEY"
 ```
+
+The mainnet walkthrough above is `script/MainnetDemo.s.sol`, which refuses to run on any chain but
+143 and asserts the buyer's MON balance is zero at both ends.
 
 ## Build
 

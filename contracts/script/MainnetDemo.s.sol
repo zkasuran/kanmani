@@ -18,8 +18,8 @@ interface IUSDC {
 ///   forge script script/MainnetDemo.s.sol:MainnetDemo --rpc-url monad --broadcast \
 ///     --private-key "$HOUSE_WALLET_PRIVATE_KEY"
 ///
-/// The shape is a metered API priced at 2 cents a call. The buyer escrows enough for 100 calls,
-/// the agent delivers, and the settlement pays for the 30 actually made. 1.40 USDC goes back.
+/// The shape is a metered API priced at 2 cents a call. The buyer escrows enough for 70 calls,
+/// the agent delivers, and the settlement pays for the 30 actually made. 0.80 USDC goes back.
 /// That returning remainder is the honesty test of this contract: keeping it would be invisible to
 /// almost every buyer, which is exactly why it goes back.
 ///
@@ -37,11 +37,18 @@ contract MainnetDemo is Script {
         "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
     );
 
-    /// 2.00 USDC at 6 decimals. Read `decimals()` rather than assuming 18, always.
-    uint128 internal constant AMOUNT = 2_000_000;
-    /// 0.02 USDC per call, so the escrow is a ceiling of 100 calls.
+    /// 1.40 USDC at 6 decimals. Read `decimals()` rather than assuming 18, always.
+    ///
+    /// Sized to the 1.434081 USDC actually at the house wallet, which arrived in one transfer
+    /// (tx `0x7017ab54…f483f0a015`, block 106,352,992). The per-call price below is the number
+    /// that matters and it is unchanged. The ceiling is just how many calls the escrow covers,
+    /// so it is set to what the wallet holds rather than to a round figure the run would revert
+    /// on. A script that asserts a precondition it cannot meet is not a safety check, it is a
+    /// script that never runs.
+    uint128 internal constant AMOUNT = 1_400_000;
+    /// 0.02 USDC per call, so the escrow is a ceiling of 70 calls.
     uint128 internal constant PRICE_PER_UNIT = 20_000;
-    /// 30 of the 100 actually used, so 0.60 is earned and 1.40 returns.
+    /// 30 of the 70 actually used, so 0.60 is earned and 0.80 returns.
     uint256 internal constant UNITS_USED = 30;
 
     uint256 internal houseKey;
