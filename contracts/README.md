@@ -83,7 +83,7 @@ The testnet job that ran first is
 [`0x675fcf6e…47eb5f`](https://testnet.monadscan.com/tx/0x675fcf6ed72811f90e841936d02a352ef1c565847adf1c55c546746c4047eb5f)
 and its settlement is
 [`0xcb4b8810…4e8223`](https://testnet.monadscan.com/tx/0xcb4b8810d835a2131c169f3385fc2e15b9ece1a4ad2c82dd3f512667704e8223):
-25 tUSDC escrowed, 10 paid, 15 returned, and a buyer nonce that is still zero.
+25 tUSDC escrowed, 10 paid, 15 returned, with a buyer nonce that is still zero.
 
 **Gasless all the way through, which it was not at first.** The original build made only job
 creation gasless. A buyer who genuinely held no MON could fund an escrow and then be stuck: no
