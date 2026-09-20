@@ -7,14 +7,19 @@ const config: NextConfig = {
   // is a collision; and a root CLAUDE.md would ship to the public repo alongside our own
   // conventions without anyone deciding it should.
   agentRules: false,
-  // Every page reads the live index, so nothing here may be captured at build time. A judge
-  // opening this during the judging window must see what the database says at that moment, not
-  // what it said when the bundle was built.
+  // Every page reads the live index, so nothing here may be captured at build time. `next build`
+  // confirms that rather than this comment asserting it: every route reports as dynamic and the
+  // only static one is /_not-found.
+  //
+  // `staleTimes.dynamic: 0` is the load-bearing half. It stops the client router serving a cached
+  // render when a judge clicks between pages, which would show a number from thirty seconds ago
+  // with nothing on screen saying so. `static` sits at its floor of 30 because the only static
+  // route here is the 404, and Next refuses anything lower.
   //
   // Muster's index froze for five days while its page reported a number that was true when it
   // was written. Rendering per request is half the fix; /status showing its own freshness is the
   // other half.
-  experimental: { staleTimes: { dynamic: 0, static: 0 } },
+  experimental: { staleTimes: { dynamic: 0, static: 30 } },
   // The database connection is server-only. Bundling `pg` into a client chunk would fail loudly,
   // which is the correct outcome, but this makes the intent explicit.
   serverExternalPackages: ["pg"],
