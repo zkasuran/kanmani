@@ -16,7 +16,8 @@
  */
 import { useEffect, useState } from "react";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
-import { signReceipt, toHex, verifyReceipt, type IrisKeys, type Receipt } from "@/lib/iris.ts";
+import { signReceipt, signVaultWrite, toHex, verifyReceipt, type IrisKeys, type Receipt } from "@/lib/iris.ts";
+import { CONTEXT, open, parseSealed, seal, writeMessage, type Sealed } from "@/lib/vault.ts";
 
 async function contentFingerprint(key: Uint8Array): Promise<string> {
   const digest = await crypto.subtle.digest("SHA-256", key as BufferSource);
@@ -39,6 +40,10 @@ export function AccountPanel() {
    * is actually true.
    */
   const [fingerprint, setFingerprint] = useState<string | null>(null);
+  const [note, setNote] = useState("Only this passkey can read this line.");
+  const [vault, setVault] = useState<
+    { phase: "idle" } | { phase: "working" } | { phase: "stored"; sealed: Sealed } | { phase: "read"; text: string } | { phase: "error"; why: string }
+  >({ phase: "idle" });
 
   useEffect(() => {
     setAvailable(webAuthnAvailable());
@@ -90,6 +95,55 @@ export function AccountPanel() {
     };
     const sig = signReceipt(r, keys.attestation.privateKey);
     setReceipt({ sig: toHex(sig), verified: verifyReceipt(r, sig, keys.attestation.publicKey) });
+  }
+
+  /** Seal the note under the content key, sign it with the account key, store the ciphertext. */
+  async function store(keys: IrisKeys) {
+    setVault({ phase: "working" });
+    try {
+      const sealed = await seal(keys.content, CONTEXT.agentMemory, note);
+      const signature = signVaultWrite(writeMessage(keys.account.address, sealed), keys.account.privateKey);
+      const r = await fetch("/api/vault", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ address: keys.account.address, sealed, signature }),
+      });
+      if (!r.ok) {
+        const e = await r.json();
+        setVault({ phase: "error", why: `${e.title ?? r.status}: ${e.detail ?? ""}` });
+        return;
+      }
+      setVault({ phase: "stored", sealed });
+    } catch (e) {
+      setVault({ phase: "error", why: (e as Error).message });
+    }
+  }
+
+  /**
+   * Fetch the blob back and decrypt it.
+   *
+   * Deliberately fetches rather than reusing the object in memory. Reading what we just sealed
+   * out of a local variable would prove nothing about the server actually holding it, and the
+   * gate is about a second device that has no local variable.
+   */
+  async function readBack(keys: IrisKeys) {
+    setVault({ phase: "working" });
+    try {
+      const r = await fetch(
+        `/api/vault?address=${keys.account.address}&context=${encodeURIComponent(CONTEXT.agentMemory)}`,
+      );
+      const body = await r.json();
+      const blob = body?.data?.blobs?.[0]?.sealed;
+      const parsed = parseSealed(blob);
+      if (!parsed) {
+        setVault({ phase: "error", why: "nothing stored for this address yet" });
+        return;
+      }
+      const opened = await open(keys.content, parsed, CONTEXT.agentMemory);
+      setVault(opened.ok ? { phase: "read", text: opened.text } : { phase: "error", why: opened.reason });
+    } catch (e) {
+      setVault({ phase: "error", why: (e as Error).message });
+    }
   }
 
   return (
@@ -201,6 +255,75 @@ export function AccountPanel() {
                     {receipt.verified ? "yes" : "no"}
                   </span>
                 </p>
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
+
+      {/* ------------------------------------------------ storage the server cannot read */}
+      {outcome?.ok ? (
+        <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]">
+          <header className="border-b border-[var(--color-line)] px-4 py-3">
+            <h2 className="font-mono text-sm">storage this server cannot read</h2>
+            <p className="mt-1 text-[12px] text-muted">
+              Encrypted here with the content key, stored as ciphertext, signed with the account
+              key so nobody else can overwrite it. Open this page on a second device, sign in with
+              the same passkey and read it back: the address will match and the text will decrypt.
+            </p>
+          </header>
+          <div className="space-y-3 px-4 py-3">
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              className="w-full rounded border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 font-mono text-[12.5px] outline-none focus:border-[var(--color-brand)]"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => store(outcome.keys)}
+                disabled={vault.phase === "working"}
+                className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-3 py-1.5 font-mono text-[12px] disabled:opacity-40"
+              >
+                encrypt and store
+              </button>
+              <button
+                onClick={() => readBack(outcome.keys)}
+                disabled={vault.phase === "working"}
+                className="rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] text-muted hover:text-[var(--color-text)] disabled:opacity-40"
+              >
+                fetch from the server and decrypt
+              </button>
+              <a
+                href={`/api/vault?address=${outcome.keys.account.address}`}
+                target="_blank"
+                rel="noreferrer"
+                className="rounded border border-[var(--color-line)] px-3 py-1.5 font-mono text-[12px] text-faint hover:text-muted"
+              >
+                see what the server actually holds →
+              </a>
+            </div>
+
+            {vault.phase === "stored" ? (
+              <div className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
+                <p className="font-mono text-[11px] text-faint">
+                  stored. this is everything the server has, and your text is not in it
+                </p>
+                <p className="mt-1 break-all font-mono text-[11px] text-muted">
+                  {JSON.stringify(vault.sealed)}
+                </p>
+              </div>
+            ) : null}
+            {vault.phase === "read" ? (
+              <div className="rounded border border-[var(--color-true)]/40 bg-[var(--color-true-bg)] p-3">
+                <p className="font-mono text-[11px] text-[var(--color-true)]">
+                  fetched from the server and decrypted in this tab
+                </p>
+                <p className="mt-1 font-mono text-[13px]">{vault.text}</p>
+              </div>
+            ) : null}
+            {vault.phase === "error" ? (
+              <div className="rounded border border-[var(--color-unknown)]/40 bg-[var(--color-unknown-bg)] p-3">
+                <p className="font-mono text-[12px] text-[var(--color-unknown)]">{vault.why}</p>
               </div>
             ) : null}
           </div>

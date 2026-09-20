@@ -264,6 +264,24 @@ export function signReceipt(r: Receipt, attestationPrivateKey: Uint8Array): Uint
   return ed25519.sign(receiptBytes(r), attestationPrivateKey);
 }
 
+/**
+ * Sign a vault write with the account key.
+ *
+ * Returns 65 bytes as hex: r || s || recovery. The recovery byte is what lets the server get the
+ * address back from the signature without being told the public key, which is the same trick
+ * ecrecover uses and the reason the address in the request can be checked rather than trusted.
+ *
+ * `prehash: false` because the caller already hashed. Letting the library hash again would sign
+ * keccak(keccak(m)), which verifies fine against itself and against nothing else, so the bug
+ * would only appear when a second implementation tried to check it.
+ */
+export function signVaultWrite(message: Uint8Array, accountPrivateKey: Uint8Array): string {
+  const sig = secp256k1.sign(keccak_256(message), accountPrivateKey, { prehash: false });
+  const compact = sig.toCompactRawBytes();
+  const rec = sig.recovery;
+  return `0x${toHex(compact)}${rec.toString(16).padStart(2, "0")}`;
+}
+
 export function verifyReceipt(
   r: Receipt,
   signature: Uint8Array,

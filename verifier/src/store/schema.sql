@@ -159,3 +159,34 @@ SELECT p.*,
     ELSE 'unknown'
   END AS state
 FROM fovea.record_probe_latest p;
+
+-- Ciphertext the server cannot read.
+--
+-- This exists so the cross-device claim is a real round trip rather than two tabs on one machine:
+-- a second device signs in with the same passkey, derives the same address, fetches this row and
+-- decrypts it with a key that never left either browser.
+--
+-- What is stored: a public address, a context label, a nonce and a ciphertext. No key, no
+-- credential id, no PRF salt, no session. A dump of this table is a pile of AES-GCM blobs and a
+-- list of addresses that are public anyway.
+--
+-- Reads are open on purpose. It is ciphertext, and pretending otherwise by gating it would imply
+-- the confidentiality comes from access control rather than from the encryption.
+--
+-- Writes are NOT open. A write carries a secp256k1 signature from the account key over the exact
+-- bytes being stored, checked against the address in the row. Without that anybody could overwrite
+-- anybody's blob: they could not read it, and destroying it is enough damage on its own.
+CREATE TABLE IF NOT EXISTS fovea.vault (
+  address      text        NOT NULL,
+  context      text        NOT NULL,
+  -- Format version of the sealed envelope, so a future format is a new row rather than a
+  -- reinterpretation of an old one.
+  version      integer     NOT NULL DEFAULT 1,
+  nonce        text        NOT NULL,
+  ciphertext   text        NOT NULL,
+  -- The signature that authorised this write, kept so a reader can check it themselves rather
+  -- than trusting that we checked.
+  signature    text        NOT NULL,
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (address, context)
+);
