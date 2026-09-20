@@ -38,8 +38,8 @@
   ],
   "exclude": [
     "node_modules",
-    "verifier",
     "indexer",
-    "contracts"
+    "contracts",
+    "verifier/**/*.test.ts"
   ]
 }
