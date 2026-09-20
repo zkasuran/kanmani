@@ -35,3 +35,8 @@ contracts/.Aqueous.verified.bak
 # forge-std is a dependency, not our code. `forge install` restores it, and keeping it out
 # avoids vendoring someone else's licence into a SAND-1.0 repo. See contracts/README.md.
 contracts/lib/
+
+# Next.js
+/.next/
+/out/
+next-env.d.ts

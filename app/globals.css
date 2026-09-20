@@ -1,0 +1,118 @@
+@import "tailwindcss";
+
+/*
+ * Cornea's one visual rule: the four verdict states must be told apart at a glance, and
+ * `unknown` must never look like `false`.
+ *
+ * That is not decoration. This site publishes judgments about named operators. If a document we
+ * could not fetch renders in the same red as a claim we checked and found missing, then somebody
+ * else's outage reads as our accusation, at scale, automatically. The colours below are chosen so
+ * the two can never be confused: `false` is red, `unknown` is a flat slate that reads as absence
+ * rather than alarm.
+ */
+@theme {
+  --color-ink: #05070a;
+  --color-panel: #0b0f16;
+  --color-panel-2: #111720;
+  --color-line: #1d2836;
+  --color-line-bright: #2b3a4d;
+  --color-text: #dce5f0;
+  --color-muted: #7f8ea3;
+  --color-faint: #4e5d72;
+
+  /* Monad's own purple, used for the product's own marks and nothing else. A verdict never
+     borrows it, so brand colour can never be mistaken for a measurement. */
+  --color-brand: #836ef9;
+  --color-brand-dim: #4b3f8f;
+
+  --color-true: #34d399;
+  --color-true-bg: #06281f;
+  --color-false: #f87171;
+  --color-false-bg: #2c1014;
+  /* Deliberately not amber. Amber reads as "warning", which is a claim about the operator.
+     This reads as "no answer here", which is what it means. */
+  --color-unknown: #94a3b8;
+  --color-unknown-bg: #171f2b;
+  --color-noclaim: #64748b;
+  --color-noclaim-bg: #121820;
+
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+}
+
+html {
+  color-scheme: dark;
+  scrollbar-color: var(--color-line-bright) var(--color-ink);
+}
+
+body {
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum" 1;
+}
+
+/* Numbers line up in columns. On a page that is mostly counts, proportional digits make two
+   figures of the same magnitude look different lengths. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--color-brand-dim);
+  color: #fff;
+}
+
+/*
+ * `unknown` is never `0`.
+ *
+ * One class, used everywhere a value could not be read. It renders as the word rather than as a
+ * number, in the flat slate above, so no reader ever mistakes a failed read for a measurement of
+ * zero. This is the whole data-quality position of the project and it costs one rule.
+ */
+.unknown-value {
+  color: var(--color-unknown);
+  font-style: normal;
+  letter-spacing: 0.02em;
+}
+
+/* A query, shown beside the number it produced. Long SQL wraps rather than scrolling sideways,
+   because a reader is meant to copy it, not admire it. */
+.sql {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--color-muted);
+}
+
+details > summary {
+  cursor: pointer;
+  list-style: none;
+}
+details > summary::-webkit-details-marker {
+  display: none;
+}
+details > summary::before {
+  content: "▸ ";
+  color: var(--color-faint);
+}
+details[open] > summary::before {
+  content: "▾ ";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
