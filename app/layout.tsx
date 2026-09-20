@@ -24,6 +24,7 @@ const NAV = [
   ["/operators", "operators"],
   ["/claims", "claims"],
   ["/verify", "verify"],
+  ["/account", "account"],
   ["/compare", "compare"],
   ["/method", "method"],
   ["/status", "status"],
