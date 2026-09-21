@@ -136,7 +136,7 @@ impression, because the head of the list is mostly https.
 
 This project was designed around a failure mode that is not the one happening. The design expected
 documents citing one chain while the payment sat on another. That is why `parse.ts` prefers the
-inner `proof_of_payment.network` over the outer `network` when both exist, and why `locate.ts`
+inner `proof_of_payment.network` over the outer `network` when both exist and why `locate.ts`
 resolves a declared chain against a covered list of seven rather than assuming Monad. A document is
 free to be about one chain while citing a transaction on another. Preferring the outer field would
 quietly rewrite what the author said.
@@ -249,11 +249,10 @@ record will show both readings.
 ## 7. Why this matters to somebody spending money
 
 An agent looking for another agent to pay has a registry with 10,252 entries and no way to tell a
-working counterparty from a registration that has been dead for months.
-
-Measure it the cheapest possible way. All 2,012 distinct registration documents, probed once each:
-8,095 agents point at a document whose host answers and says it is not there. That is 78.9% of the
-registry. 8,093 of those agents, across 7,962 distinct wallets, point at one single URL:
+working counterparty from a registration that has been dead for months. Measure it the cheapest
+possible way. All 2,012 distinct registration documents, probed once each: 8,095 agents point at a
+document whose host answers and says it is not there. That is 78.9% of the registry. 8,093 of those
+agents, across 7,962 distinct wallets, point at one single URL:
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' https://eve-8004.vercel.app/metadata/b.json

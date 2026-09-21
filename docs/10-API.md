@@ -180,16 +180,8 @@ Ids, addresses and hashes are elided there. The id shape is
 10182's third feedback from that client on chain 143.
 
 `reproduce` on this endpoint is the SQL that produced the body, verbatim, with bind parameters left
-as placeholders. It ends:
-
-```sql
-FROM "Feedback" f
-JOIN "Agent" a ON a.id = f.agent_id
-LEFT JOIN fovea.verdict_latest v ON v.feedback_id = f.id
-WHERE f."chainId" = $1 AND f."feedbackUri" <> '' AND v.outcome = $2
-ORDER BY f."blockNumber" DESC, f.id
-LIMIT $3 OFFSET $4
-```
+as placeholders. For the query above it ends `WHERE f."chainId" = $1 AND f."feedbackUri" <> '' AND
+v.outcome = $2 ORDER BY f."blockNumber" DESC, f.id LIMIT $3 OFFSET $4`.
 
 Ordering is block number descending then id, which is stable. `next` is `null` on the last page. It
 carries every filter you sent, so paging never quietly changes the query underneath you.

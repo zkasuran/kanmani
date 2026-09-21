@@ -113,23 +113,6 @@ will see the same or a higher number, never a lower one. Running the indexer loc
 log-derived count and the slot is an indexer that has fallen behind, which is why both get published
 rather than just the friendlier one.
 
-| id | command | output |
-|---|---|---|
-| `0` | `cast call $ID "ownerOf(uint256)(address)" 0 --rpc-url $R` | `0x89E9E1ab11dD1B138b1dcE6d6A4a0926aaFD5029` |
-| `10252` | `cast call $ID "ownerOf(uint256)(address)" 10252 --rpc-url $R` | `0xDB6c6340342e71A63cD11Ebac2185204b7777777` |
-| `10253` | `cast call $ID "ownerOf(uint256)(address)" 10253 --rpc-url $R` | revert `0x7e273289…280d` |
-
-`0x7e273289` is the selector for `ERC721NonexistentToken(uint256)`, which `cast sig
-"ERC721NonexistentToken(uint256)"` confirms. Its argument is `0x280d`, which is 10253. The slot
-value and the last existing id agree. A wrong slot would not agree.
-
-**This number grows.** It read `10252` when the population survey ran, so that survey covers ids `0`
-through `10251`. We then registered as id `10252`, which is why the slot reads `10253` today. You
-will see the same or a higher number, never a lower one. Running the indexer locally,
-`SELECT count(*) FROM "Agent" WHERE "chainId" = 143` returns `10253` too. A gap between the
-log-derived count and the slot is an indexer that has fallen behind, which is why both get published
-rather than just the friendlier one.
-
 ## 5. USDC on Monad mainnet
 
 | fact | command | output |
@@ -152,7 +135,8 @@ times the price. `PRICE_ATOMIC` in `lib/x402.ts` is `"10000"`, which is 0.01 USD
 
 **EIP-3009 plus EIP-2612 are both present.** They are the reason a buyer never needs MON. Presence
 is provable by calling their view functions and getting an answer rather than a revert. The returned
-values do not matter. Answering at all is the fact.
+values do not matter. Answering at all is the fact and the third line below is the control that
+proves the test can fail.
 
 ```bash
 Z=0x0000000000000000000000000000000000000000
@@ -160,12 +144,10 @@ N=0x0000000000000000000000000000000000000000000000000000000000000000
 
 cast call $U "authorizationState(address,bytes32)(bool)" $Z $N --rpc-url $R   # false   EIP-3009
 cast call $U "nonces(address)(uint256)" $Z --rpc-url $R                       # 0       EIP-2612
-
 cast call $U "notAFunction()(uint256)" --rpc-url $R                           # reverts, data "0x"
 ```
 
-That last line is the control proving the test can fail. A missing function reverts with empty data.
-The two above it do not, so they are there.
+A missing function reverts with empty data. The two above it do not, so they are there.
 
 ## 6. USDC does not exist on Monad testnet, so a test token ships
 
