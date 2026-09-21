@@ -26,9 +26,13 @@ npx next build                        # compiles clean, every route dynamic
 
 ### Retina, the index
 
-Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **10,252 agents**,
-matching the registry's own counter slot exactly, **2,012 distinct registration documents** and
-**9,188 feedbacks**.
+Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **10,252 agents** at
+census time, matching the registry's own counter slot exactly, **2,012 distinct registration
+documents** and **9,188 feedbacks**.
+
+The live index reads **10,253** and **2,013** today, because we then registered ourselves as agent
+10252. That is the registry growing rather than a corrected error, it can only ever grow, and
+[`16-METHOD.md`](16-METHOD.md) section 1 says which figure is which.
 
 Load-bearing rather than an integration: `feedbackURI` and `feedbackHash` exist only as
 non-indexed fields of the `NewFeedback` event, `readFeedback()` does not return them, and
