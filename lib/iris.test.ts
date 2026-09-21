@@ -17,7 +17,7 @@ import {
  *
  * The two Mera gates are live tests on a judge's machine: clear storage mid-demo and the identity
  * must rebuild, then the same passkey on a second device must reproduce the same keys. Both come
- * down to one property, that derivation is deterministic, and that is a property you assert
+ * down to one property, that derivation is deterministic and that is a property you assert
  * against fixed bytes rather than demonstrate by clicking.
  */
 const PRF = new Uint8Array(32).map((_, i) => i + 1);
@@ -35,7 +35,7 @@ test("the same PRF output always derives the same three keys", async () => {
 });
 
 test("the derived keys are pinned, so a refactor cannot move somebody's account", async () => {
-  // A change here is a change to where every existing user's money lives, and to which identity
+  // A change here is a change to where every existing user's money lives and to which identity
   // every past receipt was signed by. Pinning means an accidental change fails a test instead of
   // silently orphaning accounts and invalidating signatures.
   //
@@ -103,10 +103,10 @@ test("an empty info string is refused, because it namespaces nothing", async () 
   await assert.rejects(() => derive(PRF, ""), /namespace/);
 });
 
-test("the out-of-range retry actually runs, and lands on the next counter", async () => {
+test("the out-of-range retry actually runs and lands on the next counter", async () => {
   // The natural path to this branch is about one in 2^128 derivations, so without forcing it this
   // is code that has never executed and is asserted to work. Two invalid candidates in a row, then
-  // a valid one, and the result must be the valid one rather than a silently accepted bad scalar.
+  // a valid one and the result must be the valid one rather than a silently accepted bad scalar.
   const ZERO = new Uint8Array(32);                       // below the range
   const OVER = new Uint8Array(32).fill(0xff);            // above the curve order
   const GOOD = new Uint8Array(32).fill(7);

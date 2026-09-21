@@ -68,7 +68,7 @@ ORDER BY feedback_id, checked_at DESC, id DESC;
 -- Whether the document an agent's REGISTRATION points at still exists.
 --
 -- Separate from fovea.verdict on purpose. A verdict is about one feedback's payment claim; this is
--- about one registration document, and 10,252 agents share only 2,012 of those. Probing per agent
+-- about one registration document and 10,252 agents share only 2,012 of those. Probing per agent
 -- would mean fetching one dead Vercel URL 8,093 times to learn the same thing once.
 --
 -- It lives here rather than on the indexer's AgentRecord for the reason everything else does: that
@@ -132,11 +132,11 @@ ORDER BY uri_hash, checked_at DESC, id DESC;
 --     3 whose URI is not a usable pointer (a localhost URL, two placeholder CIDs)
 --
 -- Collapsing those into "dead" would publish a rate limit as an operator's failure, which is the
--- same mistake the verdict ladder exists to refuse. `unknown` means we could not tell, and 429
+-- same mistake the verdict ladder exists to refuse. `unknown` means we could not tell and 429
 -- and 5xx belong there rather than beside a 404.
 --
 -- It is a view rather than a column so a re-read reclassifies old probes too. The probe records
--- what happened; this decides what that means, and the second one is allowed to improve.
+-- what happened; this decides what that means and the second one is allowed to improve.
 CREATE OR REPLACE VIEW fovea.record_state AS
 SELECT p.*,
   CASE
@@ -170,12 +170,12 @@ FROM fovea.record_probe_latest p;
 -- credential id, no PRF salt, no session. A dump of this table is a pile of AES-GCM blobs and a
 -- list of addresses that are public anyway.
 --
--- Reads are open on purpose. It is ciphertext, and pretending otherwise by gating it would imply
+-- Reads are open on purpose. It is ciphertext and pretending otherwise by gating it would imply
 -- the confidentiality comes from access control rather than from the encryption.
 --
 -- Writes are NOT open. A write carries a secp256k1 signature from the account key over the exact
 -- bytes being stored, checked against the address in the row. Without that anybody could overwrite
--- anybody's blob: they could not read it, and destroying it is enough damage on its own.
+-- anybody's blob: they could not read it and destroying it is enough damage on its own.
 CREATE TABLE IF NOT EXISTS fovea.vault (
   address      text        NOT NULL,
   context      text        NOT NULL,

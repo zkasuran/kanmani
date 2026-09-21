@@ -34,9 +34,9 @@ test("a v2 payload in PAYMENT-SIGNATURE is accepted", () => {
   }
 });
 
-test("the older X-PAYMENT header is accepted too, and says which one was used", () => {
+test("the older X-PAYMENT header is accepted too and says which one was used", () => {
   // Both generations are live in the wild. Refusing a client for using last year's header name
-  // helps nobody, and the response says which it read so a client can tell it is on the old one.
+  // helps nobody and the response says which it read so a client can tell it is on the old one.
   const r = paymentFrom(headers({ "x-payment": b64(goodPayload) }));
   assert.equal(r.ok, true);
   if (r.ok) assert.equal(r.header, "X-PAYMENT");
@@ -76,7 +76,7 @@ test("a missing header asks for the one the spec names", () => {
 test("base64 that does not round-trip is refused", () => {
   // Buffer.from(x, "base64") drops characters it does not like rather than failing, so a corrupt
   // payload decodes to something shorter and plausible. Comparing the re-encoding is the only
-  // way to notice, and without this check a truncated payload reads as a valid short one.
+  // way to notice and without this check a truncated payload reads as a valid short one.
   const r = paymentFrom(headers({ "payment-signature": "!!!! not base64 !!!!" }));
   assert.equal(r.ok, false);
   if (!r.ok) assert.match(r.reason, /base64/);
@@ -117,7 +117,7 @@ test("a payload with no signature is refused before it reaches the facilitator",
 /* ---------------------------------------------- the money constants, which are easy to get wrong */
 
 test("the price is in six-decimal units, because USDC on Monad is six", () => {
-  // A literal carried from an 18-decimal chain is wrong by a factor of a million, and it would
+  // A literal carried from an 18-decimal chain is wrong by a factor of a million and it would
   // fail by asking for a million times the price rather than by throwing.
   const r = requirements();
   assert.equal(r.amount, "10000", "10000 atomic units at 6 decimals is 0.01 USDC");

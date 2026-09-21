@@ -7,13 +7,13 @@
  *
  * ## Why this is shaped around other people's servers
  *
- * 1,862 of Monad's 2,012 distinct records are http, and three hosts carry 1,771 of them:
+ * 1,862 of Monad's 2,012 distinct records are http and three hosts carry 1,771 of them:
  * `agent-arcade-steel.vercel.app` has 762, `api.monadmogs.xyz` 526 and `dashboard.dev.fun` 483.
  * A naive pass with global concurrency would put hundreds of simultaneous requests on one small
  * deployment. We are publishing findings about these operators. Knocking their site over while
  * measuring whether their site is up would be its own answer.
  *
- * So the queue is **per host, serial, with a gap**, and the concurrency is across hosts rather
+ * So the queue is **per host, serial, with a gap** and the concurrency is across hosts rather
  * than within one. Documents that need no network at all (`data:`, inline JSON) never enter a
  * host queue, which is most of the remainder.
  */
@@ -46,7 +46,7 @@ function parseArgs(argv: string[]): Args {
   };
 }
 
-/** The host a target will actually contact, or null when it contacts nothing. */
+/** The host a target will actually contact or null when it contacts nothing. */
 function hostOf(uri: string): string | null {
   const t = (uri ?? "").trim();
   if (!t || t.startsWith("data:") || t.startsWith("{")) return null;

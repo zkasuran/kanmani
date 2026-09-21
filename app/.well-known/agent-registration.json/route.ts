@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
  * Our own ERC-8004 record, served the way we expect everyone else's to be served.
  *
  * Published deliberately. This site measures whether other people's registration documents still
- * answer, and 8,095 agents on Monad point at one that does not. Holding ourselves to the same
+ * answer and 8,095 agents on Monad point at one that does not. Holding ourselves to the same
  * check is the minimum, so this is a real endpoint rather than a file somebody forgot to renew.
  *
  * Note what is NOT here: no payment claim. We have not been paid through this record, so it does

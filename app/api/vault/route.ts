@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
  * it. A second device signs in with the same passkey, derives the same address, GETs this row and
  * decrypts it with a key that never left either browser.
  *
- * ## Reads are open, and that is deliberate
+ * ## Reads are open and that is deliberate
  *
  * Anyone can fetch anyone's blob. It is AES-256-GCM ciphertext and the key is derived from a
  * passkey we never see, so there is nothing here to protect with an access check. Gating it would
@@ -24,7 +24,7 @@ export const dynamic = "force-dynamic";
  *
  * A write carries a secp256k1 signature from the account key over the exact bytes being stored,
  * recovered and checked against the address in the request. Without it anyone could overwrite
- * anyone's blob: they still could not read it, and destroying somebody's only copy is damage
+ * anyone's blob: they still could not read it and destroying somebody's only copy is damage
  * enough on its own.
  *
  * The signature is stored alongside, so a reader can check it themselves rather than trusting

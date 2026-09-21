@@ -1,23 +1,23 @@
 /**
  * Optic: writing verdicts to the ERC-8004 Validation Registry.
  *
- * The registry at `0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58` on Monad is live, and on
+ * The registry at `0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58` on Monad is live and on
  * 2026-09-20 it held **zero** validations against the Reputation Registry's 9,188 feedbacks.
  * Monad's own ERC-8004 guide still calls it "coming soon" while it sits there with 131 bytes of
  * code answering calls.
  *
  * It holds one row now, ours, for agent 10252 at block 106470718. That is not a boast, it is the
  * "before" picture becoming checkable: `getValidatorRequests` and `getAgentValidations` both
- * return exactly that one hash, and the indexer that follows this contract went from 0 rows to 1.
+ * return exactly that one hash and the indexer that follows this contract went from 0 rows to 1.
  *
  * So the reputation half of ERC-8004 is in heavy use on this chain and the validation half was
- * untouched. The reason is below, and it is not apathy.
+ * untouched. The reason is below and it is not apathy.
  *
- * ## The mapping problem, and the rule that settles it
+ * ## The mapping problem and the rule that settles it
  *
- * `validationResponse` takes `uint8 response`, and `getSummary` **averages** it across
- * validators. That is a score, and our verdicts are not a score. Four outcomes do not sit on a
- * scale, and squeezing them onto one would produce exactly the confident number this project
+ * `validationResponse` takes `uint8 response` and `getSummary` **averages** it across
+ * validators. That is a score and our verdicts are not a score. Four outcomes do not sit on a
+ * scale and squeezing them onto one would produce exactly the confident number this project
  * exists to argue against.
  *
  * **So we only write what we actually checked.**
@@ -124,10 +124,10 @@ export const ABI = [
 export type Writable = { claimId: string; agentId: bigint; outcome: "true" | "false" };
 
 /**
- * **Only an agent's NFT owner can open a validation**, and they name the validator when they do.
+ * **Only an agent's NFT owner can open a validation** and they name the validator when they do.
  *
  * Verified by simulating `validationRequest` from three addresses on mainnet: ours reverts with
- * `Not authorized`, the agent's own declared wallet reverts the same way, and the owner passes.
+ * `Not authorized`, the agent's own declared wallet reverts the same way and the owner passes.
  * So this module cannot publish an opinion about somebody else's agent however true it is, and
  * `writeValidation` below only ever runs against an agent we own.
  *
@@ -204,8 +204,8 @@ export type WriteResult = {
  * anything, so the request is ours too. The alternative is writing a response to a request that
  * does not exist, which the contract would reject anyway.
  *
- * **The request hash is returned before the second transaction is sent**, and the caller records
- * it. A response that broadcasts and then fails to have its receipt read is a real state, and a
+ * **The request hash is returned before the second transaction is sent** and the caller records
+ * it. A response that broadcasts and then fails to have its receipt read is a real state and a
  * run that lost the hash could not reconcile it and would re-send.
  */
 export async function writeValidation(
@@ -231,7 +231,7 @@ export async function writeValidation(
     //
     // `getValidationStatus` **reverts** on a hash it does not know, rather than returning a zero
     // address. Found by running it: the first attempt treated the read as a plain query, the
-    // revert propagated, and two validations failed before anything was written. A revert here is
+    // revert propagated and two validations failed before anything was written. A revert here is
     // the answer "no such request", so it is caught and read as one.
     let alreadyRequested = false;
     try {

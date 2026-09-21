@@ -35,7 +35,7 @@ export function AccountPanel() {
    * SHA-256 of the content key, not the key.
    *
    * An earlier cut of this printed the first eight bytes of the key itself under a label saying
-   * it was a fingerprint. Eight bytes is not a break, and printing live key material on the page
+   * it was a fingerprint. Eight bytes is not a break and printing live key material on the page
    * that argues about not leaking secrets is exactly the wrong shape. A hash is one line and it
    * is actually true.
    */
@@ -123,7 +123,7 @@ export function AccountPanel() {
    * Fetch the blob back and decrypt it.
    *
    * Deliberately fetches rather than reusing the object in memory. Reading what we just sealed
-   * out of a local variable would prove nothing about the server actually holding it, and the
+   * out of a local variable would prove nothing about the server actually holding it and the
    * gate is about a second device that has no local variable.
    */
   async function readBack(keys: IrisKeys) {
@@ -175,7 +175,7 @@ export function AccountPanel() {
         {available === false ? (
           <p className="mt-3 rounded border border-[var(--color-unknown)]/40 bg-[var(--color-unknown-bg)] p-3 text-[13px] text-[var(--color-unknown)]">
             This browser does not expose WebAuthn to this page. Nothing here will work until it
-            does, and that is the browser rather than the site.
+            does and that is the browser rather than the site.
           </p>
         ) : null}
 
@@ -227,7 +227,7 @@ export function AccountPanel() {
             <KeyRow
               ns="kanmani.optic.v1"
               what="attestation"
-              why="Signs verification receipts. Deliberately not a wallet: it can say what was checked, and it cannot move money."
+              why="Signs verification receipts. Deliberately not a wallet: it can say what was checked and it cannot move money."
               value={outcome.keys.attestation.id}
             />
             <KeyRow
@@ -306,7 +306,7 @@ export function AccountPanel() {
             {vault.phase === "stored" ? (
               <div className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
                 <p className="font-mono text-[11px] text-faint">
-                  stored. this is everything the server has, and your text is not in it
+                  stored. this is everything the server has and your text is not in it
                 </p>
                 <p className="mt-1 break-all font-mono text-[11px] text-muted">
                   {JSON.stringify(vault.sealed)}

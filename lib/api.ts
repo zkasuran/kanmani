@@ -2,7 +2,7 @@
  * The shared shape of every JSON response.
  *
  * Two fields are on every single one: `checkedAt` and `reproduce`. A number with no time attached
- * is a number that was true once, and a number with no way to re-derive it is a number the reader
+ * is a number that was true once and a number with no way to re-derive it is a number the reader
  * has to take on trust. The whole argument of this site is that neither is good enough when the
  * subject is somebody else's reputation, so our own output holds to it.
  */

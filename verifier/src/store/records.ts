@@ -2,7 +2,7 @@
  * The registration probe: does the document an agent's record points at still exist?
  *
  * This is a different question from the one `verdict.ts` answers. A verdict is about one
- * feedback's payment claim. This is about one registration document, and on Monad 10,252 agents
+ * feedback's payment claim. This is about one registration document and on Monad 10,252 agents
  * resolve to 2,012 distinct documents, so the two questions have different denominators and very
  * different costs.
  *
@@ -11,7 +11,7 @@
  * pass that is polite to other people's servers and one that is not.
  *
  * The result is also the finding. "A dead URL" is a row. "8,093 agents across 7,962 wallets point
- * at one deleted deployment" is the same fact with its scale attached, and the scale is only
+ * at one deleted deployment" is the same fact with its scale attached and the scale is only
  * available because the records are deduplicated in the first place.
  *
  * ## What a probe never says
@@ -92,7 +92,7 @@ function schemeOf(uri: string): Source | "inline" | "other" | "empty" {
  *
  * Best effort and deliberately narrow: an ERC-8004 record is JSON with a `name`, so anything
  * else returns undefined rather than guessing. A registration that resolves but names nothing is
- * a real and different state from one that does not resolve, and collapsing them would hide it.
+ * a real and different state from one that does not resolve and collapsing them would hide it.
  */
 export function nameFrom(bytes: Uint8Array): string | undefined {
   try {

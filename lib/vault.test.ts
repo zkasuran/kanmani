@@ -49,7 +49,7 @@ test("a different passkey cannot open it", async () => {
 /* ------------------------------------------------- context binding */
 
 test("a blob sealed for one purpose cannot be opened as another", async () => {
-  // Same key for both. Without the AAD binding this would succeed, and a server that can move a
+  // Same key for both. Without the AAD binding this would succeed and a server that can move a
   // blob between slots could change what a client believes it is.
   const s = await seal(KEY, CONTEXT.jobBrief, "the brief");
   const r = await open(KEY, s, CONTEXT.agentMemory);
@@ -100,7 +100,7 @@ test("a wrong-length nonce is refused with its length, not a generic failure", a
 /* ------------------------------------------------- nonces */
 
 test("every seal uses a fresh nonce", async () => {
-  // GCM loses everything on a nonce reuse under one key. A counter would need state, and there is
+  // GCM loses everything on a nonce reuse under one key. A counter would need state and there is
   // no state here by design, so the only safe answer is random every time.
   const nonces = new Set<string>();
   for (let i = 0; i < 200; i++) nonces.add((await seal(KEY, CONTEXT.jobBrief, "same")).nonce);

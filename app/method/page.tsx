@@ -56,7 +56,7 @@ export default function Method() {
         <h1 className="text-2xl font-semibold tracking-tight">Method</h1>
         <p className="mt-2 max-w-3xl text-[14.5px] leading-relaxed text-muted">
           Every verdict on this site is reproducible by hand. Each rung below says what question it
-          answers, how it decides, what happens when it cannot decide, and the command that gets the
+          answers, how it decides, what happens when it cannot decide and the command that gets the
           same answer without this site. If any of them disagree with what a page here says, the
           page is wrong.
         </p>
@@ -67,7 +67,7 @@ export default function Method() {
         <p className="text-[15px] leading-relaxed">
           <span className="text-[var(--color-false)]">false</span> means we read the chain and the
           transaction is not on it.{" "}
-          <span className="unknown-value">unknown</span> means we could not look, or could not read
+          <span className="unknown-value">unknown</span> means we could not look or could not read
           what we fetched. These are never collapsed.
         </p>
         <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
@@ -108,7 +108,7 @@ export default function Method() {
       {/* ---------------------------------------------------------------- the atlas */}
       <Panel
         title="the atlas"
-        subtitle="The mappings that read a document shape, induced from real documents on Monad and then published. A reader re-running the pipeline executes these deterministically, with no model anywhere in the loop, and gets the same numbers."
+        subtitle="The mappings that read a document shape, induced from real documents on Monad and then published. A reader re-running the pipeline executes these deterministically, with no model anywhere in the loop and gets the same numbers."
       >
         <div className="space-y-3">
           {ATLAS.map((m) => (
@@ -163,7 +163,7 @@ export default function Method() {
           A chain with no endpoint configured returns null rather than a client pointed at a
           default. A silent fallback would make an unconfigured chain look checked, which is the
           difference between &quot;not found&quot; and &quot;not looked for&quot;. A document naming
-          a chain not on this list gets <span className="unknown-value">unknown</span>, and the
+          a chain not on this list gets <span className="unknown-value">unknown</span> and the
           reason says which chain it named.
         </p>
       </Panel>

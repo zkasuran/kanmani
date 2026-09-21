@@ -183,12 +183,12 @@ export default async function Operators() {
             n={paywalledAgents}
             of={h.agentsTotal}
             head="agents whose document returns HTTP 402"
-            body="Payment Required. The host is alive and wants paying before it will describe its own agent. On a chain whose agent economy runs on x402 that is a design choice, not a failure, and it is kept apart from a deletion for exactly that reason."
+            body="Payment Required. The host is alive and wants paying before it will describe its own agent. On a chain whose agent economy runs on x402 that is a design choice, not a failure and it is kept apart from a deletion for exactly that reason."
           />
         </div>
         <Derivation
           sql={health.sql}
-          note="The state column is a view (fovea.record_state) so one definition serves the page, the feed and the API. A probe records what happened; the view decides what that means, and the view is allowed to improve without re-fetching anyone's server."
+          note="The state column is a view (fovea.record_state) so one definition serves the page, the feed and the API. A probe records what happened; the view decides what that means and the view is allowed to improve without re-fetching anyone's server."
         />
       </Panel>
 

@@ -2,7 +2,7 @@
  * Running the ladder from a page or an API call.
  *
  * The important property here is that this file contains **no verification logic at all**. It
- * resolves a document, hands the bytes to the same `judge` the sweep and the CLI use, and hands
+ * resolves a document, hands the bytes to the same `judge` the sweep and the CLI use and hands
  * back what came out. Website and command line cannot disagree about a verdict, because there is
  * only one of them.
  *

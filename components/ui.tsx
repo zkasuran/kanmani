@@ -1,5 +1,5 @@
 /**
- * The pieces every page shares, and the reason each one exists.
+ * The pieces every page shares and the reason each one exists.
  *
  * The load-bearing one is `Num`. Everything else is layout.
  */
@@ -10,13 +10,13 @@ import type { Outcome, Rung } from "@/lib/queries.ts";
 /* ------------------------------------------------------------------ unknown is never zero */
 
 /**
- * A number, or the word "unknown" when it could not be read.
+ * A number or the word "unknown" when it could not be read.
  *
  * This is the single most important component in the project and it is four lines long.
  *
  * A count that failed to read is not zero. Rendering `null` as `0` is the exact failure this
  * whole site exists to point at in other people's tools: a confident number standing in for an
- * answer nobody has. So a null never reaches a digit, and the fallback is a word in a different
+ * answer nobody has. So a null never reaches a digit and the fallback is a word in a different
  * colour rather than a dash, because a dash is quiet enough to scan past.
  */
 export function Num({
@@ -112,7 +112,7 @@ const RUNGS: Rung[] = ["declared", "resolvable", "intact", "parsed", "true"];
  * How far down the ladder a claim got, drawn as the ladder rather than as a word.
  *
  * A claim that stopped at `resolvable` and one that reached `true` are different in kind, not in
- * degree, and the shape makes that visible without reading. The rungs past where it stopped are
+ * degree and the shape makes that visible without reading. The rungs past where it stopped are
  * drawn faint rather than hidden, so the reader sees what was NOT checked.
  */
 export function RungLadder({ rung }: { rung: Rung | null }) {

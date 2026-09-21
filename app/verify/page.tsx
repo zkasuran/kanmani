@@ -37,7 +37,7 @@ export default async function Verify({ searchParams }: Props) {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Verify</h1>
         <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-          Paste an evidence document, or a claim id from this site. The check that runs here is the
+          Paste an evidence document or a claim id from this site. The check that runs here is the
           same code the sweep and the command line run, so this page and the tool cannot give
           different answers. The result gets its own URL, so it can be sent to whoever disagrees.
         </p>
@@ -46,7 +46,7 @@ export default async function Verify({ searchParams }: Props) {
       <form action="/verify" className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4">
         <label className="block">
           <span className="font-mono text-[11px] uppercase tracking-wide text-faint">
-            document uri, or a claim id
+            document uri or a claim id
           </span>
           <input
             name="uri"
@@ -183,7 +183,7 @@ function Result({ r }: { r: Awaited<ReturnType<typeof check>> }) {
           </dl>
         </Panel>
 
-        <Panel title="what it claimed, and what the chain said">
+        <Panel title="what it claimed and what the chain said">
           <dl>
             <Row label="declared network">
               {v.declaredNetwork ? <Mono>{v.declaredNetwork}</Mono> : <span className="unknown-value">none</span>}

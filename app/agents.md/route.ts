@@ -25,7 +25,7 @@ It answers with one of four outcomes and they are not interchangeable:
 | \`true\` | the cited transaction is on the chain the document names |
 | \`false\` | we read that chain successfully and it is not there |
 | \`noClaim\` | the document read fine and asserts no payment, so there is nothing to check |
-| \`unknown\` | we could not look, or could not read what we fetched. Never an accusation |
+| \`unknown\` | we could not look or could not read what we fetched. Never an accusation |
 
 **Do not collapse \`unknown\` into \`false\`.** If you build on this API and treat them as the same,
 you will publish accusations on the strength of a rate limit. Every response keeps them apart and
@@ -55,7 +55,7 @@ POST ${SITE}/api/verify
 This fetches a document you name and reads a chain. That spends a request on a third party's
 server and an RPC call, so it is priced rather than free. It answers **HTTP 402** with an x402
 challenge describing exactly what to pay and to whom. Pay it, repeat the request with the
-\`X-PAYMENT\` header, and you get the verdict.
+\`X-PAYMENT\` header and you get the verdict.
 
 402 here means "pay me", not "broken". The challenge body names the asset, the amount, the
 network and the address.
@@ -63,7 +63,7 @@ network and the address.
 ## Rate limits
 
 Free endpoints: no hard limit today. If that changes it will be announced in this file before it
-is enforced, and the response will carry \`retry-after\`.
+is enforced and the response will carry \`retry-after\`.
 
 Paid verification: one document per payment. There is no burst allowance to discover by hitting
 a wall.
@@ -74,7 +74,7 @@ A \`POST /api/verify\` fetches the URI you give us. We record the verdict, the U
 because the whole site is an append-only record of checks. We do not record who asked.
 
 We follow redirects and re-screen every hop against the same guard, we refuse private and
-loopback addresses, and we cap the document at 64 KB. If you point us at something large or
+loopback addresses and we cap the document at 64 KB. If you point us at something large or
 internal you get a refusal with the reason, not a hang.
 
 ## What we will not do

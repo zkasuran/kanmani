@@ -34,7 +34,7 @@ export default function AccountPage() {
         <h1 className="text-2xl font-semibold tracking-tight">Account</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-muted">
           One passkey ceremony gives three independent keys: the account you sign in with, the
-          identity that signs verification receipts, and the key that encrypts anything private.
+          identity that signs verification receipts and the key that encrypts anything private.
           Nothing is stored on this device and nothing secret reaches the server, so clearing local
           storage loses nothing and a second device reproduces the same keys exactly.
         </p>
@@ -58,11 +58,11 @@ content    = HKDF(prfOutput, info="kanmani.vitreous.v1")   -> AES-256-GCM key`}<
           <p className="mt-3 text-[13px] leading-relaxed text-muted">
             The honest limit: HKDF makes the three keys independent of each other, not independent
             of the PRF output. Anyone holding those 32 bytes holds all three. That is equally true
-            of deriving from three separate salts, at a different point in the flow, and saying so
+            of deriving from three separate salts, at a different point in the flow and saying so
             beats implying a compartmentalisation that does not exist.
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-muted">
-            A salt costs a ceremony, and a ceremony costs a prompt. Three namespaces as three salts
+            A salt costs a ceremony and a ceremony costs a prompt. Three namespaces as three salts
             would be three prompts. Category Labs, who build Mera, confirmed on 2026-09-18 that
             HKDF namespacing counts as genuinely namespaced. It is also their own pattern: Mera&apos;s
             secret vault derives its AES key from the same PRF output with fixed HKDF info,

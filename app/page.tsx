@@ -68,7 +68,7 @@ export default async function Home() {
 
       {/* ---------------------------------------------------------------- the breakdown */}
       <Panel
-        title="every document with an evidence pointer, and what it turned out to be"
+        title="every document with an evidence pointer and what it turned out to be"
         subtitle={
           <>
             {p.feedbacksWithUri.toLocaleString()} of {p.feedbacks.toLocaleString()} feedbacks carry a

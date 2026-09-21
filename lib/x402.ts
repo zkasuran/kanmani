@@ -3,14 +3,14 @@
  *
  * An agent can pay to have another agent's claim checked, in USDC, on the chain whose claims it
  * is checking. That closes the loop this project is about: the thing that audits payments is
- * itself paid for over the rail it audits, and its own settlement lands in its own index like
+ * itself paid for over the rail it audits and its own settlement lands in its own index like
  * anybody else's.
  *
  * ## Everything below was read from the spec and confirmed by calling, in that order
  *
  * The shapes come from `specs/x402-specification-v2.md` in the protocol repository, not from
  * memory. Writing it from memory the first time produced a v1-shaped payload with `scheme` and
- * `network` at the top level, and the live facilitator answered `unsupported_scheme` because v2
+ * `network` at the top level and the live facilitator answered `unsupported_scheme` because v2
  * moved the chosen method into an `accepted` object and it found nothing to read. Two details
  * that cost that round trip, kept here so nobody re-derives them:
  *
@@ -49,11 +49,11 @@ export const FACILITATOR = process.env.X402_FACILITATOR ?? "https://x402-facilit
  * Where a payment goes.
  *
  * The one EVM identity behind this work. Public by design: an address belongs in a submission and
- * on a verification page, and the key that signs for it never leaves the machine it lives on.
+ * on a verification page and the key that signs for it never leaves the machine it lives on.
  */
 export const PAY_TO = process.env.X402_PAY_TO ?? "0xDB6c6340342e71A63cD11Ebac2185204b7777777";
 
-/** Section 5.1.2. Note `amount`, and note that nothing describing the resource lives in here. */
+/** Section 5.1.2. Note `amount` and note that nothing describing the resource lives in here. */
 export type PaymentRequirements = {
   scheme: "exact";
   network: string;
@@ -225,7 +225,7 @@ export async function verifyPayment(
 ): Promise<{ valid: true; payer: string } | { valid: false; reason: string; ours: boolean }> {
   const r = await callFacilitator<FacilitatorVerify>("/verify", payload);
   // `ours` separates "we could not check your payment" from "your payment is not valid". The
-  // first is a 503 and the second is a 402, and a client has to be able to tell them apart.
+  // first is a 503 and the second is a 402 and a client has to be able to tell them apart.
   if (!r.ok) return { valid: false, reason: r.reason, ours: true };
   if (!r.body.isValid) {
     return {
@@ -276,7 +276,7 @@ export function challenge(url: string, error: string) {
     accepts: [requirements()],
     extensions: {},
     // Not part of the spec and included anyway, because a human will open this endpoint in a
-    // browser long before any agent posts to it, and a bare machine challenge tells them nothing.
+    // browser long before any agent posts to it and a bare machine challenge tells them nothing.
     help: {
       meaning: "402 here means pay me, not broken.",
       price: "0.01 USDC on Monad, chain 143, six decimals.",

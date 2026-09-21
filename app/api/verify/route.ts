@@ -28,7 +28,7 @@ const RESOURCE = `${SITE}/api/verify`;
  * ## Free preview, always
  *
  * A caller cannot consent to a price without seeing what it buys. So an unpaid request still gets
- * the full shape of the answer, and if the document is already in our index it gets the real
+ * the full shape of the answer and if the document is already in our index it gets the real
  * verdict for nothing, because we did that work once already and charging twice for it would be
  * a toll rather than a price.
  */
@@ -65,7 +65,7 @@ export async function POST(req: Request) {
   }
 
   if (!uri) {
-    return problem(400, "Nothing to check", 'Give a "uri", or an "id" of a claim in this index.');
+    return problem(400, "Nothing to check", 'Give a "uri" or an "id" of a claim in this index.');
   }
 
   /* ------------------------------------------------ free: we already checked this exact thing */
@@ -82,7 +82,7 @@ export async function POST(req: Request) {
             paid: false,
             // Said plainly rather than implied by the absence of a charge.
             whyFree:
-              "This document is already in our index with a recorded verdict, so nothing was fetched and nothing was charged. Re-checking it on demand would cost a request on somebody else's server, and you can ask for that by posting without a feedbackHash.",
+              "This document is already in our index with a recorded verdict, so nothing was fetched and nothing was charged. Re-checking it on demand would cost a request on somebody else's server and you can ask for that by posting without a feedbackHash.",
             claimId: hit.id,
             url: `${SITE}/claim/${encodeURIComponent(hit.id)}`,
             verdict: {
@@ -117,7 +117,7 @@ export async function POST(req: Request) {
   const verified = await verifyPayment(payment.payload);
   if (!verified.valid) {
     // Whose fault it is decides the status code. A facilitator outage answered as 402 would make
-    // a client re-sign, and re-signing burns a nonce for nothing.
+    // a client re-sign and re-signing burns a nonce for nothing.
     if (verified.ours) {
       return problem(503, "We could not check your payment", verified.reason, {
         retryable: true,
@@ -158,7 +158,7 @@ export async function POST(req: Request) {
           headerUsed: payment.header,
           note: settled.settled
             ? "This settlement is itself an x402 payment on Monad, so it can be checked by this same endpoint."
-            : "The check was performed and returned below. Settlement did not confirm, and the reason is recorded rather than hidden.",
+            : "The check was performed and returned below. Settlement did not confirm and the reason is recorded rather than hidden.",
         },
         verdict: result.verdict,
         hashWasSupplied: result.hashWasSupplied,

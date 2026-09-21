@@ -7,7 +7,7 @@ export const revalidate = 0;
 
 export const metadata = {
   title: "Status",
-  description: "How fresh every number on this site is, and what is stale.",
+  description: "How fresh every number on this site is and what is stale.",
 };
 
 /** A worker that is not scheduled is a worker that does not run, so the schedule is published. */
@@ -25,7 +25,7 @@ const WORKERS = [
   {
     name: "Fovea, the verdict sweep",
     what: "Walks every claim down the ladder and appends a verdict. Never updates one.",
-    cadence: "on demand, and the history of every check is kept",
+    cadence: "on demand and the history of every check is kept",
   },
   {
     name: "the record probe",
@@ -118,7 +118,7 @@ export default async function Status() {
           <Derivation sql={f.sql} />
         </Panel>
 
-        <Panel title="workers, and what schedules them">
+        <Panel title="workers and what schedules them">
           <p className="mb-3 text-[12.5px] leading-relaxed text-muted">
             A worker that is not scheduled is a worker that does not run. The schedule lives in the
             repository and the deploy installs it, rather than living in somebody&apos;s memory.
@@ -140,7 +140,7 @@ export default async function Status() {
       {/* ---------------------------------------------------------------- corrections */}
       <Panel
         title={`verdicts that have changed · ${changed.rows.length}`}
-        subtitle="Either we were wrong and corrected it, or somebody fixed their document and the page moved on its own. Both are worth showing, and neither is visible in a store that updates in place."
+        subtitle="Either we were wrong and corrected it or somebody fixed their document and the page moved on its own. Both are worth showing and neither is visible in a store that updates in place."
       >
         {changed.rows.length === 0 ? (
           <p className="py-3 text-[13px] text-muted">

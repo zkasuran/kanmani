@@ -22,7 +22,7 @@ test("nothing else is writable either, including anything new", () => {
   }
 });
 
-test("the response is 100 or 0, and nothing in between", () => {
+test("the response is 100 or 0 and nothing in between", () => {
   // A middle value would imply a confidence we do not have. Either the transaction was on the
   // chain the document named or it was not.
   assert.equal(responseFor("true"), 100);
@@ -30,7 +30,7 @@ test("the response is 100 or 0, and nothing in between", () => {
 });
 
 test("the average of our responses means something specific", () => {
-  // Because only checked claims are written, and each is 100 or 0, getSummary's average over our
+  // Because only checked claims are written and each is 100 or 0, getSummary's average over our
   // tag is exactly the percentage of checked payment claims that resolved. That is the property
   // that makes writing a uint8 defensible at all.
   const outcomes: ("true" | "false")[] = ["true", "false", "false", "false"];
@@ -41,7 +41,7 @@ test("the average of our responses means something specific", () => {
 /* ---------------------------------------- the request hash */
 
 test("the same claim always maps to the same request hash", () => {
-  // A random hash per run would make every re-check a new row, and getSummary counts rows. Our
+  // A random hash per run would make every re-check a new row and getSummary counts rows. Our
   // own average would drift every time we looked again.
   const a = requestHashFor("143_10182_0xabc_2");
   const b = requestHashFor("143_10182_0xabc_2");

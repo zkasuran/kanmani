@@ -19,7 +19,7 @@ interface IUSDC {
 ///     --private-key "$HOUSE_WALLET_PRIVATE_KEY"
 ///
 /// The shape is a metered API priced at 2 cents a call. The buyer escrows enough for 70 calls,
-/// the agent delivers, and the settlement pays for the 30 actually made. 0.80 USDC goes back.
+/// the agent delivers and the settlement pays for the 30 actually made. 0.80 USDC goes back.
 /// That returning remainder is the honesty test of this contract: keeping it would be invisible to
 /// almost every buyer, which is exactly why it goes back.
 ///

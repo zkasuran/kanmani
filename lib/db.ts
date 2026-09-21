@@ -4,7 +4,7 @@
  * Cornea reads two schemas that are owned by different things and have different lifecycles:
  *
  * - `public` belongs to Envio. It is dropped and recreated on every indexer resync, so nothing
- *   here may hold a reference to a row in it across requests, and no query may assume a table
+ *   here may hold a reference to a row in it across requests and no query may assume a table
  *   exists. A resync mid-request shows as an error, which is honest, rather than as a stale
  *   number, which is not.
  * - `fovea` belongs to us. Append only. It survives a resync precisely because it is not in
@@ -42,7 +42,7 @@ export function connectionString(env: NodeJS.ProcessEnv = process.env): string {
   const pw = env.ENVIO_PG_PASSWORD;
   if (!pw) {
     throw new Error(
-      "Cornea needs a database. Set FOVEA_DATABASE_URL, or ENVIO_PG_PASSWORD plus the ENVIO_PG_* " +
+      "Cornea needs a database. Set FOVEA_DATABASE_URL or ENVIO_PG_PASSWORD plus the ENVIO_PG_* " +
         "parts. There is no default password on purpose.",
     );
   }

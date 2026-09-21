@@ -1,5 +1,5 @@
 /**
- * Every number Cornea puts on a page comes from exactly one query in this file, and every page
+ * Every number Cornea puts on a page comes from exactly one query in this file and every page
  * that shows a number can show the query that produced it.
  *
  * That is not documentation politeness. The entire claim of this project is that somebody else's
@@ -156,7 +156,7 @@ export async function networkSplit(): Promise<Sourced<NetworkSplit[]>> {
   );
 }
 
-/** Which published mapping read each document, and what it decided. Coverage, in the open. */
+/** Which published mapping read each document and what it decided. Coverage, in the open. */
 export type MappingCoverage = { mapping: string; outcome: Outcome; count: number };
 
 const MAPPING_COVERAGE_SQL = `
@@ -333,7 +333,7 @@ export type AgentRow = {
 export type AgentFilter = {
   /** `unique` = nobody else shares this agent's record. The differentiator filter. */
   cluster?: "unique" | "shared" | "any";
-  /** Only agents whose record still resolves, or only those whose record is gone. */
+  /** Only agents whose record still resolves or only those whose record is gone. */
   records?: "resolving" | "dead" | "any";
   declaresX402?: boolean;
   /** Only agents carrying at least one feedback with an evidence pointer. */
@@ -357,7 +357,7 @@ export const AGENTS_ORDER_RULE =
  * The FROM and WHERE, built once and shared by the list and its count.
  *
  * Shared deliberately. A count computed from a different predicate than the list it labels is
- * the classic way a filtered page ends up saying "312 agents" above 40 rows, and nobody notices
+ * the classic way a filtered page ends up saying "312 agents" above 40 rows and nobody notices
  * because both numbers look plausible on their own.
  */
 function agentSource(f: AgentFilter, params: unknown[]): string {
@@ -778,8 +778,8 @@ export type RecordProbeRow = {
   scheme: string;
   /**
    * What the probe means, from `fovea.record_state`. One of `onchain`, `answered`, `gone`,
-   * `paywalled`, `refused`, `nohost`, `malformed`, `unknown`, or null when nothing has probed
-   * this record yet. Never-looked is a state, and it is not `gone`.
+   * `paywalled`, `refused`, `nohost`, `malformed`, `unknown` or null when nothing has probed
+   * this record yet. Never-looked is a state and it is not `gone`.
    */
   state: RecordState | null;
   reachable: boolean | null;
@@ -938,7 +938,7 @@ export const STATE_MEANING: Record<RecordState | "not probed", string> = {
   malformed: "The URI was never a usable pointer. Nothing was deleted, because it could not have worked.",
   unknown:
     "We could not find out. A rate limit, a timeout, a server error or a document past our own size cap. Never an accusation.",
-  "not probed": "Nothing has asked about this document yet. Not having looked is a state, and it is not a failure.",
+  "not probed": "Nothing has asked about this document yet. Not having looked is a state and it is not a failure.",
 };
 
 /**

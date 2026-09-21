@@ -5,7 +5,7 @@
  *   node --experimental-strip-types src/cli/optic.ts --dry
  *   node --experimental-strip-types src/cli/optic.ts
  *
- * ## This used to try to write unsolicited verdicts. It could not, and that is the finding
+ * ## This used to try to write unsolicited verdicts. It could not and that is the finding
  *
  * The first version of this walked our verdicts and wrote one row per checked claim. Every call
  * reverted with `Not authorized`. Simulating `validationRequest` from three addresses settled it:
@@ -16,7 +16,7 @@
  * | the agent's own declared wallet | revert `Not authorized` |
  * | the NFT owner | passes |
  *
- * **Only the agent's owner can open a validation, and they name the validator when they do.** A
+ * **Only the agent's owner can open a validation and they name the validator when they do.** A
  * validator cannot publish an opinion about somebody else's agent, however true that opinion is.
  *
  * That explains something we had measured and not explained: Monad's Validation Registry held
@@ -63,7 +63,7 @@ function parseArgs(argv: string[]): Args {
  *
  * An agent with several claims gets the worst one that was actually decided, because a summary
  * that reported the best would be the single most misleading thing this project could publish. An
- * agent with no decided claim gets nothing, and the worker says so rather than inventing a score.
+ * agent with no decided claim gets nothing and the worker says so rather than inventing a score.
  */
 async function verdictFor(pool: pg.Pool, agentId: bigint) {
   const { rows } = await pool.query(
@@ -123,7 +123,7 @@ export async function run(argv = process.argv.slice(2)): Promise<void> {
   console.log(`${requests.length} request${requests.length === 1 ? "" : "s"} found\n`);
 
   for (const r of requests) {
-    // Already answered? `response` is non-zero only once we have written one, and a revert here
+    // Already answered? `response` is non-zero only once we have written one and a revert here
     // means the request is unknown, which cannot happen for a hash we just read from its own
     // event. Either way, not answering twice is the point.
     let answered = false;
@@ -147,7 +147,7 @@ export async function run(argv = process.argv.slice(2)): Promise<void> {
     if (!v || !isWritable(v.outcome)) {
       // Refusing to answer is the honest outcome here and it is not a failure. Writing a number
       // for an agent whose claims we could not check would be the exact thing this project
-      // exists to argue against, and on chain it would be permanent.
+      // exists to argue against and on chain it would be permanent.
       console.log(
         `  refuse  agent ${r.agentId}, we hold no decided verdict about it. Nothing written, on purpose`,
       );

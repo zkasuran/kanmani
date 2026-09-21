@@ -1,7 +1,7 @@
 /**
  * Iris: three independent keys from one passkey ceremony.
  *
- * The account you sign in with, the identity that signs verification receipts, and the key that
+ * The account you sign in with, the identity that signs verification receipts and the key that
  * encrypts anything private. One user-verification prompt for all three.
  *
  * ## Why HKDF rather than three PRF salts, settled rather than assumed
@@ -27,7 +27,7 @@
  * about the others, because HKDF-Expand is a PRF over the extracted pseudorandom key and the
  * `info` strings are distinct and length-prefixed by their own content. What it does NOT buy is
  * independence from the PRF output itself. Anyone holding the 32-byte PRF output holds all three
- * keys. That is true of per-salt derivation too, at a different point, and it is the honest thing
+ * keys. That is true of per-salt derivation too, at a different point and it is the honest thing
  * to say rather than implying a compartmentalisation that does not exist.
  *
  * ## Nothing here touches the network or the DOM
@@ -137,7 +137,7 @@ export async function deriveSecp256k1(
 }
 
 export type IrisKeys = {
-  /** secp256k1. Signs in, owns listings, and is an ordinary EVM address. */
+  /** secp256k1. Signs in, owns listings and is an ordinary EVM address. */
   account: { privateKey: Uint8Array; publicKey: Uint8Array; address: `0x${string}` };
   /** Ed25519. Signs receipts. Not a wallet and cannot move money. */
   attestation: { privateKey: Uint8Array; publicKey: Uint8Array; id: string };
@@ -179,7 +179,7 @@ export async function deriveKeys(prfOutput: Uint8Array): Promise<IrisKeys> {
  * EIP-55 checksummed address from an uncompressed public key.
  *
  * Written out rather than imported so the checksum is visible: the mixed case is not decoration,
- * it is a typo check, and an address rendered in flat lowercase loses it.
+ * it is a typo check and an address rendered in flat lowercase loses it.
  */
 export function evmAddress(uncompressedPublicKey: Uint8Array): `0x${string}` {
   const body = uncompressedPublicKey.length === 65 ? uncompressedPublicKey.slice(1) : uncompressedPublicKey;
@@ -200,9 +200,9 @@ export function evmAddress(uncompressedPublicKey: Uint8Array): `0x${string}` {
  * base64url and hex, written out rather than reached for.
  *
  * `Buffer` is a Node global. These functions run in the browser, where it does not exist unless
- * something polyfills it, and a bundler that happens to polyfill it today is a dependency on a
+ * something polyfills it and a bundler that happens to polyfill it today is a dependency on a
  * build setting rather than on the language. The failure mode is the worst kind: everything
- * passes in Node, every test is green, and the page throws on a judge's machine during a live
+ * passes in Node, every test is green and the page throws on a judge's machine during a live
  * gate. So: no Buffer below this line.
  */
 export function toBase64url(bytes: Uint8Array): string {

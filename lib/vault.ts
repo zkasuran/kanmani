@@ -14,7 +14,7 @@
  * to sign in.
  *
  * Their format also stores a `credentialId` and a `prfSalt` alongside the ciphertext. We store
- * neither, anywhere, on purpose, and a format that requires them would quietly reintroduce the
+ * neither, anywhere, on purpose and a format that requires them would quietly reintroduce the
  * state the stateless gate is looking for.
  *
  * Their construction is still the one being followed: an AES-256-GCM key from a PRF output via
@@ -24,7 +24,7 @@
  *
  * The context string goes in as AES-GCM additional authenticated data, so a job brief cannot be
  * opened as agent memory even though both use the same content key. Without it, one key opens
- * everything that key ever sealed, and a server that can move blobs between slots can change what
+ * everything that key ever sealed and a server that can move blobs between slots can change what
  * a client believes a blob is. AAD is free and it removes that entirely.
  */
 
@@ -70,7 +70,7 @@ async function key(contentKey: Uint8Array): Promise<CryptoKey> {
  * Encrypt.
  *
  * A fresh random nonce every time, never a counter. GCM loses everything on a nonce reuse under
- * the same key, and a counter needs state to be correct. There is no state here by design, so a
+ * the same key and a counter needs state to be correct. There is no state here by design, so a
  * counter would be exactly the wrong choice: 96 random bits is the version that cannot be got
  * wrong by clearing local storage.
  */
@@ -108,7 +108,7 @@ export async function open(
   if (sealed.v !== 1) return { ok: false, reason: `unknown vault format version ${sealed.v}` };
 
   // Checked before decrypting as well as authenticated by GCM. The AAD check would catch a
-  // relabelled blob anyway, and failing early with a specific reason beats a generic auth error
+  // relabelled blob anyway and failing early with a specific reason beats a generic auth error
   // that gives a caller nothing to act on.
   if (expectedContext !== undefined && sealed.context !== expectedContext) {
     return {
@@ -143,7 +143,7 @@ export async function open(
     return {
       ok: false,
       reason:
-        "authentication failed: this ciphertext was not produced by this key for this context, or it has been altered",
+        "authentication failed: this ciphertext was not produced by this key for this context or it has been altered",
     };
   }
 }
@@ -187,8 +187,8 @@ export const CONTEXT = {
 /**
  * Exactly what a client signs to store a blob.
  *
- * Defined here, once, and imported by both the browser that signs it and the route that checks
- * it. Two copies of this would be two things that can disagree, and the symptom would be writes
+ * Defined here, once and imported by both the browser that signs it and the route that checks
+ * it. Two copies of this would be two things that can disagree and the symptom would be writes
  * silently rejected with a correct-looking signature.
  *
  * Fixed order, newline separated, with a domain prefix so a signature over these bytes cannot be

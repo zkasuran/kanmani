@@ -41,7 +41,7 @@ export default async function Validate() {
         </h1>
         <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
           Anyone can leave feedback about any agent. Almost nobody has ever asked for one to be
-          independently checked. That is not apathy, it is how the contract works, and the
+          independently checked. That is not apathy, it is how the contract works and the
           difference is worth understanding before you read the gap as a community failing.
         </p>
       </div>
@@ -76,7 +76,7 @@ export default async function Validate() {
         </table>
         <p className="mt-3 max-w-3xl text-[14px] leading-relaxed text-muted">
           <span className="text-[var(--color-text)]">
-            Only an agent&apos;s owner can open a validation, and they name the validator when they
+            Only an agent&apos;s owner can open a validation and they name the validator when they
             do.
           </span>{" "}
           A validator cannot publish an opinion about somebody else&apos;s agent, however true that
@@ -91,7 +91,7 @@ export default async function Validate() {
         </p>
       </Panel>
 
-      <Panel title="so ask, and we answer" subtitle="Two calls from your own wallet, no signup, no key.">
+      <Panel title="so ask and we answer" subtitle="Two calls from your own wallet, no signup, no key.">
         <ol className="space-y-4 text-[14px] leading-relaxed">
           <li>
             <p className="font-mono text-[11px] uppercase tracking-wide text-faint">
@@ -114,7 +114,7 @@ export default async function Validate() {
               Our responder watches for requests naming{" "}
               <Mono className="text-[var(--color-brand)]">{VALIDATOR}</Mono> and writes a{" "}
               <Mono>validationResponse</Mono> carrying the verdict, a link to the claim page it came
-              from, and the hash of the receipt.
+              from and the hash of the receipt.
             </p>
           </li>
           <li>
@@ -130,7 +130,7 @@ export default async function Validate() {
       <Panel title="what our response means, exactly">
         <p className="max-w-3xl text-[14px] leading-relaxed text-muted">
           The contract takes a <Mono>uint8</Mono> and <Mono>getSummary</Mono> averages it. That is a
-          score, and our verdicts are not a score. Four outcomes do not sit on a scale. So we only
+          score and our verdicts are not a score. Four outcomes do not sit on a scale. So we only
           write the ones we actually decided:
         </p>
         <table className="mt-3 w-full text-sm">
@@ -169,7 +169,7 @@ export default async function Validate() {
         </p>
         <p className="mt-3 max-w-3xl text-[14px] leading-relaxed text-muted">
           <span className="text-[var(--color-text)]">We will refuse to answer</span> if we hold no
-          decided verdict about your agent, and the refusal is silent on chain rather than a zero.
+          decided verdict about your agent and the refusal is silent on chain rather than a zero.
           Writing a number for an agent we could not check would be permanent and wrong.{" "}
           <Link href="/method" className="text-[var(--color-brand)] hover:underline">
             How each verdict is decided →

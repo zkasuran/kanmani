@@ -1,7 +1,7 @@
 /**
  * Rendering what a registration document does when you ask it.
  *
- * Eight states and a ninth for never-asked, and the colours are chosen the same way the verdict
+ * Eight states and a ninth for never-asked and the colours are chosen the same way the verdict
  * colours are: the ones that describe an operator's document being gone look different from the
  * ones that describe our own failure to find out. A rate limit on our side must never render in
  * the colour we use for a deletion.

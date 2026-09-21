@@ -64,7 +64,7 @@ be published at all: collapsing them would let somebody else's outage publish as
 
 - ${SITE}/method       how each rung is decided, with the command to re-derive every one by hand
 - ${SITE}/operators    the registry clustered by registration document
-- ${SITE}/status       how fresh every number here is, and what is stale
+- ${SITE}/status       how fresh every number here is and what is stale
 - ${SITE}/schema.json  the shape of every JSON response
 - ${SITE}/agents.md    the safe-access contract, if you are an agent reading this
 

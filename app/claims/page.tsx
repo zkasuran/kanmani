@@ -7,7 +7,7 @@ export const revalidate = 0;
 
 export const metadata = {
   title: "Claims",
-  description: "Every evidence document on Monad with a URI, and what checking it against the chain found.",
+  description: "Every evidence document on Monad with a URI and what checking it against the chain found.",
 };
 
 const OUTCOMES: { key: Outcome | "all"; label: string }[] = [

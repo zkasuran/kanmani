@@ -9,7 +9,7 @@
  * ## Why the record goes on chain rather than at a URL
  *
  * Our own measurement over all 2,012 distinct registration documents on Monad: 8,095 agents point
- * at a document that returns a deletion, and 137 point at documents written straight into
+ * at a document that returns a deletion and 137 point at documents written straight into
  * `tokenURI`, which cannot 404 because there is no host to ask. Registering ourselves at a URL
  * after publishing that number would be advice we do not take.
  *
@@ -22,7 +22,7 @@
  * and the owner (passes). So a validator cannot write an unsolicited verdict about somebody
  * else's agent, which is a large part of why the registry is empty on Monad.
  *
- * We can validate our own agent because we own it. Everyone else has to ask, and `/validate`
+ * We can validate our own agent because we own it. Everyone else has to ask and `/validate`
  * publishes exactly how.
  */
 import { createPublicClient, createWalletClient, http, type Hex } from "viem";
@@ -141,7 +141,7 @@ export async function run(argv = process.argv.slice(2)): Promise<void> {
 
   /* -------------------------------------------------- validate it */
 
-  // Our own agent, our own check, and the page says so. The point is not that we vouch for
+  // Our own agent, our own check and the page says so. The point is not that we vouch for
   // ourselves, it is that the row exists at all on a registry nobody has ever written to.
   const claimId = `self:${agentId}`;
   const requestHash = keccak256(toHex(`${TAG}\n${claimId}`));
