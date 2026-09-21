@@ -41,6 +41,10 @@ contracts/lib/
 /out/
 next-env.d.ts
 
+# TypeScript's incremental build cache. Machine-local, rewritten by every build, and 300 KB of
+# churn in a diff that is supposed to be readable. `npm run typecheck` regenerates it.
+tsconfig.tsbuildinfo
+
 # The x402 signing helper is a local tool that touches the house key at runtime. It is not part
 # of the product and it never ships.
 /x402sign.mjs
