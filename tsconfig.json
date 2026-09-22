@@ -40,6 +40,7 @@
     "node_modules",
     "indexer",
     "contracts",
+    "cre",
     "verifier/**/*.test.ts"
   ]
 }
