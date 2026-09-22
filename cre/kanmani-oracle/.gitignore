@@ -1,0 +1,4 @@
+*.env
+node_modules/
+bun.lock
+.cre_build_tmp.js

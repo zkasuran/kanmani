@@ -1,0 +1,7 @@
+{
+  "schedule": "0 */5 * * * *",
+  "agentId": "10182",
+  "scleraAddress": "0x0000000000000000000000000000000000000000",
+  "slaApiBase": "https://kanmani.xyz",
+  "chainName": "monad-mainnet"
+}

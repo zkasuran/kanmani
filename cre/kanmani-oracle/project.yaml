@@ -1,0 +1,19 @@
+# CRE project settings for the Kanmani slashing oracle.
+#
+# The workflow reads two things and combines them: the bond terms from Sclera on Monad mainnet
+# (the chain half of the bounty's "integrate at least one blockchain with an external API"), and
+# the agent's measured claim-truth rate from the Kanmani API (the external half). Monad mainnet is
+# the only chain it touches, so it is the only RPC configured.
+#
+# Monad mainnet is a first-class chain in the SDK: chain id 143, selector 8481857512324358265.
+# The simulator resolves the chain name below to that selector and needs this RPC to answer.
+
+staging-settings:
+  rpcs:
+    - chain-name: monad-mainnet
+      url: https://rpc.monad.xyz
+
+production-settings:
+  rpcs:
+    - chain-name: monad-mainnet
+      url: https://rpc.monad.xyz
