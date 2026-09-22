@@ -932,7 +932,7 @@ export const STATE_MEANING: Record<RecordState | "not probed", string> = {
     "The document is written into tokenURI itself. There is no host to ask, so it cannot be deleted later.",
   answered: "The document was fetched and read.",
   gone: "The host answered and said the document is not there.",
-  paywalled: "The host is alive and returned HTTP 402, asking for payment before it will serve the document.",
+  paywalled: "The host returned a real x402 payment challenge, so it is a live agent asking to be paid before it serves the document. A 402 that is not a challenge, like a suspended host, is counted as gone rather than here.",
   refused: "The host is alive and will not serve the document to us.",
   nohost: "The domain in the URI no longer resolves to any host.",
   malformed: "The URI was never a usable pointer. Nothing was deleted, because it could not have worked.",

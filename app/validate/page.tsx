@@ -189,7 +189,7 @@ export default async function Validate() {
             10252
           </a>{" "}
           with our record written into <Mono>tokenURI</Mono> rather than hosted at a URL, because we
-          had just finished measuring that 8,095 agents on this chain point at a document that
+          had just finished measuring that 8,093 agents on this chain point at one document that
           returns a deletion. Registering at a URL after publishing that number would be advice we
           do not take.
         </p>

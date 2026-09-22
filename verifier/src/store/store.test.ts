@@ -153,3 +153,44 @@ test("the outcome column refuses a value the ladder cannot produce", { skip: adm
     /violates check constraint/,
   );
 });
+
+test(
+  "a 402 is paywalled only when it is a real x402 challenge, never a suspended host",
+  { skip: adminConn ? false : reason },
+  async () => {
+    // The bug this guards against shipped once: 539 records answering 402 from a suspended Vercel
+    // account were published as agents "alive and asking for payment", because record_state keyed
+    // on the status code alone. A status code is not a protocol. Both rows below answer 402. Only
+    // the one carrying a real x402 challenge is paywalled; the vendor-error one is gone.
+    //
+    // This fails against the old view, which classified both as paywalled. That is the point.
+    const rows = [
+      // A real x402 challenge: www-authenticate header plus a JSON body.
+      { h: "x402-live", auth: "x402 realm=\"pay\"", mt: "application/json", vendor: null },
+      // A suspended host answering 402 with a vendor error and a text body.
+      { h: "vercel-dead", auth: null, mt: "text/plain; charset=utf-8", vendor: "DEPLOYMENT_DISABLED" },
+      // A 402 with nothing to say for itself is treated as a dead deployment, not a live agent.
+      { h: "bare-402", auth: null, mt: null, vendor: null },
+    ];
+    for (const r of rows) {
+      await raw.query(
+        `INSERT INTO fovea.record_probe
+           (uri_hash, uri, scheme, reachable, http_status, media_type, www_authenticate, vendor_error, reason, checked_at)
+         VALUES ($1,$2,'http',false,402,$3,$4,$5,'HTTP 402',now())`,
+        [r.h, `https://${r.h}/doc.json`, r.mt, r.auth, r.vendor],
+      );
+    }
+
+    const state = async (h: string): Promise<string> => {
+      const q = await raw.query<{ state: string }>(
+        "SELECT state FROM fovea.record_state WHERE uri_hash = $1",
+        [h],
+      );
+      return q.rows[0]!.state;
+    };
+
+    assert.equal(await state("x402-live"), "paywalled", "a real challenge is a live agent");
+    assert.equal(await state("vercel-dead"), "gone", "a vendor-error 402 is a dead host, not a paywall");
+    assert.equal(await state("bare-402"), "gone", "a 402 that is not a challenge is not paywalled");
+  },
+);

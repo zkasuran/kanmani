@@ -57,7 +57,7 @@ be published at all: collapsing them would let somebody else's outage publish as
 - ${n(p.agentsIndexed)} agents indexed. The registry's own counter slot says ${p.counterSlotCount === null ? "unknown" : n(p.counterSlotCount)}.
 - ${n(s.records)} distinct registration documents behind those agents.
 - ${gone ? `${n(gone.agents)} agents point at a document that returns a deletion. ${n(s.largestMemberCount)} of them share ONE document, registered by ${n(s.largestDistinctOwners)} distinct wallets.` : ""}
-- ${paywalled ? `${n(paywalled.agents)} agents point at a document that returns HTTP 402, asking for payment before it will describe its own agent.` : ""}
+- ${paywalled ? `${n(paywalled.agents)} agents point at a live x402 endpoint that asks for payment before it will describe its own agent.` : ""}
 - ${n(p.feedbacksWithUri)} of ${n(p.feedbacks)} feedbacks carry an evidence pointer. The rest point at nothing.
 
 ## What to read next

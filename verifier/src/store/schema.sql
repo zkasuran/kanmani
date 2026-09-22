@@ -93,6 +93,12 @@ CREATE TABLE IF NOT EXISTS fovea.record_probe (
   http_status    integer,
   byte_length    integer,
   media_type     text,
+  -- What a non-2xx response actually said, kept because a status code is not a protocol. x402
+  -- answers 402 with `www-authenticate: x402` and a JSON body. A suspended host answers 402 with
+  -- a vendor error header and a text/plain body. Reading the integer alone published the second
+  -- as the first for 539 records. `record_state` classifies on these, not on http_status.
+  www_authenticate text,
+  vendor_error     text,
   -- The name the document gives itself, when it is an agent record we can read. A registration
   -- that resolves but names nothing is a different thing from one that does not resolve.
   parsed_name    text,
@@ -122,18 +128,22 @@ ORDER BY uri_hash, checked_at DESC, id DESC;
 
 -- What a registration document's probe actually means, as one definition.
 --
--- `reachable` is a boolean and the truth has more states than that. The probe run over Monad's
--- 2,012 distinct records found, among the ones that did not return bytes:
+-- `reachable` is a boolean and the truth has more states than that. Among the records that did not
+-- return bytes, the interesting split is which failures are the operator's design and which are a
+-- death. A status code alone cannot tell them apart, so this reads the payload.
 --
---   539 answering HTTP 402, so the host is alive and asking for payment
---     3 answering HTTP 404, one of them shared by 8,093 agents
---    14 answering HTTP 429, which is a rate limit on OUR side of the conversation
---     2 whose domain no longer resolves at all
---     3 whose URI is not a usable pointer (a localhost URL, two placeholder CIDs)
+-- **402 is the trap.** On a chain whose agent economy runs on x402, a 402 can mean "this agent
+-- wants paying", which is alive and a design choice. It can equally be a hosting provider's
+-- suspended-account page, which is a death wearing the same number. The first carries
+-- `www-authenticate: x402` and a JSON body. The second carries a vendor error header
+-- (`x-vercel-error`) and a text/plain body. Classifying on the integer alone put 539 suspended
+-- documents, 545 agents, in `paywalled` on a project whose whole thesis is that a claim's shape is
+-- not its truth. So a 402 is `paywalled` ONLY when it looks like a real challenge. A vendor-error
+-- 402 falls through to `gone`.
 --
--- Collapsing those into "dead" would publish a rate limit as an operator's failure, which is the
--- same mistake the verdict ladder exists to refuse. `unknown` means we could not tell and 429
--- and 5xx belong there rather than beside a 404.
+-- Collapsing a rate limit or a timeout into "dead" would publish OUR failure as an operator's, which
+-- is the same mistake the verdict ladder exists to refuse. `unknown` means we could not tell, and
+-- 429 and 5xx belong there rather than beside a 404.
 --
 -- It is a view rather than a column so a re-read reclassifies old probes too. The probe records
 -- what happened; this decides what that means and the second one is allowed to improve.
@@ -144,9 +154,14 @@ SELECT p.*,
     WHEN p.scheme IN ('inline','data')          THEN 'onchain'
     WHEN p.reachable                            THEN 'answered'
     WHEN p.http_status IN (404, 410)            THEN 'gone'
-    -- Alive and wants paying. On a chain whose agent economy runs on x402 this is a state worth
-    -- keeping apart from a deletion, not a footnote.
-    WHEN p.http_status = 402                    THEN 'paywalled'
+    -- Alive and wants paying, but ONLY a real x402 challenge. A `www-authenticate: x402` header or
+    -- a JSON body is the challenge. A vendor error header is a suspended host, which is a death.
+    WHEN p.http_status = 402
+      AND p.vendor_error IS NULL
+      AND (p.www_authenticate ILIKE 'x402%'
+        OR p.media_type ILIKE 'application/json%') THEN 'paywalled'
+    -- A 402 that does not look like a challenge is a dead deployment answering with the wrong code.
+    WHEN p.http_status = 402                     THEN 'gone'
     WHEN p.http_status IN (401, 403)            THEN 'refused'
     WHEN p.reason LIKE 'DNS lookup failed%'     THEN 'nohost'
     -- The URI was never a usable pointer. Nobody deleted anything; it could not have worked.

@@ -94,7 +94,20 @@ export async function guardedFetch(
  */
 export type OnceResult =
   | { ok: true; status?: number; bytes?: Uint8Array; redirectTo?: string }
-  | { ok: false; reason: string };
+  | {
+      ok: false;
+      reason: string;
+      status?: number;
+      wwwAuthenticate?: string;
+      contentType?: string;
+      vendorError?: string;
+    };
+
+/** Node gives a header as string, string[] or undefined. Flatten it without inventing a value. */
+function headerText(v: string | string[] | undefined): string | undefined {
+  if (v === undefined) return undefined;
+  return Array.isArray(v) ? v.join(", ") : v;
+}
 
 export function fetchOnce(
   url: URL,
@@ -130,8 +143,22 @@ export function fetchOnce(
           return;
         }
         if (status < 200 || status >= 300) {
+          // Keep the headers that say WHAT this non-2xx is, before destroying the response.
+          //
+          // A status code is not a protocol. x402 answers 402 to mean "pay me" and Vercel answers
+          // 402 to mean "this account is suspended". Classifying on the integer alone reported
+          // 539 dead documents as live agents asking for payment. The discriminators are cheap.
+          // They are all here: `www-authenticate: x402` on a real challenge, a JSON content type,
+          // a vendor error header on a hosting failure.
+          done({
+            ok: false,
+            reason: `HTTP ${status}`,
+            status,
+            wwwAuthenticate: headerText(res.headers["www-authenticate"]),
+            contentType: headerText(res.headers["content-type"]),
+            vendorError: headerText(res.headers["x-vercel-error"]),
+          });
           res.destroy();
-          done({ ok: false, reason: `HTTP ${status}` });
           return;
         }
 

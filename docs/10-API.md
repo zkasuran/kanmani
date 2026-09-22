@@ -228,9 +228,10 @@ labelled that way so a consumer never reads it as ours. We did not test that the
 
 `registration.state` is one of `onchain`, `answered`, `gone`, `paywalled`, `refused`, `nohost`,
 `malformed`, `unknown`. It is `null` when nothing has probed that document yet. Never-looked is a
-state. It is not `gone`. Across Monad's 2,012 distinct registration documents: 1,308 answered, 539
-paywalled, 129 written into `tokenURI`, 9 never a usable pointer, 7 with no host left, 17 we could
-not read. Three records covering 8,095 agents answer with a deletion.
+state. It is not `gone`. Across Monad's 2,012 distinct registration documents: 1,308 answered, 129
+written into `tokenURI`, 9 never a usable pointer, 7 with no host left, 17 we could not read, 0 with
+a real x402 payment challenge. 542 records covering 8,640 agents answer with a deletion, one document
+behind 8,093 of them.
 
 `sharedWithAgents` is how many **other** agents point at the same document, so `0` means nobody
 else does. `sharedAcrossWallets` is how many distinct wallets registered it. Monad's largest

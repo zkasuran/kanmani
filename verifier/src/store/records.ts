@@ -38,6 +38,13 @@ export type RecordProbe = {
   distinctOwners?: number;
   checkedAt: string;
   automatic?: boolean;
+  /**
+   * What a non-2xx response actually said. Recorded because a status code is not a protocol:
+   * classifying 402 on the integer alone published 539 suspended hosting accounts as live agents
+   * asking for payment. `record_state` reads these rather than the number.
+   */
+  wwwAuthenticate?: string;
+  vendorError?: string;
 };
 
 /** What the indexer holds about one record, which is the input to a probe. */
@@ -139,7 +146,15 @@ export async function probeRecord(
 
   const r = await resolveEvidence(t.uri);
   if (!r.ok) {
-    return { ...base, reachable: false, httpStatus: statusFrom(r.reason), reason: r.reason };
+    return {
+      ...base,
+      reachable: false,
+      httpStatus: r.status ?? statusFrom(r.reason),
+      mediaType: r.contentType,
+      wwwAuthenticate: r.wwwAuthenticate,
+      vendorError: r.vendorError,
+      reason: r.reason,
+    };
   }
 
   return {
@@ -181,8 +196,9 @@ export async function recordProbe(pool: pg.Pool, p: RecordProbe): Promise<number
   const r = await pool.query<{ id: string }>(
     `INSERT INTO fovea.record_probe
        (uri_hash, uri, scheme, reachable, http_status, byte_length, media_type,
-        parsed_name, reason, member_count, distinct_owners, checked_at, automatic)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13) RETURNING id`,
+        parsed_name, reason, member_count, distinct_owners, checked_at, automatic,
+        www_authenticate, vendor_error)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING id`,
     [
       p.uriHash,
       p.uri,
@@ -197,6 +213,8 @@ export async function recordProbe(pool: pg.Pool, p: RecordProbe): Promise<number
       p.distinctOwners ?? null,
       p.checkedAt,
       p.automatic ?? true,
+      p.wwwAuthenticate ?? null,
+      p.vendorError ?? null,
     ],
   );
   return Number(r.rows[0]!.id);

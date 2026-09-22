@@ -258,7 +258,7 @@ Every mapping is in `verifier/src/ladder/parse.ts` with the date it was induced,
 
 ## 6. The registry health and the document 8,093 agents share
 
-**Published as: 8,095 agents point at a document whose host answered and said it is not there.**
+**Published as: 8,640 agents point at a registration document whose host answered and said it is not there.**
 
 Eight states rather than a boolean, as a SQL view so the page, the feed and the API cannot disagree:
 
@@ -273,20 +273,27 @@ WHERE r."chainId" = 143 GROUP BY 1 ORDER BY agents DESC;
 ```
    state    | records | agents |         probed_at
 ------------+---------+--------+----------------------------
- gone       |       3 |   8095 | 2026-09-20 11:21:59.325+00
- answered   |    1308 |   1358 | 2026-09-20 11:29:58.766+00
- paywalled  |     539 |    545 | 2026-09-20 11:26:07.614+00
+ answered   |    1308 |   1358 | 2026-09-21 ...
+ gone       |     542 |   8640 | 2026-09-21 ...
  onchain    |     129 |    137 | 2026-09-20 11:21:53.654+00
  unknown    |      17 |     18 | 2026-09-20 11:22:09.582+00
- nohost     |       7 |     10 | 2026-09-20 11:22:17.895+00
  malformed  |       9 |      9 | 2026-09-20 11:22:07.506+00
+ nohost     |       7 |     10 | 2026-09-20 11:22:17.895+00
  not probed |       1 |      1 |
 ```
 
-**A boolean could not have carried this.** 545 agents are `paywalled`, meaning HTTP 402: a host that
-is alive and asking for payment, which is the opposite of dead. 18 are `unknown`, mostly our own
-rate limiting rather than anyone's failure. Publishing those as dead would have been wrong about 563
-agents.
+**A boolean could not have carried this.** 8,640 agents are `gone`, the host answered and the
+document is not there. 18 are `unknown`, mostly our own rate limiting rather than anyone's failure.
+Publishing the unknowns as dead would have been wrong about them.
+
+**We got the 402 classification wrong first. This is how it was caught.** An earlier pass read
+539 records as `paywalled`, meaning a host alive and asking for payment, because they answered HTTP
+402 and x402 uses 402 to mean pay me. Re-probing with the response headers recorded showed all 539
+carry `x-vercel-error: DEPLOYMENT_DISABLED` and a `text/plain` body. They are one suspended hosting
+account, 545 agents behind it, not a payment surface. A status code is not a protocol. `record_state`
+now calls a 402 `paywalled` only when it carries a real challenge (`www-authenticate: x402` or a JSON
+body). A vendor-error 402 falls through to `gone`. So `paywalled` reads 0 today and the payable
+third-party surface on Monad is one endpoint, ADEXTO, not three.
 
 The buckets must sum to the registry and they do not on their own:
 
@@ -303,7 +310,7 @@ FROM "Agent" WHERE "chainId" = 143;
  10253 |          80
 ```
 
-8095 + 1358 + 545 + 137 + 18 + 10 + 9 + 1 = **10,173**, plus **80** agents holding no document at
+8640 + 1358 + 137 + 18 + 10 + 9 + 1 = **10,173**, plus **80** agents holding no document at
 all, is **10,253** exactly. **Those 80 were falling out of a join silently.** No query failed and no
 test went red; the buckets simply summed to less than the registry. A registration that says nothing
 about itself is a finding rather than a gap in a join, so the page now prints its own sum next to the

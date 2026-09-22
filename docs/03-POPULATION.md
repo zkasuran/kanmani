@@ -117,26 +117,29 @@ definition reclassifies old probes without re-fetching anybody's server.
 
 | state | documents | agents | % of registry | what it means |
 |---|---|---|---|---|
-| `gone` | 3 | 8,095 | 78.96% | the host answered and said the document is not there |
+| `gone` | 542 | 8,640 | 84.27% | the host answered and said the document is not there, including 402s that are a suspended account rather than a real payment challenge |
 | `answered` | 1,308 | 1,358 | 13.25% | fetched and read |
-| `paywalled` | 539 | 545 | 5.32% | HTTP 402. Alive, asking for payment first |
 | `onchain` | 129 | 137 | 1.34% | the document is inside `tokenURI`. No host to ask |
 | `unknown` | 17 | 18 | 0.18% | we could not find out. Ours, not theirs |
 | `nohost` | 7 | 10 | 0.10% | the domain no longer resolves to any host |
 | `malformed` | 9 | 9 | 0.09% | never a usable pointer |
+| `paywalled` | 0 | 0 | 0% | a real x402 payment challenge. No document on Monad exposes one |
 | `refused` | 0 | 0 | 0% | alive, will not serve it to us. No document on Monad did this |
 | no document at all | 0 | 80 | 0.78% | registered with no `tokenURI`, nothing to ask |
-| **total** | **2,012** | **10,252** | | |
+| **total** | **2,012** | **10,253** | | |
 
-Percentages are rounded to two places, so the column does not total exactly 100. `refused` reads
-zero as a measurement rather than an omission: the seven populated states sum to all 2,012
-documents. The big cluster is 8,093 of the 8,095 `gone` agents, so two other agents behind two other
-documents are also gone.
+Percentages are rounded to two places, so the column does not total exactly 100. `refused` and
+`paywalled` read zero as a measurement rather than an omission. The big cluster is 8,093 of the 8,640
+`gone` agents, one dead Vercel document behind 7,962 wallets.
 
-**539 documents answer HTTP 402.** Payment Required. The host is alive, running, willing to describe
-its agent once you pay. On a chain whose agent economy runs on x402 that is a design choice, closer
-to `answered` than to `gone`. Fold it into "dead" and you have published 545 agents as broken when
-their operators built exactly what the standard invites.
+**We classified 402 wrong at first. Publishing the correction is the honest move.** 539 documents
+answer HTTP 402 and an earlier pass read them as `paywalled`, a host alive and asking for payment,
+because x402 uses 402 to mean pay me. Recording the response headers showed all 539 carry
+`x-vercel-error: DEPLOYMENT_DISABLED` and a `text/plain` body. They are one suspended hosting account,
+545 agents behind it, not a payment surface. A status code is not a protocol. A 402 counts as
+`paywalled` only when it carries a real challenge (`www-authenticate: x402` or a JSON body). Everything
+else falls through to `gone`. The project's own thesis is that a claim's shape is not its truth. This
+was the same mistake pointed inward, so it is corrected in the open rather than quietly.
 
 **14 of the 17 `unknown` documents answered HTTP 429.** That is our rate limit hitting their server,
 a fact about our pass rather than about their uptime. The other three are a timeout, a server error
@@ -356,7 +359,7 @@ FROM fovea.verdict_latest GROUP BY 1, 2 ORDER BY count DESC;
 | that any operator behaved badly | an expired preview deployment is an accident |
 | that the 8,093 agents are fake | real registrations by 7,962 real wallets. Only the document they name is gone |
 | that a `gone` document means a dead agent | the agent may work fine. Its self-description is what is missing |
-| that the 545 paywalled agents are broken | HTTP 402 is a design choice on a chain built around x402 |
+| that the 545 monadmogs agents are fraudulent | their host is a suspended Vercel account, not a payment surface. The document is gone, nothing more |
 | that the 18 `unknown` agents failed anything | we failed to find out. 14 of those were rate-limiting us |
 | that these counts are permanent | each is a measurement at a time |
 

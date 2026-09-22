@@ -250,8 +250,8 @@ record will show both readings.
 
 An agent looking for another agent to pay has a registry with 10,252 entries and no way to tell a
 working counterparty from a registration that has been dead for months. Measure it the cheapest
-possible way. All 2,012 distinct registration documents, probed once each: 8,095 agents point at a
-document whose host answers and says it is not there. That is 78.9% of the registry. 8,093 of those
+possible way. All 2,012 distinct registration documents, probed once each: 8,640 agents point at a
+document whose host answers and says it is not there. That is 84.3% of the registry. 8,093 of those
 agents, across 7,962 distinct wallets, point at one single URL:
 
 ```bash

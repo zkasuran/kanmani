@@ -68,7 +68,7 @@ payments is paid for over the rail it audits.
 **The first row in Monad's ERC-8004 Validation Registry.** Registered as agent
 [`10252`](https://monadexplorer.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
 with our record written into `tokenURI` rather than hosted at a URL, because we had just finished
-measuring that 8,095 agents point at a document that returns a deletion.
+measuring that 8,093 agents point at one document that returns a deletion.
 
 | contract | address |
 |---|---|

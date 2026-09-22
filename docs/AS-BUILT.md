@@ -66,8 +66,8 @@ fetched once rather than 8,093 times. Per host, serial, with a gap, because thre
 1,771 of them.
 
 Eight states rather than a boolean, as a SQL view so page, feed and API cannot disagree. The
-headline: **8,095 agents point at a document whose host answered and said it is not there**, and
-8,093 of those share one URL across 7,962 wallets.
+headline: **8,640 agents point at a document whose host answered and said it is not there**. 8,093
+of those share one URL across 7,962 wallets.
 
 ### Aqueous, the escrow
 
@@ -114,7 +114,7 @@ decrypts. A stranger holding the ciphertext gets an authentication failure. A fo
 ### Optic: the first row in the Validation Registry
 
 Registered as **agent 10252** with the record written into `tokenURI` rather than hosted, because
-we had just measured that 8,095 agents point at a document that returns a deletion.
+we had just measured that 8,093 agents point at one document that returns a deletion.
 
 The registry held **zero** rows against the Reputation Registry's 9,188 feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index

@@ -182,8 +182,8 @@ export default async function Operators() {
           <Finding
             n={paywalledAgents}
             of={h.agentsTotal}
-            head="agents whose document returns HTTP 402"
-            body="Payment Required. The host is alive and wants paying before it will describe its own agent. On a chain whose agent economy runs on x402 that is a design choice, not a failure and it is kept apart from a deletion for exactly that reason."
+            head="agents that expose a real x402 payment challenge"
+            body="A live endpoint answering with an x402 challenge, so a buyer could pay it. This is counted only on a real challenge. A host that answers 402 with a suspended-account page is counted as gone, not here, because a status code is not a protocol."
           />
         </div>
         <Derivation

@@ -46,8 +46,19 @@ export type FetchOutcome =
   /**
    * `reason` is written for a stranger reading a verdict page, so it says what was observed and
    * never what anyone intended. "Blocked, resolves to a private address" is a fact about DNS.
+   *
+   * The header fields are carried on a refusal for one reason: a status code is not a protocol.
+   * 402 means "pay me" to x402 and "this account is suspended" to a hosting provider, so whoever
+   * classifies this outcome needs what the response actually said, not just its number.
    */
-  | { ok: false; reason: string };
+  | {
+      ok: false;
+      reason: string;
+      status?: number;
+      wwwAuthenticate?: string;
+      contentType?: string;
+      vendorError?: string;
+    };
 
 /* ------------------------------------------------------------------ address screening */
 

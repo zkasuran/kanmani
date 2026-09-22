@@ -101,7 +101,7 @@ export async function GET() {
         type: ["string", "null"],
         enum: ["onchain", "answered", "gone", "paywalled", "refused", "nohost", "malformed", "unknown", null],
         description:
-          "What an agent's registration document does when asked. onchain: written into tokenURI, so it cannot be deleted. answered: fetched and read. gone: the host said it is not there. paywalled: HTTP 402, alive and asking for payment. refused: alive and will not serve it. nohost: the domain no longer resolves. malformed: never a usable pointer. unknown: we could not find out, which is ours and not theirs. null: nothing has asked yet.",
+          "What an agent's registration document does when asked. onchain: written into tokenURI, so it cannot be deleted. answered: fetched and read. gone: the host said it is not there, or it answered 402 with a suspended-account page that is not a real payment challenge. paywalled: returned a real x402 payment challenge, so it is a live agent asking to be paid first. refused: alive and will not serve it. nohost: the domain no longer resolves. malformed: never a usable pointer. unknown: we could not find out, which is ours not theirs. null: nothing has asked yet.",
       },
     },
     endpoints: {
