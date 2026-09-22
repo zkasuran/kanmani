@@ -53,13 +53,27 @@ export const NAMESPACE = {
   /** Signs in and owns listings. A wallet. */
   account: "kanmani.iris.v1",
   /**
-   * Signs verification receipts.
+   * Signs verification receipts published off chain, as a did:key.
    *
    * Deliberately NOT a wallet, which is the whole point. A receipt saying "this claim was checked
    * and here is what was found" should be attributable to a stable identity that reconstructs on
-   * any device, without that identity also being able to move money.
+   * any device, without that identity also being able to move money. This is ed25519, so it is a
+   * did:key and never an EVM address.
    */
   attestation: "kanmani.optic.v1",
+  /**
+   * Signs a verdict that a contract on Monad recovers with `ecrecover`.
+   *
+   * secp256k1, because `ecrecover` is the only signature scheme the EVM verifies cheaply and Monad
+   * ships no ed25519 precompile we have confirmed. This is the attestor the Sclera bond contract
+   * pins as immutable: a verdict is authorised by recovering this address, not by trusting the
+   * caller, which matters because the CRE mock forwarder's `report` is permissionless.
+   *
+   * It is still not the account wallet. It is a distinct key from the same one passkey ceremony
+   * that owns nothing and signs only verdicts, so the "the thing that attests is not the thing that
+   * holds money" separation holds on chain the way the ed25519 did:key holds it off chain.
+   */
+  onchainAttestation: "kanmani.optic-onchain.v1",
   /** Encrypts anything the server must not be able to read. */
   content: "kanmani.vitreous.v1",
 } as const;
@@ -139,8 +153,13 @@ export async function deriveSecp256k1(
 export type IrisKeys = {
   /** secp256k1. Signs in, owns listings and is an ordinary EVM address. */
   account: { privateKey: Uint8Array; publicKey: Uint8Array; address: `0x${string}` };
-  /** Ed25519. Signs receipts. Not a wallet and cannot move money. */
+  /** Ed25519. Signs receipts off chain as a did:key. Not a wallet and cannot move money. */
   attestation: { privateKey: Uint8Array; publicKey: Uint8Array; id: string };
+  /**
+   * secp256k1, whose EVM address a contract pins as the verdict signer it recovers. Not the account
+   * wallet: a distinct key that owns nothing and signs only verdicts.
+   */
+  onchainAttestation: { privateKey: Uint8Array; publicKey: Uint8Array; address: `0x${string}` };
   /** Raw 32 bytes for AES-256-GCM. */
   content: Uint8Array;
 };
@@ -155,14 +174,16 @@ export type IrisKeys = {
 export async function deriveKeys(prfOutput: Uint8Array): Promise<IrisKeys> {
   require32(prfOutput, "PRF output");
 
-  const [accountKey, attestationKey, content] = await Promise.all([
+  const [accountKey, attestationKey, onchainAttestationKey, content] = await Promise.all([
     deriveSecp256k1(prfOutput, NAMESPACE.account),
     derive(prfOutput, NAMESPACE.attestation),
+    deriveSecp256k1(prfOutput, NAMESPACE.onchainAttestation),
     derive(prfOutput, NAMESPACE.content),
   ]);
 
   const accountPub = secp256k1.getPublicKey(accountKey, false);
   const attestationPub = ed25519.getPublicKey(attestationKey);
+  const onchainAttestationPub = secp256k1.getPublicKey(onchainAttestationKey, false);
 
   return {
     account: { privateKey: accountKey, publicKey: accountPub, address: evmAddress(accountPub) },
@@ -170,6 +191,11 @@ export async function deriveKeys(prfOutput: Uint8Array): Promise<IrisKeys> {
       privateKey: attestationKey,
       publicKey: attestationPub,
       id: `did:key:kanmani:${toBase64url(attestationPub)}`,
+    },
+    onchainAttestation: {
+      privateKey: onchainAttestationKey,
+      publicKey: onchainAttestationPub,
+      address: evmAddress(onchainAttestationPub),
     },
     content,
   };

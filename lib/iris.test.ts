@@ -30,8 +30,10 @@ test("the same PRF output always derives the same three keys", async () => {
   const b = await deriveKeys(PRF);
   assert.deepEqual(a.account.privateKey, b.account.privateKey);
   assert.deepEqual(a.attestation.privateKey, b.attestation.privateKey);
+  assert.deepEqual(a.onchainAttestation.privateKey, b.onchainAttestation.privateKey);
   assert.deepEqual(a.content, b.content);
   assert.equal(a.account.address, b.account.address);
+  assert.equal(a.onchainAttestation.address, b.onchainAttestation.address);
 });
 
 test("the derived keys are pinned, so a refactor cannot move somebody's account", async () => {
@@ -49,6 +51,11 @@ test("the derived keys are pinned, so a refactor cannot move somebody's account"
     "23a178fd9061eadd2cb67259fe20d92c2074e88a6565e85b22051a314a910ca4",
   );
   assert.equal(k.attestation.id, "did:key:kanmani:I6F4_ZBh6t0stnJZ_iDZLCB06IplZehbIgUaMUqRDKQ");
+  // The on-chain attestor. A contract pins this address as immutable and recovers it from a verdict
+  // signature, so a change here silently makes every deployed bond reject a correct verdict. Pinned,
+  // and cross-checked against foundry's `cast wallet address` on the same derived private key, so the
+  // vector is agreed by two independent implementations rather than by this file agreeing with itself.
+  assert.equal(k.onchainAttestation.address, "0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf");
   assert.equal(
     Buffer.from(k.content).toString("hex"),
     "f1cd29ed4d6f88322730babddf6c0fd9a319b0821c529dc78390f743527915bd",
@@ -65,13 +72,18 @@ test("a different PRF output derives entirely different keys", async () => {
 
 /* ------------------------------------------------- the namespaces actually separate */
 
-test("the three keys are different from each other", async () => {
+test("the four keys are different from each other", async () => {
   // If two namespaces collided, the key that signs receipts would also move money. The whole
-  // reason the attestation key exists is that it cannot.
+  // reason the attestation keys exist is that they cannot. The on-chain attestor especially must
+  // not equal the account key: they are both secp256k1, so a collision would make the verdict
+  // signer and the wallet the same address, which is the separation the design turns on.
   const k = await deriveKeys(PRF);
   assert.notDeepEqual(k.account.privateKey, k.attestation.privateKey);
   assert.notDeepEqual(k.account.privateKey, k.content);
   assert.notDeepEqual(k.attestation.privateKey, k.content);
+  assert.notDeepEqual(k.onchainAttestation.privateKey, k.account.privateKey);
+  assert.notDeepEqual(k.onchainAttestation.privateKey, k.attestation.privateKey);
+  assert.notEqual(k.onchainAttestation.address, k.account.address);
 });
 
 test("changing one character of an info string changes the whole key", async () => {
@@ -85,7 +97,7 @@ test("changing one character of an info string changes the whole key", async () 
 
 test("the version lives inside the namespace string, so v1 is frozen", () => {
   for (const ns of Object.values(NAMESPACE)) {
-    assert.match(ns, /^kanmani\.[a-z]+\.v1$/, `${ns} must carry its own version`);
+    assert.match(ns, /^kanmani\.[a-z-]+\.v1$/, `${ns} must carry its own version`);
   }
 });
 
