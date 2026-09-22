@@ -667,6 +667,84 @@ export async function verdictHistory(feedbackId: string): Promise<VerdictHistory
 }
 
 /**
+ * The claim-truth rate for one agent over a block window.
+ *
+ * This is the number the slashing oracle reads. It is deliberately a pure function of an agent id
+ * and a block range, nothing else, because a CRE workflow reaches consensus by having independent
+ * nodes compute the same answer: anything keyed on wall-clock time (like `checked_at`) would drift
+ * between nodes and break the aggregation. The window is `[fromBlock, toBlock]` on `Feedback`'s own
+ * `blockNumber`, which comes from the chain, so two nodes reading the same range get the same rows.
+ *
+ * `unknown` is carried apart from the rate and excluded from both sides of it. A claim we could not
+ * check is not a claim the agent failed, and folding it in would let our own rate limit or a
+ * transient outage slash somebody. `sampleSize` is the decided count (`true` plus `false`), which is
+ * what a `minSampleSize` floor must be compared against, never the raw feedback count.
+ */
+export type ClaimTruthWindow = {
+  agentId: number;
+  fromBlock: string;
+  toBlock: string;
+  /** Feedbacks with an evidence pointer recorded in the window, before any verdict is considered. */
+  feedbacks: number;
+  /** Decided claims: true + false. This is what a minSampleSize floor is measured against. */
+  sampleSize: number;
+  trueCount: number;
+  falseCount: number;
+  /** Carried apart, never in the rate. A claim we could not check is not one the agent failed. */
+  unknownCount: number;
+  /** Claims that parsed but assert no payment, so there is nothing to resolve. Not a failure. */
+  noClaimCount: number;
+  /** true / (true + false), in basis points. null when the sample is empty, never a misleading 0. */
+  rateBps: number | null;
+};
+
+export const CLAIM_TRUTH_WINDOW_SQL = `
+SELECT
+  count(*) FILTER (WHERE f."feedbackUri" <> '')                       AS feedbacks,
+  count(*) FILTER (WHERE v.outcome IN ('true','false'))               AS sample_size,
+  count(*) FILTER (WHERE v.outcome = 'true')                          AS true_count,
+  count(*) FILTER (WHERE v.outcome = 'false')                         AS false_count,
+  count(*) FILTER (WHERE v.outcome = 'unknown')                       AS unknown_count,
+  count(*) FILTER (WHERE v.outcome = 'noClaim')                       AS no_claim_count
+FROM "Feedback" f
+JOIN "Agent" a ON a.id = f.agent_id
+LEFT JOIN fovea.verdict_latest v ON v.feedback_id = f.id
+WHERE f."chainId" = $1
+  AND a."agentId"::text = $2
+  AND f."blockNumber" >= $3
+  AND f."blockNumber" <= $4`;
+
+export async function claimTruthWindow(
+  agentId: string,
+  fromBlock: bigint,
+  toBlock: bigint,
+): Promise<Sourced<ClaimTruthWindow>> {
+  const r = await q1<Record<string, string>>(CLAIM_TRUTH_WINDOW_SQL, [
+    CHAIN_ID,
+    agentId,
+    fromBlock.toString(),
+    toBlock.toString(),
+  ]);
+  const n = (k: string) => Number(r?.[k] ?? 0);
+  const trueCount = n("true_count");
+  const sampleSize = n("sample_size");
+  return src(CLAIM_TRUTH_WINDOW_SQL, {
+    agentId: Number(agentId),
+    fromBlock: fromBlock.toString(),
+    toBlock: toBlock.toString(),
+    feedbacks: n("feedbacks"),
+    sampleSize,
+    trueCount,
+    falseCount: n("false_count"),
+    unknownCount: n("unknown_count"),
+    noClaimCount: n("no_claim_count"),
+    // Basis points, so the contract compares integers. Empty sample is null, not a 0 that reads as
+    // "every claim was false", which would slash an agent nobody has rated yet.
+    rateBps: sampleSize === 0 ? null : Math.round((trueCount / sampleSize) * 10_000),
+  });
+}
+
+/**
  * Claims whose verdict has ever changed.
  *
  * A row here is the append-only store earning its keep: either we were wrong and corrected it,

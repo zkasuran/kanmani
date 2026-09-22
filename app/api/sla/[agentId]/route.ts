@@ -1,0 +1,65 @@
+import { envelope, json, problem, SITE } from "@/lib/api.ts";
+import { claimTruthWindow } from "@/lib/queries.ts";
+
+export const dynamic = "force-dynamic";
+
+/**
+ * The claim-truth rate for one agent over a block window, which is what a slashing oracle reads.
+ *
+ * A CRE workflow reaches consensus by having independent nodes compute the same answer, so this
+ * endpoint is a pure function of the agent id and the block range and nothing else. Give it
+ * `fromBlock` and `toBlock` and every node that queries the same range gets the same rows, because
+ * the window is `Feedback.blockNumber`, which is the chain's own number rather than a wall clock.
+ *
+ * `unknown` is carried apart from the rate and never folded into it. `rateBps` is null on an empty
+ * sample rather than 0, because 0 reads as "every claim was false" and would slash an agent nobody
+ * has rated yet. The sample size a `minSampleSize` floor compares against is `true + false`, the
+ * decided count, not the raw feedback total.
+ */
+export async function GET(req: Request, { params }: { params: Promise<{ agentId: string }> }) {
+  const { agentId } = await params;
+  const u = new URL(req.url);
+
+  if (!/^\d+$/.test(agentId)) {
+    return problem(400, "Bad agent id", "agentId must be a decimal registry id, for example 10182");
+  }
+
+  const fromRaw = u.searchParams.get("fromBlock") ?? "0";
+  const toRaw = u.searchParams.get("toBlock") ?? String(2n ** 63n - 1n);
+  let fromBlock: bigint;
+  let toBlock: bigint;
+  try {
+    fromBlock = BigInt(fromRaw);
+    toBlock = BigInt(toRaw);
+  } catch {
+    return problem(400, "Bad block range", "fromBlock and toBlock must be integers");
+  }
+  if (fromBlock < 0n || toBlock < 0n) {
+    return problem(400, "Bad block range", "block numbers cannot be negative");
+  }
+  if (fromBlock > toBlock) {
+    return problem(400, "Bad block range", "fromBlock must not be greater than toBlock");
+  }
+
+  const w = await claimTruthWindow(agentId, fromBlock, toBlock);
+
+  return json(
+    envelope(
+      {
+        agentId: w.rows.agentId,
+        url: `${SITE}/agent/${w.rows.agentId}`,
+        window: { fromBlock: w.rows.fromBlock, toBlock: w.rows.toBlock },
+        feedbacks: w.rows.feedbacks,
+        sampleSize: w.rows.sampleSize,
+        trueCount: w.rows.trueCount,
+        falseCount: w.rows.falseCount,
+        unknownCount: w.rows.unknownCount,
+        noClaimCount: w.rows.noClaimCount,
+        // Basis points so an on-chain reader compares integers. Null on an empty sample, which the
+        // oracle must treat as "not enough to decide", never as a zero rate.
+        rateBps: w.rows.rateBps,
+      },
+      w.sql,
+    ),
+  );
+}
