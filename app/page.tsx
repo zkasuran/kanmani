@@ -155,7 +155,7 @@ export default async function Home() {
             <HeroFact k="agents measured" v={p.agentsIndexed === null ? "unknown" : p.agentsIndexed.toLocaleString()} note="the whole ERC-8004 population on Monad" />
             <HeroFact k="settled in real USDC" v="1 job" note="buyer held zero MON throughout" />
             <HeroFact k="validation registry rows" v="1 of 1" note="the first ever written on Monad" />
-            <HeroFact k="tests passing" v="497" note="site, verifier and contracts" />
+            <HeroFact k="tests passing" v="503" note="site, verifier and contracts" />
           </dl>
 
           <div className="marquee mt-8 border-t border-[var(--color-line)]/70 pt-4" aria-label="Machine-readable surfaces">

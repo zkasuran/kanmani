@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {Sclera, IERC20, IERC165, IReceiver} from "../src/Sclera.sol";
+import {MockIdentityRegistry} from "./fixtures/MockIdentityRegistry.sol";
 
 /// @dev A plain ERC-20. Nothing clever, because what is under test is Sclera's accounting.
 contract MockToken is IERC20 {
@@ -80,9 +81,13 @@ contract ScleraTest is Test {
     ///      the test passes against a contract that never ran. That cost 12 false failures once.
     bytes32 internal domainSeparator;
 
+    MockIdentityRegistry reg;
+
     function setUp() public {
         attestor = vm.addr(attestorKey);
-        sc = new Sclera(attestor, sink);
+        reg = new MockIdentityRegistry();
+        reg.setOwner(AGENT_ID, agent);
+        sc = new Sclera(attestor, sink, address(reg));
         tok = new MockToken();
         domainSeparator = sc.DOMAIN_SEPARATOR();
 
@@ -192,9 +197,9 @@ contract ScleraTest is Test {
 
     function test_constructor_refusesZeroAddresses() public {
         vm.expectRevert(Sclera.ZeroAgent.selector);
-        new Sclera(address(0), sink);
+        new Sclera(address(0), sink, address(reg));
         vm.expectRevert(Sclera.ZeroAgent.selector);
-        new Sclera(attestor, address(0));
+        new Sclera(attestor, address(0), address(reg));
     }
 
     /* ------------------------------------------------------------ the forwarder */
@@ -335,7 +340,7 @@ contract ScleraTest is Test {
         Sclera.Verdict memory v = _verdict(at, 42, 0, 1);
         bytes memory report = _report(attestorKey, v);
 
-        Sclera other = new Sclera(attestor, sink);
+        Sclera other = new Sclera(attestor, sink, address(reg));
         MockToken t2 = new MockToken();
         t2.mint(agent, 1_000e6);
         vm.startPrank(agent);
@@ -545,4 +550,73 @@ contract ScleraTest is Test {
         sc.onReport("", _report(attestorKey, v));
         assertEq(tok.balanceOf(sink), 0);
     }
+
+    /* ------------------------------------------------- finding 9: agent ownership */
+
+    /// A bond must be the AGENT's stake. Without this the whole thesis is a description of intent
+    /// rather than a fact about the caller.
+    function test_postBond_strangerCannotBondSomebodyElsesAgent() public {
+        address stranger = address(0xBEEF);
+        tok.mint(stranger, 1_000e6);
+        vm.prank(stranger);
+        tok.approve(address(sc), type(uint256).max);
+
+        vm.prank(stranger);
+        vm.expectRevert(Sclera.NotAgentOwner.selector);
+        sc.postBond(AGENT_ID, address(tok), BOND, 8000, 100, 5);
+    }
+
+    /// The squat this closes: a stranger taking the only bond slot for one atomic unit, after which
+    /// the real owner could never bond that agent again.
+    function test_postBond_strangerCannotSquatTheSlot() public {
+        address stranger = address(0xBEEF);
+        tok.mint(stranger, 1_000e6);
+        vm.prank(stranger);
+        tok.approve(address(sc), type(uint256).max);
+
+        vm.prank(stranger);
+        vm.expectRevert(Sclera.NotAgentOwner.selector);
+        sc.postBond(AGENT_ID, address(tok), 1, 0, 100, 5);
+
+        // The owner is still able to bond, which is the property that was broken.
+        uint64 at = _post();
+        assertEq(sc.bonds(AGENT_ID).agent, agent, "the owner must still be able to bond");
+        assertGt(at, 0);
+    }
+
+    /// A stranger must not be able to fake a bond that can never be slashed. minTruthRateBps = 0 is
+    /// the specific shape that made a bond meaningless, so it is named in a test.
+    function test_postBond_unslashableBondCannotBeCreatedByAStranger() public {
+        address stranger = address(0xBEEF);
+        tok.mint(stranger, 10e6);
+        vm.prank(stranger);
+        tok.approve(address(sc), type(uint256).max);
+
+        vm.prank(stranger);
+        vm.expectRevert(Sclera.NotAgentOwner.selector);
+        sc.postBond(AGENT_ID, address(tok), 1, 0, 100, 5);
+
+        assertEq(uint8(sc.bonds(AGENT_ID).state), uint8(Sclera.State.None), "no bond may exist");
+    }
+
+    /// An unregistered agent has no owner, and the registry's own revert is what stops it. Asserted
+    /// so a future mock that returns address(0) instead cannot make this pass wrongly.
+    function test_postBond_unregisteredAgentCannotBeBonded() public {
+        uint256 ghost = 999_999;
+        vm.prank(agent);
+        vm.expectRevert(MockIdentityRegistry.NonexistentToken.selector);
+        sc.postBond(ghost, address(tok), BOND, 8000, 100, 5);
+    }
+
+    /// The registry address is fixed at deploy and there is no setter, so authority over who may bond
+    /// cannot be moved after the fact.
+    function test_identityRegistryIsImmutable() public view {
+        assertEq(sc.identityRegistry(), address(reg));
+    }
+
+    function test_constructorRefusesZeroIdentityRegistry() public {
+        vm.expectRevert(Sclera.ZeroAgent.selector);
+        new Sclera(attestor, sink, address(0));
+    }
+
 }

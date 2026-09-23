@@ -7,6 +7,17 @@ interface IERC20 {
     function balanceOf(address account) external view returns (uint256);
 }
 
+/// @notice The one function this contract needs from the ERC-8004 Identity Registry, which is an
+///         ERC-721. Declared rather than imported so there is no dependency on their package, and
+///         narrow on purpose: this contract reads ownership and is given no ability to change it.
+///
+///         `ownerOf` REVERTS for a token that does not exist, which is the behaviour we want. A bond
+///         against an agent that was never registered should fail, and letting the registry's own
+///         revert do that is better than reimplementing existence here.
+interface IIdentityRegistry {
+    function ownerOf(uint256 tokenId) external view returns (address);
+}
+
 interface IERC165 {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
 }
@@ -103,6 +114,13 @@ contract Sclera is IReceiver {
     ///         from profiting by triggering a slash, which is the griefing incentive to avoid.
     address public immutable slashBeneficiary;
 
+    /// @notice The ERC-8004 Identity Registry this contract reads ownership from.
+    ///
+    /// A constructor argument rather than a constant because the registries are per-chain
+    /// singletons at one address on every mainnet AND at a different address on Monad testnet, so a
+    /// hardcoded value would be correct in production and untestable everywhere else.
+    address public immutable identityRegistry;
+
     bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
     uint256 private immutable _CACHED_CHAIN_ID;
 
@@ -146,7 +164,11 @@ contract Sclera is IReceiver {
     /// @dev This exists because the mock forwarder swallows a receiver revert into `success=false`
     ///      and emits its own event with no reason. Without this, a forged report would be
     ///      indistinguishable on chain from one that never arrived.
-    event ReportRefused(uint256 indexed agentId, bytes32 reason);
+    // `ReportRefused` was removed rather than kept unused. It was emitted immediately before a
+    // revert on every refusal path, so a revert discarded the log and no such event could ever be
+    // observed: the contract appeared to publish why a report was refused and published nothing. The
+    // custom errors below carry the same information in revert data, where a caller can actually read
+    // it. See docs/17-CONTRACT-AUDIT.md Finding 10.
 
     /* ------------------------------------------------------------------ errors */
 
@@ -154,6 +176,7 @@ contract Sclera is IReceiver {
     error NoSuchBond();
     error WrongState();
     error NotAgent();
+    error NotAgentOwner();
     error ZeroAmount();
     error ZeroAgent();
     error WindowOpen();
@@ -176,10 +199,13 @@ contract Sclera is IReceiver {
         _entered = 0;
     }
 
-    constructor(address attestor_, address slashBeneficiary_) {
-        if (attestor_ == address(0) || slashBeneficiary_ == address(0)) revert ZeroAgent();
+    constructor(address attestor_, address slashBeneficiary_, address identityRegistry_) {
+        if (attestor_ == address(0) || slashBeneficiary_ == address(0) || identityRegistry_ == address(0)) {
+            revert ZeroAgent();
+        }
         attestor = attestor_;
         slashBeneficiary = slashBeneficiary_;
+        identityRegistry = identityRegistry_;
         _CACHED_CHAIN_ID = block.chainid;
         _CACHED_DOMAIN_SEPARATOR = _buildDomainSeparator();
     }
@@ -245,6 +271,21 @@ contract Sclera is IReceiver {
         Bond storage b = _bonds[agentId];
         if (b.state != State.None) revert BondExists();
 
+        // The whole point of the contract, enforced rather than assumed.
+        //
+        // Without this, anyone could post a bond against anyone's agent. That is not theft, because
+        // `release` pays whoever posted, but it makes a bond prove nothing: a stranger could bond
+        // any agent with `minTruthRateBps = 0`, which no verdict can fall below, and the agent would
+        // read as bonded to anybody looking. "An agent stakes against its own promise" has to be a
+        // fact about the caller, not a description of the intended use.
+        //
+        // It also closes the squat: one bond per agent forever meant a stranger could take the slot
+        // for the cost of one atomic unit and the real owner could never bond again.
+        //
+        // `ownerOf` reverts for an unregistered agent, which is the outcome we want and is why there
+        // is no existence check of our own here.
+        if (IIdentityRegistry(identityRegistry).ownerOf(agentId) != msg.sender) revert NotAgentOwner();
+
         b.agent = msg.sender;
         b.postedAt = uint64(block.number);
         b.state = State.Active;
@@ -276,37 +317,31 @@ contract Sclera is IReceiver {
 
         Bond storage b = _bonds[v.agentId];
         if (b.state != State.Active) {
-            emit ReportRefused(v.agentId, "no active bond");
             revert WrongState();
         }
 
         if (!_signedByAttestor(v, signature)) {
-            emit ReportRefused(v.agentId, "bad signature");
             revert BadSignature();
         }
 
         // Monotonic per agent, so a replayed or reordered report cannot re-decide a settled window.
         if (v.nonce <= b.lastNonce) {
-            emit ReportRefused(v.agentId, "stale nonce");
             revert StaleVerdict();
         }
 
         // The window has to sit inside what was committed to. `windowStart` at or after `postedAt`
         // is the whole forward-looking rule, enforced here rather than trusted to the workflow.
         if (v.windowStart < b.postedAt || v.windowEnd < v.windowStart || v.windowEnd > block.number) {
-            emit ReportRefused(v.agentId, "window mismatch");
             revert WindowMismatch();
         }
 
         if (v.trueCount > v.sampleSize) {
-            emit ReportRefused(v.agentId, "true exceeds sample");
             revert BadSample();
         }
 
         b.lastNonce = v.nonce;
 
         if (v.sampleSize < b.minSampleSize) {
-            emit ReportRefused(v.agentId, "sample too small");
             revert SampleTooSmall();
         }
 

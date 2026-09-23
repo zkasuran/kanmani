@@ -668,9 +668,45 @@ Three options and they are not equivalent:
 Option 1 is what the thesis already claims is true, so it is the one that makes the documentation
 correct rather than the one that makes the code match a weaker claim.
 
+### The fix, applied
+
+Option 1. `postBond` now reads ownership from the ERC-8004 Identity Registry and refuses anyone else:
+
+```solidity
+if (IIdentityRegistry(identityRegistry).ownerOf(agentId) != msg.sender) revert NotAgentOwner();
+```
+
+The registry address is an **immutable constructor argument with no setter**, so authority over who may
+bond cannot be moved after deployment. It is an argument rather than a constant because the registries
+are per-chain singletons at one address on every mainnet *and* at a different address on Monad testnet,
+so a hardcoded value would be correct in production and untestable everywhere else. The deploy script
+defaults to the canonical address and asserts there is code at it, because a wrong address makes the
+contract inert rather than dangerous: every `postBond` would revert.
+
+`ownerOf` reverts for an unregistered token, which is the behaviour we want, so there is no existence
+check of our own. The mock in the tests reverts the same way on purpose — a mock returning
+`address(0)` instead would let a test pass while the real registry reverted.
+
+### The proof
+
+Six tests, and the mutation that proves they are load-bearing rather than decorative. Replacing the
+check with `if (false) revert NotAgentOwner();` turns **four of them red**:
+
+```
+[FAIL: next call did not revert as expected] test_postBond_strangerCannotBondSomebodyElsesAgent
+[FAIL: next call did not revert as expected] test_postBond_strangerCannotSquatTheSlot
+[FAIL: next call did not revert as expected] test_postBond_unslashableBondCannotBeCreatedByAStranger
+[FAIL: next call did not revert as expected] test_postBond_unregisteredAgentCannotBeBonded
+Suite result: FAILED. 35 passed; 4 failed
+```
+
+Restored, the suite is green at 39. The specific shape that made a bond meaningless —
+`minTruthRateBps = 0`, which no verdict can fall below — is named in its own test rather than left
+implied.
+
 ### Status
 
-**Open. Sclera is not deployed and must not be until this is closed.**
+**Closed 2026-09-24.** The gate is satisfied for this finding.
 `.hq/plan/09-SECURITY.md` says the security review is *"gating, not advisory"*, and this is the
 finding that gate exists for. No test covered it:
 
@@ -694,6 +730,14 @@ observed.** The contract appears to publish why a report was refused and in fact
 Either the reason belongs in the revert data, or the paths that are meant to be observable must
 return rather than revert. The tests pass because they assert the revert selector, which is the part
 that works.
+
+### The fix, applied
+
+**Closed 2026-09-24.** The event and all six unreachable `emit`s are removed, and the declaration is
+replaced by a comment explaining why so the absence does not read as an oversight. The custom errors
+already carry the reason in revert data, where a caller can read it. Nothing was added: deleting a
+thing that could never be observed is the smaller change than making it observable, and no caller
+could have depended on a log that was never emitted.
 
 ### What was checked and found sound
 

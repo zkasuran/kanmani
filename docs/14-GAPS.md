@@ -116,14 +116,21 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 | **Lens**, route | Agent Hub services proxied with measured failover | not started |
 | jobs board with bidding | post, bid, accept, deliver, release, refund by a real counterparty | not started |
 
-**The pre-deploy security review has now run, and it found a blocker.**
+**The pre-deploy security review has run and its blocker is now closed.**
 [`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) Finding 9: `postBond` never checks who owns the agent
 it is bonding, so anyone can post a bond for any agent. That is a denial of service on bonding and,
 worse, it means a bond does not prove the agent staked anything — a stranger can bond any agent with
 `minTruthRateBps = 0`, which can never be slashed, and the agent then reads as bonded. A badge that
-costs one atomic unit to fake is the thing this project exists to attack. **Sclera must not be
-deployed until that is closed**, and the fix is a design decision between three options rather than a
-missing input check, so it is the author's call.
+costs one atomic unit to fake is the thing this project exists to attack.
+
+**Fixed 2026-09-24.** `postBond` reads `ownerOf` from the ERC-8004 Identity Registry, which is an
+immutable constructor argument with no setter. Six new tests, and the mutation that proves they matter:
+replacing the check with `if (false)` turns four of them red. Finding 10 is closed too. The contract
+suite is 127 tests, 119 passing, 8 fork tests skipped without a fork URL.
+
+**So the remaining blocker is deployment, not safety.** That needs a funded deployer key and a real
+attestor address — the deploy script refuses the demo attestor by address, because that key is derived
+from a test vector committed to this repository.
 
 **What "built, not deployed" costs, stated exactly.** No Sclera address is recorded anywhere and no
 `SCLERA` variable is set in the running environment, so no bond has ever been posted or slashed with
@@ -360,11 +367,11 @@ Small, real and better written here than discovered by a reader.
   is `fovea.verdict`, outside Envio, which is what lets it survive a resync. Nothing reads the dead
   one. **Removing it forces a full resync**, so it is batched with the next schema change rather than
   done alone. Verify with `grep -n Verdict indexer/schema.graphql`.
-* **Eight contract tests skip without a fork URL.** `forge test` reports 121 tests, 113 passing and 8
+* **Eight contract tests skip without a fork URL.** `forge test` reports 127 tests, 119 passing and 8
   skipped. They are the fork tests and they are skipped rather than silently passing, but a reader
-  should know the 113 is not the whole suite.
+  should know the 119 is not the whole suite.
 * **Seventeen verifier tests skip without a database.** Same shape: 189 tests, 172 pass, 17 need
-  Postgres and say so. The site suite is 215 tests, 212 passing, 3 skipped. **497 pass in total.**
+  Postgres and say so. The site suite is 215 tests, 212 passing, 3 skipped. **503 pass in total.**
 * **Census figures and live figures differ by one agent.** Documents written at census time say 10,252
   agents and 2,012 distinct records. The live index reads 10,253 and 2,013 because we registered
   ourselves as agent 10252 afterwards. Section 1 of [`16-METHOD.md`](16-METHOD.md) explains which

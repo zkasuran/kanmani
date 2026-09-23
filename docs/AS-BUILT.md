@@ -16,11 +16,11 @@ hand. Claims about tests carry the command that runs them.
 ```bash
 npm test                              # 215 tests, 212 pass, 3 skip. the site
 cd verifier && npm test               # 189 tests, 172 pass, 17 skip without a database
-cd contracts && forge test            # 121 tests, 113 pass, 8 fork tests skipped without a fork URL
+cd contracts && forge test            # 127 tests, 119 pass, 8 fork tests skipped without a fork URL
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**497 tests pass across the three suites.** That is the number quoted on the site.
+**503 tests pass across the three suites.** That is the number quoted on the site.
 
 ---
 
@@ -431,8 +431,15 @@ grep -rn 0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf contracts/ lib/
 # contracts/script/DeploySclera.s.sol, contracts/test/ScleraCrossSign.t.sol, lib/iris.test.ts
 ```
 
-**What is missing is the deployment.** No Sclera address is recorded and no `SCLERA` variable is set
-in the running environment, so the site calls this layer `built` rather than `live`. The one
+**The pre-deploy security review has run and its blocker is closed.**
+[`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) Finding 9 found that `postBond` never checked who owned
+the agent, so anyone could bond anyone and a bond proved nothing. `postBond` now reads `ownerOf` from
+the Identity Registry, the registry is an immutable constructor argument with no setter, and the fix is
+mutation-tested: disabling the check turns four tests red. Finding 10, six unreachable refusal emits, is
+also closed.
+
+**What is missing is the deployment itself.** No Sclera address is recorded and no `SCLERA` variable is
+set in the running environment, so the site calls this layer `built` rather than `live`. The one
 remaining join is a signature produced by our code, accepted by the deployed contract, in a single
 test. Everything up to that line is green.
 

@@ -4,6 +4,7 @@ pragma solidity 0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {Sclera, IERC20} from "../src/Sclera.sol";
 import {MockToken} from "./Sclera.t.sol";
+import {MockIdentityRegistry} from "./fixtures/MockIdentityRegistry.sol";
 
 interface IKeystoneForwarder {
     function report(address receiver, bytes calldata rawReport, bytes calldata, bytes[] calldata) external;
@@ -71,9 +72,13 @@ contract ScleraForkTest is Test {
         _;
     }
 
+    MockIdentityRegistry reg;
+
     function setUp() public {
         attestor = vm.addr(attestorKey);
-        sc = new Sclera(attestor, sink);
+        reg = new MockIdentityRegistry();
+        reg.setOwner(AGENT_ID, agent);
+        sc = new Sclera(attestor, sink, address(reg));
         tok = new MockToken();
         domainSeparator = sc.DOMAIN_SEPARATOR();
 

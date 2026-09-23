@@ -33,6 +33,12 @@ contract DeploySclera is Script {
     /// @dev The published test attestor. Its key is derivable from the repository.
     address internal constant DEMO_ATTESTOR = 0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf;
 
+    /// @dev The ERC-8004 Identity Registry. A per-chain singleton at this address on every mainnet
+    ///      deployment checked, verified on chain on both 143 and 56 rather than taken from a
+    ///      deployment list. Overridable by env for a chain that deployed elsewhere, which Monad
+    ///      testnet did.
+    address internal constant IDENTITY_REGISTRY = 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432;
+
     function run() external returns (Sclera sclera) {
         address attestor = vm.envAddress("SCLERA_ATTESTOR");
         address beneficiary = vm.envAddress("SCLERA_SLASH_BENEFICIARY");
@@ -49,7 +55,13 @@ contract DeploySclera is Script {
         console.log("slashBeneficiary", beneficiary);
 
         vm.startBroadcast();
-        sclera = new Sclera(attestor, beneficiary);
+        address registry = vm.envOr("SCLERA_IDENTITY_REGISTRY", IDENTITY_REGISTRY);
+        require(registry != address(0), "identity registry is the zero address");
+        // A bond has to be the agent's own stake, so the contract reads ownership from here. If this
+        // address is wrong the contract is inert rather than dangerous: every postBond reverts.
+        require(registry.code.length > 0, "no contract at the identity registry address");
+
+        sclera = new Sclera(attestor, beneficiary, registry);
         vm.stopBroadcast();
 
         console.log("Sclera          ", address(sclera));
@@ -57,5 +69,6 @@ contract DeploySclera is Script {
         // Read the immutables back off the deployed contract rather than trusting the arguments.
         require(sclera.attestor() == attestor, "attestor did not stick");
         require(sclera.slashBeneficiary() == beneficiary, "beneficiary did not stick");
+        require(sclera.identityRegistry() == registry, "identity registry did not stick");
     }
 }

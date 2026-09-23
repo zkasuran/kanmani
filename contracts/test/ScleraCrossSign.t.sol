@@ -3,6 +3,7 @@ pragma solidity 0.8.24;
 
 import {Test} from "forge-std/Test.sol";
 import {Sclera, IERC20} from "../src/Sclera.sol";
+import {MockIdentityRegistry} from "./fixtures/MockIdentityRegistry.sol";
 
 /// @dev The one join the rest of the suite does not test.
 ///
@@ -59,9 +60,13 @@ contract ScleraCrossSignTest is Test {
     uint256 internal constant AGENT_ID = 10182;
     uint128 internal constant BOND = 100e6;
 
+    MockIdentityRegistry reg;
+
     function setUp() public {
         // Deploy with the derived attestor, not a vm.addr test key. That is the point.
-        sc = new Sclera(PINNED_ATTESTOR, sink);
+        reg = new MockIdentityRegistry();
+        reg.setOwner(AGENT_ID, agent);
+        sc = new Sclera(PINNED_ATTESTOR, sink, address(reg));
         tok = new MintableToken();
         tok.mint(agent, 1_000e6);
         vm.prank(agent);
