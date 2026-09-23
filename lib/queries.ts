@@ -936,8 +936,8 @@ export type RegistryHealth = {
   /**
    * Agents carrying no tokenURI at all, so they have no record row to probe.
    *
-   * Counted separately because without it the state buckets sum to 10,172 against a registry of
-   * 10,252 and 80 agents quietly vanish off the page. A registration that says nothing about
+   * Counted separately because without it the state buckets sum short of the registry total and the
+   * agents with no tokenURI quietly vanish off the page. A registration that says nothing about
    * itself is a finding, not a gap in the join.
    */
   agentsWithNoDocument: number;

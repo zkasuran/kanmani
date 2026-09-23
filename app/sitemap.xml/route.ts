@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 /**
  * Complete and every URL in it resolves.
  *
- * Capped deliberately rather than emitting 10,252 agent URLs: a sitemap a crawler cannot finish
+ * Capped deliberately rather than emitting one URL per registered agent: a sitemap a crawler cannot finish
  * is worse than a smaller one it can. The cap is stated in a comment in the file itself so nobody
  * mistakes it for completeness.
  */

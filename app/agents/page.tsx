@@ -7,7 +7,9 @@ export const revalidate = 0;
 
 export const metadata = {
   title: "Agents",
-  description: "Monad's 10,252 registered agents, filterable by whether anyone else shares their record.",
+  // No count baked in here. The registry grows, so a literal goes stale. The live figure is read
+  // from the counter slot and shown on the page itself.
+  description: "Every registered agent on Monad, filterable by whether anyone else shares their record.",
 };
 
 const PER_PAGE = 60;
@@ -84,7 +86,7 @@ export default async function Agents({ searchParams }: Props) {
           <Chip
             href={qs({ cluster: "unique" })}
             active={filter.cluster === "unique"}
-            title="Agents whose registration document nobody else points at. This is the filter that collapses 10,252 to something a buyer can read."
+            title="Agents whose registration document nobody else points at. The filter that collapses the whole registry to the few a buyer can actually read."
           >
             nobody else shares it
           </Chip>

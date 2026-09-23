@@ -205,3 +205,186 @@ CREATE TABLE IF NOT EXISTS fovea.vault (
   updated_at   timestamptz NOT NULL DEFAULT now(),
   PRIMARY KEY (address, context)
 );
+
+-- Whether a buyer could pay an agent's own SERVICE endpoint, right now.
+--
+-- **Not the same question as fovea.record_probe.** That one asks whether an agent's registration
+-- document still resolves. This one asks whether the service that document declares answers a buyer
+-- with a payment requirement, which is a different host as often as not. An agent whose business
+-- card loads and whose service is gone passes the first and fails this one. Reporting the first
+-- as the second is the confusion this whole schema is arranged to prevent.
+--
+-- It is its own table rather than a rung on fovea.verdict for the reason record_probe is: the
+-- denominators differ. A verdict is per feedback claim, 1,192 of them. This is per registration
+-- document, 2,016 of them. Most feedback claims belong to agents with no service endpoint at
+-- all.
+--
+-- Append only, same as everything else here. An operator who wires up x402 next week should read as
+-- `false -> true` with both timestamps.
+CREATE TABLE IF NOT EXISTS fovea.payable_probe (
+  id                bigserial PRIMARY KEY,
+
+  -- keccak of the registration URI, which is AgentRecord.id. Plain text, no foreign key, because
+  -- that table is dropped and rebuilt on every Envio resync.
+  uri_hash          text        NOT NULL,
+  uri               text        NOT NULL,
+
+  -- The service endpoint actually contacted, plus where in the document it was declared. Null when
+  -- nothing was contacted, which is a real and common state rather than a missing value.
+  probed_url        text,
+  declared_at       text,
+
+  payable           text        NOT NULL CHECK (payable IN ('true','false','noOffer','unknown')),
+  -- Written for a stranger. Describes what was observed, never what anyone intended.
+  reason            text        NOT NULL,
+
+  -- What the response actually said. **A status code is not a protocol**, so these columns carry the
+  -- discriminators and payable_state below reads them rather than http_status. 402 with a text/plain
+  -- body and a vendor error header is a suspended host; 402 with www-authenticate: x402 and an
+  -- accepts array is a live till. Keying on the integer published 539 of the second as the first.
+  http_status       integer,
+  www_authenticate  text,
+  content_type      text,
+  vendor_error      text,
+
+  -- A 402 demanding payment is a challenge. A 200 publishing the same offer is a catalogue.
+  -- Both are live offers from a running server. Which one it was is recorded rather than flattened.
+  offer_kind        text        CHECK (offer_kind IS NULL OR offer_kind IN ('challenge','catalogue')),
+
+  -- The x402Version the server printed, next to the shape its entries are actually written in.
+  -- **These disagree in the wild and that is why both columns exist.** One live endpoint answers
+  -- x402Version 2 over v1-shaped entries (scheme and network at the top of each accepts entry,
+  -- amount under maxAmountRequired). Another writes both amount keys at once, which reads as hybrid.
+  declared_version  integer,
+  accepts_shape     text,
+
+  -- Whether any offer settles on Monad mainnet, chain 143, which is the rail this build measures.
+  -- An agent can be genuinely payable on Base and that is a different finding, not a failure.
+  monad_option      boolean,
+  offer_network     text,
+  offer_amount      text,
+  offer_asset       text,
+  offer_pay_to      text,
+
+  -- The agent's own x402 claim, stored beside the measurement so a page can show claim against
+  -- observation. That cross tab is the finding; neither column is it on its own.
+  claims_x402       boolean     NOT NULL DEFAULT false,
+  declared_settlement_tx text,
+
+  -- How many endpoints the document declared and how many we actually contacted. The gap is
+  -- deliberate politeness and it belongs on the record rather than in a comment.
+  endpoints_declared integer,
+  endpoints_probed   integer,
+
+  -- How many agents and wallets shared this document when we checked, so a finding carries its own
+  -- scale and stays true after the index moves.
+  member_count      integer,
+  distinct_owners   integer,
+
+  checked_at        timestamptz NOT NULL,
+  automatic         boolean     NOT NULL DEFAULT true
+);
+
+CREATE INDEX IF NOT EXISTS payable_probe_hash_checked
+  ON fovea.payable_probe (uri_hash, checked_at DESC);
+
+CREATE INDEX IF NOT EXISTS payable_probe_payable
+  ON fovea.payable_probe (payable);
+
+CREATE OR REPLACE VIEW fovea.payable_probe_latest AS
+SELECT DISTINCT ON (uri_hash) *
+FROM fovea.payable_probe
+ORDER BY uri_hash, checked_at DESC, id DESC;
+
+-- What a payable probe means, as one definition.
+--
+-- The useful axis is not the boolean. It is the agent's claim set against the measurement, because
+-- the whole thesis of this build is that the two come apart. Six states, with `unknown` one of
+-- them rather than a rounding of the others.
+--
+-- A view rather than a column, so a re-read reclassifies old probes too. The probe records what
+-- happened; this decides what that means and the second is allowed to improve.
+CREATE OR REPLACE VIEW fovea.payable_state AS
+SELECT p.*,
+  CASE
+    -- We could not look. A rate limit, a timeout, a method we never tried, a host we chose to skip.
+    -- First, so nothing below can absorb it.
+    WHEN p.payable = 'unknown'                   THEN 'unknown'
+    -- Nothing was declared to probe, so nothing was refused. Not the same as a refusal.
+    WHEN p.payable = 'noOffer'                   THEN 'noendpoint'
+    WHEN p.payable = 'true' AND p.monad_option   THEN 'payable-monad'
+    -- Genuinely payable, settling somewhere other than Monad mainnet. A finding, not a failure.
+    WHEN p.payable = 'true'                      THEN 'payable-elsewhere'
+    -- The agent publishes x402Support and its own endpoint asked for nothing. Stated as the
+    -- observation it is: the claim is unconfirmed, which is not a statement about anyone's intent.
+    WHEN p.claims_x402                           THEN 'claimed-unconfirmed'
+    ELSE 'free'
+  END AS state
+FROM fovea.payable_probe_latest p;
+
+-- Whether a claimed payment actually reached the agent.
+--
+-- fovea.verdict already records whether a cited transaction exists on the chain a document names.
+-- This is the next question and it is a harder one: a transaction can exist, sit on the right
+-- chain and still have moved nothing to the agent. It can revert, it can pay a different address,
+-- it can move a different token, it can move a token id rather than an amount.
+--
+-- Separate from fovea.verdict because a settlement claim does not only come from a feedback. An
+-- agent's own registration can carry one: one document on Monad publishes an x402Support object
+-- holding a settlement transaction, a facilitator and a treasury address. `subject_kind` says which
+-- kind of thing the claim was attached to.
+--
+-- Append only. A reorg or a later read that changes the answer writes a new row.
+CREATE TABLE IF NOT EXISTS fovea.settlement_check (
+  id               bigserial PRIMARY KEY,
+
+  -- A Feedback id, an AgentRecord uri hash or an operator asking by hand. No foreign key, same
+  -- reason as everywhere else in this schema.
+  subject          text        NOT NULL,
+  subject_kind     text        NOT NULL CHECK (subject_kind IN ('feedback','record','manual')),
+
+  tx_hash          text        NOT NULL,
+  declared_network text,
+  -- The address the payment was claimed to reach. Without it there is no "to this agent" to check,
+  -- so the check refuses rather than answering a different question.
+  recipient        text        NOT NULL,
+  claimed_asset    text,
+  claimed_amount   text,
+
+  settled          text        NOT NULL CHECK (settled IN ('true','false','unknown')),
+  reason           text        NOT NULL,
+
+  found_chain      text,
+  found_chain_id   integer,
+  found_block      numeric(78,0),
+  -- How deep the receipt was. A receipt in the head block is on chain and can still be reorganised
+  -- away, so depth is evidence and it is stored rather than recomputed from a moving head.
+  confirmations    numeric(78,0),
+
+  observed_asset   text,
+  observed_amount  numeric(78,0),
+  observed_from    text,
+  -- **False means the amount was never checked**, not that it failed. A document writing "0.1"
+  -- cannot be compared to an on chain integer without the token's own decimals(), which this check
+  -- does not read. AUSD on Monad is 6 where the same code met 18 elsewhere, so a guessed conversion
+  -- is wrong by 1e12 in the direction of a confident false. Refusing to compare is the honest
+  -- answer and this column is how a reader sees that it was refused.
+  amount_compared  boolean,
+  -- Every transfer the transaction did make, counted, so "none of them to this agent" is a number.
+  transfer_count   integer,
+
+  checked_at       timestamptz NOT NULL,
+  checked_at_block numeric(78,0),
+  automatic        boolean     NOT NULL DEFAULT true
+);
+
+CREATE INDEX IF NOT EXISTS settlement_check_subject_checked
+  ON fovea.settlement_check (subject, checked_at DESC);
+
+CREATE INDEX IF NOT EXISTS settlement_check_settled
+  ON fovea.settlement_check (settled);
+
+CREATE OR REPLACE VIEW fovea.settlement_check_latest AS
+SELECT DISTINCT ON (subject, tx_hash) *
+FROM fovea.settlement_check
+ORDER BY subject, tx_hash, checked_at DESC, id DESC;
