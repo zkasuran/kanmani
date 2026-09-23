@@ -14,13 +14,13 @@ CLI that produces them. [`16-METHOD.md`](16-METHOD.md) reproduces every publishe
 hand. Claims about tests carry the command that runs them.
 
 ```bash
-npm test                              # 172 tests, 169 pass, 3 skip. the site
+npm test                              # 186 tests, 183 pass, 3 skip. the site
 cd verifier && npm test               # 189 tests, 172 pass, 17 skip without a database
 cd contracts && forge test            # 121 tests, 113 pass, 8 fork tests skipped without a fork URL
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**454 tests pass across the three suites.** That is the number quoted on the site.
+**468 tests pass across the three suites.** That is the number quoted on the site.
 
 ---
 
@@ -135,6 +135,37 @@ we had just measured that 8,093 agents point at one document that returns a dele
 The registry held **zero** rows against the Reputation Registry's 9,188 feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index
 that follows the contract went from 0 to 1.
+
+### The studio, both onboarding doors
+
+`/studio` composes an ERC-8004 registration document and generates the transaction that puts it on
+chain. Two doors, the shape [`../.hq/plan/06-JOBS-AND-ROUTE.md`](../.hq/plan/06-JOBS-AND-ROUTE.md)
+specified:
+
+* **Register a new agent.** A progressive form where every field shows its consequence live: an
+  endpoint is what separates a declared skill from a reachable one, a `data:` URI is what cannot
+  return a deletion. The JSON, the URI, the byte count and the calldata are all on screen before
+  anything is sent.
+* **Repoint an agent you own.** `setAgentURI(agentId, newURI)`, which the registry refuses for anyone
+  who is not the owner.
+
+**We generate the call and never sign it.** There is no key on the server that could: the operator
+either takes the calldata to any wallet, or signs in with a passkey and sends it from the account
+that passkey derives. Both paths are offered on equal footing, because a project that publishes
+measurements about other people's registrations must not be able to manufacture one, and the honest
+guarantee is having no means to.
+
+Two rules are enforced in code rather than asserted here. The calldata decodes back to the document
+that was previewed, and a draft that mentions a payment proof fails its own consequence check,
+because a registration document is not the place for a payment claim.
+
+```bash
+node --test --experimental-strip-types 'lib/registration.test.ts'    # 14 pass
+curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/studio # 200
+```
+
+`register()` with no argument is deliberately not offered. It mints an agent whose URI is empty, and
+80 of those already exist on Monad: the one population no verifier can help.
 
 ### Cornea, the surface
 

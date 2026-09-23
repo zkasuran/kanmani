@@ -159,7 +159,36 @@ delivered to us" are different claims and only the first is currently true.
 
 ---
 
-## 5. Traction is zero and this is the weakest part of the entry
+## 5. Onboarding: one door is open, the operator-side half of the other is not
+
+**This section was accidentally deleted on 2026-09-23** while §4 was being rewritten, and for a few
+hours the onboarding gap was tracked nowhere at all. That is worse than the gap itself: this page's
+own rule in §10 is that anything absent should be findable here. It is restored, and what has since
+shipped is recorded with it.
+
+**What shipped.** `/studio` composes a registration document and generates both calls:
+`register(string agentURI)` for a new agent and `setAgentURI(uint256, string)` for one the operator
+already owns. Every field shows its consequence, the exact bytes and calldata are shown before
+sending, and the operator signs with their own key. `lib/registration.test.ts` has 14 tests including
+one asserting the calldata decodes back to the previewed document.
+
+**What is still missing, and it is the half that serves the named first user.**
+
+| | |
+|---|---|
+| **Missing** | Door A as the plan described it: paste a registry id or wallet and land on **your own data, already measured**, with a claim action. Today `/studio` asks for an id to repoint and `/agent/<id>` shows the measurement, but they are two pages and neither says "this is yours, here is the one field that is wrong, fix it here" |
+| **Missing** | Door B's `skill.md` import. The plan named Monad's Agent Hub format as the first one to support. `/studio` composes a document by hand instead, so an operator with an existing agent card retypes it |
+| **Exists** | `/studio`, `/agent/<id>`, `/validate`, `/agents.md`, and a re-check that fires on `MetadataUpdate` |
+| **Blocks** | the shortest path for Execution Market, whose payment claims are the majority of the 73. Their fix is one field in a template. Today they would have to read `/method`, find their agents, and compose a corrected document by hand |
+
+**Why this matters more than its size.** Traction is 20% of the score and is section 6 below with a
+count of zero. The cheapest thing that could change that is a page where a named operator sees their
+own broken record and a button that fixes it. Door A is mostly a query against data already held, so
+this is scoped small and is not scheduled, which is the honest state rather than a plan.
+
+---
+
+## 6. Traction is zero and this is the weakest part of the entry
 
 Traction is 20% of the score. The honest count today:
 
@@ -188,7 +217,7 @@ an invented number and an invented one would be caught.
 
 ---
 
-## 6. Submission artifacts that do not exist yet
+## 7. Submission artifacts that do not exist yet
 
 | artifact | state |
 |---|---|
@@ -203,7 +232,7 @@ previous entry of mine shipped a working paid service and died anyway on an unfi
 
 ---
 
-## 7. Measurement we cannot complete and why it stays unknown
+## 8. Measurement we cannot complete and why it stays unknown
 
 Twelve of the 1,192 documents have no verdict beyond `unknown`. Each stays that way deliberately.
 
@@ -224,7 +253,7 @@ Neither group is counted as `false`. A failure to look is not evidence that a pa
 
 ---
 
-## 8. Known debt inside what did ship
+## 9. Known debt inside what did ship
 
 Small, real and better written here than discovered by a reader.
 
@@ -237,7 +266,7 @@ Small, real and better written here than discovered by a reader.
   skipped. They are the fork tests and they are skipped rather than silently passing, but a reader
   should know the 113 is not the whole suite.
 * **Seventeen verifier tests skip without a database.** Same shape: 189 tests, 172 pass, 17 need
-  Postgres and say so. The site suite is 172 tests, 169 passing, 3 skipped. **454 pass in total.**
+  Postgres and say so. The site suite is 186 tests, 183 passing, 3 skipped. **468 pass in total.**
 * **Census figures and live figures differ by one agent.** Documents written at census time say 10,252
   agents and 2,012 distinct records. The live index reads 10,253 and 2,013 because we registered
   ourselves as agent 10252 afterwards. Section 1 of [`16-METHOD.md`](16-METHOD.md) explains which
@@ -246,7 +275,7 @@ Small, real and better written here than discovered by a reader.
 
 ---
 
-## 9. Things that look like gaps and are findings
+## 10. Things that look like gaps and are findings
 
 Listed because each one reads like a hole in the data until you know what it is and two of them cost
 real time to understand.
@@ -271,12 +300,12 @@ real time to understand.
 
 ---
 
-## 10. How this list is meant to be used
+## 11. How this list is meant to be used
 
 Three ways and the third is the one that matters.
 
 1. **As a boundary.** Anything not claimed on the site should be findable here.
-2. **As a schedule.** Gap 1 is the next thing being worked on. Gap 5 should have started already.
+2. **As a schedule.** Gap 1 flips on 2026-10-02. Gap 6, traction, should have started already and Gap 5 is the cheapest thing that would move it.
 3. **As a test of everything else.** If you find something missing that is not on this page, then this
    page is incomplete and the rest of the documentation earns less trust for it. That is the correct
    response. Defects found in our own work go in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md) with the

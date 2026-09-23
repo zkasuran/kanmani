@@ -1,0 +1,267 @@
+/**
+ * Composing an ERC-8004 registration document, and the two calls that put it on chain.
+ *
+ * This is the module behind `/studio`. It is pure over strings and bytes: it builds a document,
+ * encodes it, and returns the exact calldata an operator sends. **It never sends anything and it
+ * never holds a key.** That separation is the whole design, for a reason that is not squeamishness:
+ * this project publishes measurements about other people's registrations, so it must not be able to
+ * manufacture one. A row we created is a row we cannot honestly measure.
+ *
+ * What we will do is make the operator's own registration correct, then get out of the way. The
+ * calldata comes back to the caller, who signs it with a key derived from their own passkey or with
+ * any wallet they already use. Nothing here is custodial.
+ *
+ * ## The two calls, from the spec
+ *
+ * The ERC-8004 Identity Registry is an ERC-721. `.hq/erc-8004-spec.md` gives three registration
+ * overloads and one update:
+ *
+ *   register(string agentURI) returns (uint256 agentId)
+ *   register(string agentURI, MetadataEntry[] metadata) returns (uint256 agentId)
+ *   register() returns (uint256 agentId)                  // URI added later
+ *   setAgentURI(uint256 agentId, string newURI)           // owner only
+ *
+ * We generate the single-argument `register` and `setAgentURI`. The no-argument overload is
+ * deliberately not offered: it mints an agent whose URI is empty, which is a registration that says
+ * nothing about itself. Our own measurement found 80 of those already on Monad and they are the one
+ * population no verifier can help.
+ *
+ * ## Why `data:` is the default here
+ *
+ * We probed all 2,012 distinct registration documents on Monad. **8,640 agents point at a document
+ * whose host answered and said it is not there**, 8,093 of them sharing one expired preview
+ * deployment across 7,962 wallets. Those registrations are still perfectly valid on chain, with a
+ * valid owner and a valid URI, and they will stay that way forever while describing nothing.
+ *
+ * A `data:` URI cannot 404, because there is no host to ask. It costs more gas once, and then it
+ * cannot rot. When we registered ourselves as agent 10252 we wrote our record into `tokenURI` as a
+ * `data:` URI rather than hosting it, because publishing that measurement and then hosting our own
+ * record would have been advice we do not take. The default here is the same advice.
+ */
+
+import { encodeFunctionData, type Hex } from "viem";
+
+/** Monad mainnet, chain 143. The registry every number on this site is measured against. */
+export const IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as const;
+
+/**
+ * Only the two functions we generate calldata for.
+ *
+ * A narrow ABI on purpose. A wider one invites a future caller to encode something this module has
+ * not thought about, and every entry here is a transaction somebody signs with their own key.
+ */
+export const IDENTITY_ABI = [
+  {
+    type: "function",
+    name: "register",
+    stateMutability: "nonpayable",
+    inputs: [{ name: "agentURI", type: "string" }],
+    outputs: [{ name: "", type: "uint256" }],
+  },
+  {
+    type: "function",
+    name: "setAgentURI",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "agentId", type: "uint256" },
+      { name: "newURI", type: "string" },
+    ],
+    outputs: [],
+  },
+] as const;
+
+export type SkillDraft = {
+  /** A stable identifier an agent consumer can match on. */
+  id: string;
+  /** Where the skill is actually callable. Empty means the skill is declared and not reachable. */
+  endpoint: string;
+  /** Whether that endpoint answers an x402 payment challenge. */
+  x402: boolean;
+};
+
+export type RegistrationDraft = {
+  name: string;
+  description: string;
+  /** The operator's own site. Not where the record is hosted, which is a separate decision. */
+  url: string;
+  skills: SkillDraft[];
+  /**
+   * What this agent refuses to do.
+   *
+   * Unusual in a registration document and kept because it is the most useful field we found while
+   * reading 2,012 of them: a capability list says what somebody hopes, a refusal list says what
+   * they have thought about. Optional, and empty is fine.
+   */
+  refuses: string[];
+};
+
+export const EMPTY_DRAFT: RegistrationDraft = {
+  name: "",
+  description: "",
+  url: "",
+  skills: [{ id: "", endpoint: "", x402: false }],
+  refuses: [],
+};
+
+/** How the record reaches a reader. The trade is gas once against rot forever. */
+export type UriKind = "data" | "https";
+
+/* ------------------------------------------------------------------ the document */
+
+/**
+ * The record, with a fixed key order.
+ *
+ * Fixed rather than whatever the object literal happened to be, because the bytes are hashed by
+ * everything downstream and two orders are two different documents. Empty fields are dropped rather
+ * than emitted as `""`, because a field present and empty is a claim that resolved to nothing, and
+ * this whole project is about not making those.
+ */
+export function buildRecord(d: RegistrationDraft): Record<string, unknown> {
+  const rec: Record<string, unknown> = {};
+  if (d.name.trim()) rec.name = d.name.trim();
+  if (d.description.trim()) rec.description = d.description.trim();
+  if (d.url.trim()) rec.url = d.url.trim();
+
+  const skills = d.skills
+    .filter((s) => s.id.trim())
+    .map((s) => {
+      const out: Record<string, unknown> = { id: s.id.trim() };
+      if (s.endpoint.trim()) out.endpoint = s.endpoint.trim();
+      if (s.x402) out.payment = "x402";
+      return out;
+    });
+  if (skills.length) rec.skills = skills;
+
+  const refuses = d.refuses.map((r) => r.trim()).filter(Boolean);
+  if (refuses.length) rec.refuses = refuses;
+
+  return rec;
+}
+
+/** The document as the bytes that go on chain. Two-space indent, stable, readable in a block explorer. */
+export function recordJson(d: RegistrationDraft): string {
+  return JSON.stringify(buildRecord(d), null, 2);
+}
+
+/** UTF-8 length, which is what storage is paid for, not `string.length`. */
+export function byteLength(s: string): number {
+  return new TextEncoder().encode(s).length;
+}
+
+/**
+ * base64 without `Buffer`.
+ *
+ * `Buffer` is a Node global and this module is imported by a client component. A bundler that
+ * polyfills it today is a dependency on a build setting rather than on the language, and the failure
+ * mode is the worst kind: green in Node, throws in the browser. The project already fixed this class
+ * of bug once in `lib/iris.ts`; it is not being reintroduced here.
+ */
+function toBase64(s: string): string {
+  const bytes = new TextEncoder().encode(s);
+  let bin = "";
+  for (const b of bytes) bin += String.fromCharCode(b);
+  return btoa(bin);
+}
+
+/** The record as a `data:` URI, which is the form that cannot 404. */
+export function dataUri(json: string): string {
+  return `data:application/json;base64,${toBase64(json)}`;
+}
+
+/** The agentURI that would actually go on chain, for either hosting choice. */
+export function agentUri(d: RegistrationDraft, kind: UriKind, hostedAt = ""): string {
+  return kind === "data" ? dataUri(recordJson(d)) : hostedAt.trim();
+}
+
+/* ------------------------------------------------------------------ the calldata */
+
+/** `register(string agentURI)`. The caller signs and sends this; we never do. */
+export function registerCalldata(agentURI: string): Hex {
+  return encodeFunctionData({ abi: IDENTITY_ABI, functionName: "register", args: [agentURI] });
+}
+
+/** `setAgentURI(uint256 agentId, string newURI)`. Owner only, enforced by the registry. */
+export function setAgentUriCalldata(agentId: bigint, newURI: string): Hex {
+  return encodeFunctionData({
+    abi: IDENTITY_ABI,
+    functionName: "setAgentURI",
+    args: [agentId, newURI],
+  });
+}
+
+/* ------------------------------------------------------------------ consequences */
+
+/**
+ * What this document would mean, field by field.
+ *
+ * The plan's rule for this form is that it is progressive and never a wall, with each field showing
+ * its consequence live. So this returns the consequences rather than a score: an operator should be
+ * able to see that adding an endpoint moves them a rung, without us ranking them.
+ *
+ * `met` is deliberately a boolean about the DOCUMENT, never about the operator. Nothing here is a
+ * verdict: a verdict requires reading a chain, and this document has not been on one yet.
+ */
+export type Consequence = { label: string; met: boolean; why: string };
+
+export function consequences(d: RegistrationDraft, kind: UriKind, hostedAt = ""): Consequence[] {
+  const rec = buildRecord(d);
+  const skills = (rec.skills as { endpoint?: string; payment?: string }[] | undefined) ?? [];
+  const reachable = skills.filter((s) => s.endpoint);
+  const uri = agentUri(d, kind, hostedAt);
+
+  return [
+    {
+      label: "describes itself",
+      met: Boolean(rec.name && rec.description),
+      why: "A name and a description. Without them the registration is a token with an owner and nothing a buyer can read.",
+    },
+    {
+      label: "cannot return a deletion",
+      met: kind === "data",
+      why:
+        kind === "data"
+          ? "A data: URI has no host to ask, so it cannot 404. 8,640 agents on Monad point at a document whose host says it is not there."
+          : "A hosted document can stop answering. It is a valid choice and it is the failure mode we measured most.",
+    },
+    {
+      label: "has a callable endpoint",
+      met: reachable.length > 0,
+      why:
+        reachable.length > 0
+          ? "A skill with an endpoint can be probed, which is the difference between a declared capability and a reachable one."
+          : "Every skill here is declared and not reachable. 10,253 agents are registered on Monad and 23 have a callable endpoint.",
+    },
+    {
+      label: "can take a payment",
+      met: skills.some((s) => s.payment === "x402"),
+      why: "An endpoint that answers an x402 challenge can be paid. One third-party endpoint on Monad currently does.",
+    },
+    {
+      label: "asserts no payment it has not received",
+      met: !/proof_of_payment|payment_tx|\banchored\b/i.test(recordJson(d)),
+      why: "A registration document is not the place for a payment claim. 73 of the 85 payment claims on Monad cite a transaction that is not on the chain they name. Ours asserts none.",
+    },
+    {
+      label: "fits on chain",
+      met: uri.length > 0 && byteLength(uri) <= 65_536,
+      why: "Our verifier caps a fetched document at 65,536 bytes, so a record above that cannot be read back by the thing that checks it.",
+    },
+  ];
+}
+
+/** A blocking problem, as opposed to a consequence. Returns an empty array when the draft can ship. */
+export function problems(d: RegistrationDraft, kind: UriKind, hostedAt = ""): string[] {
+  const out: string[] = [];
+  const rec = buildRecord(d);
+  if (!rec.name) out.push("A name is required. A record with no name describes nothing.");
+  if (kind === "https") {
+    const at = hostedAt.trim();
+    if (!at) out.push("Choose a URL for the hosted document, or switch to data: and put it on chain.");
+    else if (!/^https:\/\/\S+$/.test(at)) out.push("The hosted URL must be absolute and https.");
+  }
+  const uri = agentUri(d, kind, hostedAt);
+  if (uri && byteLength(uri) > 65_536) {
+    out.push(`The URI is ${byteLength(uri).toLocaleString()} bytes, over the 65,536 byte cap a reader will apply.`);
+  }
+  return out;
+}
