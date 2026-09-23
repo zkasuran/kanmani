@@ -11,9 +11,11 @@
 # hides the cluster) and Verdict is append-only so a fixed template reads as false -> true
 # rather than as a silent edit.
 
-# NOTE: no entity declares `chainId`. With `disable_default_cross_chain: true` envio adds it to
-# every per-chain entity automatically and declaring it yourself is a hard codegen error. Add
-# `@crossChain` to an entity if its rows should instead be shared across chains.
+# NOTE: no PER-CHAIN entity declares `chainId`. With `disable_default_cross_chain: true` envio adds
+# it to every per-chain entity automatically and declaring it yourself is a hard codegen error. Add
+# `@crossChain` to an entity if its rows should instead be shared across chains. A cross-chain
+# entity gets no automatic column, so that is the one place a `chainId` field is allowed. It goes
+# in the ID as well when rows need to stay apart per chain. See Chiasm at the bottom.
 
 type Agent {
   id: ID! # chainId_agentId
@@ -167,6 +169,67 @@ type Validation {
 #   query { Agent_aggregate { aggregate { count } } }
 #
 # See docs/18-BUGS-FIXED.md.
+# Chiasm. Where the two nerves cross.
+#
+# One row per registration document, shared by every chain that referenced it. Everything above
+# is per-chain by default and stays that way. These two entities are the only shared rows in the
+# schema, because a registration document is addressed by its content rather than by where it was
+# posted, so the same document can legitimately be referenced from Monad and from BSC by
+# unrelated operators.
+#
+# `@crossChain` is the supported spelling for a shared row when `disable_default_cross_chain` is
+# true. Per-chain separation inside the merge comes from the ID, `<uriHash>_<chainId>` on
+# ChiasmPresence, because envio only appends its own chainId column to per-chain entities.
+#
+# The merged row is what the per-chain tables cannot answer. AgentRecord on Monad knows 8,093
+# agents share one dead document; it cannot know whether BSC points at the same one. The join
+# key is the same key AgentRecord uses, so the two layers agree by construction.
+type ChiasmRecord @crossChain {
+  id: ID! # uriHash. No chain in the key. That is the entity.
+  # The document as named by `Registered`, so this is the document at registration time, not the
+  # one `tokenURI()` returns today. `URIUpdated` is not in the indexed event list, same as for
+  # AgentRecord above, so an operator who later repointed an agent is not reflected here. Checked
+  # on 2026-09-23: all three cross-chain rows found so far had been repointed since. Two of the
+  # three still resolve to one shared document at head. Registration time is the claim this
+  # row makes. Anything about the current document is a live read, not an index read.
+  uri: String!
+  # How many chains referenced this document. 1 is the common case, 2 or more is the finding.
+  chainCount: Int! @index
+  # Ascending, so two chains writing in either order leave the same row.
+  chainIds: [Int!]!
+  # Agents pointing here, summed over every chain. Per-chain counts live on ChiasmPresence.
+  agentCount: Int!
+  # The chain that referenced it first, by block timestamp.
+  firstSeenChainId: Int!
+  firstSeenAt: BigInt!
+  lastSeenAt: BigInt!
+  # AgentRecord.id is a 64-bit content key over the URI, not a cryptographic digest, so two
+  # different documents could in principle land on one row. That would read as a cross-chain hit
+  # when it is a key collision. This flag is true when a later chain arrived at this key carrying
+  # a different URI string, which is the only way the difference is visible. A cross-chain claim
+  # is only worth making while it is false.
+  uriConflict: Boolean!
+  presence: [ChiasmPresence!]! @derivedFrom(field: "record")
+}
+
+# One row per (document, chain). Cross-chain too, for two reasons. A `@crossChain` parent cannot
+# hold a `@derivedFrom` list of per-chain children. A per-chain entity may not declare its own
+# `chainId` field either, because envio appends that column itself. So the chain lives in the ID instead,
+# which is also what keeps the two chains off each other's counters: only the chain named in an ID
+# ever writes that row.
+type ChiasmPresence @crossChain {
+  id: ID! # uriHash_chainId
+  record: ChiasmRecord!
+  chainId: Int! @index
+  agentCount: Int!
+  # The first agent id seen on this chain pointing here, so a reader can jump straight to the row.
+  firstAgentId: BigInt!
+  firstSeenBlock: BigInt!
+  lastSeenBlock: BigInt!
+  firstSeenAt: BigInt!
+  lastSeenAt: BigInt!
+}
+
 type IndexState {
   id: ID! # chainId
   # eth_getStorageAt on the identity registry counter slot.

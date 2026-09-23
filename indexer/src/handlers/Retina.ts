@@ -19,39 +19,66 @@
  *   4. `feedbackURI` and `feedbackHash` exist ONLY as non-indexed fields of `NewFeedback`.
  *      `readFeedback()` does not return them and eth_getLogs caps at a 100-block span on free
  *      Monad RPC against a 104M-block head. Without this indexer the verifier is impossible.
+ *
+ * Two chains now, Monad 143 and BSC 56, with the same three registries at the same addresses and
+ * unrelated populations. Everything in this file stays per-chain: entity IDs carry the chain and
+ * chain 143 produces the same IDs it always did. The one place the chains meet is ./Chiasm.ts,
+ * called from the `Registered` handler.
  */
 import { indexer, createEffect, S } from "envio";
+import { recordReferral } from "./Chiasm";
 
-const CHAIN = 143;
 const ZERO = "0x0000000000000000000000000000000000000000";
 
 /** Storage slot holding the registration counter, since totalSupply() reverts. */
 const COUNTER_SLOT =
   "0xa040f782729de4970518741823ec1276cbcd41a0c7493f62d173341566a04e00";
-const IDENTITY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432";
 
 /**
- * Where the population sweep reads state from.
+ * Per-chain wiring for the population cross-check. The registries sit at the same three
+ * addresses on both chains, verified on chain rather than taken from a deployment list, so the
+ * only thing that actually differs here is which node to ask. See config.yaml for the reads.
  *
- * Overridable, but NOT because a dedicated endpoint fixes the sweep failures. That was the theory
- * and it is wrong: swapping the public endpoint for a dedicated one left the failure count
- * unchanged, 3,705 against 3,869, which is what proved the cause was sweep volume rather than the
- * endpoint. The `_gte` floor on PopulationCheck is the fix. This stays configurable because
- * hardcoding one provider's URL is its own problem.
+ * Keyed by the literal chain ids from config.yaml, so a chain added there without a line here is
+ * a type error in the onBlock `where` below rather than a silent gap.
  *
- * Kept out of the repo. The URL carries an API key, so it lives in .env.local and arrives through
- * compose. Falling back to the public endpoint is deliberate: a missing key should degrade, not
- * break, because this read is a cross-check rather than the indexing path.
+ * Both URLs are overridable and both fall back to a public endpoint. Overridable is NOT because
+ * a dedicated endpoint fixes the sweep failures. That was the theory and it is wrong: swapping
+ * the public Monad endpoint for a dedicated one left the failure count unchanged, 3,705 against
+ * 3,869, which is what proved the cause was sweep volume rather than the endpoint. The `_gte`
+ * floor on PopulationCheck is the fix. This stays configurable because hardcoding one provider's
+ * URL is its own problem.
+ *
+ * The Monad URL carries an API key, so it lives in .env.local and arrives through compose.
+ * Falling back to the public endpoint is deliberate: a missing key should degrade, not break,
+ * because this read is a cross-check rather than the indexing path. The BSC default is
+ * bsc-dataseed.bnbchain.org, which answered the counter slot on 2026-09-23 without a key.
  */
-const RPC_URL = process.env.MONAD_RPC_URL || "https://rpc.monad.xyz";
+const CHAINS = {
+  143: {
+    identity: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+    rpc: process.env.MONAD_RPC_URL || "https://rpc.monad.xyz",
+  },
+  56: {
+    identity: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+    rpc: process.env.BSC_RPC_URL || "https://bsc-dataseed.bnbchain.org",
+  },
+} as const;
 
-const agentKey = (agentId: bigint): string => `${CHAIN}_${agentId}`;
+/**
+ * Entity IDs stay namespaced by chain because every entity here is per-chain and an agent id
+ * means nothing without the chain it was minted on. Chain 143 produces the same strings it did
+ * when Monad was the only chain, so no published Monad row moves.
+ */
+const agentKey = (chainId: number, agentId: bigint): string =>
+  `${chainId}_${agentId}`;
 
 const feedbackKey = (
+  chainId: number,
   agentId: bigint,
   client: string,
   index: bigint,
-): string => `${CHAIN}_${agentId}_${client}_${index}`;
+): string => `${chainId}_${agentId}_${client}_${index}`;
 
 /** Stable dedup key for a registration document. Not cryptographic, never used as evidence. */
 function uriKey(uri: string): string {
@@ -86,6 +113,11 @@ function recordKind(uri: string): string {
  *
  * `cache: false` because the counter changes every time an agent registers and a cached value
  * would make the freshness number we publish a lie.
+ *
+ * `crossChain: false` states the default explicitly. Under `disable_default_cross_chain: true`
+ * every effect is already chain-scoped, which is what makes `context.chain.id` readable in here.
+ * Reading it on a cross-chain effect throws, so the option and the read belong together in one
+ * place rather than one relying on the other's default.
  */
 const readAgentCount = createEffect(
   {
@@ -99,8 +131,17 @@ const readAgentCount = createEffect(
     // make the freshness number we publish a lie.
     cache: false,
     rateLimit: false,
+    crossChain: false,
   },
   async ({ input, context }) => {
+    const chain = CHAINS[context.chain.id as keyof typeof CHAINS];
+    if (!chain) {
+      // A chain in config.yaml with no line in CHAINS. Publish unknown rather than guess a node.
+      context.log.warn(
+        `readAgentCount: no RPC configured for chain ${context.chain.id}, publishing unknown`,
+      );
+      return null;
+    }
     const body = {
       jsonrpc: "2.0",
       id: 1,
@@ -110,15 +151,16 @@ const readAgentCount = createEffect(
       // rpc.monad.xyz is not an archive node. Asking it for state at block 53,010,000 returns
       // -32602 "Block requested not found. Request might be querying historical state that is
       // not available", so every sweep during a backfill failed, which is every sweep there is
-      // until the index reaches head. Measured: 5,276 of 5,276 returned no result.
+      // until the index reaches head. Measured: 5,276 of 5,276 returned no result. The public
+      // BSC endpoints are the same: eth_getCode at block 30,000,000 answers "missing trie node".
       //
-      // Reading at head is also what the number is FOR. IndexState is one row that each sweep
-      // overwrites and /status compares "agents that exist now" against "rows we hold now".
-      // Nobody reads a historical population, so nothing was gained by asking for one.
-      params: [IDENTITY, COUNTER_SLOT, "latest"],
+      // Reading at head is also what the number is FOR. IndexState is one row per chain that
+      // each sweep overwrites and /status compares "agents that exist now" against "rows we hold
+      // now". Nobody reads a historical population, so nothing was gained by asking for one.
+      params: [chain.identity, COUNTER_SLOT, "latest"],
     };
     try {
-      const res = await fetch(RPC_URL, {
+      const res = await fetch(chain.rpc, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
@@ -130,7 +172,8 @@ const readAgentCount = createEffect(
       const json = (await res.json()) as { result?: string };
       if (!json.result) {
         context.log.warn(
-          `readAgentCount: no result at block ${input.blockNumber}, publishing unknown. ` +
+          `readAgentCount: no result on chain ${context.chain.id} at block ` +
+            `${input.blockNumber}, publishing unknown. ` +
             `rpc said: ${JSON.stringify(json).slice(0, 200)}`,
         );
         return null;
@@ -143,7 +186,8 @@ const readAgentCount = createEffect(
       // But SAY SO. A bare `catch { return null }` here hid a 100% failure rate, because a
       // silent null is indistinguishable from a chain that has nothing to report.
       context.log.warn(
-        `readAgentCount failed at block ${input.blockNumber}: ${String(err)}`,
+        `readAgentCount failed on chain ${context.chain.id} at block ` +
+          `${input.blockNumber}: ${String(err)}`,
       );
       return null;
     }
@@ -157,7 +201,7 @@ const readAgentCount = createEffect(
 indexer.onEvent(
   { contract: "IdentityRegistry", event: "Registered", fields: { block: ["timestamp"] } },
   async ({ event, context }) => {
-    const id = agentKey(event.params.agentId);
+    const id = agentKey(event.chainId, event.params.agentId);
     const existing = await context.Agent.get(id);
     const uri = event.params.agentURI ?? "";
     const hasUri = uri.length > 0;
@@ -206,6 +250,17 @@ indexer.onEvent(
           firstSeenBlock: BigInt(event.block.number),
         });
       }
+
+      // Chiasm. The same key this handler just wrote per chain, merged across chains. Everything
+      // above stays per-chain; this is the only shared write in the file. See ./Chiasm.ts.
+      await recordReferral(context, {
+        uriHash,
+        uri,
+        chainId: event.chainId,
+        agentId: event.params.agentId,
+        blockNumber: BigInt(event.block.number),
+        timestamp: BigInt(event.block.timestamp),
+      });
     }
 
     context.Agent.set({
@@ -236,7 +291,7 @@ indexer.onEvent(
 indexer.onEvent(
   { contract: "IdentityRegistry", event: "Transfer", fields: { block: ["timestamp"] } },
   async ({ event, context }) => {
-    const id = agentKey(event.params.tokenId);
+    const id = agentKey(event.chainId, event.params.tokenId);
     const existing = await context.Agent.get(id);
     const isMint = event.params.from === ZERO;
 
@@ -279,7 +334,7 @@ indexer.onEvent(
 indexer.onEvent(
   { contract: "IdentityRegistry", event: "MetadataSet" },
   async ({ event, context }) => {
-    const id = agentKey(event.params.agentId);
+    const id = agentKey(event.chainId, event.params.agentId);
     const existing = await context.Agent.get(id);
     if (!existing) return;
 
@@ -308,7 +363,7 @@ indexer.onEvent(
 indexer.onEvent(
   { contract: "IdentityRegistry", event: "MetadataUpdate" },
   async ({ event, context }) => {
-    const id = agentKey(event.params._tokenId);
+    const id = agentKey(event.chainId, event.params._tokenId);
     const existing = await context.Agent.get(id);
     if (!existing) return;
     context.Agent.set({
@@ -332,11 +387,12 @@ indexer.onEvent(
   async ({ event, context }) => {
     context.Feedback.set({
       id: feedbackKey(
+        event.chainId,
         event.params.agentId,
         event.params.clientAddress,
         event.params.feedbackIndex,
       ),
-      agent_id: agentKey(event.params.agentId),
+      agent_id: agentKey(event.chainId, event.params.agentId),
       clientAddress: event.params.clientAddress,
       feedbackIndex: event.params.feedbackIndex,
       value: event.params.value,
@@ -368,6 +424,7 @@ indexer.onEvent(
   { contract: "ReputationRegistry", event: "FeedbackRevoked" },
   async ({ event, context }) => {
     const id = feedbackKey(
+      event.chainId,
       event.params.agentId,
       event.params.clientAddress,
       event.params.feedbackIndex,
@@ -390,6 +447,7 @@ indexer.onEvent(
   { contract: "ReputationRegistry", event: "ResponseAppended" },
   async ({ event, context }) => {
     const id = feedbackKey(
+      event.chainId,
       event.params.agentId,
       event.params.clientAddress,
       event.params.feedbackIndex,
@@ -414,8 +472,8 @@ indexer.onEvent(
   { contract: "ValidationRegistry", event: "ValidationRequest" },
   async ({ event, context }) => {
     context.Validation.set({
-      id: `${CHAIN}_${event.params.requestHash}`,
-      agent_id: agentKey(event.params.agentId),
+      id: `${event.chainId}_${event.params.requestHash}`,
+      agent_id: agentKey(event.chainId, event.params.agentId),
       validatorAddress: event.params.validatorAddress,
       requestHash: event.params.requestHash,
       requestUri: event.params.requestURI,
@@ -432,11 +490,11 @@ indexer.onEvent(
 indexer.onEvent(
   { contract: "ValidationRegistry", event: "ValidationResponse" },
   async ({ event, context }) => {
-    const id = `${CHAIN}_${event.params.requestHash}`;
+    const id = `${event.chainId}_${event.params.requestHash}`;
     const existing = await context.Validation.get(id);
     context.Validation.set({
       id,
-      agent_id: agentKey(event.params.agentId),
+      agent_id: agentKey(event.chainId, event.params.agentId),
       validatorAddress: event.params.validatorAddress,
       requestHash: event.params.requestHash,
       requestUri: existing?.requestUri,
@@ -451,7 +509,7 @@ indexer.onEvent(
 );
 
 /**
- * The population cross-check, every 2,000 blocks (~30 min at Monad's block time).
+ * The population cross-check, every 10,000 blocks on each chain.
  *
  * The registry is not enumerable, so "how many agents exist" and "how many have we indexed" are
  * two different questions with two different answers. Publishing both is what lets /status say
@@ -462,6 +520,9 @@ indexer.onEvent(
  * and for free with `Agent_aggregate { aggregate { count } }`. An earlier version stored it on
  * IndexState and never incremented it, which pinned it at 0 and made the gap always maximal.
  * See docs/18-BUGS-FIXED.md.
+ *
+ * IndexState is per-chain, one row keyed by chain id, so BSC gets the same honest freshness gap
+ * Monad does and Monad's row is untouched by its arrival.
  */
 indexer.onBlock(
   {
@@ -493,6 +554,16 @@ indexer.onBlock(
               number: { _every: 10000, _gte: 105000000 },
             },
           };
+        case 56:
+          return {
+            block: {
+              // Same shape, same reasoning, BSC's own floor. Head was 123,484,348 on 2026-09-23,
+              // so 123,000,000 sits below it and keeps sweeping forever without replaying the
+              // 44M blocks between the deployment at 79,027,268 and now. 10,000 BSC blocks is
+              // about 2 hours.
+              number: { _every: 10000, _gte: 123000000 },
+            },
+          };
         default: {
           // Exhaustiveness check: adding a chain to config.yaml without handling it here is a
           // type error rather than a silent gap.
@@ -507,9 +578,12 @@ indexer.onBlock(
       blockNumber: BigInt(block.number),
     });
 
-    const existing = await context.IndexState.get(String(CHAIN));
+    // One row per chain. `context.chain.id` rather than a constant, because this handler now runs
+    // on both chains and a hardcoded id would have BSC overwriting Monad's freshness row.
+    const chainId = String(context.chain.id);
+    const existing = await context.IndexState.get(chainId);
     context.IndexState.set({
-      id: String(CHAIN),
+      id: chainId,
       // Unknown stays unknown. The comment here said that before the field could express it:
       // the schema had `BigInt!`, so this line's `?? 0n` fallback published exactly the zero it
       // forbids. The field is nullable now. See docs/18-BUGS-FIXED.md.

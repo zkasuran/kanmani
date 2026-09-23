@@ -11,7 +11,7 @@
 #
 # Events are named rather than spelled out as signatures, because `abi_file_path` is set and the
 # canonical ABIs are vendored under ./abis. That matters: three of these signatures are easy to
-# get wrong from the draft text alone, and the ABI is the authority.
+# get wrong from the draft text alone. The ABI is the authority.
 #
 # Two measured facts shape the event list, both read off the chain on 2026-09-13:
 #
@@ -22,7 +22,7 @@
 #
 #   2. The deployment emits FOUR events per registration, one more than the ERC-8004 draft lists.
 #      Confirmed by querying block 103,845,082 and matching every topic0 with `cast keccak`:
-#        Transfer        0xddf252ad...  ERC-721 mint, and the ONLY source of ownership change
+#        Transfer        0xddf252ad...  ERC-721 mint, the ONLY source of ownership change
 #        Registered      0xca52e62c...  in the draft
 #        MetadataSet     0x2c149ed5...  in the draft
 #        MetadataUpdate  0xf8e1a15a...  NOT in the draft. ERC-4906.
@@ -32,13 +32,18 @@
 # `start_block: 0` is deliberate: HyperSync fast-forwards to the first block carrying registry
 # data, which is the only practical way to find the deployment block when the public RPC keeps a
 # limited state window and caps eth_getLogs at a 100-block span.
+#
+# HyperSync serves chain 56 as well, height 123,484,348 when checked on 2026-09-23, so BSC needs
+# no RPC config either. The one thing it does need is its own start_block, because 79M empty
+# blocks is a scan worth skipping. See the note beside the chain.
 
 name: kanmani-retina
-description: ERC-8004 agent identity and reputation on Monad, indexed with provenance
+description: ERC-8004 agent identity and reputation on Monad and BSC, indexed with provenance
 
-# Entities are per-chain. Monad is the only chain today, but BSC carries the same registries at
-# identical addresses with a separate population, and Chiasm will index both to merge standing
-# across them. Setting this now avoids a migration later.
+# Entities are per-chain by default. Two chains are indexed, Monad and BSC. Every entity above
+# Chiasm in schema.graphql keeps its rows separate per chain. Sharing is opt-in per entity with
+# `@crossChain`, which is what Chiasm uses for the merged document row. Turning this flag off
+# instead would silently merge every entity, including the Monad agent and feedback counts.
 disable_default_cross_chain: true
 
 contracts:
@@ -86,6 +91,40 @@ chains:
   # agents, but the USDC rail and the population that matters are both here.
   - id: 143
     start_block: 0
+    contracts:
+      - name: IdentityRegistry
+        address: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
+      - name: ReputationRegistry
+        address: "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63"
+      - name: ValidationRegistry
+        address: "0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58"
+
+  # BSC mainnet, chain 56. Same three registries at the same addresses, separate population.
+  #
+  # Every address below was established on chain rather than from a deployment list, because a
+  # wrong address indexes nothing and still looks like a working integration. Read 2026-09-23
+  # against https://bsc-dataseed.bnbchain.org, confirmed identical on
+  # https://bsc-rpc.publicnode.com, both answering eth_chainId 0x38:
+  #
+  #   all three          eth_getCode 130 bytes, an ERC-1967 proxy
+  #   IdentityRegistry   name() "AgentIdentity", symbol() "AGENT", getVersion() "2.0.0"
+  #   ReputationRegistry getIdentityRegistry() -> 0x8004a169...a432, getVersion() "2.0.0"
+  #   ValidationRegistry getIdentityRegistry() -> 0x8004a169...a432, getVersion() "2.0.0"
+  #
+  # The last two are the load-bearing checks. Each registry names its own identity registry, so
+  # the set is self-consistent on chain and nothing here rests on a document.
+  #
+  # Separate population, not a mirror of Monad: the counter slot reads 356,277 against Monad's
+  # 10,253. ownerOf(1) is 0x89e9e1ab11dd1b138b1dce6d6a4a0926aafd5029 with a tokenURI naming a
+  # different agent.
+  #
+  # start_block is the proxy deployment, found by asking HyperSync for the first log at these
+  # three addresses from block 0: block 79,027,268 carries Upgraded, OwnershipTransferred and
+  # Initialized for the identity registry. Monad's equivalent is 52,952,790. Monad keeps
+  # start_block 0 deliberately, see the note above, so this is the one chain where the number is
+  # pinned. It saves scanning 79M empty blocks.
+  - id: 56
+    start_block: 79027268
     contracts:
       - name: IdentityRegistry
         address: "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432"
