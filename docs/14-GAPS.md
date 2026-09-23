@@ -256,7 +256,7 @@ Traction is 20% of the score. The honest count today:
 | jobs settled that we did not create ourselves | **0** |
 | progress updates posted | 6 |
 | mentor questions asked / fielded / answered | 6 / 5 / 1 |
-| forum threads | 0 |
+| forum threads | 1 submitted, awaiting moderation |
 
 The three targets are named because the whole population was measured, which is the one advantage
 here: I can name every payable agent on Monad because I checked all 10,253 and there are three.
