@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, outcomeMeaning } from "@/components/ui.tsx";
+import { Derivation, Mono, Num, OutcomeBadge, PageHeader, Panel, Row, RungLadder, outcomeMeaning } from "@/components/ui.tsx";
 import { check } from "@/lib/check.ts";
 import { claim } from "@/lib/queries.ts";
 
@@ -33,21 +33,18 @@ export default async function Verify({ searchParams }: Props) {
   const failed = result instanceof Error;
 
   return (
-    <div className="space-y-12">
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
-        <div className="grid-faint pointer-events-none absolute inset-0" />
-        <div className="relative">
-          <p className="eyebrow">erc-8004 · monad mainnet · live check</p>
-          <h1 className="mt-4 max-w-3xl text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.15] tracking-tight">
-            Check any claim yourself.
-          </h1>
-          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
+    <div className="flex flex-col gap-[var(--section-gap)]">
+      <PageHeader
+        kicker="erc-8004 · monad mainnet · live check"
+        title="Check any claim yourself."
+        lead={
+          <>
             Paste an evidence document or a claim id from this site. The check that runs here is the
             same code the sweep and the command line run, so this page and the tool cannot give
             different answers. The result gets its own URL, so it can be sent to whoever disagrees.
-          </p>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       <Panel title="check a document or a claim id">
         <form action="/verify" className="space-y-3">

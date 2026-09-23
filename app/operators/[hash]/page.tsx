@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Eyebrow, Mono, Num, Panel, Pct, Row } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, Panel, Pct, Row } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { clusterMembers, clusterOwners, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 
@@ -38,14 +38,14 @@ export default async function ClusterPage({ params, searchParams }: Props) {
   const repeats = c.memberCount - c.distinctOwners;
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       <section>
         <Link href="/operators" className="font-mono text-[11px] text-faint hover:text-muted">
           ← all clusters
         </Link>
         <div className="mt-3">
-          <Eyebrow>one registration document, everyone who points at it</Eyebrow>
-          <h1 className="mt-2 text-[clamp(1.5rem,3vw,2.1rem)] font-semibold leading-[1.15] tracking-tight">
+          <span className="kicker">one registration document, everyone who points at it</span>
+          <h1 className="mt-3 fluid-3 font-semibold leading-[1.15] tracking-tight">
             <Num value={c.memberCount} /> {c.memberCount === 1 ? "agent" : "agents"} across{" "}
             <Num value={c.distinctOwners} /> {c.distinctOwners === 1 ? "wallet" : "wallets"}
           </h1>

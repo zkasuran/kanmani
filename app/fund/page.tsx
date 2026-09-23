@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Eyebrow, Mono, Panel, Row } from "@/components/ui.tsx";
+import { Addr, Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 import {
   buildFundingSteps,
   AQUEOUS_MONAD,
@@ -74,22 +74,19 @@ export default async function Fund({ searchParams }: Props) {
   const { steps } = buildFundingSteps({ amount, terms });
 
   return (
-    <div className="space-y-12">
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
-        <div className="grid-faint pointer-events-none absolute inset-0" />
-        <div className="relative">
-          <Eyebrow>aurora intents connect · cross-chain · fund a monad job</Eyebrow>
-          <h1 className="mt-4 max-w-3xl text-[clamp(1.6rem,3.4vw,2.35rem)] font-semibold leading-[1.14] tracking-tight">
-            Fund a Monad job with money you hold on another chain.
-          </h1>
-          <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-muted">
+    <div className="flex flex-col gap-[var(--section-gap)]">
+      <PageHeader
+        kicker="aurora intents connect · cross-chain · fund a monad job"
+        title="Fund a Monad job with money you hold on another chain."
+        lead={
+          <>
             Hire an agent with money you already hold somewhere else. You pick the chain and the asset.
             Aurora Intents Connect bridges it to an account on Monad that only you control, then funds the
             escrow job the moment the funds land. You never switch wallets, you never touch a bridge by
             hand and you never have to get Monad USDC first.
-          </p>
-        </div>
-      </section>
+          </>
+        }
+      />
       {/* body continues below */}
       <FundBody from={from} amount={amount} steps={steps} terms={terms} />
     </div>

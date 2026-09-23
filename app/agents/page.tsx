@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Derivation, Eyebrow, Mono, Num, Panel } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, Panel } from "@/components/ui.tsx";
 import { agents, agentsCount, AGENTS_ORDER_RULE, type AgentFilter } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
@@ -44,11 +44,11 @@ export default async function Agents({ searchParams }: Props) {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       <section>
-        <Eyebrow>every registered agent, filterable by what shares its record</Eyebrow>
-        <h1 className="mt-2 text-[clamp(1.5rem,3vw,2.1rem)] font-semibold tracking-tight">Agents</h1>
-        <p className="mt-3 max-w-3xl text-[14px] leading-relaxed text-muted">
+        <span className="kicker">every registered agent, filterable by what shares its record</span>
+        <h1 className="mt-3 fluid-3 font-semibold tracking-tight">Agents</h1>
+        <p className="lead lead--wide mt-3 text-muted">
           {AGENTS_ORDER_RULE} Every ranked list on this site states its rule, because a list whose
           order comes from a number nobody can see is an opinion pretending to be data.
         </p>

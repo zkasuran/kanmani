@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Cta, Derivation, Eyebrow, Num, Panel, Pct, StatTile } from "@/components/ui.tsx";
+import { Addr, Cta, Derivation, Num, Panel, Pct, StatTile } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { hosts, probedClusters, registryHealth, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, labelDistribution } from "@/lib/labels.ts";
@@ -29,13 +29,13 @@ export default async function Operators() {
   const paywalledAgents = h.byState.find((s) => s.state === "paywalled")?.agents ?? 0;
 
   return (
-    <div className="space-y-12">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- the biggest cluster */}
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+      <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
         <div className="grid-faint pointer-events-none absolute inset-0" />
         <div className="relative">
-          <Eyebrow>clustered by registration document, not by wallet</Eyebrow>
-          <h1 className="mt-4 max-w-4xl text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.15] tracking-tight">
+          <span className="kicker">clustered by registration document, not by wallet</span>
+          <h1 className="mt-4 max-w-4xl fluid-3 font-semibold leading-[1.15] tracking-tight">
             {biggest ? (
               <>
                 <span className="text-[var(--color-brand)]">

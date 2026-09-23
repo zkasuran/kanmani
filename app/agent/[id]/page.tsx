@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Eyebrow, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile, TxLink } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile, TxLink } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
@@ -36,15 +36,15 @@ export default async function AgentPage({ params }: Props) {
   const doNot = checked.filter((c) => c.outcome === "false").length;
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       <section>
         <Link href="/agents" className="font-mono text-[11px] text-faint hover:text-muted">
           ← all agents
         </Link>
         <div className="mt-3">
-          <Eyebrow>one agent, every claim about it and how it was decided</Eyebrow>
+          <span className="kicker">one agent, every claim about it and how it was decided</span>
         </div>
-        <h1 className="mt-2 flex flex-wrap items-baseline gap-3 text-[clamp(1.5rem,3vw,2.1rem)] font-semibold tracking-tight">
+        <h1 className="mt-3 flex flex-wrap items-baseline gap-3 fluid-3 font-semibold tracking-tight">
           <span>#{a.agentId}</span>
           <span className="text-[var(--color-muted)]">{a.name ?? "unnamed"}</span>
         </h1>

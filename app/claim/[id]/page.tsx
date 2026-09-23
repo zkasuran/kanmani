@@ -27,15 +27,15 @@ export default async function ClaimPage({ params }: Props) {
   const isDataUri = c.feedbackUri.startsWith("data:");
 
   return (
-    <div className="space-y-6">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- header */}
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-8 pt-8 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+      <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-8 pt-8 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
         <div className="grid-faint pointer-events-none absolute inset-0" />
         <div className="relative">
           <Link href="/claims" className="font-mono text-[11px] text-faint hover:text-muted">
             ← all claims
           </Link>
-          <p className="eyebrow mt-3">evidence document · monad mainnet · chain 143</p>
+          <p className="kicker mt-3">evidence document · monad mainnet · chain 143</p>
           <div className="mt-2 flex flex-wrap items-center gap-3">
             <h1 className="break-all font-mono text-lg tracking-tight">{c.id}</h1>
             <OutcomeBadge outcome={c.outcome} size="lg" />

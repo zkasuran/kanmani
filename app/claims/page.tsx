@@ -58,16 +58,16 @@ export default async function Claims({ searchParams }: Props) {
   const unknownN = outcomeTotal("unknown");
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- header */}
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-8 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+      <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-8 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
         <div className="grid-faint pointer-events-none absolute inset-0" />
         <div className="relative">
-          <p className="eyebrow">claims · monad mainnet · chain 143</p>
-          <h1 className="mt-4 max-w-4xl text-[clamp(1.7rem,3.6vw,2.5rem)] font-semibold leading-[1.15] tracking-tight">
+          <span className="kicker">claims · monad mainnet · chain 143</span>
+          <h1 className="mt-4 max-w-4xl fluid-3 font-semibold leading-[1.15] tracking-tight">
             Every evidence document and what checking it found
           </h1>
-          <p className="mt-4 max-w-3xl text-[14px] leading-relaxed text-muted">
+          <p className="lead lead--wide mt-4 text-muted">
             One row per evidence document carrying a URI. Ordered newest first by the block the
             feedback was recorded in. There is no score and no ranking here, because a list of other
             people&apos;s documents sorted by an opinion of ours would be exactly the thing this site
@@ -75,7 +75,7 @@ export default async function Claims({ searchParams }: Props) {
           </p>
 
           {/* the whole checked population at a glance, before any filter narrows it */}
-          <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="mt-7 auto-grid">
             <StatTile label="not on the chain they name" value={falseN} tone="false" hint="We read the chain the document names and the cited transaction is not on it." />
             <StatTile label="on the chain they name" value={trueN} tone="true" hint="The cited transaction is on the chain the document names." />
             <StatTile label="could not check" value={unknownN} tone="unknown" hint="A fetch failed, the bytes moved or no mapping read the shape. Never an accusation." />

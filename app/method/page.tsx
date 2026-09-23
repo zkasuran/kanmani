@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mono, Panel, SectionHead } from "@/components/ui.tsx";
+import { Mono, PageHeader, Panel, SectionHead } from "@/components/ui.tsx";
+import { Reveal } from "@/components/motion.tsx";
 import { ATLAS } from "../../verifier/src/ladder/parse.ts";
 import { CHAINS } from "../../verifier/src/chains.ts";
 
@@ -51,25 +52,22 @@ const RUNGS = [
 
 export default function Method() {
   return (
-    <div className="space-y-10">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- header */}
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-9 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
-        <div className="grid-faint pointer-events-none absolute inset-0" />
-        <div className="relative">
-          <p className="eyebrow">method · monad mainnet · chain 143</p>
-          <h1 className="mt-4 max-w-4xl text-[clamp(1.8rem,4vw,2.6rem)] font-semibold leading-[1.14] tracking-tight">
-            How each verdict on this site is decided
-          </h1>
-          <p className="mt-4 max-w-3xl text-[14.5px] leading-relaxed text-muted">
-            Every verdict on this site is reproducible by hand. Each rung below says what question it
-            answers, how it decides, what happens when it cannot decide and the command that gets the
-            same answer without this site. If any of them disagree with what a page here says, the
-            page is wrong.
-          </p>
-        </div>
-      </section>
+      <PageHeader
+        kicker="method · monad mainnet · chain 143"
+        title="How each verdict on this site is decided"
+        lead={
+          <>
+            Every verdict here is reproducible by hand. Each rung says what question it answers, how
+            it decides, what happens when it cannot decide, and the command that gets the same answer
+            without this site. If any of them disagree with what a page here says, the page is wrong.
+          </>
+        }
+      />
 
       {/* ---------------------------------------------------------------- the rule */}
+      <Reveal>
       <Panel title="the one rule that governs everything else">
         <p className="text-[15px] leading-relaxed">
           <span className="text-[var(--color-false)]">false</span> means we read the chain and the
@@ -86,9 +84,12 @@ export default function Method() {
           does not exist&quot; on the strength of an outage.
         </p>
       </Panel>
+      </Reveal>
+
+      <hr className="rule-soft" />
 
       {/* ---------------------------------------------------------------- the ladder */}
-      <section className="space-y-4">
+      <Reveal as="section" className="space-y-4">
         <SectionHead eyebrow="the ladder" title="How each rung decides" />
         {RUNGS.map((r, i) => (
           <Panel key={r.id} title={`${i + 1}. ${r.id}`} subtitle={r.q}>
@@ -110,9 +111,12 @@ export default function Method() {
             </div>
           </Panel>
         ))}
-      </section>
+      </Reveal>
+
+      <hr className="rule-soft" />
 
       {/* ---------------------------------------------------------------- the atlas */}
+      <Reveal>
       <Panel
         title="the atlas"
         subtitle="The mappings that read a document shape, induced from real documents on Monad and then published. A reader re-running the pipeline executes these deterministically, with no model anywhere in the loop and gets the same numbers."
@@ -142,8 +146,12 @@ export default function Method() {
           rather than guessed at.
         </p>
       </Panel>
+      </Reveal>
+
+      <hr className="rule-soft" />
 
       {/* ---------------------------------------------------------------- coverage */}
+      <Reveal>
       <Panel
         title="chain coverage"
         subtitle="A transaction that is not found means nothing without the list of chains it was looked for on. This is what makes a negative falsifiable."
@@ -174,8 +182,12 @@ export default function Method() {
           reason says which chain it named.
         </p>
       </Panel>
+      </Reveal>
+
+      <hr className="rule-soft" />
 
       {/* ---------------------------------------------------------------- corrections */}
+      <Reveal>
       <Panel title="what happens when we are wrong">
         <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
           Verdicts are stored append only. There is no update path anywhere in the code. A re-check
@@ -194,6 +206,7 @@ export default function Method() {
           word on somebody else&apos;s reputation by construction.
         </p>
       </Panel>
+      </Reveal>
     </div>
   );
 }

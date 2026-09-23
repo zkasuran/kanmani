@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { AccountPanel } from "@/components/account-panel.tsx";
-import { Eyebrow, Panel } from "@/components/ui.tsx";
+import { PageHeader, Panel } from "@/components/ui.tsx";
 
 export const metadata = {
   title: "Account",
@@ -29,23 +29,20 @@ const AUTHENTICATORS = [
 
 export default function AccountPage() {
   return (
-    <div className="space-y-12">
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
-        <div className="grid-faint pointer-events-none absolute inset-0" />
-        <div className="relative">
-          <Eyebrow>mera · webauthn prf · trust-identity-ai</Eyebrow>
-          <h1 className="mt-4 max-w-3xl text-[clamp(1.6rem,3.4vw,2.35rem)] font-semibold leading-[1.14] tracking-tight">
-            Four keys from one passkey. The server holds none of them.
-          </h1>
-          <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-muted">
+    <div className="flex flex-col gap-[var(--section-gap)]">
+      <PageHeader
+        kicker="mera · webauthn prf · trust-identity-ai"
+        title="Four keys from one passkey. The server holds none of them."
+        lead={
+          <>
             One passkey ceremony gives four independent keys: the account you sign in with, the
             identity that signs verification receipts off chain, the on-chain attestation key a
             contract recovers as the verdict signer and the key that encrypts anything private.
             Nothing is stored on this device and nothing secret reaches the server, so clearing local
             storage loses nothing and a second device reproduces the same keys exactly.
-          </p>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       <AccountPanel />
 

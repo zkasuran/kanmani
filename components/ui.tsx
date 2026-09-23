@@ -191,6 +191,38 @@ export function SectionHead({
 }
 
 /**
+ * The page header every interior page shares, so the whole site opens on the same beat as the
+ * landing hero: the living brand field, a fluid title and a calm lead line, bleeding to the screen
+ * edges on a phone and settling into a rounded panel on a wider viewport. Craft only; it states no
+ * verdict. Children render as actions or a stat cluster beneath the lead.
+ */
+export function PageHeader({
+  kicker,
+  title,
+  lead,
+  children,
+}: {
+  kicker?: ReactNode;
+  title: ReactNode;
+  lead?: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-9 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+      <div className="grid-faint pointer-events-none absolute inset-0" />
+      <div className="relative">
+        {kicker ? <span className="kicker">{kicker}</span> : null}
+        <h1 className="mt-4 max-w-4xl fluid-3 font-semibold leading-[1.14] tracking-tight">{title}</h1>
+        {lead ? (
+          <p className="lead lead--wide mt-4 text-muted">{lead}</p>
+        ) : null}
+        {children ? <div className="mt-6">{children}</div> : null}
+      </div>
+    </section>
+  );
+}
+
+/**
  * One measured figure with a label. The number is large and tabular, the label quiet. `tone`
  * borrows a verdict colour when the figure IS a verdict count and stays neutral otherwise, so a
  * number never wears a colour that means something it does not.

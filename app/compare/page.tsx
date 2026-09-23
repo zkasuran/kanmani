@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, OutcomeBadge, PageHeader, Panel } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, claims, probedCluster, type AgentRow, type ClusterWithProbe } from "@/lib/queries.ts";
 
@@ -54,21 +54,18 @@ export default async function Compare({ searchParams }: Props) {
   const missing = ids.length - sides.length;
 
   return (
-    <div className="space-y-12">
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
-        <div className="grid-faint pointer-events-none absolute inset-0" />
-        <div className="relative">
-          <p className="eyebrow">erc-8004 · monad mainnet · side by side</p>
-          <h1 className="mt-4 max-w-3xl text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.15] tracking-tight">
-            Two to four agents, rung first.
-          </h1>
-          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
+    <div className="flex flex-col gap-[var(--section-gap)]">
+      <PageHeader
+        kicker="erc-8004 · monad mainnet · side by side"
+        title="Two to four agents, rung first."
+        lead={
+          <>
             Rung first, then what each one claimed against what was found. There is no combined score
             and there is no winner, because a single number over two agents with different amounts of
             evidence would hide exactly the thing worth comparing.
-          </p>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       <Panel title="pick agents to compare">
         <form action="/compare" className="flex flex-wrap items-end gap-2.5">
