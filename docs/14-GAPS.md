@@ -108,7 +108,7 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 
 | planned | what it was for | state |
 |---|---|---|
-| **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **built, not deployed** |
+| **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **LIVE on Monad mainnet 2026-09-24**, [`0x57aF4e4B…`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), source verified |
 | **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **shipped and live 2026-09-23.** 356,647 BSC agents indexed beside Monad's 10,256, 205,597 merged records, 3 documents referenced from both chains |
 | **CleanverseGate**, gated release | release conditioned on a compliance credential | **built, not deployed** |
 | **Cone**, odds market | a crowd price on whether an agent delivers | not started |
@@ -128,9 +128,13 @@ immutable constructor argument with no setter. Six new tests, and the mutation t
 replacing the check with `if (false)` turns four of them red. Finding 10 is closed too. The contract
 suite is 127 tests, 119 passing, 8 fork tests skipped without a fork URL.
 
-**So the remaining blocker is deployment, not safety.** That needs a funded deployer key and a real
-attestor address — the deploy script refuses the demo attestor by address, because that key is derived
-from a test vector committed to this repository.
+**Deployed 2026-09-24** at `0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`, source verified `exact_match`, 0.250 MON of gas. The ownership
+check is proven on the live contract: `postBond` for an agent we do not own reverts `NotAgentOwner()`.
+
+**What is still true is that no bond has been posted.** The mechanism exists and nothing is staked on
+it yet, which is a different sentence from the one this section used to carry and a weaker claim than
+"trust becomes a price" fully realised. Posting the first real bond needs an agent we own plus USDC,
+and it is not done.
 
 **What "built, not deployed" costs, stated exactly.** No Sclera address is recorded anywhere and no
 `SCLERA` variable is set in the running environment, so no bond has ever been posted or slashed with

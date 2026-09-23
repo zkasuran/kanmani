@@ -409,7 +409,7 @@ and it is now false.** Leaving it up would be a published claim that no longer m
 returns, which is the failure this project exists to attack. Each line below says what exists, what
 does not, and the command that shows which.
 
-### Sclera, the bond that makes "trust becomes a price" a mechanism
+### Sclera, the bond that makes "trust becomes a price" a mechanism — LIVE
 
 An agent stakes USDC against a floor on its own claim-truth rate over a block window, with a
 minimum sample below which nothing can slash. Stay above the floor and the stake returns when the
@@ -431,7 +431,43 @@ grep -rn 0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf contracts/ lib/
 # contracts/script/DeploySclera.s.sol, contracts/test/ScleraCrossSign.t.sol, lib/iris.test.ts
 ```
 
-**The pre-deploy security review has run and its blocker is closed.**
+**Deployed to Monad mainnet 2026-09-24** at
+[`0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), 8,477 bytes, source verified `exact_match`,
+immutable with no admin function and no setter on any of its three constructor arguments.
+
+```bash
+cast call 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf 'attestor()(address)'         --rpc-url https://rpc.monad.xyz
+cast call 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf 'slashBeneficiary()(address)' --rpc-url https://rpc.monad.xyz
+cast call 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf 'identityRegistry()(address)' --rpc-url https://rpc.monad.xyz
+# 0x358c591aD7D60aC36bC223472B41518A7FA7b44A
+# 0xDB6c6340342e71A63cD11Ebac2185204b7777777
+# 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432
+```
+
+Deployment 0xa2fbbe20…c8a18793 at block 107455772, 2,452,175 gas at 102 gwei = 0.250 MON.
+
+**Finding 9 is proven closed on the live contract, not only in tests.** Calling `postBond` for agent
+10182 from an address that does not own it reverts with `0x390772fc`, which is
+`cast sig 'NotAgentOwner()'`. Agent 10182 is owned by
+`0x350Ef06F11e87731476D567b3e5E5d865dcd6657`, not by us:
+
+```bash
+cast call 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf 'postBond(uint256,address,uint128,uint16,uint64,uint32)' \
+  10182 0x754704Bc059F8C67012fEd69BC8A327a5aafb603 1000000 8000 100 5 \
+  --from 0xDB6c6340342e71A63cD11Ebac2185204b7777777 --rpc-url https://rpc.monad.xyz
+# execution reverted: 0x390772fc == NotAgentOwner()
+```
+
+So "an agent stakes against its own promise" is now enforced by a deployed contract rather than
+asserted by a sentence.
+
+**The attestor is a passkey-derived key that owns nothing.** It is the fourth Iris key, namespace
+`kanmani.optic-onchain.v1`, secp256k1 because `ecrecover` is the only scheme the EVM verifies cheaply.
+It signs verdicts and cannot move money, and it is deliberately not the deployer: the deploy script
+refuses `attestor == msg.sender`, and refuses the demo attestor by address because that key derives
+from a test vector committed to this repository.
+
+**The original pre-deploy review and its blocker.**
 [`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) Finding 9 found that `postBond` never checked who owned
 the agent, so anyone could bond anyone and a bond proved nothing. `postBond` now reads `ownerOf` from
 the Identity Registry, the registry is an immutable constructor argument with no setter, and the fix is

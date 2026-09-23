@@ -15,7 +15,6 @@
     "site are TypeScript, and a data file is the only format all three can agree on without one of",
     "them importing another's build."
   ],
-
   "$canonicalRegistries": [
     "ERC-8004 registries are per-chain singletons and the mainnet deployments share one address set.",
     "Verified on chain rather than taken from a deployment list, on both 143 and 56: eth_getCode",
@@ -32,7 +31,6 @@
     "reputation": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
     "validation": "0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58"
   },
-
   "$chains": [
     "Fields, and which of them are load-bearing.",
     "",
@@ -60,7 +58,12 @@
       "id": 143,
       "key": "monad",
       "displayName": "Monad",
-      "aliases": ["monad", "monad mainnet", "monad-mainnet", "monadmainnet"],
+      "aliases": [
+        "monad",
+        "monad mainnet",
+        "monad-mainnet",
+        "monadmainnet"
+      ],
       "rpcEnv": "RPC_MONAD",
       "explorer": "https://monadexplorer.com",
       "erc8004": {
@@ -73,7 +76,14 @@
       "id": 56,
       "key": "bsc",
       "displayName": "BNB Smart Chain",
-      "aliases": ["bsc", "bnb", "binance", "bnb smart chain", "binance smart chain", "bnb chain"],
+      "aliases": [
+        "bsc",
+        "bnb",
+        "binance",
+        "bnb smart chain",
+        "binance smart chain",
+        "bnb chain"
+      ],
       "rpcEnv": "RPC_BSC",
       "explorer": "https://bscscan.com",
       "erc8004": {
@@ -86,7 +96,14 @@
       "id": 1,
       "key": "ethereum",
       "displayName": "Ethereum",
-      "aliases": ["ethereum", "eth", "mainnet", "ethereum mainnet", "homestead", "l1"],
+      "aliases": [
+        "ethereum",
+        "eth",
+        "mainnet",
+        "ethereum mainnet",
+        "homestead",
+        "l1"
+      ],
       "rpcEnv": "RPC_ETHEREUM",
       "explorer": "https://etherscan.io",
       "erc8004": null
@@ -95,7 +112,13 @@
       "id": 10,
       "key": "optimism",
       "displayName": "OP Mainnet",
-      "aliases": ["optimism", "op", "op mainnet", "optimism mainnet", "op-mainnet"],
+      "aliases": [
+        "optimism",
+        "op",
+        "op mainnet",
+        "optimism mainnet",
+        "op-mainnet"
+      ],
       "rpcEnv": "RPC_OPTIMISM",
       "explorer": "https://optimistic.etherscan.io",
       "erc8004": null
@@ -104,7 +127,11 @@
       "id": 8453,
       "key": "base",
       "displayName": "Base",
-      "aliases": ["base", "base mainnet", "base-mainnet"],
+      "aliases": [
+        "base",
+        "base mainnet",
+        "base-mainnet"
+      ],
       "rpcEnv": "RPC_BASE",
       "explorer": "https://basescan.org",
       "erc8004": null
@@ -113,7 +140,13 @@
       "id": 42161,
       "key": "arbitrum",
       "displayName": "Arbitrum One",
-      "aliases": ["arbitrum", "arbitrum one", "arb", "arbitrum-one", "arbone"],
+      "aliases": [
+        "arbitrum",
+        "arbitrum one",
+        "arb",
+        "arbitrum-one",
+        "arbone"
+      ],
       "rpcEnv": "RPC_ARBITRUM",
       "explorer": "https://arbiscan.io",
       "erc8004": null
@@ -122,10 +155,33 @@
       "id": 137,
       "key": "polygon",
       "displayName": "Polygon",
-      "aliases": ["polygon", "matic", "polygon mainnet", "polygon-pos"],
+      "aliases": [
+        "polygon",
+        "matic",
+        "polygon mainnet",
+        "polygon-pos"
+      ],
       "rpcEnv": "RPC_POLYGON",
       "explorer": "https://polygonscan.com",
       "erc8004": null
     }
-  ]
+  ],
+  "$ourContracts": [
+    "Contracts this project deployed, recorded here so a reader does not have to trust prose for an address.",
+    "All immutable, no proxy, no admin function."
+  ],
+  "ourContracts": {
+    "aqueous": {
+      "chainId": 143,
+      "address": "0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32",
+      "what": "escrow, one job settled in real USDC"
+    },
+    "sclera": {
+      "chainId": 143,
+      "address": "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf",
+      "what": "claim-truth bond, deployed 2026-09-24, source verified",
+      "attestor": "0x358c591aD7D60aC36bC223472B41518A7FA7b44A",
+      "slashBeneficiary": "0xDB6c6340342e71A63cD11Ebac2185204b7777777"
+    }
+  }
 }
