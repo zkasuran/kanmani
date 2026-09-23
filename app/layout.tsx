@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Nav } from "@/components/nav.tsx";
+import { ThemeToggle } from "@/components/theme-toggle.tsx";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -32,14 +33,21 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="alternate" type="application/json" href="/feed.json" title="The verified population" />
         <link rel="alternate" type="application/schema+json" href="/schema.json" title="Response schemas" />
         {/*
-          Progressive enhancement flag. The page ships with `no-js` on <html>, which the CSS uses to
-          keep every [data-reveal] section fully visible. The instant this runs — before paint — it
-          removes the flag, letting the motion layer take over. If scripting is off, the class stays
-          and the page is simply still. Craft only; it moves nothing that carries meaning.
+          Two things, both before first paint, which is the whole reason they are inline.
+
+          The theme is read from storage and applied as `data-theme` on <html>. Waiting for
+          hydration would paint the default palette first, so every returning light-mode reader
+          would get a dark flash on a dark-default site. No stored choice means no attribute, which
+          hands the decision to the prefers-color-scheme block in globals.css.
+
+          Then `no-js` is removed, which the motion layer uses to decide whether it may animate.
+          Both are wrapped so a storage exception in private browsing cannot stop the second one.
         */}
         <script
           dangerouslySetInnerHTML={{
-            __html: "document.documentElement.classList.remove('no-js');",
+            __html:
+              "try{var t=localStorage.getItem('kanmani.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}" +
+              "document.documentElement.classList.remove('no-js');",
           }}
         />
       </head>
@@ -60,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </span>
             </Link>
             <Nav />
+            <ThemeToggle />
           </div>
         </header>
 
