@@ -55,6 +55,21 @@ export default async function ClusterPage({ params, searchParams }: Props) {
               {c.state ? STATE_MEANING[c.state] : STATE_MEANING["not probed"]}
             </span>
           </p>
+          {c.chainCount > 1 ? (
+            <p className="mt-3 flex flex-wrap items-center gap-2 rounded border border-[var(--brand-line)] bg-[var(--color-panel)] px-3 py-2">
+              <span className="chip chip--live">
+                also on {c.chainIds.filter((id) => id !== 143).join(", ")}
+              </span>
+              <span className="text-[13px] leading-relaxed text-muted">
+                This exact document is registered on {c.chainCount} chains ({c.chainIds.join(", ")}),
+                matched on its content hash, which is the only key that means the same thing on two
+                chains. The standing behind this agent did not start on Monad.{" "}
+                <Link href="/chains" className="text-[var(--color-brand)] hover:underline">
+                  Which chains we read →
+                </Link>
+              </span>
+            </p>
+          ) : null}
         </div>
       </section>
 
