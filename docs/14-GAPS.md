@@ -266,7 +266,7 @@ Small, real and better written here than discovered by a reader.
   skipped. They are the fork tests and they are skipped rather than silently passing, but a reader
   should know the 113 is not the whole suite.
 * **Seventeen verifier tests skip without a database.** Same shape: 189 tests, 172 pass, 17 need
-  Postgres and say so. The site suite is 186 tests, 183 passing, 3 skipped. **468 pass in total.**
+  Postgres and say so. The site suite is 203 tests, 200 passing, 3 skipped. **485 pass in total.**
 * **Census figures and live figures differ by one agent.** Documents written at census time say 10,252
   agents and 2,012 distinct records. The live index reads 10,253 and 2,013 because we registered
   ourselves as agent 10252 afterwards. Section 1 of [`16-METHOD.md`](16-METHOD.md) explains which

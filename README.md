@@ -127,10 +127,10 @@ cd verifier && npm install && npm test          # 189 tests, 172 pass, 17 need P
 cd contracts && forge install foundry-rs/forge-std && forge test    # 121 tests, 113 pass, 8 fork tests skipped
 
 # the site
-npm install && npm test && npm run dev          # 186 tests, 183 pass, then http://localhost:3400
+npm install && npm test && npm run dev          # 203 tests, 200 pass, then http://localhost:3400
 ```
 
-**468 tests pass across the three suites.**
+**485 tests pass across the three suites.**
 
 The site needs a database. Set `FOVEA_DATABASE_URL` or the `ENVIO_PG_*` parts including a
 password. There is no default password on purpose.

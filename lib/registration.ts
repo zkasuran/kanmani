@@ -40,9 +40,29 @@
  */
 
 import { encodeFunctionData, type Hex } from "viem";
+import { registriesFor } from "./chains.ts";
 
-/** Monad mainnet, chain 143. The registry every number on this site is measured against. */
+/**
+ * Monad mainnet, chain 143. Kept as a named export because it is the default everywhere and every
+ * number on this site is measured there.
+ *
+ * For any other chain use `identityRegistryFor(chainId)`, which reads the chain registry rather than
+ * assuming this address. The mainnet deployments do share one address set, and assuming that in code
+ * would still be wrong: Monad testnet deployed elsewhere, so the assumption is false on a chain that
+ * already exists.
+ */
 export const IDENTITY_REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" as const;
+
+/**
+ * The identity registry for a chain, or null when ERC-8004 is not deployed there.
+ *
+ * Null rather than a fallback on purpose. Handing back a plausible address for a chain with no
+ * registry produces a transaction that goes somewhere real and does nothing, which is worse than a
+ * refusal because it looks like it worked.
+ */
+export function identityRegistryFor(chainId: number): `0x${string}` | null {
+  return registriesFor(chainId)?.identity ?? null;
+}
 
 /**
  * Only the two functions we generate calldata for.

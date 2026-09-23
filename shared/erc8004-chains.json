@@ -1,0 +1,131 @@
+{
+  "$comment": [
+    "THE CHAIN REGISTRY. One entry per chain, and adding a chain should touch nothing else.",
+    "",
+    "Read docs/23-ADDING-A-CHAIN.md before editing. The short version: append an entry, set the",
+    "RPC env var, run `npm test`. The conformance tests in lib/chains.test.ts fail with the exact",
+    "thing still missing, including any place that has drifted out of step with this file.",
+    "",
+    "WHY THIS FILE EXISTS. Chains were declared in three places that no test compared:",
+    "verifier/src/chains.ts for verification, indexer/config.yaml for indexing, and a hardcoded",
+    "address for writing. Three sources mean a chain can be half-added and still look integrated,",
+    "which is the same shape of bug this project exists to point at in other people's data.",
+    "",
+    "JSON rather than TypeScript because the indexer is Envio and reads YAML, the verifier and the",
+    "site are TypeScript, and a data file is the only format all three can agree on without one of",
+    "them importing another's build."
+  ],
+
+  "$canonicalRegistries": [
+    "ERC-8004 registries are per-chain singletons and the mainnet deployments share one address set.",
+    "Verified on chain rather than taken from a deployment list, on both 143 and 56: eth_getCode",
+    "returns a 130-byte ERC-1967 proxy at all three, getVersion() is 2.0.0, and each of the",
+    "reputation and validation registries answers getIdentityRegistry() with the identity address",
+    "below. That last check is the load-bearing one: the set is self-consistent on chain, so nothing",
+    "here rests on a document.",
+    "",
+    "This is why a new chain needs no new addresses. A chain that deployed somewhere else overrides",
+    "them with its own `registries` object, which Monad testnet does."
+  ],
+  "canonicalRegistries": {
+    "identity": "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+    "reputation": "0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
+    "validation": "0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58"
+  },
+
+  "$chains": [
+    "Fields, and which of them are load-bearing.",
+    "",
+    "  id           EIP-155. The only identifier that is not a matter of opinion.",
+    "  key          our stable slug. Appears in URLs, so changing one is a breaking change.",
+    "  displayName  what a reader sees.",
+    "  aliases      what documents in the wild ACTUALLY write. Authors type a word, not an id, so",
+    "               this decides whether a claim is readable at all. Must be lowercase and must not",
+    "               collide with another chain: two chains claiming \"base\" makes a claim ambiguous,",
+    "               and the conformance test refuses it.",
+    "  rpcEnv       env var holding the endpoint. No endpoint means the chain reads as UNCOVERED,",
+    "               and a claim naming it is `unknown`, never `false`. We did not look.",
+    "  explorer     base URL for a human link. Cosmetic, and still required, because a hash nobody",
+    "               can open is a worse citation than no hash.",
+    "  erc8004      null when the registries are not deployed there. An object when they are, and",
+    "               then the chain can carry agents, be indexed and be registered on.",
+    "",
+    "The two dimensions are deliberately separate. A chain can be VERIFIABLE without hosting any",
+    "agents: Ethereum has no ERC-8004 registry here and we still read receipts on it, because an",
+    "agent registered on Monad may well be paid on Ethereum. That separation is the whole point of",
+    "'register on Monad, settle anywhere'."
+  ],
+  "chains": [
+    {
+      "id": 143,
+      "key": "monad",
+      "displayName": "Monad",
+      "aliases": ["monad", "monad mainnet", "monad-mainnet", "monadmainnet"],
+      "rpcEnv": "RPC_MONAD",
+      "explorer": "https://monadexplorer.com",
+      "erc8004": {
+        "startBlock": 0,
+        "indexed": true,
+        "note": "start_block stays 0 deliberately. The population and the USDC rail are both here, so a full scan is worth it once."
+      }
+    },
+    {
+      "id": 56,
+      "key": "bsc",
+      "displayName": "BNB Smart Chain",
+      "aliases": ["bsc", "bnb", "binance", "bnb smart chain", "binance smart chain", "bnb chain"],
+      "rpcEnv": "RPC_BSC",
+      "explorer": "https://bscscan.com",
+      "erc8004": {
+        "startBlock": 79027268,
+        "indexed": false,
+        "note": "The proxy deployment block, found by asking HyperSync for the first log at the three addresses from block 0. Saves scanning 79M empty blocks. A separate population from Monad, not a mirror: the counter slot reads 356,277 against Monad's 10,253. Configured in indexer/config.yaml and NOT yet present in the live database, which is why `indexed` is false."
+      }
+    },
+    {
+      "id": 1,
+      "key": "ethereum",
+      "displayName": "Ethereum",
+      "aliases": ["ethereum", "eth", "mainnet", "ethereum mainnet", "homestead", "l1"],
+      "rpcEnv": "RPC_ETHEREUM",
+      "explorer": "https://etherscan.io",
+      "erc8004": null
+    },
+    {
+      "id": 10,
+      "key": "optimism",
+      "displayName": "OP Mainnet",
+      "aliases": ["optimism", "op", "op mainnet", "optimism mainnet", "op-mainnet"],
+      "rpcEnv": "RPC_OPTIMISM",
+      "explorer": "https://optimistic.etherscan.io",
+      "erc8004": null
+    },
+    {
+      "id": 8453,
+      "key": "base",
+      "displayName": "Base",
+      "aliases": ["base", "base mainnet", "base-mainnet"],
+      "rpcEnv": "RPC_BASE",
+      "explorer": "https://basescan.org",
+      "erc8004": null
+    },
+    {
+      "id": 42161,
+      "key": "arbitrum",
+      "displayName": "Arbitrum One",
+      "aliases": ["arbitrum", "arbitrum one", "arb", "arbitrum-one", "arbone"],
+      "rpcEnv": "RPC_ARBITRUM",
+      "explorer": "https://arbiscan.io",
+      "erc8004": null
+    },
+    {
+      "id": 137,
+      "key": "polygon",
+      "displayName": "Polygon",
+      "aliases": ["polygon", "matic", "polygon mainnet", "polygon-pos"],
+      "rpcEnv": "RPC_POLYGON",
+      "explorer": "https://polygonscan.com",
+      "erc8004": null
+    }
+  ]
+}

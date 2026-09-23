@@ -14,13 +14,13 @@ CLI that produces them. [`16-METHOD.md`](16-METHOD.md) reproduces every publishe
 hand. Claims about tests carry the command that runs them.
 
 ```bash
-npm test                              # 186 tests, 183 pass, 3 skip. the site
+npm test                              # 203 tests, 200 pass, 3 skip. the site
 cd verifier && npm test               # 189 tests, 172 pass, 17 skip without a database
 cd contracts && forge test            # 121 tests, 113 pass, 8 fork tests skipped without a fork URL
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**468 tests pass across the three suites.** That is the number quoted on the site.
+**485 tests pass across the three suites.** That is the number quoted on the site.
 
 ---
 
@@ -135,6 +135,38 @@ we had just measured that 8,093 agents point at one document that returns a dele
 The registry held **zero** rows against the Reputation Registry's 9,188 feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index
 that follows the contract went from 0 to 1.
+
+### The chain registry, so a new chain is one entry
+
+[`shared/erc8004-chains.json`](../shared/erc8004-chains.json) is the single source of truth for every
+chain: EIP-155 id, the aliases documents actually write, the RPC env var, the explorer, and whether
+ERC-8004 is deployed there. `/chains` publishes it, which is required rather than decorative: a
+`false` means "not found on the chains in this registry", so a reader has to be able to see the list.
+
+**Adding a chain is one entry plus one env var**, because the registries are per-chain singletons and
+the mainnet deployments share one address set. That was established on chain rather than from a
+deployment list, on both 143 and 56: a 130-byte ERC-1967 proxy at all three addresses,
+`getVersion()` of `2.0.0`, and the reputation and validation registries each answering
+`getIdentityRegistry()` with the identity address. The runbook is
+[`23-ADDING-A-CHAIN.md`](23-ADDING-A-CHAIN.md).
+
+Two dimensions are kept apart on purpose. **Readable** means we can fetch a receipt there.
+**Registrable** means ERC-8004 is deployed there. Ethereum is readable and hosts no registry, which
+is what makes "registered on Monad, paid on Ethereum" a checkable statement rather than a hope, and
+it is the topology ERC-8004 itself describes.
+
+```bash
+npm test    # lib/chains.test.ts, 17 tests
+```
+
+Those tests are the reason this is safe rather than merely tidy. They refuse an alias claimed by two
+chains, refuse a chain marked `indexed` that is not registrable, return null rather than plausible
+addresses for a chain with no deployment, and **read `verifier/src/chains.ts` and
+`indexer/config.yaml` to fail naming whatever has drifted.** Chains used to live in three places that
+nothing compared, so one could be half-added and still look integrated.
+
+`indexed` is true only for a chain in the live database, not one merely configured. BNB Smart Chain
+is configured and not synced, so it reads false and `/chains` says so.
 
 ### The studio, both onboarding doors
 

@@ -19,6 +19,7 @@ const NAV: [string, string][] = [
   ["/claims", "claims"],
   ["/verify", "verify"],
   ["/studio", "studio"],
+  ["/chains", "chains"],
   ["/account", "account"],
   ["/validate", "validate"],
   ["/compare", "compare"],

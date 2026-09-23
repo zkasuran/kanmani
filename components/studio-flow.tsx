@@ -28,10 +28,10 @@ import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "
 import { type IrisKeys } from "@/lib/iris.ts";
 import {
   EMPTY_DRAFT,
-  IDENTITY_REGISTRY,
   agentUri,
   byteLength,
   consequences,
+  identityRegistryFor,
   problems,
   recordJson,
   registerCalldata,
@@ -39,8 +39,11 @@ import {
   type RegistrationDraft,
   type UriKind,
 } from "@/lib/registration.ts";
+import { registrable } from "@/lib/chains.ts";
 
 type Door = "create" | "manage";
+
+const CHAIN_OPTIONS = registrable();
 
 const FIELD =
   "mt-1 w-full rounded border border-[var(--color-line-bright)] bg-[var(--color-ink)] px-2.5 py-1.5 font-mono text-[12.5px] text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
@@ -54,6 +57,7 @@ export function StudioFlow() {
   });
   const [kind, setKind] = useState<UriKind>("data");
   const [hostedAt, setHostedAt] = useState("");
+  const [chainId, setChainId] = useState<number>(CHAIN_OPTIONS[0]?.id ?? 143);
   const [agentId, setAgentId] = useState("");
   const [keys, setKeys] = useState<IrisKeys | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
@@ -130,6 +134,31 @@ export function StudioFlow() {
         >
           repoint an agent you own
         </button>
+      </div>
+
+      {/* ---------------------------------------------------------------- which chain */}
+      <div className="rounded border border-[var(--color-line)] p-3">
+        <span className={LABEL}>which chain this agent is registered on</span>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {CHAIN_OPTIONS.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setChainId(c.id)}
+              className={chainId === c.id ? "cta" : "cta-ghost"}
+            >
+              {c.displayName} · {c.id}
+            </button>
+          ))}
+        </div>
+        <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
+          Only chains where the ERC-8004 registries are actually deployed are offered, read from the
+          chain registry rather than hardcoded.{" "}
+          <Link href="/chains" className="text-[var(--color-brand)] hover:underline">
+            Which chains, and what it takes to add one →
+          </Link>{" "}
+          Your identity lives here; the work can settle on any chain we can read.
+        </p>
       </div>
 
       {door === "manage" ? (
@@ -266,7 +295,9 @@ export function StudioFlow() {
                   copy
                 </button>
               </div>
-              <p className="mt-1 font-mono text-[11px] text-faint">to {IDENTITY_REGISTRY} on chain 143</p>
+              <p className="mt-1 font-mono text-[11px] text-faint">
+                to {identityRegistryFor(chainId) ?? "no registry on this chain"} on chain {chainId}
+              </p>
               <pre className="sql mt-2 max-h-28 overflow-auto break-all">{calldata}</pre>
             </div>
           ) : null}
