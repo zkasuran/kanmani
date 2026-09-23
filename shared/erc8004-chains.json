@@ -78,8 +78,8 @@
       "explorer": "https://bscscan.com",
       "erc8004": {
         "startBlock": 79027268,
-        "indexed": false,
-        "note": "The proxy deployment block, found by asking HyperSync for the first log at the three addresses from block 0. Saves scanning 79M empty blocks. A separate population from Monad, not a mirror: the counter slot reads 356,277 against Monad's 10,253. Configured in indexer/config.yaml and NOT yet present in the live database, which is why `indexed` is false."
+        "indexed": true,
+        "note": "The proxy deployment block, found by asking HyperSync for the first log at the three addresses from block 0. Saves scanning 79M empty blocks. A separate population from Monad, not a mirror: 356,647 agents against Monad's 10,256, backfilled 2026-09-23. Chiasm merges the two on the content hash of the registration document and finds 3 documents referenced from both chains, 6 agents, no URI conflict."
       }
     },
     {

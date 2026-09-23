@@ -223,14 +223,19 @@ npm test                 # conformance + drift, and it names what is missing`}</
             on this page beside every claim that depends on it. A chain outside it is{" "}
             <span className="unknown-value">unknown</span>, which is a statement about our reach and
             never about an operator.{" "}
-            {live.length === 1 ? (
+            {live.length > 1 ? (
               <>
-                One chain is in the live index today. BNB Smart Chain is configured and not yet
-                synced, so the cross-chain merge has nothing to merge yet and this page says so rather
-                than implying a network that is not there.
+                {live.length} chains are in the live index, so an operator registered on more than one
+                reads as one history rather than as strangers.{" "}
+                <Link href="/operators" className="text-[var(--color-brand)] hover:underline">
+                  Clusters, including the ones that span chains →
+                </Link>
               </>
             ) : (
-              <>{live.length} chains are in the live index today.</>
+              <>
+                One chain is in the live index today, so the cross-chain merge has nothing to merge
+                yet and this page says so rather than implying a network that is not there.
+              </>
             )}{" "}
             <Link href="/method" className="text-[var(--color-brand)] hover:underline">
               How coverage decides a verdict →

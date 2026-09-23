@@ -165,8 +165,35 @@ addresses for a chain with no deployment, and **read `verifier/src/chains.ts` an
 `indexer/config.yaml` to fail naming whatever has drifted.** Chains used to live in three places that
 nothing compared, so one could be half-added and still look integrated.
 
-`indexed` is true only for a chain in the live database, not one merely configured. BNB Smart Chain
-is configured and not synced, so it reads false and `/chains` says so.
+`indexed` is true only for a chain in the live database, not one merely configured.
+
+### Chiasm, the cross-chain merge, with data in it
+
+**BNB Smart Chain was backfilled on 2026-09-23** and the index now holds two chains: **356,647
+agents on BSC against 10,256 on Monad**, a separate population rather than a mirror.
+
+Chiasm merges the two on the content hash of the registration document, which is the only key that
+means the same thing on both chains. 205,597 merged records, and the result worth reporting:
+
+| documents referenced from | records | agents |
+|---|---|---|
+| one chain | 205,594 | 355,142 |
+| **both Monad and BSC** | **3** | **6** |
+
+No URI conflict on any of the three, and **all three are `data:` URIs**, one of them gzip-compressed.
+That is the observation rather than the count: the records that appear on two chains are precisely
+the ones with no host to ask, because a self-contained document is the only kind that travels.
+
+The resync was the honest cost. Envio refused to start when the chain was added, rather than
+destroying data, and named the three options. The reset then rebuilt Monad to exactly its previous
+figures, 10,256 agents and 9,188 feedbacks, while **`fovea.verdict` kept all 2,384 rows** because it
+lives outside the schema Envio drops. That separation was designed for this and this is the first
+time it was load-bearing.
+
+```bash
+sudo -u postgres psql -d envio-dev -c 'select "chainId", count(*) from public."Agent" group by 1;'
+sudo -u postgres psql -d envio-dev -c 'select "chainCount", count(*) from public."ChiasmRecord" group by 1;'
+```
 
 ### The studio, both onboarding doors
 

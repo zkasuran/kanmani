@@ -109,7 +109,7 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 | planned | what it was for | state |
 |---|---|---|
 | **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **built, not deployed** |
-| **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **built, not deployed** |
+| **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **shipped and live 2026-09-23.** 356,647 BSC agents indexed beside Monad's 10,256, 205,597 merged records, 3 documents referenced from both chains |
 | **CleanverseGate**, gated release | release conditioned on a compliance credential | **built, not deployed** |
 | **Cone**, odds market | a crowd price on whether an agent delivers | not started |
 | **Choroid**, credit | borrowing power from a real settlement history, with a funded lending pool | not started |
