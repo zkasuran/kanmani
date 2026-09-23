@@ -251,7 +251,7 @@ Traction is 20% of the score. The honest count today:
 
 | | count |
 |---|---|
-| operators contacted | **1** |
+| operators contacted | **3** |
 | operators integrated | **0** |
 | jobs settled that we did not create ourselves | **0** |
 | progress updates posted | 6 |
@@ -267,7 +267,28 @@ here: I can name every payable agent on Monad because I checked all 10,253 and t
 2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
 3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
 
-**First contact made 2026-09-23**, as
+**Three contacts made, 2026-09-23 to 09-24.** All on GitHub, because `gh` is authenticated, a public
+issue is re-derivable where private mail is not, and there are no mail credentials in this environment.
+
+| target | agents | issue |
+|---|---|---|
+| Ultravioleta / Execution Market | 49 | [uvd-describe-sdk-typescript#4](https://github.com/UltravioletaDAO/uvd-describe-sdk-typescript/issues/4) |
+| The Agora | 32 | [The-Agora#3](https://github.com/SakshiShah29/The-Agora/issues/3) |
+| Envio HyperIndex | — | [hyperindex#1659](https://github.com/enviodev/hyperindex/issues/1659) |
+
+Each message was checked against the chain or the live host **before** posting, because a public claim
+about somebody else's work has to survive them checking it. For Ultravioleta, both cited transactions
+were read from `rpc.monad.xyz` directly rather than only through our own API. For The Agora, all eight
+documents were confirmed answering 200 and the commit-pinned URL I recommended was verified to return
+byte-identical content, so the fix is a genuine drop-in rather than advice. For Envio the arithmetic was
+re-checked (356,647 + 10,256 = 366,903).
+
+Two of the three are not findings against the recipient, which matters for the tone rule. The Agora's
+records are healthy and the note is preventive, about a mutable branch pointer rather than a defect.
+Envio is a contribution offer with two `@crossChain` notes and a caution, and it credits their resync
+refusal as correct behaviour.
+
+**Original first contact, 2026-09-23**, as
 [UltravioletaDAO/uvd-describe-sdk-typescript#4](https://github.com/UltravioletaDAO/uvd-describe-sdk-typescript/issues/4).
 
 Target 1, via a public GitHub issue on the org's own ERC-8004 reputation SDK rather than by email,
