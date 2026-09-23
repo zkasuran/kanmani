@@ -15,6 +15,7 @@
  * read off the screen rather than something we assert in a paragraph.
  */
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import { signReceipt, signVaultWrite, toHex, verifyReceipt, type IrisKeys, type Receipt } from "@/lib/iris.ts";
 import { CONTEXT, open, parseSealed, seal, writeMessage, type Sealed } from "@/lib/vault.ts";
@@ -184,6 +185,12 @@ export function AccountPanel() {
           creation it is two, because a second assertion has to run. That depends on your
           authenticator rather than on this site, so it is stated rather than promised. Signing in
           afterwards is always exactly one.
+        </p>
+        <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+          This same passkey pays.{" "}
+          <Link href="/pay" className="text-[var(--color-brand)] hover:underline">
+            Open a scoped signing session and send a gasless Monad transaction →
+          </Link>
         </p>
       </section>
 
