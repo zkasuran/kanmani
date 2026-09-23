@@ -31,7 +31,8 @@ If you have one minute, do these four things in this order.
 | 2 | [`/operators`](https://kanmani.xyz/operators) | 8,093 agents across 7,962 wallets sharing one document that returns 404 |
 | 3 | [`/verify`](https://kanmani.xyz/verify) | Paste anything, get a verdict, with the command to re-derive it |
 | 4 | [`/studio`](https://kanmani.xyz/studio) | Compose a registration document and get the exact call to send. We generate it; you sign it |
-| 5 | [`/validate`](https://kanmani.xyz/validate) | Why Monad's Validation Registry had zero rows, which took a reverted transaction to learn |
+| 5 | [`/developers`](https://kanmani.xyz/developers) | The components, the API and the one-line badge. Render a verdict without being able to render it wrongly |
+| 6 | [`/validate`](https://kanmani.xyz/validate) | Why Monad's Validation Registry had zero rows, which took a reverted transaction to learn |
 
 Then read [`docs/AS-BUILT.md`](docs/AS-BUILT.md), which says what shipped against the plan
 including what did not. [`docs/14-GAPS.md`](docs/14-GAPS.md) is our own list of what this build is
@@ -98,6 +99,7 @@ GET  /api/claims?outcome=false              filterable, free
 GET  /api/agent/<id>                        one agent, including what is not known about it
 POST /api/verify                            check a document. 402, then pay, then the verdict
 GET  /.well-known/agent-registration.json   our own ERC-8004 record
+GET  /embed.js                              a drop-in trust badge for somebody else's page
 ```
 
 Every JSON response carries `checkedAt`, `checkedAtBlock` and a `reproduce` field with the exact
@@ -127,10 +129,10 @@ cd verifier && npm install && npm test          # 189 tests, 172 pass, 17 need P
 cd contracts && forge install foundry-rs/forge-std && forge test    # 121 tests, 113 pass, 8 fork tests skipped
 
 # the site
-npm install && npm test && npm run dev          # 203 tests, 200 pass, then http://localhost:3400
+npm install && npm test && npm run dev          # 215 tests, 212 pass, then http://localhost:3400
 ```
 
-**485 tests pass across the three suites.**
+**497 tests pass across the three suites.**
 
 The site needs a database. Set `FOVEA_DATABASE_URL` or the `ENVIO_PG_*` parts including a
 password. There is no default password on purpose.

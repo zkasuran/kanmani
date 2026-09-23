@@ -188,7 +188,44 @@ this is scoped small and is not scheduled, which is the honest state rather than
 
 ---
 
-## 6. Traction is zero and this is the weakest part of the entry
+## 6. The component layer is published and is not packaged
+
+**Added 2026-09-23**, the same day the kit shipped, because the gap was created by shipping it.
+
+`components/kit.tsx` is the public component surface and `/developers` documents it. Two things about
+that are not yet true in the way the page implies.
+
+| | |
+|---|---|
+| **Missing** | The snippets on `/developers` read `import { Verdict } from "@kanmani/kit"`. **There is no such package on npm.** The import path is aspirational, which makes it exactly the kind of claim a check contradicts, and the check is `npm view @kanmani/kit` |
+| **Missing** | A licence posture for the component layer. The repository is `LicenseRef-zkasuran-SAND-1.0`, source-available with **no derivatives**. An embeddable badge invites reuse and a no-derivatives licence discourages precisely the adoption that scores under Traction. The two are in tension and the tension is not resolved |
+| **Exists** | The components, working, rendering live data on `/developers`; `embed.js`, which needs no package because it is a script tag |
+| **Closes** | either publish the package, or change the snippets to a relative import and say the kit is vendored rather than installed. The second is a ten-minute fix and is the honest one until the first happens |
+
+**`embed.js` is the part that does work today**, needs no install, and is the whole distribution
+argument, so nothing about the product depends on resolving this. It is listed because the page says
+`@kanmani/kit` and a reader will try it.
+
+---
+
+## 7. An action receipt is signed and then goes nowhere
+
+`lib/authority.ts` signs a statement of intent with the attestation key before an agent is registered
+or repointed, and `/studio` shows it and offers to copy it. That is the whole lifecycle.
+
+| | |
+|---|---|
+| **Missing** | Nothing persists a receipt and nothing verifies one on a page. `/agent/<id>` does not display who authorised the document it is looking at, so the receipt is a personal artifact rather than a public audit trail |
+| **Missing** | No endpoint accepts one. A third party cannot submit "here is proof I authorised this change" and have it render beside the verdict |
+| **Exists** | Signing, canonical bytes, and `verifyAction`, which is self-contained: a holder needs nothing from us to check a receipt, because the did:key inside it carries the public key |
+| **Closes** | a table and a render on the agent page. Small. It is not done, so the receipt currently proves something to its holder and to nobody else |
+
+This is a real limit on the claim. A receipt that only its author can see is a weaker thing than an
+audit trail, and the difference should not be blurred.
+
+---
+
+## 8. Traction is zero and this is the weakest part of the entry
 
 Traction is 20% of the score. The honest count today:
 
@@ -217,7 +254,7 @@ an invented number and an invented one would be caught.
 
 ---
 
-## 7. Submission artifacts that do not exist yet
+## 9. Submission artifacts that do not exist yet
 
 | artifact | state |
 |---|---|
@@ -232,7 +269,7 @@ previous entry of mine shipped a working paid service and died anyway on an unfi
 
 ---
 
-## 8. Measurement we cannot complete and why it stays unknown
+## 10. Measurement we cannot complete and why it stays unknown
 
 Twelve of the 1,192 documents have no verdict beyond `unknown`. Each stays that way deliberately.
 
@@ -253,7 +290,7 @@ Neither group is counted as `false`. A failure to look is not evidence that a pa
 
 ---
 
-## 9. Known debt inside what did ship
+## 11. Known debt inside what did ship
 
 Small, real and better written here than discovered by a reader.
 
@@ -266,7 +303,7 @@ Small, real and better written here than discovered by a reader.
   skipped. They are the fork tests and they are skipped rather than silently passing, but a reader
   should know the 113 is not the whole suite.
 * **Seventeen verifier tests skip without a database.** Same shape: 189 tests, 172 pass, 17 need
-  Postgres and say so. The site suite is 203 tests, 200 passing, 3 skipped. **485 pass in total.**
+  Postgres and say so. The site suite is 215 tests, 212 passing, 3 skipped. **497 pass in total.**
 * **Census figures and live figures differ by one agent.** Documents written at census time say 10,252
   agents and 2,012 distinct records. The live index reads 10,253 and 2,013 because we registered
   ourselves as agent 10252 afterwards. Section 1 of [`16-METHOD.md`](16-METHOD.md) explains which
@@ -275,7 +312,7 @@ Small, real and better written here than discovered by a reader.
 
 ---
 
-## 10. Things that look like gaps and are findings
+## 12. Things that look like gaps and are findings
 
 Listed because each one reads like a hole in the data until you know what it is and two of them cost
 real time to understand.
@@ -300,12 +337,12 @@ real time to understand.
 
 ---
 
-## 11. How this list is meant to be used
+## 13. How this list is meant to be used
 
 Three ways and the third is the one that matters.
 
 1. **As a boundary.** Anything not claimed on the site should be findable here.
-2. **As a schedule.** Gap 1 flips on 2026-10-02. Gap 6, traction, should have started already and Gap 5 is the cheapest thing that would move it.
+2. **As a schedule.** Gap 1 flips on 2026-10-02. Gap 8, traction, should have started already; Gap 5 (Door A) and Gap 6 (packaging the kit) are the two cheapest things that would move it, because both lower what an operator has to do to adopt this from a project to a paste.
 3. **As a test of everything else.** If you find something missing that is not on this page, then this
    page is incomplete and the rest of the documentation earns less trust for it. That is the correct
    response. Defects found in our own work go in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md) with the

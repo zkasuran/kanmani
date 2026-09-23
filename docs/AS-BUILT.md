@@ -14,13 +14,13 @@ CLI that produces them. [`16-METHOD.md`](16-METHOD.md) reproduces every publishe
 hand. Claims about tests carry the command that runs them.
 
 ```bash
-npm test                              # 203 tests, 200 pass, 3 skip. the site
+npm test                              # 215 tests, 212 pass, 3 skip. the site
 cd verifier && npm test               # 189 tests, 172 pass, 17 skip without a database
 cd contracts && forge test            # 121 tests, 113 pass, 8 fork tests skipped without a fork URL
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**485 tests pass across the three suites.** That is the number quoted on the site.
+**497 tests pass across the three suites.** That is the number quoted on the site.
 
 ---
 
@@ -226,11 +226,143 @@ curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/studio # 200
 `register()` with no argument is deliberately not offered. It mints an agent whose URI is empty, and
 80 of those already exist on Monad: the one population no verifier can help.
 
+### The kit, the embed, and /developers
+
+**The output used to be a site with eleven nav tabs.** The track this enters asks for *"a protocol,
+primitive, or infrastructure layer that other applications build on — not a standalone consumer
+product"*, and scores Design as developer experience rather than visuals. Meanwhile
+`components/ui.tsx` already was a component library and was private. The architecture existed and was
+not the product.
+
+[`components/kit.tsx`](../components/kit.tsx) is now the public boundary. `ui.tsx` stays internal
+layout; everything in the kit is meant to be rendered by somebody else, and the distinction matters
+because an internal helper can change shape on a Tuesday and a published component cannot. `Verdict`,
+`Count`, `Share`, `Ladder`, `Distribution`, `TrustBadge`, `RecordState`, `Reproduce`.
+
+**What it publishes is not the data.** The API has been open and CORS-enabled since the beginning, so
+the numbers were never the hard part. The hard part is that three mistakes are available to anyone
+consuming `/api/agent/<id>` by hand: printing a null as `0`, colouring `unknown` like `false`, and
+averaging the four outcomes into a score. Every component makes all three unavailable and there is no
+prop that turns it off. A marketplace embedding `<Verdict>` gets the `unknown` rule whether or not it
+has read a word of this documentation. **The primitive is the discipline, not the figures.**
+
+[`app/embed.js`](../app/embed.js/route.ts) is one line for a page that is not ours:
+
+```html
+<script src="https://kanmani.xyz/embed.js" data-agent="10182"></script>
+```
+
+No framework and no build step, because a host page cannot be asked to adopt our toolchain. It renders
+inside a **closed shadow root**, which matters beyond tidiness: a badge that inherited a host page's
+error red could show `unknown` in the colour of an accusation. It fails quiet — a network error, a bad
+id or a missing agent removes the element rather than drawing an error box in somebody else's page.
+Served from a route rather than committed as a static asset so the origin follows
+`NEXT_PUBLIC_SITE_URL` instead of being hardcoded twice.
+
+```bash
+curl -sS https://kanmani.xyz/embed.js -o /tmp/e.js && node --check /tmp/e.js   # valid, 4,471 bytes
+curl -sSI https://kanmani.xyz/embed.js | grep -i access-control-allow-origin   # *
+```
+
+`/developers` renders every component against live data from the same functions our own pages use, so
+a broken component there means a broken site.
+
+**The navigation is four groups rather than eleven tabs**: explore, build, trust, developers. Nothing
+was deleted; depth is one hover away instead of eleven siblings competing for one row. `developers` is
+the only group that is a destination in itself, because it is what the product is for.
+
+### Light and dark, with the verdict distinction surviving both
+
+The site was dark only. Two palettes now, defaulting to the reader's system preference, with an
+explicit three-state switch (system, light, dark) applied by an inline head script **before first
+paint** so a returning light-mode reader does not get a dark flash.
+
+**Two palettes rather than an inversion, for the same reason the colours exist at all.** A hue that
+reads as "absence" on near-black does not automatically read as absence on white, and a green legible
+on ink fails contrast on paper. Each mode names its own values and both were checked against three
+questions: is `false` unmistakably an alarm colour, is `unknown` unmistakably not one, and does
+`unknown` stay more present than `noClaim`. Light mode therefore takes darker verdict hues and uses
+slate-600 for `unknown` against slate-500 for `noClaim`, so that third relationship survives the
+inversion rather than flipping.
+
+`@theme inline` is load-bearing. Without it Tailwind resolves each value at build time and bakes a
+literal into every utility, so `text-muted` would freeze to whichever palette compiled first and only
+hand-written `var()` call sites would move.
+
+```bash
+curl -sS https://kanmani.xyz/_next/static/chunks/*.css | grep -o '\.text-muted{color:var(--muted)}'
+```
+
+**Contrast was measured rather than eyeballed, and two failures were found**, one of them
+pre-existing: light `noClaim` was 2.56:1 on white and is now 4.76, and dark `faint` was already
+failing at 2.86:1 and is now 3.65. Everything else is AA or better in both modes.
+
+Per-mode too, because each was tuned for near-black and reads as dirt or a stray bright stripe on
+paper: the drawn field strength, the grid opacity, the elevation shadows, and the inset top edge,
+which has to darken on light instead of lighting. `::selection` stopped hardcoding white text, which
+would have vanished on the light lilac fill.
+
+### Authority over an agent: the passkey as a protection layer
+
+The passkey layer was a showcase. `/account` demonstrated four keys from one ceremony and `/pay`
+opened a scoped session, but the one place authority actually matters — creating an agent and
+changing an existing one — treated it as one of two equal options and used it to protect nothing.
+
+**What is actually at risk, stated precisely.** Not "someone repoints an agent they do not own":
+`setAgentURI` reverts for anyone who is not the owner, so the chain already refuses that and no
+front-end care adds to it. Three real risks remain, and [`lib/authority.ts`](../lib/authority.ts)
+answers each:
+
+| risk | answer |
+|---|---|
+| **Blind signing.** A clone of the studio could preview one document and hand over calldata for another, pointing an agent at a record its author controls | `signAction` signs a statement of intent committing to the URI by keccak256 hash, so a page that previewed one thing and sent another would not match it |
+| **Paying gas to learn you are not the owner.** A reverted `setAgentURI` is an expensive way to discover a different passkey | `checkAuthority` reads the owner from our own `/api/agent/<id>`, so no second RPC is configured and no second source of truth can drift. Comparison is lowercased, because EIP-55 casing is a checksum and not an identity |
+| **Authority living in one browser profile** | The key comes from the passkey, so the same passkey reaches the same agent on another device |
+
+The receipt is signed by the **attestation** key, which is ed25519 and deliberately cannot move
+money, so it proves who authorised a change without granting anything. Canonical bytes with a fixed
+field order, the same construction `lib/iris.ts` uses, so two implementations cannot disagree. A null
+`agentId` is an empty line rather than the string `null`, so a registration cannot collide with id
+parsing.
+
+**The rule this project runs on applies to itself here.** A failure to reach the API is `unknown`,
+never `notOwner`. Telling somebody they do not own their own agent on the strength of our network
+problem is the same error as rendering a timeout as `false`, and nothing is blocked on it because the
+registry still refuses a write nobody is entitled to make. A mismatch reports **both** addresses
+rather than only refusing, because it is usually a different passkey rather than an attack.
+
+Sessions are scoped to authority rather than to a spend: `maxAmountAtomic` is `0n`, so a session
+opened to pay for a verification cannot silently also repoint an agent.
+
+```bash
+node --test --experimental-strip-types 'lib/authority.test.ts'   # 12 pass
+```
+
 ### Cornea, the surface
 
-Thirteen pages and nine machine-readable surfaces. Every page can print the SQL behind its numbers.
-`/verify` imports the verifier's own `judge()` rather than reimplementing the ladder, so the site
-and the command line cannot give different answers.
+Eighteen pages, seven machine-readable surfaces and 7 API routes. Every page can print
+the SQL behind its numbers. `/verify` imports the verifier's own `judge()` rather than
+reimplementing the ladder, so the site and the command line cannot give different answers.
+
+```bash
+for p in / /agents /operators /claims /compare /verify /studio /pay /fund /account \
+         /method /chains /status /validate /developers; do
+  printf '%s %s\n' "$p" "$(curl -sS -o /dev/null -w '%{http_code}' https://kanmani.xyz$p)"
+done
+```
+
+**The surface is fully adaptive.** One fluid `clamp()` scale for type and rhythm rather than a
+handful of breakpoints, container-query-ready shells, auto-fitting grids, and a navigation that
+folds into a sheet on a phone. Motion follows monad.xyz's language — a drifting aurora behind the
+hero, a one-shot brand sweep, a marquee of the machine-readable surfaces, scroll-reveal and a
+count-up on the headline figure — and all of it is neutralised under `prefers-reduced-motion`.
+
+One defect in that layer is worth recording because it shipped and had to be fixed: the reveal
+originally hid every wrapped section with `opacity: 0` and relied on JavaScript to reveal it. When
+that did not arm as expected the page rendered **blank** while the server HTML and every asset were
+correct. It is inverted now — content is visible by default and only a JS-armed `pending` state
+hides it, with a failsafe that force-reveals anything still hidden after 1.2s. A motion layer must
+not be able to swallow the page.
 
 **It is live at [https://kanmani.xyz](https://kanmani.xyz).** Verify the way a judge would, signed
 out:
