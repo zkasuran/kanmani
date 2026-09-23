@@ -5,7 +5,7 @@ import { Panel } from "@/components/ui.tsx";
 export const metadata = {
   title: "Account",
   description:
-    "One passkey ceremony, three independent keys, nothing stored. Clear local storage or open a second device and everything rebuilds.",
+    "One passkey ceremony, four independent keys, nothing stored. Clear local storage or open a second device and everything rebuilds.",
 };
 
 /**
@@ -33,8 +33,9 @@ export default function AccountPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Account</h1>
         <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-muted">
-          One passkey ceremony gives three independent keys: the account you sign in with, the
-          identity that signs verification receipts and the key that encrypts anything private.
+          One passkey ceremony gives four independent keys: the account you sign in with, the
+          identity that signs verification receipts off chain, the on-chain attestation key a
+          contract recovers as the verdict signer and the key that encrypts anything private.
           Nothing is stored on this device and nothing secret reaches the server, so clearing local
           storage loses nothing and a second device reproduces the same keys exactly.
         </p>
@@ -44,26 +45,27 @@ export default function AccountPage() {
 
       {/* ---------------------------------------------------------------- how, in the open */}
       <div className="grid gap-5 lg:grid-cols-2">
-        <Panel title="how the three keys are derived">
+        <Panel title="how the four keys are derived">
           <p className="text-[13.5px] leading-relaxed text-muted">
             One WebAuthn assertion returns a 32-byte PRF output. That output is run through
-            HKDF-SHA256 with a distinct info string per key, so the three are independent: holding
+            HKDF-SHA256 with a distinct info string per key, so the four are independent: holding
             one tells you nothing about the others.
           </p>
           <pre className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3 sql">{`prfOutput  = getPasskeyPrfOutput({ rpId })        one ceremony, one prompt
 
-account    = HKDF(prfOutput, info="kanmani.iris.v1")       -> secp256k1 -> EVM address
-attestation= HKDF(prfOutput, info="kanmani.optic.v1")      -> ed25519   -> signs receipts
-content    = HKDF(prfOutput, info="kanmani.vitreous.v1")   -> AES-256-GCM key`}</pre>
+account    = HKDF(prfOutput, info="kanmani.iris.v1")          -> secp256k1 -> EVM address
+attestation= HKDF(prfOutput, info="kanmani.optic.v1")         -> ed25519   -> signs receipts
+onchain    = HKDF(prfOutput, info="kanmani.optic-onchain.v1") -> secp256k1 -> verdict signer
+content    = HKDF(prfOutput, info="kanmani.vitreous.v1")      -> AES-256-GCM key`}</pre>
           <p className="mt-3 text-[13px] leading-relaxed text-muted">
-            The honest limit: HKDF makes the three keys independent of each other, not independent
-            of the PRF output. Anyone holding those 32 bytes holds all three. That is equally true
-            of deriving from three separate salts, at a different point in the flow and saying so
+            The honest limit: HKDF makes the four keys independent of each other, not independent
+            of the PRF output. Anyone holding those 32 bytes holds all four. That is equally true
+            of deriving from four separate salts, at a different point in the flow, so saying so
             beats implying a compartmentalisation that does not exist.
           </p>
           <p className="mt-3 text-[13px] leading-relaxed text-muted">
-            A salt costs a ceremony and a ceremony costs a prompt. Three namespaces as three salts
-            would be three prompts. Category Labs, who build Mera, confirmed on 2026-09-18 that
+            A salt costs a ceremony and a ceremony costs a prompt. Four namespaces as four salts
+            would be four prompts. Category Labs, who build Mera, confirmed on 2026-09-18 that
             HKDF namespacing counts as genuinely namespaced. It is also their own pattern: Mera&apos;s
             secret vault derives its AES key from the same PRF output with fixed HKDF info,
             explicitly so it is separated from other keys derived from that output.
@@ -115,7 +117,7 @@ content    = HKDF(prfOutput, info="kanmani.vitreous.v1")   -> AES-256-GCM key`}<
           </li>
           <li>
             <span className="font-mono text-[var(--color-true)]">no</span> private key, ever. All
-            three are derived in the tab and stay there.
+            four are derived in the tab and stay there.
           </li>
           <li>
             <span className="font-mono text-[var(--color-true)]">no</span> credential ID cached

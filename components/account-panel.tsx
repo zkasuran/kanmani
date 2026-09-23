@@ -206,11 +206,11 @@ export function AccountPanel() {
         </section>
       ) : null}
 
-      {/* ------------------------------------------------ the three keys */}
+      {/* ------------------------------------------------ the four keys */}
       {outcome?.ok ? (
         <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]">
           <header className="border-b border-[var(--color-line)] px-4 py-3">
-            <h2 className="font-mono text-sm">three keys, one ceremony</h2>
+            <h2 className="font-mono text-sm">four keys, one ceremony</h2>
             <p className="mt-1 text-[12px] text-muted">
               Derived with HKDF-SHA256 over a single PRF output, one namespace per key. Public
               halves shown. The private halves never leave this tab and are never sent anywhere.
@@ -227,8 +227,14 @@ export function AccountPanel() {
             <KeyRow
               ns="kanmani.optic.v1"
               what="attestation"
-              why="Signs verification receipts. Deliberately not a wallet: it can say what was checked and it cannot move money."
+              why="Signs verification receipts off chain as a did:key. Deliberately not a wallet: it can say what was checked and it cannot move money."
               value={outcome.keys.attestation.id}
+            />
+            <KeyRow
+              ns="kanmani.optic-onchain.v1"
+              what="onchain attestation"
+              why="The verdict signer. secp256k1, whose EVM address a contract pins and recovers, so a Sclera slashing verdict is authorised by this key rather than by whoever relays it. Still not the account wallet."
+              value={outcome.keys.onchainAttestation.address}
             />
             <KeyRow
               ns="kanmani.vitreous.v1"
