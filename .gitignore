@@ -48,3 +48,7 @@ tsconfig.tsbuildinfo
 # The x402 signing helper is a local tool that touches the house key at runtime. It is not part
 # of the product and it never ships.
 /x402sign.mjs
+
+# Generated exports. tools/export-d1.py writes a full copy of the measurement
+# database here, which is 19 MB of SQL and is rebuilt on demand.
+/build/

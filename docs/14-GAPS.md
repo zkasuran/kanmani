@@ -8,43 +8,53 @@ items that are embarrassing.
 Each entry says what is missing, what exists instead and what it would take to close. Where a
 decision has already been made to cut something, the reason is given rather than implied.
 
-**State as of 2026-09-21.** Submission closes 2026-10-14T03:59Z. I am one person.
+**State as of 2026-09-23.** Submission closes 2026-10-14T03:59Z. I am one person.
 
 ---
 
-## 1. The site is not deployed. This is the gap that decides whether there is an entry at all
+## 1. The repository is private. That is now the gap. The deployment one is closed
 
-Everything else on this page is secondary to this one.
+**This section used to say the site was not deployed and that it decided whether there was an entry
+at all.** That was true when it was written on 2026-09-21. It is not true now. Leaving it up
+would be the same failure this project exists to attack: a published claim that no longer matches
+what a check returns.
+
+The site is live at **https://kanmani.xyz**. Verify it the way a judge would, signed out:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/          # 200
+curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/agents    # 200
+curl -sS https://kanmani.xyz/llms.txt | head -5                         # the measurement, in text
+```
+
+Every route the docs cite answers 200 to an anonymous fetch, TLS verifies and the index sits at the
+chain head. The domain is paid to 2027-09-21, so it outlasts the judging window.
+
+**What is still missing here is the repository.**
 
 | | |
 |---|---|
-| **Missing** | a hosted surface. `kanmani.xyz` does not resolve. The repository is private |
-| **Exists** | the full site running on `localhost:3400` against Postgres in local Docker, 56 tests green, `npx next build` clean, every route dynamic |
-| **Blocks** | the submission itself, which requires a live product link plus judge access instructions |
+| **Missing** | `github.com/zkasuran/kanmani` answers 404 to anyone who is not me. It is private |
+| **Exists** | the full history, plus a site that renders the same numbers the repository produces |
+| **Blocks** | any bounty clause asking for public code, plus reproducibility for a judge who wants to run the ladder rather than read about it |
 
-Verify the gap rather than taking my word for it:
+This one is deliberate rather than forgotten. An unfinished build published early is a preview for
+rivals. At least one agent operator named in this document has since pushed a Monad project of
+their own into the same programme. The flip is scheduled for the day the submission window opens,
+2026-10-02, carried as a dated commitment rather than an intention:
 
 ```bash
-getent hosts kanmani.xyz                                          # no answer
-curl -sS -o /dev/null -w '%{http_code}\n' https://github.com/zkasuran/kanmani    # 404
+gh api -X PATCH repos/zkasuran/kanmani -F private=false
+curl -sS -o /dev/null -w '%{http_code}\n' https://github.com/zkasuran/kanmani    # must be 200
 ```
 
-**Four other things fail because of this one**, which is why it ranks above work that sounds more
-interesting:
+The second command is the one that counts. Our own `gh` calls are authenticated and pass either
+way, so they prove nothing about what a stranger sees.
 
-* **Both Mera gates.** They are pass or fail tests that a judge runs on their own device, clearing
-  local storage or opening a second phone mid-demo. Our own logged-in session proves nothing. The code
-  is built and tested. It cannot be demonstrated to anyone.
-* **The Envio deliverable**, which asks for a frontend or API *consuming* the indexed data. Retina
-  runs and the site consumes it. Neither is reachable.
-* **Any third-party traction.** Nobody can integrate against a URL that does not exist.
-* **Every URL in the machine-readable surfaces.** `/llms.txt`, `/feed.json`, `/schema.json` and
-  `/agents.md` are all written and all unreachable.
-
-**What is genuinely not blocked by it:** everything on chain. The escrow, the settled job, the x402
-payment and the validation row are on Monad mainnet and readable today by anyone with `cast`. Every
-chain command in [`16-METHOD.md`](16-METHOD.md) works right now. The gap is the hosted surface over
-the index, not the evidence.
+**One thing that was blamed on the deployment gap and never belonged to it.** Both Mera gates are
+pass-or-fail tests a judge runs on their own device, clearing storage or opening a second phone. A
+hosted site is necessary for that and it was never sufficient: what those gates need is a browser
+path that a stranger can walk without us in the room. That is tracked in section 4, not here.
 
 ---
 
