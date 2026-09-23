@@ -38,6 +38,10 @@
 
   --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
   --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+
+  /* A tiny breakpoint below Tailwind's `sm`, so the header badge can shed its label on the
+     narrowest phones without losing the chain id. Craft only. */
+  --breakpoint-xs: 26rem;
 }
 
 html {
@@ -267,4 +271,191 @@ details[open] > summary::before {
 }
 .panel-hover:hover {
   border-color: var(--color-line-bright);
+}
+
+/* ==================================================================
+ * SUPER-ADAPTIVE CRAFT LAYER
+ *
+ * Everything below is craft, never meaning. It adds monad.xyz-style motion and a fully fluid,
+ * viewport-aware scale on top of the system above. It touches no verdict colour and no `unknown`
+ * rule, so a redesign here can never turn a false red into something softer. The whole layer is
+ * neutralised by the prefers-reduced-motion block already declared above and re-asserted at the
+ * end of this file for the animations introduced here.
+ * ================================================================== */
+
+/* ---- fluid type & spacing tokens ------------------------------------------------
+ * A single fluid scale so type and rhythm breathe with the viewport rather than snapping at a
+ * handful of breakpoints. clamp() keeps every step legible from a 320px phone to a 4K display. */
+:root {
+  --step--1: clamp(0.78rem, 0.74rem + 0.18vw, 0.9rem);
+  --step-0: clamp(0.9rem, 0.85rem + 0.25vw, 1.02rem);
+  --step-1: clamp(1.06rem, 0.98rem + 0.4vw, 1.35rem);
+  --step-2: clamp(1.3rem, 1.15rem + 0.75vw, 1.85rem);
+  --step-3: clamp(1.7rem, 1.4rem + 1.5vw, 2.6rem);
+  --step-4: clamp(2.1rem, 1.6rem + 2.6vw, 3.6rem);
+  --step-5: clamp(2.6rem, 1.8rem + 4vw, 5rem);
+
+  /* Adaptive gutters: tight on a phone, generous on a wide desktop, continuous in between. */
+  --gutter: clamp(1rem, 0.6rem + 2.5vw, 2.75rem);
+  --section-gap: clamp(2.5rem, 1.6rem + 4vw, 5rem);
+}
+
+.fluid-1 { font-size: var(--step-1); }
+.fluid-2 { font-size: var(--step-2); }
+.fluid-3 { font-size: var(--step-3); }
+.fluid-4 { font-size: var(--step-4); }
+.fluid-5 { font-size: var(--step-5); line-height: 1.04; letter-spacing: -0.02em; }
+
+/* ---- the living field --------------------------------------------------------------
+ * monad.xyz lets its brand purple drift slowly behind the fold. `.field-live` layers a second,
+ * animated aurora over the static `.field` so the hero has depth in motion. GPU-only properties
+ * (transform, opacity, background-position) so it never triggers layout. */
+.field-live::after {
+  content: "";
+  position: absolute;
+  inset: -30% -10% auto -10%;
+  height: 140%;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 55% at 20% 20%, color-mix(in oklab, var(--color-brand) 26%, transparent), transparent 70%),
+    radial-gradient(38% 50% at 80% 10%, color-mix(in oklab, #1d9bf0 16%, transparent), transparent 72%),
+    radial-gradient(45% 60% at 55% 90%, color-mix(in oklab, var(--color-brand) 14%, transparent), transparent 75%);
+  filter: blur(12px);
+  opacity: 0.9;
+  animation: aurora-drift 22s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(-2%, -1%, 0) scale(1);     opacity: 0.75; }
+  50%  { transform: translate3d(3%, 2%, 0) scale(1.08);    opacity: 1; }
+  100% { transform: translate3d(-1%, 1%, 0) scale(1.02);   opacity: 0.8; }
+}
+
+/* A soft brand beam that sweeps once when the hero enters, echoing monad's launch shimmer. */
+.beam {
+  position: relative;
+  overflow: hidden;
+}
+.beam::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 30%, color-mix(in oklab, var(--color-brand) 22%, transparent) 48%, transparent 66%);
+  transform: translateX(-120%);
+  animation: beam-sweep 2.6s ease 0.35s 1 both;
+  pointer-events: none;
+}
+@keyframes beam-sweep {
+  to { transform: translateX(120%); }
+}
+
+/* ---- marquee ------------------------------------------------------------------------
+ * monad.xyz scrolls its partner logos in a seamless loop. Here it carries the machine-readable
+ * surfaces. Two copies of the track sit end to end and the whole thing translates by exactly half,
+ * so the seam is invisible. Pauses on hover and honours reduced motion. */
+.marquee {
+  display: flex;
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee__track {
+  display: flex;
+  flex: 0 0 auto;
+  gap: clamp(1.25rem, 0.8rem + 2vw, 2.75rem);
+  padding-right: clamp(1.25rem, 0.8rem + 2vw, 2.75rem);
+  animation: marquee-scroll 32s linear infinite;
+  will-change: transform;
+}
+.marquee:hover .marquee__track {
+  animation-play-state: paused;
+}
+@keyframes marquee-scroll {
+  to { transform: translateX(-50%); }
+}
+
+/* ---- scroll reveal ------------------------------------------------------------------
+ * Sections lift into place as they enter the viewport, driven by a tiny IntersectionObserver hook
+ * that toggles [data-reveal="in"]. Falls back to fully visible if JS never runs, so nothing is
+ * ever trapped invisible. */
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+[data-reveal="in"] {
+  opacity: 1;
+  transform: none;
+}
+/* No JS, no observer: never hide content. */
+.no-js [data-reveal] {
+  opacity: 1;
+  transform: none;
+}
+
+/* ---- animated counters --------------------------------------------------------------
+ * A measured figure that counts up once on reveal. Purely presentational: the real value is always
+ * in the DOM text for a screen reader and for any reader with motion disabled. */
+@keyframes count-fade {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+.count-in {
+  animation: count-fade 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ---- adaptive containers ------------------------------------------------------------
+ * A shell that widens smoothly and centres, replacing a hard max-width with one that tracks the
+ * viewport. Container-query ready so nested grids can respond to their own width, not the page's. */
+.shell {
+  width: min(100% - var(--gutter) * 2, 1200px);
+  margin-inline: auto;
+  container-type: inline-size;
+}
+
+/* A responsive auto-grid: cards flow into as many columns as fit, no breakpoint list required. */
+.auto-grid {
+  display: grid;
+  gap: clamp(0.75rem, 0.5rem + 1vw, 1.25rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
+}
+
+/* ---- stronger hover glow (craft, opt-in) --------------------------------------------
+ * A brand-tinted lift for interactive cards, matching monad's soft elevation on hover. It borrows
+ * the brand colour only as a shadow, never as a fill, so it can never read as a verdict. */
+.glow-lift {
+  transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.2s ease;
+}
+.glow-lift:hover {
+  transform: translateY(-3px);
+  border-color: var(--brand-line);
+  box-shadow: 0 20px 45px -22px color-mix(in oklab, var(--color-brand) 55%, transparent), var(--edge);
+}
+
+/* A slow brand pulse for the live status dot in the header. */
+@keyframes live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-true) 55%, transparent); }
+  50%      { box-shadow: 0 0 0 4px color-mix(in oklab, var(--color-true) 0%, transparent); }
+}
+.live-dot {
+  animation: live-pulse 2.4s ease-in-out infinite;
+}
+
+/* Re-assert the reduced-motion contract for everything introduced in this layer. Anyone who asked
+ * for less motion gets a still, fully-visible page. */
+@media (prefers-reduced-motion: reduce) {
+  .field-live::after,
+  .beam::before,
+  .marquee__track,
+  .count-in,
+  .live-dot {
+    animation: none !important;
+  }
+  .beam::before { display: none; }
+  [data-reveal] {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
 }

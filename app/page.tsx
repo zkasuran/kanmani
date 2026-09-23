@@ -1,10 +1,25 @@
 import Link from "next/link";
 import { Derivation, DistBar, Num, OutcomeBadge, Panel, Pct, StatTile } from "@/components/ui.tsx";
+import { CountUp, Reveal } from "@/components/motion.tsx";
 import { clusterShape, mappingCoverage, measurement, networkSplit, population } from "@/lib/queries.ts";
 
 /** Nothing on this page may be captured at build time. See next.config.ts. */
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
+
+/**
+ * The machine-readable surfaces, shown in the hero marquee. Every one is a live endpoint an agent
+ * can fetch; the scroll is decoration over links that work with or without motion. Listed here
+ * rather than inline so the two marquee copies stay identical.
+ */
+const SURFACES: { href: string; label: string }[] = [
+  { href: "/llms.txt", label: "GET /llms.txt" },
+  { href: "/agents.md", label: "GET /agents.md" },
+  { href: "/feed.json", label: "GET /feed.json" },
+  { href: "/schema.json", label: "GET /schema.json" },
+  { href: "/api/claims?outcome=false", label: "GET /api/claims" },
+  { href: "/.well-known/agent-registration.json", label: "GET /.well-known/agent-registration.json" },
+];
 
 export default async function Home() {
   const [pop, m, net, shape, cov] = await Promise.all([
@@ -26,20 +41,20 @@ export default async function Home() {
   const unknownTotal = d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed;
 
   return (
-    <div className="space-y-12">
+    <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- the one number */}
-      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+      <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
         <div className="grid-faint pointer-events-none absolute inset-0" />
         <div className="relative">
           <p className="eyebrow">erc-8004 · monad mainnet · chain 143</p>
-          <h1 className="mt-4 max-w-4xl text-[clamp(1.9rem,4.4vw,3rem)] font-semibold leading-[1.12] tracking-tight">
+          <h1 className="mt-4 max-w-4xl fluid-4 font-semibold leading-[1.12] tracking-tight">
             <span className="text-[var(--color-false)]">
-              <Num value={d.doNotResolve} />
+              <CountUp value={d.doNotResolve} />
             </span>{" "}
             of <Num value={d.paymentClaims} /> payment claims on Monad name a transaction
             <br className="hidden sm:block" /> that is not on the chain they name.
           </h1>
-          <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-muted">
+          <p className="mt-5 max-w-3xl text-[length:var(--step-0)] leading-relaxed text-muted">
             Every one of those {d.paymentClaims} documents is hash-perfect. The bytes served today are
             the bytes committed on chain, so every tool that checks integrity calls them verified.
             Integrity is not truth. This site checks the second thing.
@@ -78,19 +93,40 @@ export default async function Home() {
               <Legend className="bg-[var(--color-unknown)]" label={`${unknownTotal.toLocaleString()} unknown`} />
             </div>
           </div>
+
+          {/* The machine-readable surfaces, drifting past like monad.xyz's partner rail. Every
+              item is a real endpoint an agent can fetch; the motion is decoration over links that
+              work with or without it. */}
+          <div className="marquee mt-8 border-t border-[var(--color-line)]/70 pt-4" aria-label="Machine-readable surfaces">
+            <div className="marquee__track font-mono text-[11px] text-faint" aria-hidden="false">
+              {SURFACES.map((s) => (
+                <a key={s.href} href={s.href} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">
+                  {s.label}
+                </a>
+              ))}
+            </div>
+            <div className="marquee__track font-mono text-[11px] text-faint" aria-hidden="true">
+              {SURFACES.map((s) => (
+                <a key={`${s.href}-dup`} href={s.href} tabIndex={-1} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">
+                  {s.label}
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ---------------------------------------------------------------- the numbers at a glance */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <Reveal as="section" className="auto-grid">
         <StatTile label="agents indexed" value={p.agentsIndexed} hint="Every ERC-8004 agent Retina has seen registered on Monad." />
         <StatTile label="distinct evidence documents" value={s.records} tone="brand" hint="Agents share documents, so this is far below the agent count. It is the real number of things to check." />
         <StatTile label="payment claims checked" value={d.paymentClaims} hint="Documents that assert a payment and were taken through the whole ladder." />
         <StatTile label="claims that resolve" value={d.resolve} tone="true" hint="The cited transaction is on the chain the document names." />
-      </section>
+      </Reveal>
 
 
       {/* ---------------------------------------------------------------- the breakdown */}
+      <Reveal>
       <Panel
         title="every document with an evidence pointer and what it turned out to be"
         subtitle={
@@ -139,8 +175,10 @@ export default async function Home() {
           note="One row per claim, latest verdict only. The full history of every re-check stays in fovea.verdict."
         />
       </Panel>
+      </Reveal>
 
       {/* ---------------------------------------------------------------- the finding */}
+      <Reveal>
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="which chain the claims name">
           <table className="w-full text-sm">
@@ -216,8 +254,10 @@ export default async function Home() {
           <Derivation sql={shape.sql} />
         </Panel>
       </div>
+      </Reveal>
 
       {/* ---------------------------------------------------------------- coverage in the open */}
+      <Reveal>
       <Panel
         title="which published mapping read each document"
         subtitle="Coverage is published as a number, not implied by an absence of errors. A shape no mapping reads is a gap we report on ourselves."
@@ -254,6 +294,7 @@ export default async function Home() {
         </p>
         <Derivation sql={cov.sql} />
       </Panel>
+      </Reveal>
     </div>
   );
 }

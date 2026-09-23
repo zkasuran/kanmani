@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className="no-js">
       <head>
         {/*
           Pointed at from the head as well as served at the path, because an agent reading this
@@ -31,27 +31,42 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="alternate" type="text/plain" href="/llms.txt" title="Summary for a language model" />
         <link rel="alternate" type="application/json" href="/feed.json" title="The verified population" />
         <link rel="alternate" type="application/schema+json" href="/schema.json" title="Response schemas" />
+        {/*
+          Progressive enhancement flag. The page ships with `no-js` on <html>, which the CSS uses to
+          keep every [data-reveal] section fully visible. The instant this runs — before paint — it
+          removes the flag, letting the motion layer take over. If scripting is off, the class stays
+          and the page is simply still. Craft only; it moves nothing that carries meaning.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: "document.documentElement.classList.remove('no-js');",
+          }}
+        />
       </head>
       <body className="min-h-screen antialiased">
-        <header className="sticky top-0 z-20 border-b border-[var(--color-line)] bg-[var(--color-ink)]/80 backdrop-blur-md">
-          <div className="mx-auto flex max-w-[1180px] flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3">
+        <header
+          className="sticky top-0 z-20 border-b border-[var(--color-line)] bg-[var(--color-ink)]/80 backdrop-blur-md"
+          style={{ ["--header-h" as string]: "3.25rem" }}
+        >
+          <div className="shell flex items-center gap-x-6 gap-y-2 py-3">
             <Link href="/" className="group flex items-baseline gap-2">
               <span className="font-mono text-base font-semibold tracking-tight text-[var(--color-text)]">
                 kanmani
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10.5px] text-faint group-hover:border-[var(--brand-line)] group-hover:text-muted">
-                <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-true)]" />
-                monad mainnet · 143
+                <span className="live-dot h-1.5 w-1.5 rounded-full bg-[var(--color-true)]" />
+                <span className="hidden xs:inline">monad mainnet · 143</span>
+                <span className="xs:hidden">143</span>
               </span>
             </Link>
             <Nav />
           </div>
         </header>
 
-        <main className="mx-auto max-w-[1180px] px-5 py-10">{children}</main>
+        <main className="shell py-[var(--section-gap)]">{children}</main>
 
-        <footer className="mt-20 border-t border-[var(--color-line)]">
-          <div className="mx-auto max-w-[1180px] px-5 py-8 text-[12px] text-faint">
+        <footer className="mt-[var(--section-gap)] border-t border-[var(--color-line)]">
+          <div className="shell py-8 text-[12px] text-faint">
             <p className="max-w-3xl leading-relaxed">
               Kanmani reads Monad&apos;s ERC-8004 registries and checks whether what each evidence
               document says actually happened. A verdict describes what was observed, never what
