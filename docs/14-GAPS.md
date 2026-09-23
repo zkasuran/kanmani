@@ -251,7 +251,7 @@ Traction is 20% of the score. The honest count today:
 
 | | count |
 |---|---|
-| operators contacted | **0** |
+| operators contacted | **1** |
 | operators integrated | **0** |
 | jobs settled that we did not create ourselves | **0** |
 | progress updates posted | 6 |
@@ -267,7 +267,27 @@ here: I can name every payable agent on Monad because I checked all 10,253 and t
 2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
 3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
 
-**None of them has been approached.** Outreach was scheduled to start 2026-10-01 and that is late for
+**First contact made 2026-09-23**, as
+[UltravioletaDAO/uvd-describe-sdk-typescript#4](https://github.com/UltravioletaDAO/uvd-describe-sdk-typescript/issues/4).
+
+Target 1, via a public GitHub issue on the org's own ERC-8004 reputation SDK rather than by email,
+because that repo reads reputation across chains so its maintainers are the people the distinction
+matters to, and because a public channel is re-derivable in a way a private mail is not.
+
+Both cited transactions were verified **directly against `rpc.monad.xyz`** before posting, not merely
+through our own API: `0x6004e1bd…3c1cc7` returns a null receipt, `0xd0df2994…fcf1847` is found at block
+97684606, matching the block recorded in the verdict. A public claim about somebody else's records has
+to survive being checked by them.
+
+The tone rule was applied literally: the finding is framed as a field that is probably not set from the
+chain the settlement landed on, the one claim that *does* resolve is cited as evidence their pipeline
+can write a correct reference, and the message states plainly that no misstatement is being alleged.
+It also offers to be corrected if `network` means something we have misread.
+
+**Targets 2 and 3 are not yet approached**, and the honest reason is channel rather than intent: ADEXTO
+and Mogmatic publish no contact beyond an endpoint, and there are no mail credentials in this
+environment, so an email to `ultravioletadao@gmail.com` could not be sent either. Drafts for all three
+are ready in `.hq/outreach/DRAFTS-2026-09-23.md` and need a person with a mailbox, not more work. Outreach was scheduled to start 2026-10-01 and that is late for
 the criterion least fixable at the end. **There is no cut trigger on this one:** if no integration
 lands, the outreach record ships with what happened stated plainly, because a documented attempt beats
 an invented number and an invented one would be caught.
