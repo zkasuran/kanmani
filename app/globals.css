@@ -459,3 +459,117 @@ details[open] > summary::before {
     transition: none !important;
   }
 }
+
+/* ==================================================================
+ * EDITORIAL LAYER
+ *
+ * Craft, not meaning. These give the landing page the pacing of a story rather than a dashboard:
+ * one idea per band, a lead paragraph that is allowed to be large, section kickers with room to
+ * breathe, a horizontal step rail and a single highlight band for the one finding. The heavy
+ * tables live on their own pages (/claims, /operators, /method); this layer is what sits between
+ * them and the hero. No verdict colour is defined or altered here.
+ * ================================================================== */
+
+/* A section lead: a small brand kicker, a fluid heading, and a calm supporting line, centred or
+   left as the band wants. Generous top margin so each idea lands on its own. */
+.band {
+  padding-block: clamp(1rem, 0.5rem + 2vw, 2.5rem);
+}
+.kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+.kicker::before {
+  content: "";
+  width: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-brand), transparent);
+}
+
+/* A lead paragraph, larger and lighter than body, for the one or two sentences that carry a band. */
+.lead {
+  font-size: var(--step-1);
+  line-height: 1.5;
+  color: var(--color-text);
+  max-width: 48ch;
+}
+.lead--wide { max-width: 62ch; }
+
+/* The one finding, as a single band with a large figure and a sentence — monad's case-study beat,
+   not a table. Brand tint kept to a hairline and a soft glow so it never reads as a verdict. */
+.finding {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--brand-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in oklab, var(--color-brand) 12%, transparent), transparent 55%),
+    var(--color-panel);
+  box-shadow: var(--shadow-2), var(--edge);
+}
+.finding__figure {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  font-size: var(--step-5);
+  color: var(--color-brand);
+}
+
+/* A horizontal step rail: the verdict ladder or the method, as connected beads that wrap on a
+   phone. Each step is a card; a hairline connector runs behind them on wide screens. */
+.rail {
+  display: grid;
+  gap: clamp(0.75rem, 0.5rem + 1vw, 1.25rem);
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  counter-reset: step;
+}
+.rail__step {
+  position: relative;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-panel);
+  padding: clamp(0.9rem, 0.7rem + 0.6vw, 1.15rem);
+  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.25s ease;
+}
+.rail__step:hover {
+  transform: translateY(-2px);
+  border-color: var(--brand-line);
+  box-shadow: 0 16px 40px -22px color-mix(in oklab, var(--color-brand) 45%, transparent);
+}
+.rail__step::before {
+  counter-increment: step;
+  content: counter(step);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--color-brand);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  margin-bottom: 0.65rem;
+}
+
+/* A divider that is a fading hairline rather than a hard rule, so bands separate without a boxy
+   line across the page. */
+.rule-soft {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(90deg, transparent, var(--color-line-bright), transparent);
+}
+
+/* The closing call band: centred, on the same living field as the hero, one line and two actions. */
+.closing {
+  text-align: center;
+  padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem);
+}

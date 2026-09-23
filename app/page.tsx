@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Derivation, DistBar, Num, OutcomeBadge, Panel, Pct, StatTile } from "@/components/ui.tsx";
+import { Derivation, DistBar, Num, OutcomeBadge, Pct, StatTile } from "@/components/ui.tsx";
 import { CountUp, Reveal } from "@/components/motion.tsx";
-import { clusterShape, mappingCoverage, measurement, networkSplit, population } from "@/lib/queries.ts";
+import { clusterShape, measurement, population } from "@/lib/queries.ts";
 
 /** Nothing on this page may be captured at build time. See next.config.ts. */
 export const dynamic = "force-dynamic";
@@ -22,22 +22,16 @@ const SURFACES: { href: string; label: string }[] = [
 ];
 
 export default async function Home() {
-  const [pop, m, net, shape, cov] = await Promise.all([
+  const [pop, m, shape] = await Promise.all([
     population(),
     measurement(),
-    networkSplit(),
     clusterShape(),
-    mappingCoverage(),
   ]);
 
   const p = pop.rows;
   const d = m.rows;
   const s = shape.rows;
 
-  // The gap between what the registry's own counter says and what we hold. Unknown when the slot
-  // read failed, never zero, because "the index is complete" and "we could not check" are not the
-  // same statement.
-  const gap = p.counterSlotCount === null ? null : p.counterSlotCount - p.agentsIndexed;
   const unknownTotal = d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed;
 
   return (
@@ -124,26 +118,60 @@ export default async function Home() {
         <StatTile label="claims that resolve" value={d.resolve} tone="true" hint="The cited transaction is on the chain the document names." />
       </Reveal>
 
+      <hr className="rule-soft" />
 
-      {/* ---------------------------------------------------------------- the breakdown */}
-      <Reveal>
-      <Panel
-        title="every document with an evidence pointer and what it turned out to be"
-        subtitle={
-          <>
-            {p.feedbacksWithUri.toLocaleString()} of {p.feedbacks.toLocaleString()} feedbacks carry a
-            URI. The rest point at nothing, so there is nothing to check.
-          </>
-        }
-      >
-        <div className="grid gap-px overflow-hidden rounded border border-[var(--color-line)] bg-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">
+      {/* ---------------------------------------------------------------- the stakes, said once */}
+      <Reveal as="section" className="band grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div>
+          <span className="kicker">the distinction</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            Hash integrity is not claim truth.
+          </h2>
+          <p className="lead mt-5 text-muted">
+            Every tool in the registry checks that a document&apos;s bytes match the hash committed
+            on chain. Ours checks the thing nobody else does: whether the payment the document
+            <em className="text-[var(--color-text)] not-italic"> describes </em>
+            actually happened on the chain it names.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <GlanceCard
+            tone="neutral"
+            head="What every other tool sees"
+            body="Bytes intact, hash matches. Verified. It says nothing about whether the transaction is real."
+          />
+          <GlanceCard
+            tone="brand"
+            head="What Kanmani checks"
+            body="Read the named chain. Is the cited transaction there? Four honest outcomes, one rule."
+          />
+        </div>
+      </Reveal>
+
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- the four outcomes, as a story */}
+      <Reveal as="section" className="band">
+        <div className="max-w-2xl">
+          <span className="kicker">how a claim resolves</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            Four outcomes. And one rule that governs all of them.
+          </h2>
+          <p className="lead lead--wide mt-5 text-muted">
+            A failure to look is never an accusation.{" "}
+            <span className="unknown-value">unknown</span> is never <span className="text-[var(--color-false)]">false</span>,
+            and never zero — because these verdicts carry real operators&apos; names.
+          </p>
+        </div>
+
+        <div className="mt-8 grid gap-px overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">
           <Cell
-            outcome="noClaim"
-            n={d.noClaim}
+            outcome="true"
+            n={d.resolve}
             of={d.verdicts}
-            head="assert no payment"
-            body="A game rating or a plain-text comment. Read fine, claims nothing, so it cannot be wrong. Counting these as a coverage gap would inflate our own failure number."
-            href="/claims?outcome=noClaim"
+            head="check out"
+            body="The cited transaction is on the chain the document names, at a block we record."
+            href="/claims?outcome=true"
           />
           <Cell
             outcome="false"
@@ -154,147 +182,176 @@ export default async function Home() {
             href="/claims?outcome=false"
           />
           <Cell
-            outcome="true"
-            n={d.resolve}
+            outcome="noClaim"
+            n={d.noClaim}
             of={d.verdicts}
-            head="check out"
-            body="The cited transaction is on the chain the document names, at a block we record."
-            href="/claims?outcome=true"
+            head="assert no payment"
+            body="A rating or a plain comment. Read fine, claims nothing, so it cannot be wrong."
+            href="/claims?outcome=noClaim"
           />
           <Cell
             outcome="unknown"
             n={d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed}
             of={d.verdicts}
             head="we could not check"
-            body={`${d.unknownBytesMoved} serve bytes that no longer match their own on-chain hash. ${d.unknownUnreachable} would not answer. A failure to look is never an accusation.`}
+            body={`${d.unknownBytesMoved} serve bytes that no longer match their own on-chain hash. ${d.unknownUnreachable} would not answer.`}
             href="/claims?outcome=unknown"
           />
         </div>
-        <Derivation
-          sql={m.sql}
-          note="One row per claim, latest verdict only. The full history of every re-check stays in fovea.verdict."
-        />
-      </Panel>
+        <div className="mt-4">
+          <Link href="/method" className="cta-ghost">how each rung is decided →</Link>
+        </div>
       </Reveal>
 
-      {/* ---------------------------------------------------------------- the finding */}
-      <Reveal>
-      <div className="grid gap-5 lg:grid-cols-2">
-        <Panel title="which chain the claims name">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[var(--color-line)] text-left font-mono text-[11px] uppercase tracking-wide text-faint">
-                <th className="pb-2">declared network</th>
-                <th className="pb-2 text-right">found there</th>
-                <th className="pb-2 text-right">not found</th>
-              </tr>
-            </thead>
-            <tbody>
-              {net.rows.map((r) => (
-                <tr key={r.network} className="border-b border-[var(--color-line)]/50 last:border-0">
-                  <td className="py-2 font-mono text-[13px]">{r.network}</td>
-                  <td className="py-2 text-right font-mono text-[var(--color-true)]">
-                    <Num value={r.resolve} />
-                  </td>
-                  <td className="py-2 text-right font-mono text-[var(--color-false)]">
-                    <Num value={r.doNotResolve} />
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="mt-3 text-[13px] leading-relaxed text-muted">
-            This project was built expecting to find documents citing one chain while the payment sat
-            on another. That is not what is happening. Every claim names Monad and{" "}
-            {d.doNotResolve} of them are not on Monad. The failure is simpler than the one I designed
-            for, so the site says the simpler thing.
-          </p>
-          <Derivation sql={net.sql} />
-        </Panel>
+      <hr className="rule-soft" />
 
-        <Panel title="how the population divides" subtitle="by the document each agent registered">
-          <dl className="space-y-2 text-sm">
-            <Stat label="agents indexed" value={p.agentsIndexed} />
-            <Stat
-              label="the registry's own count"
-              value={p.counterSlotCount}
-              hint={`Read from storage slot 0xa040f7…04e00 at block ${p.atBlock?.toLocaleString() ?? "unknown"}. The registry is not enumerable, so this is the only source of population truth.`}
-            />
-            <Stat
-              label="gap"
-              value={gap}
-              hint="Positive means the index is behind. Unknown means the slot read failed, which is not the same as zero."
-            />
-            <div className="h-2" />
-            <Stat label="distinct registration documents" value={s.records} />
-            <Stat
-              label="agents whose record nobody shares"
-              value={s.agentsWithUniqueRecord}
-              hint="The filter a buyer actually wants."
-            />
-            <Stat
-              label="agents sharing a record with another agent"
-              value={s.agentsInACluster}
-            />
-          </dl>
-          <p className="mt-4 rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] p-3 text-[13px] leading-relaxed">
-            <span className="font-mono text-[var(--color-brand)]">
-              {s.largestMemberCount.toLocaleString()} agents
-            </span>{" "}
-            across{" "}
-            <span className="font-mono text-[var(--color-brand)]">
-              {s.largestDistinctOwners.toLocaleString()} distinct wallets
-            </span>{" "}
-            point at one document (<Pct of={s.largestMemberCount} total={p.agentsIndexed} /> of the
-            registry).{" "}
-            <Link href="/operators" className="text-[var(--color-brand)] hover:underline">
-              What that document is →
-            </Link>
-          </p>
-          <Derivation sql={shape.sql} />
-        </Panel>
-      </div>
+      {/* ---------------------------------------------------------------- the one finding, as a case study */}
+      <Reveal as="section" className="band">
+        <div className="finding p-6 sm:p-9">
+          <span className="kicker">the finding</span>
+          <div className="mt-6 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
+            <div>
+              <div className="finding__figure">
+                <CountUp value={s.largestMemberCount} />
+              </div>
+              <p className="mt-2 font-mono text-[12px] text-muted">
+                agents across {s.largestDistinctOwners.toLocaleString()} distinct wallets
+                {" · "}<Pct of={s.largestMemberCount} total={p.agentsIndexed} /> of the registry
+              </p>
+            </div>
+            <div>
+              <h2 className="fluid-2 font-semibold leading-tight tracking-tight">
+                point at one document that returns a deletion.
+              </h2>
+              <p className="mt-4 text-[length:var(--step-0)] leading-relaxed text-muted max-w-xl">
+                Not many documents shared by a few agents. One dead file, cited by thousands of
+                agents across thousands of wallets — every one of them still reading as a valid
+                registration to anything that checks only the hash.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-2.5">
+                <Link href="/operators" className="cta">what that document is →</Link>
+                <Link href="/agents" className="cta-ghost">browse the agents →</Link>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 border-t border-[var(--color-line)] pt-4">
+            <Derivation sql={shape.sql} note="The cluster shape, from the registry's own records." />
+          </div>
+        </div>
       </Reveal>
 
-      {/* ---------------------------------------------------------------- coverage in the open */}
-      <Reveal>
-      <Panel
-        title="which published mapping read each document"
-        subtitle="Coverage is published as a number, not implied by an absence of errors. A shape no mapping reads is a gap we report on ourselves."
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- what the claims name */}
+      <Reveal as="section" className="band grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <div>
+          <span className="kicker">the shape of it</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            Every claim names Monad. {d.doNotResolve} of them are not on Monad.
+          </h2>
+          <p className="lead mt-5 text-muted">
+            This was built expecting documents that cite one chain while the payment sits on
+            another. That is not what is happening. The failure is simpler than the one it was
+            designed for, so the site says the simpler thing.
+          </p>
+          <div className="mt-6">
+            <Link href="/claims" className="cta-ghost">read every checked claim →</Link>
+          </div>
+        </div>
+        <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
+          <DistBar
+            segments={[
+              { value: d.resolve, className: "bg-[var(--color-true)]", label: "on the named chain" },
+              { value: d.doNotResolve, className: "bg-[var(--color-false)]", label: "not on the named chain" },
+              { value: d.noClaim, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
+              { value: unknownTotal, className: "bg-[var(--color-unknown)]", label: "could not check" },
+            ]}
+          />
+          <div className="mt-4 space-y-2.5 font-mono text-[12px]">
+            <LegendRow className="bg-[var(--color-true)]" label="on the named chain" value={d.resolve} />
+            <LegendRow className="bg-[var(--color-false)]" label="not on the named chain" value={d.doNotResolve} />
+            <LegendRow className="bg-[var(--color-noclaim)]" label="assert no payment" value={d.noClaim} />
+            <LegendRow className="bg-[var(--color-unknown)]" label="could not check" value={unknownTotal} />
+          </div>
+        </div>
+      </Reveal>
+
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- for agents */}
+      <Reveal as="section" className="band">
+        <div className="max-w-2xl">
+          <span className="kicker">built for software</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            An agent should never need to read HTML.
+          </h2>
+          <p className="lead lead--wide mt-5 text-muted">
+            Every surface here is served as plain data too, with live numbers, a{" "}
+            <code className="font-mono text-[var(--color-brand)]">reproduce</code> field on every
+            response, and a null rendered as <span className="unknown-value">unknown</span> rather
+            than defaulted to zero.
+          </p>
+        </div>
+        <div className="mt-8 auto-grid">
+          {SURFACES.map((surface) => (
+            <a
+              key={surface.href}
+              href={surface.href}
+              className="glow-lift block rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
+            >
+              {surface.label}
+            </a>
+          ))}
+        </div>
+      </Reveal>
+
+      {/* ---------------------------------------------------------------- closing */}
+      <Reveal
+        as="section"
+        className="field field-live -mx-[var(--gutter)] mb-[calc(var(--section-gap)*-1)] overflow-hidden border-t border-[var(--color-line)] px-[var(--gutter)] sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border"
       >
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--color-line)] text-left font-mono text-[11px] uppercase tracking-wide text-faint">
-              <th className="pb-2">mapping</th>
-              <th className="pb-2">decided</th>
-              <th className="pb-2 text-right">documents</th>
-            </tr>
-          </thead>
-          <tbody>
-            {cov.rows.map((r) => (
-              <tr key={`${r.mapping}-${r.outcome}`} className="border-b border-[var(--color-line)]/50 last:border-0">
-                <td className="py-2 font-mono text-[13px]">{r.mapping}</td>
-                <td className="py-2">
-                  <OutcomeBadge outcome={r.outcome} />
-                </td>
-                <td className="py-2 text-right font-mono">
-                  <Num value={r.count} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="mt-3 text-[13px] text-muted">
-          Every mapping carries the date it was induced from real documents. Adding one mapping
-          moved the count of resolving claims from 2 to 12, which is why the unread count is
-          published rather than folded into something softer.{" "}
-          <Link href="/method" className="text-[var(--color-brand)] hover:underline">
-            How each rung is decided →
-          </Link>
-        </p>
-        <Derivation sql={cov.sql} />
-      </Panel>
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="closing relative">
+          <h2 className="mx-auto max-w-3xl fluid-3 font-semibold leading-tight tracking-tight">
+            Check the second thing yourself.
+          </h2>
+          <p className="mx-auto mt-4 max-w-xl text-[length:var(--step-0)] text-muted">
+            Paste any claim and get a verdict, with the command to re-derive it without us.
+          </p>
+          <div className="mt-7 flex flex-wrap justify-center gap-2.5">
+            <Link href="/verify" className="cta">verify a claim →</Link>
+            <Link href="/method" className="cta-ghost">how a verdict is decided →</Link>
+            <Link href="/status" className="cta-ghost">is the index fresh? →</Link>
+          </div>
+        </div>
       </Reveal>
+    </div>
+  );
+}
+
+/** A calm comparison card for the stakes band. `tone` borrows brand only as an accent, never as a
+    verdict. */
+function GlanceCard({ tone, head, body }: { tone: "neutral" | "brand"; head: string; body: string }) {
+  const accent = tone === "brand" ? "border-[var(--brand-line)]" : "border-[var(--color-line)]";
+  return (
+    <div className={`rounded-[var(--radius)] border ${accent} bg-[var(--color-panel)] p-4`}>
+      <p className={`text-[13px] font-semibold ${tone === "brand" ? "text-[var(--color-brand)]" : "text-[var(--color-text)]"}`}>
+        {head}
+      </p>
+      <p className="mt-2 text-[13px] leading-relaxed text-muted">{body}</p>
+    </div>
+  );
+}
+
+/** One labelled row in a distribution legend, colour swatch, name, and its count. */
+function LegendRow({ className, label, value }: { className: string; label: string; value: number }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-[var(--color-line)]/50 pb-2 last:border-0">
+      <span className="inline-flex items-center gap-2 text-muted">
+        <span className={`h-2.5 w-2.5 rounded-sm ${className}`} />
+        {label}
+      </span>
+      <span className="tnum text-[var(--color-text)]">{value.toLocaleString()}</span>
     </div>
   );
 }
@@ -335,19 +392,5 @@ function Legend({ className, label }: { className: string; label: string }) {
       <span className={`h-2 w-2 rounded-sm ${className}`} />
       {label}
     </span>
-  );
-}
-
-function Stat({ label, value, hint }: { label: string; value: number | null; hint?: string }) {
-  return (
-    <div className="flex items-baseline justify-between gap-4 border-b border-[var(--color-line)]/50 pb-1.5 last:border-0">
-      <dt className="text-[13px] text-muted" title={hint}>
-        {label}
-        {hint ? <span className="ml-1 text-faint">ⓘ</span> : null}
-      </dt>
-      <dd className="font-mono text-[15px]">
-        <Num value={value} title={hint} />
-      </dd>
-    </div>
   );
 }
