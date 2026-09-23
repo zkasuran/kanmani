@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Addr, Derivation, Num, Panel, Pct } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { hosts, probedClusters, registryHealth, STATE_MEANING } from "@/lib/queries.ts";
+import { CATEGORY_META, labelDistribution } from "@/lib/labels.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -13,9 +14,16 @@ export const metadata = {
 };
 
 export default async function Operators() {
-  const [health, cl, hs] = await Promise.all([registryHealth(), probedClusters(40), hosts(20)]);
+  const [health, cl, hs, labels] = await Promise.all([
+    registryHealth(),
+    probedClusters(40),
+    hosts(20),
+    labelDistribution(),
+  ]);
   const h = health.rows;
   const biggest = cl.rows[0];
+  const ld = labels.rows;
+  const unknownWallets = ld.unlabeled + ld.unknownLookedUp + ld.notLookedUp;
 
   const goneAgents = h.byState.find((s) => s.state === "gone")?.agents ?? 0;
   const paywalledAgents = h.byState.find((s) => s.state === "paywalled")?.agents ?? 0;
@@ -189,6 +197,83 @@ export default async function Operators() {
         <Derivation
           sql={health.sql}
           note="The state column is a view (fovea.record_state) so one definition serves the page, the feed and the API. A probe records what happened; the view decides what that means and the view is allowed to improve without re-fetching anyone's server."
+        />
+      </Panel>
+
+      {/* ---------------------------------------------------------------- who the wallets are */}
+      <Panel
+        title="who those wallets are, from Nansen"
+        subtitle={
+          <>
+            {ld.walletsTotal.toLocaleString()} distinct wallets registered an agent.{" "}
+            {ld.askedAt ? (
+              <>
+                Nansen labels {ld.labeledWallets.toLocaleString()} of them. Last asked{" "}
+                {ld.askedAt.slice(0, 16).replace("T", " ")}Z.
+              </>
+            ) : (
+              <span className="unknown-value">Nobody has asked Nansen yet, so every wallet is unknown.</span>
+            )}
+          </>
+        }
+      >
+        <p className="mb-4 max-w-3xl text-[13px] leading-relaxed text-muted">
+          A wallet count says how many. It does not say who. Nansen&apos;s labels endpoint turns each
+          address into its known entity and behavioural labels, so the count becomes a distribution.
+          A wallet Nansen holds nothing on is <span className="unknown-value">unknown</span>, never a
+          zero. So is one we have not asked about yet. Absence of a label is not a finding about the
+          wallet.
+        </p>
+        <div className="space-y-1">
+          {ld.byCategory.map((c) => (
+            <div
+              key={c.category}
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-[var(--color-line)]/50 py-2 last:border-0"
+            >
+              <div className="w-36 shrink-0">
+                <span
+                  className={`${CATEGORY_META[c.category].cls} inline-block rounded border border-current/20 px-2 py-0.5 font-mono text-[11px]`}
+                >
+                  {CATEGORY_META[c.category].label}
+                </span>
+              </div>
+              <div className="w-40 shrink-0 font-mono text-[13px]">
+                <Num value={c.wallets} /> <span className="text-faint">wallets</span>
+              </div>
+              <div className="w-16 shrink-0 text-right font-mono text-[12px] text-muted">
+                <Pct of={c.wallets} total={ld.walletsTotal} />
+              </div>
+            </div>
+          ))}
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-[var(--color-line)] py-2">
+            <div className="w-36 shrink-0">
+              <span className="unknown-value inline-block rounded border border-[var(--color-line)] px-2 py-0.5 font-mono text-[11px]">
+                unknown
+              </span>
+            </div>
+            <div className="w-40 shrink-0 font-mono text-[13px]">
+              <Num value={unknownWallets} /> <span className="text-faint">wallets</span>
+            </div>
+            <div className="w-16 shrink-0 text-right font-mono text-[12px] text-muted">
+              <Pct of={unknownWallets} total={ld.walletsTotal} />
+            </div>
+            <p className="min-w-[16rem] flex-1 text-[12.5px] leading-relaxed text-muted">
+              {ld.notLookedUp.toLocaleString()} not asked about yet, {ld.unlabeled.toLocaleString()}{" "}
+              Nansen answered with no label, {ld.unknownLookedUp.toLocaleString()} we could not look
+              up. All three are unknown rather than a claim about the wallet.
+            </p>
+          </div>
+        </div>
+        <p className="mt-3 border-t border-[var(--color-line)] pt-3 font-mono text-[11.5px] text-faint">
+          buckets sum to{" "}
+          <span className="text-muted">
+            {(ld.byCategory.reduce((n, c) => n + c.wallets, 0) + unknownWallets).toLocaleString()}
+          </span>{" "}
+          against {ld.walletsTotal.toLocaleString()} distinct wallets.
+        </p>
+        <Derivation
+          sql={labels.sql}
+          note="Paid per wallet against Nansen's labels endpoint (POST /api/v1/profiler/address/labels), deduplicated so one wallet is asked about once whichever agent it registered. Nansen excludes labels from x402, so this is the apikey path. The profiler endpoints that accept x402 settle on Monad through the same Molandak facilitator this product's own verifier is paid over."
         />
       </Panel>
 

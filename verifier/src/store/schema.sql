@@ -388,3 +388,63 @@ CREATE OR REPLACE VIEW fovea.settlement_check_latest AS
 SELECT DISTINCT ON (subject, tx_hash) *
 FROM fovea.settlement_check
 ORDER BY subject, tx_hash, checked_at DESC, id DESC;
+
+-- Who a registration wallet is, from Nansen.
+--
+-- The operators page can say 7,962 distinct wallets registered one dead document. It cannot say who
+-- they are. Nansen turns an address into its known entity and behavioural labels, so that count
+-- becomes a distribution: exchange wallets, smart money, DeFi users and the ones Nansen holds
+-- nothing on. The last group is the honest one and it is `unknown`, never a zero.
+--
+-- It lives in fovea for the reason everything here does: `public` is dropped on every Envio resync,
+-- so an enrichment stored there would cost a paid Nansen call per wallet again every time our own
+-- schema changed. Keyed on the lowercased address rather than on an agent, because 8,093 agents
+-- share far fewer wallets and one wallet's label is the same whichever agent it registered.
+--
+-- Append only, same as every table here. A wallet that gets a label next month reads as
+-- `unlabeled -> labeled` with both timestamps rather than a row quietly changing its mind.
+--
+-- **There are three statuses and the split is the point.** `labeled` is Nansen holding something. `unlabeled`
+-- is Nansen answering with nothing. `unknown` is us not getting an answer at all: a 429, a 500, a
+-- missing key. The page renders the last two the same, as unknown, but the row keeps them apart so a
+-- reader can tell "asked, nothing there" from "never got an answer". A lookup failure is never
+-- written as a category, because our outage is not a fact about somebody's wallet.
+CREATE TABLE IF NOT EXISTS fovea.wallet_label (
+  id              bigserial PRIMARY KEY,
+
+  -- Lowercased so a join against Agent.owner is case-clean. No foreign key, because the Agent table
+  -- lives in the schema Envio drops and rebuilds.
+  address         text        NOT NULL,
+  chain           text        NOT NULL,
+
+  status          text        NOT NULL CHECK (status IN ('labeled','unlabeled','unknown')),
+  -- The primary category bucket, null unless labeled. `other` is Nansen's `others` normalised plus
+  -- the fallback for a label that carries no category.
+  category        text        CHECK (category IS NULL OR category IN
+                    ('smart_money','cefi','defi','nft','social','behavioral','other')),
+  -- Every label Nansen returned, verbatim, so a reader sees the raw strings rather than only our
+  -- bucket. Empty when unlabeled or unknown.
+  labels          text[]      NOT NULL DEFAULT '{}',
+  label_count     integer     NOT NULL DEFAULT 0,
+
+  -- Which endpoint produced this and how the call was paid, so the x402 story is on the record.
+  source          text        NOT NULL,
+  auth_mode       text        NOT NULL CHECK (auth_mode IN ('x402','apikey')),
+  -- Written for a stranger. What was observed, never intent. "HTTP 429" is a fact.
+  reason          text        NOT NULL,
+  http_status     integer,
+
+  checked_at      timestamptz NOT NULL,
+  automatic       boolean     NOT NULL DEFAULT true
+);
+
+CREATE INDEX IF NOT EXISTS wallet_label_address_checked
+  ON fovea.wallet_label (address, chain, checked_at DESC);
+
+CREATE INDEX IF NOT EXISTS wallet_label_category
+  ON fovea.wallet_label (category);
+
+CREATE OR REPLACE VIEW fovea.wallet_label_latest AS
+SELECT DISTINCT ON (address, chain) *
+FROM fovea.wallet_label
+ORDER BY address, chain, checked_at DESC, id DESC;

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, TxLink } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
+import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -24,9 +25,10 @@ export default async function AgentPage({ params }: Props) {
   const a = await agent(decodeURIComponent(id));
   if (!a) notFound();
 
-  const [record, feedback] = await Promise.all([
+  const [record, feedback, ownerLabel] = await Promise.all([
     a.uriHash ? probedCluster(a.uriHash) : Promise.resolve(undefined),
     claims({ agentId: a.id, withUri: false, limit: 100 }),
+    walletLabel(a.owner),
   ]);
 
   const checked = feedback.rows.filter((c) => c.outcome !== null);
@@ -81,6 +83,29 @@ export default async function AgentPage({ params }: Props) {
             <Row label="owner">
               <Addr value={a.owner} href={`/agents?q=${a.owner}`} />
               <span className="ml-2 text-[11.5px] text-faint">holds the ERC-721</span>
+            </Row>
+            <Row label="owner, per Nansen">
+              {ownerLabel && ownerLabel.status === "labeled" && ownerLabel.category ? (
+                <span className="flex flex-wrap items-center gap-2">
+                  <span
+                    className={`${CATEGORY_META[ownerLabel.category].cls} inline-block rounded border border-current/20 px-2 py-0.5 font-mono text-[11px]`}
+                  >
+                    {CATEGORY_META[ownerLabel.category].label}
+                  </span>
+                  <span className="text-[12.5px] text-muted">{ownerLabel.labels.slice(0, 4).join(", ")}</span>
+                </span>
+              ) : (
+                <span
+                  className="unknown-value"
+                  title={
+                    ownerLabel
+                      ? "Nansen answered and holds no label for this wallet. That is not a negative finding."
+                      : "Nobody has asked Nansen about this wallet yet. Not looked up is not the same as no label."
+                  }
+                >
+                  unknown
+                </span>
+              )}
             </Row>
             <Row label="agent wallet">
               {a.agentWallet ? (
