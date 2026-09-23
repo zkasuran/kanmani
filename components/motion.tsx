@@ -44,6 +44,12 @@ export function Reveal({
       el.setAttribute("data-reveal", "in");
       return;
     }
+    // Arm from JS only. The server rendered this element visible; we hide it now, on the client,
+    // knowing the observer below will reveal it. If this effect never runs the element simply stays
+    // visible — the page can never be trapped blank by the reveal layer.
+    el.setAttribute("data-reveal", "pending");
+    // If it is already in view on mount (above the fold), reveal on the next frame so the transition
+    // still plays from hidden to shown rather than snapping.
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -56,7 +62,15 @@ export function Reveal({
       { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
     );
     io.observe(el);
-    return () => io.disconnect();
+    // Safety net: whatever happens with the observer, never leave an element armed-but-hidden for
+    // more than a moment. If it has not been revealed shortly after mount, reveal it.
+    const failsafe = window.setTimeout(() => {
+      if (el.getAttribute("data-reveal") !== "in") el.setAttribute("data-reveal", "in");
+    }, 1200);
+    return () => {
+      io.disconnect();
+      window.clearTimeout(failsafe);
+    };
   }, []);
 
   return (
