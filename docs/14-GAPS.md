@@ -116,6 +116,15 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 | **Lens**, route | Agent Hub services proxied with measured failover | not started |
 | jobs board with bidding | post, bid, accept, deliver, release, refund by a real counterparty | not started |
 
+**The pre-deploy security review has now run, and it found a blocker.**
+[`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) Finding 9: `postBond` never checks who owns the agent
+it is bonding, so anyone can post a bond for any agent. That is a denial of service on bonding and,
+worse, it means a bond does not prove the agent staked anything — a stranger can bond any agent with
+`minTruthRateBps = 0`, which can never be slashed, and the agent then reads as bonded. A badge that
+costs one atomic unit to fake is the thing this project exists to attack. **Sclera must not be
+deployed until that is closed**, and the fix is a design decision between three options rather than a
+missing input check, so it is the author's call.
+
 **What "built, not deployed" costs, stated exactly.** No Sclera address is recorded anywhere and no
 `SCLERA` variable is set in the running environment, so no bond has ever been posted or slashed with
 real money. The thesis sentence "trust becomes a price" is therefore **demonstrable in tests and not

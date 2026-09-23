@@ -610,3 +610,99 @@ design, the review and the decisions are the author's and every finding here was
 executable exploit rather than accepted as an assertion. Verified before publishing: 37 tests passing
 across two suites, 0 compiler warnings and both fixes confirmed by reverting them and watching the
 regression tests fail.
+
+---
+
+## Finding 9: anyone can post a bond for an agent they do not own
+
+**Sclera. Found 2026-09-23 by the pre-deploy review. This is why Sclera is not deployed.**
+
+### The bug
+
+`postBond` takes an `agentId` and never asks who owns it.
+
+```bash
+grep -cE "ownerOf|IdentityRegistry|0x8004A169" contracts/src/Sclera.sol    # 0
+```
+
+The contract validates that the id is non-zero, that the amount is non-zero, that the rate is within
+bounds, and that no bond already exists. It then writes `b.agent = msg.sender` and pulls the token.
+Nowhere does it consult the ERC-721 identity registry that decides who actually holds agent `id`.
+
+### The exploit
+
+Two things follow, and the second is worse than the first.
+
+**It is a denial of service on bonding.** `if (b.state != State.None) revert BondExists()` means one
+bond per agent, forever, whoever got there first. A stranger posts the smallest bond the token allows
+against agent 10182 and the real operator can never bond that agent again. The squatter is not out of
+pocket: `release` pays `b.agent`, which is the squatter.
+
+**It makes a bond prove nothing, which defeats the thesis.** The product claim is *"an agent stakes
+against its own promise"* and *"trust stops being a badge and becomes a price"*. Without an ownership
+check, a bond is not the agent's stake. A stranger can post one for any agent with
+`minTruthRateBps = 0`, which no verdict can ever fall below, so the bond can never be slashed:
+
+```
+postBond(10182, USDC, 1, /* minTruthRateBps */ 0, window, minSample)
+```
+
+Agent 10182 now reads as bonded. A buyer who takes that as evidence the operator has money at risk
+has been misled, and the misleading is cheap, permanent and available to anyone. **A badge that costs
+one atomic unit of USDC to fake is the exact thing this project was built to attack**, which is what
+makes this a design failure rather than a missing input check.
+
+### The fix, not applied here because it is a design decision
+
+Three options and they are not equivalent:
+
+1. **Require `ownerOf(agentId) == msg.sender`** at post time, reading the identity registry. Correct
+   and costs an external call. It also means a bond cannot survive the agent being transferred, which
+   has to be decided rather than discovered.
+2. **Let anyone bond, and publish who bonded.** A bond by a non-owner is then a third party's wager
+   rather than the agent's stake, which is a different and defensible product — but every surface
+   saying "the agent staked" would have to stop saying it.
+3. **Allow one bond per (agent, poster)** instead of per agent, removing the denial of service while
+   leaving option 2's disclosure problem.
+
+Option 1 is what the thesis already claims is true, so it is the one that makes the documentation
+correct rather than the one that makes the code match a weaker claim.
+
+### Status
+
+**Open. Sclera is not deployed and must not be until this is closed.**
+`.hq/plan/09-SECURITY.md` says the security review is *"gating, not advisory"*, and this is the
+finding that gate exists for. No test covered it:
+
+```bash
+grep -niE "notOwner|ownerOf|squat" contracts/test/Sclera.t.sol    # no matches
+```
+
+## Finding 10: every ReportRefused event is discarded
+
+**Sclera. Low severity, and it makes debugging a live slashing harder.**
+
+`onReport` emits a refusal reason and then reverts:
+
+```solidity
+emit ReportRefused(v.agentId, "bad signature");
+revert BadSignature();
+```
+
+A revert discards the whole transaction including its logs, so **no `ReportRefused` event can ever be
+observed.** The contract appears to publish why a report was refused and in fact publishes nothing.
+Either the reason belongs in the revert data, or the paths that are meant to be observable must
+return rather than revert. The tests pass because they assert the revert selector, which is the part
+that works.
+
+### What was checked and found sound
+
+Recorded so the review is not only a list of complaints. Reentrancy: `nonReentrant` on all three
+state-changing entry points, with effects written before token interaction in `onReport` and
+`release`. Fee-on-transfer: `_requireExactlyReceived` refuses a token that does not deliver the exact
+amount, which is Finding 2 from Aqueous already applied here. Replay: verdict nonces are monotonic per
+agent, and a reverted report correctly does **not** record its nonce, asserted directly in
+`test_verdict_smallSampleStillConsumesTheNonce`. Forwarder trust: `onReport` deliberately ignores the
+forwarder's metadata and authorises on the attestor's own signature, which is correct on a chain where
+the forwarder validates nothing. The deploy script refuses the demo attestor by address, because that
+key is derived from a test vector committed to this repository.
