@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Derivation, Mono, Num, OutcomeBadge, Panel } from "@/components/ui.tsx";
+import { Derivation, Mono, Num, OutcomeBadge, Panel, StatTile } from "@/components/ui.tsx";
 import { changedClaims, freshness, population, registryHealth } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
@@ -55,15 +55,37 @@ export default async function Status() {
   const gap = p.counterSlotCount === null ? null : p.counterSlotCount - p.agentsIndexed;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Status</h1>
-        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-          Every number on this site is a measurement at a time. This page says which time. A page
-          that reports a figure that was true when it was written, with no way to tell how long ago
-          that was, is the failure mode this exists to prevent.
-        </p>
-      </div>
+    <div className="space-y-12">
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">erc-8004 · monad mainnet · freshness</p>
+          <h1 className="mt-4 max-w-3xl text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.15] tracking-tight">
+            Every number here is a measurement at a time.
+          </h1>
+          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
+            This page says which time. A page that reports a figure that was true when it was
+            written, with no way to tell how long ago that was, is the failure mode this exists to
+            prevent.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label="agents we hold" value={p.agentsIndexed} hint="Agent rows Retina has indexed on Monad." />
+        <StatTile
+          label="the registry's own count"
+          value={p.counterSlotCount}
+          hint="Read from the registry's counter slot. The registry is not enumerable, so this is the only source of population truth."
+        />
+        <StatTile
+          label="gap"
+          value={gap}
+          tone={gap !== null && gap !== 0 ? "unknown" : "neutral"}
+          hint="Positive means the index is behind. Unknown means the slot read failed, which is not the same as zero."
+        />
+        <StatTile label="verdicts that have changed" value={changed.rows.length} tone="brand" hint="Claims whose verdict moved after a re-check. The correction trail." />
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="freshness">

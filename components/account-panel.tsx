@@ -16,6 +16,7 @@
  */
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Panel } from "@/components/ui.tsx";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import { signReceipt, signVaultWrite, toHex, verifyReceipt, type IrisKeys, type Receipt } from "@/lib/iris.ts";
 import { CONTEXT, open, parseSealed, seal, writeMessage, type Sealed } from "@/lib/vault.ts";
@@ -150,19 +151,19 @@ export function AccountPanel() {
   return (
     <div className="space-y-5">
       {/* ------------------------------------------------ the two buttons */}
-      <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4">
+      <Panel title="create or restore" subtitle="No seed phrase, no extension, no key on our server.">
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => run("create")}
             disabled={busy !== null || available === false}
-            className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-4 py-2 font-mono text-[13px] hover:bg-[var(--color-brand-dim)]/40 disabled:opacity-40"
+            className="cta disabled:opacity-40"
           >
             {busy === "create" ? "waiting for the prompt…" : "create a passkey"}
           </button>
           <button
             onClick={() => run("signin")}
             disabled={busy !== null || available === false}
-            className="rounded border border-[var(--color-line-bright)] px-4 py-2 font-mono text-[13px] text-muted hover:text-[var(--color-text)] disabled:opacity-40"
+            className="cta-ghost disabled:opacity-40"
           >
             {busy === "signin" ? "waiting for the prompt…" : "sign in with an existing one"}
           </button>
@@ -192,7 +193,7 @@ export function AccountPanel() {
             Open a scoped signing session and send a gasless Monad transaction →
           </Link>
         </p>
-      </section>
+      </Panel>
 
       {/* ------------------------------------------------ failure, explained rather than thrown */}
       {outcome && !outcome.ok ? (
@@ -205,7 +206,7 @@ export function AccountPanel() {
           {outcome.retryable ? (
             <button
               onClick={() => run("create")}
-              className="mt-3 rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] hover:text-[var(--color-text)]"
+              className="cta-ghost mt-3"
             >
               try again
             </button>
@@ -215,15 +216,11 @@ export function AccountPanel() {
 
       {/* ------------------------------------------------ the four keys */}
       {outcome?.ok ? (
-        <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]">
-          <header className="border-b border-[var(--color-line)] px-4 py-3">
-            <h2 className="font-mono text-sm">four keys, one ceremony</h2>
-            <p className="mt-1 text-[12px] text-muted">
-              Derived with HKDF-SHA256 over a single PRF output, one namespace per key. Public
-              halves shown. The private halves never leave this tab and are never sent anywhere.
-            </p>
-          </header>
-          <div className="space-y-3 px-4 py-3">
+        <Panel
+          title="four keys, one ceremony"
+          subtitle="Derived with HKDF-SHA256 over a single PRF output, one namespace per key. Public halves shown. The private halves never leave this tab and are never sent anywhere."
+        >
+          <div className="space-y-3">
             <KeyRow
               ns="kanmani.iris.v1"
               what="account"
@@ -251,10 +248,10 @@ export function AccountPanel() {
             />
           </div>
 
-          <div className="border-t border-[var(--color-line)] px-4 py-3">
+          <div className="mt-4 border-t border-[var(--color-line)] pt-4">
             <button
               onClick={() => signOne(outcome.keys)}
-              className="rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
+              className="cta-ghost"
             >
               sign a verification receipt with the attestation key
             </button>
@@ -271,21 +268,16 @@ export function AccountPanel() {
               </div>
             ) : null}
           </div>
-        </section>
+        </Panel>
       ) : null}
 
       {/* ------------------------------------------------ storage the server cannot read */}
       {outcome?.ok ? (
-        <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]">
-          <header className="border-b border-[var(--color-line)] px-4 py-3">
-            <h2 className="font-mono text-sm">storage this server cannot read</h2>
-            <p className="mt-1 text-[12px] text-muted">
-              Encrypted here with the content key, stored as ciphertext, signed with the account
-              key so nobody else can overwrite it. Open this page on a second device, sign in with
-              the same passkey and read it back: the address will match and the text will decrypt.
-            </p>
-          </header>
-          <div className="space-y-3 px-4 py-3">
+        <Panel
+          title="storage this server cannot read"
+          subtitle="Encrypted here with the content key, stored as ciphertext, signed with the account key so nobody else can overwrite it. Open this page on a second device, sign in with the same passkey and read it back: the address will match and the text will decrypt."
+        >
+          <div className="space-y-3">
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -295,14 +287,14 @@ export function AccountPanel() {
               <button
                 onClick={() => store(outcome.keys)}
                 disabled={vault.phase === "working"}
-                className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-3 py-1.5 font-mono text-[12px] disabled:opacity-40"
+                className="cta disabled:opacity-40"
               >
                 encrypt and store
               </button>
               <button
                 onClick={() => readBack(outcome.keys)}
                 disabled={vault.phase === "working"}
-                className="rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] text-muted hover:text-[var(--color-text)] disabled:opacity-40"
+                className="cta-ghost disabled:opacity-40"
               >
                 fetch from the server and decrypt
               </button>
@@ -310,7 +302,7 @@ export function AccountPanel() {
                 href={`/api/vault?address=${outcome.keys.account.address}`}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded border border-[var(--color-line)] px-3 py-1.5 font-mono text-[12px] text-faint hover:text-muted"
+                className="cta-ghost"
               >
                 see what the server actually holds →
               </a>
@@ -340,47 +332,35 @@ export function AccountPanel() {
               </div>
             ) : null}
           </div>
-        </section>
+        </Panel>
       ) : null}
 
       {/* ------------------------------------------------ the gate, made pressable */}
-      <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]">
-        <header className="border-b border-[var(--color-line)] px-4 py-3">
-          <h2 className="font-mono text-sm">what this site has stored about you</h2>
-          <p className="mt-1 text-[12px] text-muted">
-            Live readout of this origin, not a claim. Clear it and nothing here changes, because
-            nothing about your identity was ever in it.
-          </p>
-        </header>
-        <div className="px-4 py-3">
-          <dl className="grid grid-cols-3 gap-3 text-center">
-            <Count label="localStorage" n={storage?.local ?? null} />
-            <Count label="sessionStorage" n={storage?.session ?? null} />
-            <Count label="cookies" n={storage?.cookies ?? null} />
-          </dl>
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              onClick={clearEverything}
-              className="rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
-            >
-              clear all of it
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              className="rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
-            >
-              hard reload, then sign in again
-            </button>
-          </div>
-          <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
-            The passkey is created as a discoverable credential, so the browser offers it with
-            nothing from us. There is no cached credential ID and no returning-user path, which is
-            why there is no returning-user path that can break. Sign in on a second device and the
-            address above will be identical, because it is a deterministic function of the PRF
-            output and nothing else.
-          </p>
+      <Panel
+        title="what this site has stored about you"
+        subtitle="Live readout of this origin, not a claim. Clear it and nothing here changes, because nothing about your identity was ever in it."
+      >
+        <dl className="grid grid-cols-3 gap-3">
+          <Count label="localStorage" n={storage?.local ?? null} />
+          <Count label="sessionStorage" n={storage?.session ?? null} />
+          <Count label="cookies" n={storage?.cookies ?? null} />
+        </dl>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button onClick={clearEverything} className="cta-ghost">
+            clear all of it
+          </button>
+          <button onClick={() => window.location.reload()} className="cta-ghost">
+            hard reload, then sign in again
+          </button>
         </div>
-      </section>
+        <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+          The passkey is created as a discoverable credential, so the browser offers it with
+          nothing from us. There is no cached credential ID and no returning-user path, which is
+          why there is no returning-user path that can break. Sign in on a second device and the
+          address above will be identical, because it is a deterministic function of the PRF
+          output and nothing else.
+        </p>
+      </Panel>
     </div>
   );
 }
@@ -418,11 +398,11 @@ function KeyRow({
 
 function Count({ label, n }: { label: string; n: number | null }) {
   return (
-    <div className="rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] p-3">
-      <p className={`tnum text-2xl font-semibold ${n === 0 ? "text-[var(--color-true)]" : ""}`}>
+    <div className="rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel-2)] px-4 py-3.5">
+      <div className={`stat-value text-[1.9rem] ${n === 0 ? "text-[var(--color-true)]" : "text-[var(--color-text)]"}`}>
         {n === null ? <span className="unknown-value text-base">reading</span> : n}
-      </p>
-      <p className="mt-0.5 font-mono text-[11px] text-faint">{label}</p>
+      </div>
+      <p className="mt-1.5 font-mono text-[11px] text-faint">{label}</p>
     </div>
   );
 }

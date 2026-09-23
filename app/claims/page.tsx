@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Derivation, Mono, Num, OutcomeBadge, Panel, RungLadder } from "@/components/ui.tsx";
+import { Derivation, DistBar, Mono, Num, OutcomeBadge, Panel, RungLadder, StatTile } from "@/components/ui.tsx";
 import { claims, claimsCount, mappingCoverage, type Outcome } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
@@ -47,17 +47,59 @@ export default async function Claims({ searchParams }: Props) {
     return s ? `/claims?${s}` : "/claims";
   };
 
+  // The verdict split of the whole checked corpus, summed from the coverage rows already fetched
+  // above. This is the population, not the current filter, so the tiles read the same as the
+  // landing page rather than the count in the filter bar.
+  const outcomeTotal = (o: Outcome) =>
+    cov.rows.reduce((n, r) => (r.outcome === o ? n + r.count : n), 0);
+  const trueN = outcomeTotal("true");
+  const falseN = outcomeTotal("false");
+  const noClaimN = outcomeTotal("noClaim");
+  const unknownN = outcomeTotal("unknown");
+
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Claims</h1>
-        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-          One row per evidence document carrying a URI. Ordered newest first by the block the
-          feedback was recorded in. There is no score and no ranking here, because a list of other
-          people&apos;s documents sorted by an opinion of ours would be exactly the thing this site
-          argues against.
-        </p>
-      </div>
+    <div className="space-y-8">
+      {/* ---------------------------------------------------------------- header */}
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-8 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">claims · monad mainnet · chain 143</p>
+          <h1 className="mt-4 max-w-4xl text-[clamp(1.7rem,3.6vw,2.5rem)] font-semibold leading-[1.15] tracking-tight">
+            Every evidence document and what checking it found
+          </h1>
+          <p className="mt-4 max-w-3xl text-[14px] leading-relaxed text-muted">
+            One row per evidence document carrying a URI. Ordered newest first by the block the
+            feedback was recorded in. There is no score and no ranking here, because a list of other
+            people&apos;s documents sorted by an opinion of ours would be exactly the thing this site
+            argues against.
+          </p>
+
+          {/* the whole checked population at a glance, before any filter narrows it */}
+          <div className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile label="not on the chain they name" value={falseN} tone="false" hint="We read the chain the document names and the cited transaction is not on it." />
+            <StatTile label="on the chain they name" value={trueN} tone="true" hint="The cited transaction is on the chain the document names." />
+            <StatTile label="could not check" value={unknownN} tone="unknown" hint="A fetch failed, the bytes moved or no mapping read the shape. Never an accusation." />
+            <StatTile label="assert no payment" value={noClaimN} hint="Read fine, claims nothing, so there is nothing to be right or wrong about." />
+          </div>
+
+          <div className="mt-6 max-w-3xl">
+            <DistBar
+              segments={[
+                { value: noClaimN, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
+                { value: falseN, className: "bg-[var(--color-false)]", label: "not on the named chain" },
+                { value: trueN, className: "bg-[var(--color-true)]", label: "on the named chain" },
+                { value: unknownN, className: "bg-[var(--color-unknown)]", label: "could not check" },
+              ]}
+            />
+            <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted">
+              <Legend className="bg-[var(--color-noclaim)]" label={`${noClaimN.toLocaleString()} no claim`} />
+              <Legend className="bg-[var(--color-false)]" label={`${falseN.toLocaleString()} false`} />
+              <Legend className="bg-[var(--color-true)]" label={`${trueN.toLocaleString()} true`} />
+              <Legend className="bg-[var(--color-unknown)]" label={`${unknownN.toLocaleString()} unknown`} />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* ---------------------------------------------------------------- filters */}
       <div className="space-y-3 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-3">
@@ -117,7 +159,7 @@ export default async function Claims({ searchParams }: Props) {
       </div>
 
       {/* ---------------------------------------------------------------- rows */}
-      <Panel>
+      <Panel title="matching documents">
         <div className="space-y-px">
           {list.rows.length === 0 ? (
             <p className="py-6 text-center text-[13px] text-muted">
@@ -180,5 +222,14 @@ export default async function Claims({ searchParams }: Props) {
         <Derivation sql={list.sql} />
       </Panel>
     </div>
+  );
+}
+
+function Legend({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2 w-2 rounded-sm ${className}`} />
+      {label}
+    </span>
   );
 }

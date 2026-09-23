@@ -1,5 +1,5 @@
 import { PayFlow } from "./pay-flow.tsx";
-import { Panel } from "@/components/ui.tsx";
+import { Eyebrow, Panel } from "@/components/ui.tsx";
 
 export const metadata = {
   title: "Pay",
@@ -17,17 +17,23 @@ export const metadata = {
  */
 export default function PayPage() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Pay for a verification</h1>
-        <p className="mt-2 max-w-3xl text-[15px] leading-relaxed text-muted">
-          Mera is the whole account layer here. You connect a passkey once, a scoped signing session
-          opens on the key it derives, then a single tap signs a payment the facilitator relays and
-          pays the gas for. No seed phrase, no wallet extension, no MON in your pocket and no key on
-          our server. The session signs with no further prompt until its scope expires. The
-          countdown shows exactly when the next action asks again.
-        </p>
-      </div>
+    <div className="space-y-12">
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <Eyebrow>mera · x402 · consumer-payments</Eyebrow>
+          <h1 className="mt-4 max-w-3xl text-[clamp(1.6rem,3.4vw,2.35rem)] font-semibold leading-[1.14] tracking-tight">
+            Pay for a verification without ever touching a wallet.
+          </h1>
+          <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-muted">
+            Mera is the whole account layer here. You connect a passkey once, a scoped signing session
+            opens on the key it derives, then a single tap signs a payment the facilitator relays and
+            pays the gas for. No seed phrase, no wallet extension, no MON in your pocket and no key on
+            our server. The session signs with no further prompt until its scope expires. The
+            countdown shows exactly when the next action asks again.
+          </p>
+        </div>
+      </section>
 
       <PayFlow />
 

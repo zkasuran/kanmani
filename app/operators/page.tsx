@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Derivation, Num, Panel, Pct } from "@/components/ui.tsx";
+import { Addr, Cta, Derivation, Eyebrow, Num, Panel, Pct, StatTile } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { hosts, probedClusters, registryHealth, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, labelDistribution } from "@/lib/labels.ts";
@@ -29,61 +29,98 @@ export default async function Operators() {
   const paywalledAgents = h.byState.find((s) => s.state === "paywalled")?.agents ?? 0;
 
   return (
-    <div className="space-y-10">
-      <section>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-faint">
-          clustered by registration document, not by wallet
-        </p>
-        <h1 className="mt-3 text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.15] tracking-tight">
+    <div className="space-y-12">
+      {/* ---------------------------------------------------------------- the biggest cluster */}
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <Eyebrow>clustered by registration document, not by wallet</Eyebrow>
+          <h1 className="mt-4 max-w-4xl text-[clamp(1.6rem,3.4vw,2.4rem)] font-semibold leading-[1.15] tracking-tight">
+            {biggest ? (
+              <>
+                <span className="text-[var(--color-brand)]">
+                  <Num value={biggest.memberCount} /> agents
+                </span>{" "}
+                across{" "}
+                <span className="text-[var(--color-brand)]">
+                  <Num value={biggest.distinctOwners} /> distinct wallets
+                </span>{" "}
+                registered the same document.
+              </>
+            ) : (
+              "No records indexed yet."
+            )}
+          </h1>
           {biggest ? (
-            <>
-              <span className="text-[var(--color-brand)]">
-                <Num value={biggest.memberCount} /> agents
-              </span>{" "}
-              across{" "}
-              <span className="text-[var(--color-brand)]">
-                <Num value={biggest.distinctOwners} /> distinct wallets
-              </span>{" "}
-              registered the same document.
-            </>
-          ) : (
-            "No records indexed yet."
-          )}
-        </h1>
-        {biggest ? (
-          <div className="mt-4 max-w-3xl space-y-3">
-            <p className="text-[15px] leading-relaxed text-muted">
-              That document is{" "}
-              <a
-                href={biggest.uri}
-                target="_blank"
-                rel="noreferrer noopener nofollow"
-                className="break-all font-mono text-[13px] text-[var(--color-text)] underline decoration-[var(--color-line-bright)] underline-offset-4 hover:decoration-[var(--color-brand)]"
-              >
-                {biggest.uri}
-              </a>
-              . We asked it{" "}
-              {biggest.checkedAt ? (
-                <>on {biggest.checkedAt.slice(0, 10)}</>
-              ) : (
-                <span className="unknown-value">at a time we have not recorded</span>
-              )}{" "}
-              and it answered{" "}
-              <span className="font-mono text-[var(--color-false)]">
-                {biggest.reason ?? "with something we did not record"}
-              </span>
-              .
-            </p>
-            <p className="text-[14px] leading-relaxed text-muted">
-              Nobody did anything wrong here. A preview deployment expired and thousands of
-              registrations that were fine on the day they were written now point at nothing. The
-              registrations are still on chain, still hash-perfect, still returned by every tool
-              that reads the registry. That is the part worth showing: an agent can look completely
-              healthy in a registry explorer while the only thing describing it has been gone for
-              months.
-            </p>
-          </div>
-        ) : null}
+            <div className="mt-5 max-w-3xl space-y-3">
+              <p className="text-[15px] leading-relaxed text-muted">
+                That document is{" "}
+                <a
+                  href={biggest.uri}
+                  target="_blank"
+                  rel="noreferrer noopener nofollow"
+                  className="break-all font-mono text-[13px] text-[var(--color-text)] underline decoration-[var(--color-line-bright)] underline-offset-4 hover:decoration-[var(--color-brand)]"
+                >
+                  {biggest.uri}
+                </a>
+                . We asked it{" "}
+                {biggest.checkedAt ? (
+                  <>on {biggest.checkedAt.slice(0, 10)}</>
+                ) : (
+                  <span className="unknown-value">at a time we have not recorded</span>
+                )}{" "}
+                and it answered{" "}
+                <span className="font-mono text-[var(--color-false)]">
+                  {biggest.reason ?? "with something we did not record"}
+                </span>
+                .
+              </p>
+              <p className="text-[14px] leading-relaxed text-muted">
+                Nobody did anything wrong here. A preview deployment expired and thousands of
+                registrations that were fine on the day they were written now point at nothing. The
+                registrations are still on chain, still hash-perfect, still returned by every tool
+                that reads the registry. That is the part worth showing: an agent can look completely
+                healthy in a registry explorer while the only thing describing it has been gone for
+                months.
+              </p>
+            </div>
+          ) : null}
+          {biggest ? (
+            <div className="mt-7 flex flex-wrap gap-2.5">
+              <Cta href={`/operators/${biggest.uriHash}`} variant="brand">
+                see who shares it →
+              </Cta>
+              <Cta href="/agents?cluster=shared">every shared record →</Cta>
+            </div>
+          ) : null}
+        </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- the numbers at a glance */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile
+          label="agents in the registry"
+          value={h.agentsTotal}
+          hint="Every ERC-8004 agent indexed on Monad."
+        />
+        <StatTile
+          label="distinct registration documents"
+          value={h.recordsTotal}
+          tone="brand"
+          hint="Agents reuse documents, so this sits far below the agent count. It is the real number of things to ask about."
+        />
+        <StatTile
+          label="agents whose document is gone"
+          value={goneAgents}
+          tone="false"
+          hint="The host answered and said the document is not there. Not a timeout, not a guess."
+        />
+        <StatTile
+          label="agents behind a live 402"
+          value={paywalledAgents}
+          tone="brand"
+          hint="A live endpoint answering with a real x402 challenge, so a buyer could pay it."
+        />
       </section>
 
       {/* ---------------------------------------------------------------- the eight states */}
@@ -358,10 +395,10 @@ export default async function Operators() {
 
 function Finding({ n, of, head, body }: { n: number; of: number; head: string; body: string }) {
   return (
-    <div className="rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] p-3">
-      <p className="tnum text-2xl font-semibold">{n.toLocaleString()}</p>
-      <p className="mt-0.5 text-[13px]">{head}</p>
-      <p className="font-mono text-[11px] text-faint">
+    <div className="hover-lift rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel-2)] p-4">
+      <p className="stat-value text-[1.7rem]">{n.toLocaleString()}</p>
+      <p className="mt-1.5 text-[13px] text-[var(--color-text)]">{head}</p>
+      <p className="mt-0.5 font-mono text-[11px] text-faint">
         <Pct of={n} total={of} /> of the registry
       </p>
       <p className="mt-2 text-[12px] leading-relaxed text-muted">{body}</p>

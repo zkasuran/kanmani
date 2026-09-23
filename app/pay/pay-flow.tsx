@@ -14,6 +14,7 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { Row } from "@/components/ui.tsx";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import type { IrisKeys } from "@/lib/iris.ts";
 import {
@@ -173,8 +174,8 @@ type ViewProps = {
   mmss: (ms: number) => string;
 };
 
-const CARD = "rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4";
-const STEP = "font-mono text-[11px] uppercase tracking-wide text-faint";
+const CARD = "elevated panel-hover rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5";
+const STEP = "eyebrow";
 
 function PayFlowView(p: ViewProps) {
   const connected = p.session !== null;
@@ -196,14 +197,14 @@ function PayFlowView(p: ViewProps) {
           <button
             onClick={() => p.onConnect("create")}
             disabled={p.busy !== null || p.available === false}
-            className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-4 py-2 font-mono text-[13px] hover:bg-[var(--color-brand-dim)]/40 disabled:opacity-40"
+            className="cta disabled:opacity-40"
           >
             {p.busy === "connect" ? "waiting for the prompt…" : "connect a new passkey"}
           </button>
           <button
             onClick={() => p.onConnect("signin")}
             disabled={p.busy !== null || p.available === false}
-            className="rounded border border-[var(--color-line-bright)] px-4 py-2 font-mono text-[13px] text-muted hover:text-[var(--color-text)] disabled:opacity-40"
+            className="cta-ghost disabled:opacity-40"
           >
             {p.busy === "connect" ? "…" : "sign in with an existing one"}
           </button>
@@ -218,27 +219,28 @@ function PayFlowView(p: ViewProps) {
       {/* ---------------------------------------------------------------- the session */}
       {connected && p.session ? (
         <section className={`${CARD} border-[var(--color-brand)]/40`}>
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <p className={STEP}>signing session, open</p>
-            <span className="font-mono text-[12px] text-faint">
-              re-prompts in <span className="text-[var(--color-text)]">{p.mmss(p.remaining)}</span>
-            </span>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-true)]" />
+              <p className={STEP}>signing session open</p>
+            </div>
+            <div className="text-right">
+              <div className="stat-value tnum text-[1.5rem] text-[var(--color-text)]">{p.mmss(p.remaining)}</div>
+              <div className="eyebrow mt-0.5">until the next prompt</div>
+            </div>
           </div>
-          <p className="mt-3 text-[13.5px] leading-relaxed">{p.session.scope.label}</p>
-          <dl className="mt-3 space-y-1 font-mono text-[12px] text-muted">
-            <div className="flex gap-2">
-              <dt className="text-faint">account</dt>
-              <dd className="break-all">{address}</dd>
-            </div>
-            <div className="flex gap-2">
-              <dt className="text-faint">ceiling</dt>
-              <dd>{p.session.scope.maxAmountAtomic.toString()} atomic units</dd>
-            </div>
+          <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--color-text)]">{p.session.scope.label}</p>
+          <dl className="mt-3">
+            <Row label="account">
+              <span className="break-all font-mono text-[13px] text-muted">{address}</span>
+            </Row>
+            <Row label="ceiling">
+              <span className="font-mono text-[13px] text-muted">
+                {p.session.scope.maxAmountAtomic.toString()} atomic units
+              </span>
+            </Row>
           </dl>
-          <button
-            onClick={p.onEnd}
-            className="mt-3 rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
-          >
+          <button onClick={p.onEnd} className="cta-ghost mt-4">
             end session now
           </button>
           <p className="mt-3 text-[12px] leading-relaxed text-faint">
@@ -261,7 +263,7 @@ function PayFlowView(p: ViewProps) {
           <button
             onClick={p.onPay}
             disabled={!connected || p.busy !== null || p.target.trim() === ""}
-            className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-4 py-2 font-mono text-[13px] hover:bg-[var(--color-brand-dim)]/40 disabled:opacity-40"
+            className="cta disabled:opacity-40"
           >
             {p.busy === "pay" ? "signing and settling…" : `pay ${p.price.usdc} and verify`}
           </button>

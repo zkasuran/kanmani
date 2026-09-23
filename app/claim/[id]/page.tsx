@@ -28,27 +28,32 @@ export default async function ClaimPage({ params }: Props) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <Link href="/claims" className="font-mono text-[11px] text-faint hover:text-muted">
-          ← all claims
-        </Link>
-        <div className="mt-2 flex flex-wrap items-center gap-3">
-          <h1 className="font-mono text-lg tracking-tight">{c.id}</h1>
-          <OutcomeBadge outcome={c.outcome} size="lg" />
+      {/* ---------------------------------------------------------------- header */}
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-8 pt-8 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <Link href="/claims" className="font-mono text-[11px] text-faint hover:text-muted">
+            ← all claims
+          </Link>
+          <p className="eyebrow mt-3">evidence document · monad mainnet · chain 143</p>
+          <div className="mt-2 flex flex-wrap items-center gap-3">
+            <h1 className="break-all font-mono text-lg tracking-tight">{c.id}</h1>
+            <OutcomeBadge outcome={c.outcome} size="lg" />
+          </div>
+          {c.reason ? (
+            <p className="mt-4 max-w-3xl text-[15px] leading-relaxed">
+              {c.reason.charAt(0).toUpperCase() + c.reason.slice(1)}.
+            </p>
+          ) : (
+            <p className="mt-4 unknown-value max-w-3xl text-[15px]">
+              No verdict has been recorded for this claim. Unchecked is not the same as clean.
+            </p>
+          )}
+          {c.outcome ? (
+            <p className="mt-2 max-w-3xl text-[13px] text-muted">{outcomeMeaning(c.outcome)}</p>
+          ) : null}
         </div>
-        {c.reason ? (
-          <p className="mt-3 max-w-3xl text-[15px] leading-relaxed">
-            {c.reason.charAt(0).toUpperCase() + c.reason.slice(1)}.
-          </p>
-        ) : (
-          <p className="mt-3 unknown-value max-w-3xl text-[15px]">
-            No verdict has been recorded for this claim. Unchecked is not the same as clean.
-          </p>
-        )}
-        {c.outcome ? (
-          <p className="mt-2 max-w-3xl text-[13px] text-muted">{outcomeMeaning(c.outcome)}</p>
-        ) : null}
-      </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         {/* -------------------------------------------------- what the document claimed */}

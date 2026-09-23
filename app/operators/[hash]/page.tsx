@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Mono, Num, Panel, Pct, Row } from "@/components/ui.tsx";
+import { Addr, Derivation, Eyebrow, Mono, Num, Panel, Pct, Row } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { clusterMembers, clusterOwners, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 
@@ -38,22 +38,25 @@ export default async function ClusterPage({ params, searchParams }: Props) {
   const repeats = c.memberCount - c.distinctOwners;
 
   return (
-    <div className="space-y-5">
-      <div>
+    <div className="space-y-8">
+      <section>
         <Link href="/operators" className="font-mono text-[11px] text-faint hover:text-muted">
           ← all clusters
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-          <Num value={c.memberCount} /> {c.memberCount === 1 ? "agent" : "agents"} across{" "}
-          <Num value={c.distinctOwners} /> {c.distinctOwners === 1 ? "wallet" : "wallets"}
-        </h1>
-        <p className="mt-2 flex flex-wrap items-center gap-2">
-          <RecordStateBadge state={c.state} />
-          <span className="text-[13px] text-muted">
-            {c.state ? STATE_MEANING[c.state] : STATE_MEANING["not probed"]}
-          </span>
-        </p>
-      </div>
+        <div className="mt-3">
+          <Eyebrow>one registration document, everyone who points at it</Eyebrow>
+          <h1 className="mt-2 text-[clamp(1.5rem,3vw,2.1rem)] font-semibold leading-[1.15] tracking-tight">
+            <Num value={c.memberCount} /> {c.memberCount === 1 ? "agent" : "agents"} across{" "}
+            <Num value={c.distinctOwners} /> {c.distinctOwners === 1 ? "wallet" : "wallets"}
+          </h1>
+          <p className="mt-3 flex flex-wrap items-center gap-2">
+            <RecordStateBadge state={c.state} />
+            <span className="text-[13px] text-muted">
+              {c.state ? STATE_MEANING[c.state] : STATE_MEANING["not probed"]}
+            </span>
+          </p>
+        </div>
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="the document">

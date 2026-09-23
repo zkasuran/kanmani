@@ -28,23 +28,24 @@ export default async function Validate() {
   const feedbacks = Number(counts?.feedbacks ?? 0);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-faint">
-          erc-8004 validation registry · monad mainnet
-        </p>
-        <h1 className="mt-3 text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.2] tracking-tight">
-          <Num value={feedbacks} /> feedbacks on this chain.{" "}
-          <span className="text-[var(--color-brand)]">
-            <Num value={validations} /> validation{validations === 1 ? "" : "s"}.
-          </span>
-        </h1>
-        <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
-          Anyone can leave feedback about any agent. Almost nobody has ever asked for one to be
-          independently checked. That is not apathy, it is how the contract works and the
-          difference is worth understanding before you read the gap as a community failing.
-        </p>
-      </div>
+    <div className="space-y-12">
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">erc-8004 validation registry · monad mainnet</p>
+          <h1 className="mt-4 max-w-3xl text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.15] tracking-tight">
+            <Num value={feedbacks} /> feedbacks on this chain.{" "}
+            <span className="text-[var(--color-brand)]">
+              <Num value={validations} /> validation{validations === 1 ? "" : "s"}.
+            </span>
+          </h1>
+          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
+            Anyone can leave feedback about any agent. Almost nobody has ever asked for one to be
+            independently checked. That is not apathy, it is how the contract works and the
+            difference is worth understanding before you read the gap as a community failing.
+          </p>
+        </div>
+      </section>
 
       <Panel title="why the registry is empty, which took a failed transaction to learn">
         <p className="max-w-3xl text-[14px] leading-relaxed">

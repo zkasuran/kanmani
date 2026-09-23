@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mono, Panel } from "@/components/ui.tsx";
+import { Mono, Panel, SectionHead } from "@/components/ui.tsx";
 import { ATLAS } from "../../verifier/src/ladder/parse.ts";
 import { CHAINS } from "../../verifier/src/chains.ts";
 
@@ -51,16 +51,23 @@ const RUNGS = [
 
 export default function Method() {
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Method</h1>
-        <p className="mt-2 max-w-3xl text-[14.5px] leading-relaxed text-muted">
-          Every verdict on this site is reproducible by hand. Each rung below says what question it
-          answers, how it decides, what happens when it cannot decide and the command that gets the
-          same answer without this site. If any of them disagree with what a page here says, the
-          page is wrong.
-        </p>
-      </div>
+    <div className="space-y-10">
+      {/* ---------------------------------------------------------------- header */}
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-9 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">method · monad mainnet · chain 143</p>
+          <h1 className="mt-4 max-w-4xl text-[clamp(1.8rem,4vw,2.6rem)] font-semibold leading-[1.14] tracking-tight">
+            How each verdict on this site is decided
+          </h1>
+          <p className="mt-4 max-w-3xl text-[14.5px] leading-relaxed text-muted">
+            Every verdict on this site is reproducible by hand. Each rung below says what question it
+            answers, how it decides, what happens when it cannot decide and the command that gets the
+            same answer without this site. If any of them disagree with what a page here says, the
+            page is wrong.
+          </p>
+        </div>
+      </section>
 
       {/* ---------------------------------------------------------------- the rule */}
       <Panel title="the one rule that governs everything else">
@@ -82,7 +89,7 @@ export default function Method() {
 
       {/* ---------------------------------------------------------------- the ladder */}
       <section className="space-y-4">
-        <h2 className="font-mono text-sm uppercase tracking-widest text-faint">the ladder</h2>
+        <SectionHead eyebrow="the ladder" title="How each rung decides" />
         {RUNGS.map((r, i) => (
           <Panel key={r.id} title={`${i + 1}. ${r.id}`} subtitle={r.q}>
             <dl className="space-y-3 text-[13.5px] leading-relaxed">

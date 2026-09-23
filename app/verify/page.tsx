@@ -33,17 +33,24 @@ export default async function Verify({ searchParams }: Props) {
   const failed = result instanceof Error;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Verify</h1>
-        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-          Paste an evidence document or a claim id from this site. The check that runs here is the
-          same code the sweep and the command line run, so this page and the tool cannot give
-          different answers. The result gets its own URL, so it can be sent to whoever disagrees.
-        </p>
-      </div>
+    <div className="space-y-12">
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">erc-8004 · monad mainnet · live check</p>
+          <h1 className="mt-4 max-w-3xl text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.15] tracking-tight">
+            Check any claim yourself.
+          </h1>
+          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
+            Paste an evidence document or a claim id from this site. The check that runs here is the
+            same code the sweep and the command line run, so this page and the tool cannot give
+            different answers. The result gets its own URL, so it can be sent to whoever disagrees.
+          </p>
+        </div>
+      </section>
 
-      <form action="/verify" className="space-y-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-4">
+      <Panel title="check a document or a claim id">
+        <form action="/verify" className="space-y-3">
         <label className="block">
           <span className="font-mono text-[11px] uppercase tracking-wide text-faint">
             document uri or a claim id
@@ -70,25 +77,24 @@ export default async function Verify({ searchParams }: Props) {
             bytes against a hash of the same bytes. The result says which of those two happened.
           </span>
         </label>
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <button
-            type="submit"
-            className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-4 py-1.5 font-mono text-[12.5px] hover:bg-[var(--color-brand-dim)]/40"
-          >
-            check it
+        <div className="flex flex-wrap items-center gap-2.5 pt-1">
+          <button type="submit" className="cta">
+            check it →
           </button>
           <Link
             href="/verify?id=143_10182_0x103040545AC5031A11E8C03dd11324C7333a13C7_2"
-            className="font-mono text-[11.5px] text-faint hover:text-muted"
+            className="cta-ghost"
           >
             try one that resolves
           </Link>
-          <Link href="/claims?outcome=false" className="font-mono text-[11.5px] text-faint hover:text-muted">
+          <Link href="/claims?outcome=false" className="cta-ghost">
             try one that does not
           </Link>
         </div>
-      </form>
+        </form>
+      </Panel>
 
+      <div className="space-y-5">
       {fromClaim ? (
         <p className="font-mono text-[12px] text-muted">
           checking claim{" "}
@@ -119,6 +125,7 @@ export default async function Verify({ searchParams }: Props) {
       ) : null}
 
       {result && !failed ? <Result r={result as Awaited<ReturnType<typeof check>>} /> : null}
+      </div>
     </div>
   );
 }

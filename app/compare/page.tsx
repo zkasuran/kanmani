@@ -54,17 +54,24 @@ export default async function Compare({ searchParams }: Props) {
   const missing = ids.length - sides.length;
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Compare</h1>
-        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-          Two to four agents, side by side. Rung first, then what each one claimed against what was
-          found. There is no combined score and there is no winner, because a single number over two
-          agents with different amounts of evidence would hide exactly the thing worth comparing.
-        </p>
-      </div>
+    <div className="space-y-12">
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">erc-8004 · monad mainnet · side by side</p>
+          <h1 className="mt-4 max-w-3xl text-[clamp(1.5rem,3.2vw,2.2rem)] font-semibold leading-[1.15] tracking-tight">
+            Two to four agents, rung first.
+          </h1>
+          <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
+            Rung first, then what each one claimed against what was found. There is no combined score
+            and there is no winner, because a single number over two agents with different amounts of
+            evidence would hide exactly the thing worth comparing.
+          </p>
+        </div>
+      </section>
 
-      <form action="/compare" className="flex flex-wrap items-end gap-2 rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)] p-3">
+      <Panel title="pick agents to compare">
+        <form action="/compare" className="flex flex-wrap items-end gap-2.5">
         <label className="min-w-[20rem] flex-1">
           <span className="font-mono text-[11px] uppercase tracking-wide text-faint">
             agent ids, comma separated, up to four
@@ -76,17 +83,16 @@ export default async function Compare({ searchParams }: Props) {
             className="mt-1 w-full rounded border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-1.5 font-mono text-[12.5px] outline-none placeholder:text-faint focus:border-[var(--color-brand)]"
           />
         </label>
-        <button
-          type="submit"
-          className="rounded border border-[var(--color-brand)] bg-[var(--color-brand-dim)]/25 px-4 py-1.5 font-mono text-[12.5px] hover:bg-[var(--color-brand-dim)]/40"
-        >
-          compare
+        <button type="submit" className="cta">
+          compare →
         </button>
-        <Link href="/compare?ids=10182,10169,9" className="pb-1.5 font-mono text-[11.5px] text-faint hover:text-muted">
+        <Link href="/compare?ids=10182,10169,9" className="cta-ghost">
           try three
         </Link>
-      </form>
+        </form>
+      </Panel>
 
+      <div className="space-y-5">
       {missing > 0 ? (
         <p className="font-mono text-[12px] text-[var(--color-unknown)]">
           {missing} of the ids given is not in the index, so it is left out rather than shown blank.
@@ -101,7 +107,8 @@ export default async function Compare({ searchParams }: Props) {
           </p>
         </Panel>
       ) : (
-        <div className="overflow-x-auto">
+        <Panel title="what each one claimed against what was found">
+          <div className="overflow-x-auto">
           <table className="w-full min-w-[46rem] border-separate border-spacing-0 text-sm">
             <thead>
               <tr>
@@ -185,8 +192,10 @@ export default async function Compare({ searchParams }: Props) {
               </Cmp>
             </tbody>
           </table>
-        </div>
+          </div>
+        </Panel>
       )}
+      </div>
     </div>
   );
 }

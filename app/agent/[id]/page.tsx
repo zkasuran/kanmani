@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, TxLink } from "@/components/ui.tsx";
+import { Addr, Derivation, Eyebrow, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile, TxLink } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
@@ -36,12 +36,15 @@ export default async function AgentPage({ params }: Props) {
   const doNot = checked.filter((c) => c.outcome === "false").length;
 
   return (
-    <div className="space-y-5">
-      <div>
+    <div className="space-y-8">
+      <section>
         <Link href="/agents" className="font-mono text-[11px] text-faint hover:text-muted">
           ← all agents
         </Link>
-        <h1 className="mt-2 flex flex-wrap items-baseline gap-3 text-2xl font-semibold tracking-tight">
+        <div className="mt-3">
+          <Eyebrow>one agent, every claim about it and how it was decided</Eyebrow>
+        </div>
+        <h1 className="mt-2 flex flex-wrap items-baseline gap-3 text-[clamp(1.5rem,3vw,2.1rem)] font-semibold tracking-tight">
           <span>#{a.agentId}</span>
           <span className="text-[var(--color-muted)]">{a.name ?? "unnamed"}</span>
         </h1>
@@ -75,7 +78,34 @@ export default async function AgentPage({ params }: Props) {
             </>
           )}
         </p>
-      </div>
+      </section>
+
+      {/* ---------------------------------------------------------------- the numbers at a glance */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile
+          label="feedback on chain"
+          value={a.feedbackCount}
+          hint="Everything ever said about this agent in the registry."
+        />
+        <StatTile
+          label="checkable claims"
+          value={checked.length}
+          tone="brand"
+          hint="Feedback that points at a document, so it can be checked against a chain."
+        />
+        <StatTile
+          label="resolve on the named chain"
+          value={resolve}
+          tone="true"
+          hint="The cited transaction is on the chain the document names."
+        />
+        <StatTile
+          label="cited transaction missing"
+          value={doNot}
+          tone="false"
+          hint="We read the named chain successfully and the cited transaction is not on it."
+        />
+      </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="the registration">
