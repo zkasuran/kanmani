@@ -577,3 +577,125 @@ details[open] > summary::before {
   text-align: center;
   padding-block: clamp(2.5rem, 1.5rem + 4vw, 5rem);
 }
+
+/* ==================================================================
+ * PRODUCT LAYER
+ *
+ * The stack, as a product rather than a report. Craft only: no verdict colour is defined here and
+ * the status chips deliberately use neither the verdict green nor the verdict red, because "this
+ * layer is live" is a statement about our build, never a verdict about an agent. `live` borrows the
+ * brand; `built` is a neutral slate. Confusing the two would be the same category error the whole
+ * project exists to point at.
+ * ================================================================== */
+
+/* One layer of the stack. Numbered by the order money flows through it. */
+.layer {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-panel);
+  padding: clamp(0.95rem, 0.75rem + 0.6vw, 1.25rem);
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.25s ease;
+}
+.layer:hover {
+  transform: translateY(-2px);
+  border-color: var(--brand-line);
+  box-shadow: 0 18px 44px -24px color-mix(in oklab, var(--color-brand) 50%, transparent);
+}
+.layer__name {
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-size: var(--step-0);
+}
+.layer__codename {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+.layer__body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--color-muted);
+}
+
+/* Status chips. Two states and they are about OUR build, never about an agent.
+   `live`  = running on Monad mainnet right now, checkable by a stranger.
+   `built` = written, tested and reviewable in the repository, not yet deployed or wired live.
+   Neither borrows a verdict colour, so a chip can never be misread as a measurement. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  align-self: flex-start;
+  border-radius: 999px;
+  border: 1px solid;
+  padding: 0.12rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.chip--live {
+  border-color: var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--color-brand);
+}
+.chip--live::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: var(--color-brand);
+}
+.chip--built {
+  border-color: var(--color-line-bright);
+  background: var(--color-panel-2);
+  color: var(--color-muted);
+}
+
+/* A flow of steps with an arrow between them, for "how the money moves". Wraps on a phone and the
+   connector disappears rather than pointing at nothing. */
+.flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+.flow__step {
+  flex: 1 1 8.5rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-panel);
+  padding: 0.8rem 0.9rem;
+}
+.flow__step h4 {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-brand);
+}
+.flow__step p {
+  margin-top: 0.35rem;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--color-muted);
+}
+
+/* A receipt-style proof row: a label, a value and a link to the chain. Monospace, tabular. */
+.proof-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  border-bottom: 1px solid color-mix(in oklab, var(--color-line) 60%, transparent);
+  padding-block: 0.55rem;
+}
+.proof-row:last-child { border-bottom: 0; }

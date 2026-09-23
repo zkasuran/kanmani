@@ -58,86 +58,104 @@ path that a stranger can walk without us in the room. That is tracked in section
 
 ---
 
-## 2. Two rungs of the ladder that the design promised
+## 2. Two rungs of the ladder exist in the repository and do not run
 
-The plan described six rungs. Five are implemented.
+**Corrected 2026-09-23.** This section used to say the two rungs were "not implemented". The files
+exist with their own tests. What is still true, and is the part that matters, is that they are not
+wired into the live ladder.
 
 | rung | state |
 |---|---|
 | `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all 1,192 documents through them |
-| `payable` | **not implemented.** A live x402 probe of an agent's own endpoint |
-| `settled` | **not implemented.** Proof that a payment to that agent cleared |
+| `payable` | **written and tested, not wired.** A live x402 probe of an agent's own endpoint |
+| `settled` | **written and tested, not wired.** Proof that a payment to that agent cleared |
 
 ```bash
-ls verifier/src/ladder/    # intact  locate  parse  resolve  verdict
+ls verifier/src/ladder/
+# intact  locate  parse  payable  resolve  settled  verdict  (+ a .test.ts for each)
+
+grep -n 'export type Rung' verifier/src/ladder/verdict.ts
+# "declared" | "resolvable" | "intact" | "parsed" | "true"
+
+grep -nE '^import' verifier/src/ladder/verdict.ts
+# intact, parse, locate. Neither payable nor settled is imported.
 ```
 
-The ladder ships as five rungs and is described as five everywhere, rather than as six with two
-marked "coming soon". **A promised rung that does not exist is worse than an absent one**, because the
-first is a claim and the second is a boundary.
+So the ladder **runs** as five rungs and is described as five everywhere on the site, including on
+`/method`. **A promised rung that does not run is a claim; an absent one is a boundary.** Having the
+code in the tree does not upgrade the claim, and this document would be worth less if it did.
 
 **One thing here is easy to misread, so it is stated plainly.** `POST /api/verify` is payable. That
 means somebody can pay **us** to check a document. It does not mean we have probed whether a given
 agent can be paid. Those are different claims about different parties and the second one is the rung
-that is missing.
+that is not wired.
 
 ---
 
-## 3. Layer 2 and Layer 3 do not exist
+## 3. Sclera is built and not deployed. Three layers above it remain absent
 
-The plan has four layers. Layers 0 and 1 shipped. The rest is absent and not partially.
+**Corrected 2026-09-23.** This section used to say "Layer 2 and Layer 3 do not exist" and that
+Sclera was not started. Both are now wrong, and the grep it offered as proof now returns matches.
+The corrected picture:
 
 ```bash
-ls contracts/src/          # Aqueous.sol  TestUSDC.sol
-grep -rliE "sclera|cone|choroid|chiasm|lens" app lib contracts/src verifier/src indexer/src
-# no matches
+ls contracts/src/          # Aqueous.sol  CleanverseGate.sol  Sclera.sol  TestUSDC.sol
+wc -l contracts/src/Sclera.sol                          # 410
+cd contracts && forge test --match-path 'test/Sclera*'  # passes
+ls indexer/src/handlers/   # Retina.ts  Chiasm.ts
+wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 ```
 
 | planned | what it was for | state |
 |---|---|---|
-| **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" true rather than asserted | not started |
+| **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **built, not deployed** |
+| **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **built, not deployed** |
+| **CleanverseGate**, gated release | release conditioned on a compliance credential | **built, not deployed** |
 | **Cone**, odds market | a crowd price on whether an agent delivers | not started |
 | **Choroid**, credit | borrowing power from a real settlement history, with a funded lending pool | not started |
-| **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | not started |
-| **Lens**, route | all 66 Agent Hub services proxied with measured failover | not started |
+| **Lens**, route | Agent Hub services proxied with measured failover | not started |
 | jobs board with bidding | post, bid, accept, deliver, release, refund by a real counterparty | not started |
 
-**Sclera is the loss that actually hurts the thesis.** Without bonds, "trust becomes a price" is a
-sentence rather than a mechanism and Chainlink CRE falls with it because CRE was the slashing oracle
-and had no other job here. The pre-decided cut order in the roadmap protects Sclera above the other
-four for exactly this reason, so if anything in this block survives it will be that one.
+**What "built, not deployed" costs, stated exactly.** No Sclera address is recorded anywhere and no
+`SCLERA` variable is set in the running environment, so no bond has ever been posted or slashed with
+real money. The thesis sentence "trust becomes a price" is therefore **demonstrable in tests and not
+yet demonstrable on chain.** The site labels that layer `built` for this reason and a judge reading
+the repository will find exactly what this paragraph describes.
+
+The one remaining join is named rather than glossed: a signature produced by our signing code,
+accepted by the deployed contract, inside one test. The signing side and the checking side were each
+built from the same spec and each verifies on its own. Closing that join is the first thing after
+deployment.
 
 **The decision date is 2026-10-02**, when each remaining layer is asked one question: finishing or
 limping? Limping gets cut whole into this document the same day. **There is no thin tier**, because a
-half-built surface costs more credibility than an absent one and a judge who finds one shallow page
-assumes the rest.
+half-built surface costs more credibility than an absent one.
 
 ---
 
-## 4. Integrations named in the plan that are absent
+## 4. Integrations: what is wired, what is written, what is absent
 
-Each was real scope with a bounty attached. Listing them as "planned" without this section would be
-the kind of claim this project exists to attack.
-
-| integration | state | falls with |
-|---|---|---|
-| Chainlink CRE | not started | Sclera |
-| Nansen | not started | Choroid |
-| Aurora Intents | not started | the cross-chain funding path |
-| Cleanverse | not started | compliance-gated release |
-| Alchemy self-healing re-verification | not started | nothing, it is standalone |
-| Qwen schema atlas as a published artifact | **partly.** The atlas exists, is versioned, is rendered on `/method` and every mapping carries its induced date. The before-and-after coverage article does not exist | nothing |
+**Corrected 2026-09-23.** This section used to list every integration as "not started" and offered a
+grep as proof. That grep now returns matches, so the table is rewritten against the tree.
 
 ```bash
-grep -rliE "webhook|alchemy" app lib verifier/src indexer/src     # no matches
+wc -l lib/intents.ts lib/cleanverse.ts cre/kanmani-oracle/slashing/main.ts \
+      app/api/webhooks/alchemy/route.ts
+# 504, 189, 280, 45
 ```
 
-**The Alchemy one is worth calling out separately** because it is cheap and it is not blocked by any
-other layer. The design was a webhook on `MetadataUpdate` that re-runs the ladder for that agent, so
-a repaired document flips `false` to `true` within minutes with nobody watching. The append-only
-verdict store already supports exactly this: the history renders, the timestamps are there, `/status`
-lists every changed verdict. **What is missing is only the trigger.** Today a re-check has to be
-started by hand.
+| integration | state |
+|---|---|
+| Alchemy self-healing re-verification | **written and tested, not fed by a live stream.** HMAC-SHA256 over the raw body in constant time, refusing every delivery when no key is configured rather than failing open; delivery id is a primary key so retries are idempotent. No delivery has yet come from a webhook created in Alchemy's own dashboard |
+| Chainlink CRE slashing workflow | **written, not deployed to the CRE network.** The bounty accepts a CLI simulation or a live deployment, so approval does not gate it |
+| Aurora Intents funding path | **written, not exercised on mainnet.** `/fund` renders it |
+| Cleanverse gated release | **contract and client written, not deployed** |
+| Qwen schema atlas | **shipped.** Versioned, rendered on `/method`, every mapping carries its induced date. The before-and-after coverage article does not exist |
+| Nansen underwriting, paid per call over x402 | **not started.** Falls with Choroid |
+
+**The honest summary is that the integration code is real and the live wiring is the gap.** Every row
+above says which half is which, because "we integrated Alchemy" and "a webhook Alchemy created has
+delivered to us" are different claims and only the first is currently true.
 
 ---
 
@@ -215,11 +233,11 @@ Small, real and better written here than discovered by a reader.
   is `fovea.verdict`, outside Envio, which is what lets it survive a resync. Nothing reads the dead
   one. **Removing it forces a full resync**, so it is batched with the next schema change rather than
   done alone. Verify with `grep -n Verdict indexer/schema.graphql`.
-* **Six contract tests skip without a fork URL.** `forge test` reports 55 passing and 6 skipped. They
-  are the fork tests and they are skipped rather than silently passing, but a reader should know the
-  55 is not the whole suite.
-* **Five verifier tests skip without a database.** Same shape: 94 tests, 89 pass, 5 need Postgres and
-  say so.
+* **Eight contract tests skip without a fork URL.** `forge test` reports 121 tests, 113 passing and 8
+  skipped. They are the fork tests and they are skipped rather than silently passing, but a reader
+  should know the 113 is not the whole suite.
+* **Seventeen verifier tests skip without a database.** Same shape: 189 tests, 172 pass, 17 need
+  Postgres and say so. The site suite is 172 tests, 169 passing, 3 skipped. **454 pass in total.**
 * **Census figures and live figures differ by one agent.** Documents written at census time say 10,252
   agents and 2,012 distinct records. The live index reads 10,253 and 2,013 because we registered
   ourselves as agent 10252 afterwards. Section 1 of [`16-METHOD.md`](16-METHOD.md) explains which

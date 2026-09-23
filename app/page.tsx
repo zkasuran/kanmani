@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Derivation, DistBar, Num, OutcomeBadge, Pct, StatTile } from "@/components/ui.tsx";
+import { Derivation, DistBar, Pct, StatTile } from "@/components/ui.tsx";
 import { CountUp, Reveal } from "@/components/motion.tsx";
 import { clusterShape, measurement, population } from "@/lib/queries.ts";
 
@@ -8,10 +8,25 @@ export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 /**
- * The machine-readable surfaces, shown in the hero marquee. Every one is a live endpoint an agent
- * can fetch; the scroll is decoration over links that work with or without motion. Listed here
- * rather than inline so the two marquee copies stay identical.
+ * The landing page is the product, not the report.
+ *
+ * This page used to open with the measurement and nothing else, which read as a forensic exposé of
+ * other people's work. That breaks the tone rule this project set for itself in
+ * `.hq/plan/00-THESIS-AND-SCOPE.md`: **a clearing house, never an exposé.** The measurement is the
+ * proof the engine works. It is not the pitch.
+ *
+ * So the order here is the order of the official submission pitch: what Kanmani is, why the market
+ * needs it, how the money moves, the stack it composes into, then the evidence underneath. The
+ * heavy tables stay on the pages built for them (`/claims`, `/operators`, `/method`).
+ *
+ * One rule governs every status label below. `live` means running on Monad mainnet and checkable by
+ * a stranger right now. `built` means written, tested and readable in the repository but not yet
+ * deployed or wired to a live stream. Nothing here says "live" that a check would contradict,
+ * because a published claim that does not survive a check is the exact failure this project exists
+ * to attack.
  */
+
+/** The machine-readable surfaces. Design in this track is developer experience, so these are the craft. */
 const SURFACES: { href: string; label: string }[] = [
   { href: "/llms.txt", label: "GET /llms.txt" },
   { href: "/agents.md", label: "GET /agents.md" },
@@ -21,12 +36,87 @@ const SURFACES: { href: string; label: string }[] = [
   { href: "/.well-known/agent-registration.json", label: "GET /.well-known/agent-registration.json" },
 ];
 
+/**
+ * The stack, in the order money flows through it. Each layer consumes the one below and feeds the
+ * one above, which is why ten directions are one project rather than a feature list.
+ *
+ * `status` is checked against the artifact, not against the plan. Sclera is `built`: the contract,
+ * the EIP-712 signer and 33 passing tests exist and the attestor key is pinned in both Solidity and
+ * TypeScript, but no deployment address is recorded, so calling it live would be false.
+ */
+const STACK: {
+  name: string;
+  codename: string;
+  body: string;
+  status: "live" | "built";
+  href?: string;
+}[] = [
+  {
+    name: "Index the evidence",
+    codename: "Retina",
+    body: "The evidence pointer exists only as a non-indexed event field and eth_getLogs caps at 100 blocks. Without an index there is nothing to check at all.",
+    status: "live",
+    href: "/agents",
+  },
+  {
+    name: "Verify the claim",
+    codename: "Fovea",
+    body: "Five rungs, four outcomes. Read the chain the document names and record what was there, at a block. Never an inference.",
+    status: "live",
+    href: "/verify",
+  },
+  {
+    name: "Escrow the job",
+    codename: "Aqueous",
+    body: "USDC locked before work starts. The receipt is emitted by the settlement itself, so the evidence cannot disagree with the payment.",
+    status: "live",
+    href: "/pay",
+  },
+  {
+    name: "Pay without a wallet",
+    codename: "Iris · x402",
+    body: "One passkey is the whole account layer. An EIP-3009 authorisation is relayed, so the buyer needs no MON and holds no key we could lose.",
+    status: "live",
+    href: "/account",
+  },
+  {
+    name: "Answer on chain",
+    codename: "Optic",
+    body: "The first and only row in Monad's ERC-8004 Validation Registry. A verdict written where the protocol expects it, not just on our own page.",
+    status: "live",
+    href: "/validate",
+  },
+  {
+    name: "Bond the promise",
+    codename: "Sclera",
+    body: "An agent stakes USDC against a floor on its own claim-truth rate. A signed verdict slashes it, recovered against one key fixed at deploy. No admin override anywhere.",
+    status: "built",
+  },
+  {
+    name: "Fund from any chain",
+    codename: "Chiasm · Intents",
+    body: "Hire a Monad agent with money held elsewhere. The escrow funds the moment the bridge lands, with no bridge step the buyer has to see.",
+    status: "built",
+    href: "/fund",
+  },
+  {
+    name: "Heal a fixed record",
+    codename: "Alchemy hook",
+    body: "A MetadataUpdate re-runs the ladder for that agent, so an operator who repairs a document sees false become true with both timestamps, nobody watching.",
+    status: "built",
+  },
+];
+
+/** The money path, said once, plainly. */
+const FLOW = [
+  { h: "Escrow", p: "The buyer locks USDC against terms. The job id is derived, never supplied." },
+  { h: "Deliver", p: "The agent delivers. Both sides have an exit that does not need the other to reply." },
+  { h: "Settle", p: "Payment and receipt in one transaction. Unspent metered funds return in the same call." },
+  { h: "Price it", p: "The claim-truth rate that falls out becomes the bond, the odds and the credit line." },
+];
+
 export default async function Home() {
-  const [pop, m, shape] = await Promise.all([
-    population(),
-    measurement(),
-    clusterShape(),
-  ]);
+  const [pop, m, shape] = await Promise.all([population(), measurement(), clusterShape()]);
 
   const p = pop.rows;
   const d = m.rows;
@@ -36,201 +126,277 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
-      {/* ---------------------------------------------------------------- the one number */}
+      {/* ---------------------------------------------------------------- what this is */}
       <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
         <div className="grid-faint pointer-events-none absolute inset-0" />
         <div className="relative">
-          <p className="eyebrow">erc-8004 · monad mainnet · chain 143</p>
-          <h1 className="mt-4 max-w-4xl fluid-4 font-semibold leading-[1.12] tracking-tight">
-            <span className="text-[var(--color-false)]">
-              <CountUp value={d.doNotResolve} />
-            </span>{" "}
-            of <Num value={d.paymentClaims} /> payment claims on Monad name a transaction
-            <br className="hidden sm:block" /> that is not on the chain they name.
+          <p className="eyebrow">erc-8004 · x402 · monad mainnet · chain 143</p>
+          <h1 className="mt-4 max-w-4xl fluid-4 font-semibold leading-[1.1] tracking-tight">
+            The settlement and trust layer for agent work on Monad.
           </h1>
-          <p className="mt-5 max-w-3xl text-[length:var(--step-0)] leading-relaxed text-muted">
-            Every one of those {d.paymentClaims} documents is hash-perfect. The bytes served today are
-            the bytes committed on chain, so every tool that checks integrity calls them verified.
-            Integrity is not truth. This site checks the second thing.
+          <p className="mt-5 max-w-2xl text-[length:var(--step-1)] leading-snug">
+            Trust stops being a badge. <span className="text-[var(--color-brand)]">It becomes a price.</span>
+          </p>
+          <p className="lead lead--wide mt-5 text-muted">
+            Hire an agent and the money sits in escrow until the work lands. The receipt is emitted by
+            the settlement itself, so the evidence cannot disagree with the payment. The track record
+            that falls out is financially load-bearing: it sets the bond an agent posts and what it
+            can borrow against.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-2.5">
-            <Link
-              href="/claims?outcome=false"
-              className="cta"
-              style={{ borderColor: "color-mix(in oklab, var(--color-false) 45%, transparent)", background: "var(--color-false-bg)", color: "var(--color-false)" }}
-            >
-              see the {d.doNotResolve} that do not resolve →
-            </Link>
-            <Link href="/verify" className="cta-ghost">
-              check one yourself →
-            </Link>
-            <Link href="/method" className="cta-ghost">
-              how a verdict is decided →
-            </Link>
+            <Link href="/verify" className="cta">verify an agent →</Link>
+            <Link href="/pay" className="cta-ghost">settle a job →</Link>
+            <Link href="/method" className="cta-ghost">how a verdict is decided →</Link>
           </div>
 
-          {/* the distribution of every checked claim, as one bar */}
-          <div className="mt-8 max-w-3xl">
-            <DistBar
-              segments={[
-                { value: d.noClaim, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
-                { value: d.doNotResolve, className: "bg-[var(--color-false)]", label: "not on the named chain" },
-                { value: d.resolve, className: "bg-[var(--color-true)]", label: "on the named chain" },
-                { value: unknownTotal, className: "bg-[var(--color-unknown)]", label: "could not check" },
-              ]}
-            />
-            <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted">
-              <Legend className="bg-[var(--color-noclaim)]" label={`${d.noClaim.toLocaleString()} no claim`} />
-              <Legend className="bg-[var(--color-false)]" label={`${d.doNotResolve.toLocaleString()} false`} />
-              <Legend className="bg-[var(--color-true)]" label={`${d.resolve.toLocaleString()} true`} />
-              <Legend className="bg-[var(--color-unknown)]" label={`${unknownTotal.toLocaleString()} unknown`} />
-            </div>
-          </div>
+          {/* Live, checkable facts. Every one is a link to a chain or a page, not an assertion. */}
+          <dl className="mt-9 grid gap-x-8 gap-y-3 border-t border-[var(--color-line)]/70 pt-5 sm:grid-cols-2 lg:grid-cols-4">
+            <HeroFact k="agents measured" v={p.agentsIndexed === null ? "unknown" : p.agentsIndexed.toLocaleString()} note="the whole ERC-8004 population on Monad" />
+            <HeroFact k="settled in real USDC" v="1 job" note="buyer held zero MON throughout" />
+            <HeroFact k="validation registry rows" v="1 of 1" note="the first ever written on Monad" />
+            <HeroFact k="tests passing" v="454" note="site, verifier and contracts" />
+          </dl>
 
-          {/* The machine-readable surfaces, drifting past like monad.xyz's partner rail. Every
-              item is a real endpoint an agent can fetch; the motion is decoration over links that
-              work with or without it. */}
           <div className="marquee mt-8 border-t border-[var(--color-line)]/70 pt-4" aria-label="Machine-readable surfaces">
-            <div className="marquee__track font-mono text-[11px] text-faint" aria-hidden="false">
-              {SURFACES.map((s) => (
-                <a key={s.href} href={s.href} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">
-                  {s.label}
-                </a>
+            <div className="marquee__track font-mono text-[11px] text-faint">
+              {SURFACES.map((x) => (
+                <a key={x.href} href={x.href} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">{x.label}</a>
               ))}
             </div>
             <div className="marquee__track font-mono text-[11px] text-faint" aria-hidden="true">
-              {SURFACES.map((s) => (
-                <a key={`${s.href}-dup`} href={s.href} tabIndex={-1} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">
-                  {s.label}
-                </a>
+              {SURFACES.map((x) => (
+                <a key={`${x.href}-d`} href={x.href} tabIndex={-1} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">{x.label}</a>
               ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ---------------------------------------------------------------- the numbers at a glance */}
-      <Reveal as="section" className="auto-grid">
-        <StatTile label="agents indexed" value={p.agentsIndexed} hint="Every ERC-8004 agent Retina has seen registered on Monad." />
-        <StatTile label="distinct evidence documents" value={s.records} tone="brand" hint="Agents share documents, so this is far below the agent count. It is the real number of things to check." />
-        <StatTile label="payment claims checked" value={d.paymentClaims} hint="Documents that assert a payment and were taken through the whole ladder." />
-        <StatTile label="claims that resolve" value={d.resolve} tone="true" hint="The cited transaction is on the chain the document names." />
-      </Reveal>
-
-      <hr className="rule-soft" />
-
-      {/* ---------------------------------------------------------------- the stakes, said once */}
-      <Reveal as="section" className="band grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+      {/* ---------------------------------------------------------------- why it has to exist */}
+      <Reveal as="section" className="band grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
         <div>
-          <span className="kicker">the distinction</span>
+          <span className="kicker">the market, not an accusation</span>
           <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
-            Hash integrity is not claim truth.
+            A registry with {p.agentsIndexed === null ? "thousands of" : p.agentsIndexed.toLocaleString()} agents
+            and no way to tell a working counterparty from a dead one.
           </h2>
           <p className="lead mt-5 text-muted">
-            Every tool in the registry checks that a document&apos;s bytes match the hash committed
-            on chain. Ours checks the thing nobody else does: whether the payment the document
-            <em className="text-[var(--color-text)] not-italic"> describes </em>
-            actually happened on the chain it names.
+            This is a plumbing problem, not a lying problem: one unchecked field in a template written
+            by honest people. Auditing that forever is the small product. Routing the money so the
+            receipt cannot disagree with reality is the large one.
           </p>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
           <GlanceCard
-            tone="neutral"
-            head="What every other tool sees"
-            body="Bytes intact, hash matches. Verified. It says nothing about whether the transaction is real."
+            head="What every tool checks"
+            body="That a document's bytes match the hash committed on chain. All of them pass. It says nothing about whether the payment happened."
           />
           <GlanceCard
-            tone="brand"
-            head="What Kanmani checks"
-            body="Read the named chain. Is the cited transaction there? Four honest outcomes, one rule."
+            brand
+            head="What Kanmani adds"
+            body="Read the named chain. Then escrow the next job so the receipt is correct by construction, and price the record that results."
           />
         </div>
       </Reveal>
 
       <hr className="rule-soft" />
 
-      {/* ---------------------------------------------------------------- the four outcomes, as a story */}
+      {/* ---------------------------------------------------------------- how the money moves */}
       <Reveal as="section" className="band">
         <div className="max-w-2xl">
-          <span className="kicker">how a claim resolves</span>
+          <span className="kicker">how it works</span>
           <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
-            Four outcomes. And one rule that governs all of them.
+            The receipt is produced by the payment, not written about it afterwards.
           </h2>
           <p className="lead lead--wide mt-5 text-muted">
-            A failure to look is never an accusation.{" "}
-            <span className="unknown-value">unknown</span> is never <span className="text-[var(--color-false)]">false</span>,
-            and never zero — because these verdicts carry real operators&apos; names.
+            Evidence scraped after the fact can name the wrong chain. Evidence emitted by the
+            settlement cannot, because it is the same transaction that moved the money.
+          </p>
+        </div>
+        <div className="flow mt-8">
+          {FLOW.map((f) => (
+            <div key={f.h} className="flow__step">
+              <h4>{f.h}</h4>
+              <p>{f.p}</p>
+            </div>
+          ))}
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2.5">
+          <Link href="/pay" className="cta-ghost">settle a job in the browser →</Link>
+          <Link href="/fund" className="cta-ghost">fund from another chain →</Link>
+        </div>
+      </Reveal>
+
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- the stack */}
+      <Reveal as="section" className="band">
+        <div className="max-w-2xl">
+          <span className="kicker">the stack</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            Eight layers, one primitive underneath: a proven track record.
+          </h2>
+          <p className="lead lead--wide mt-5 text-muted">
+            Each layer consumes the one below it and feeds the one above, which is why these compose
+            into a stack rather than scattering into features. Status is checked against the artifact:
+            <span className="chip chip--live mx-1.5 align-middle">live</span> is running on Monad
+            mainnet now, <span className="chip chip--built mx-1.5 align-middle">built</span> is written
+            and tested in the repository, not yet deployed.
+          </p>
+        </div>
+        <div className="mt-8 auto-grid">
+          {STACK.map((l) => {
+            const card = (
+              <>
+                <span className={`chip ${l.status === "live" ? "chip--live" : "chip--built"}`}>{l.status}</span>
+                <div>
+                  <div className="layer__codename">{l.codename}</div>
+                  <div className="layer__name mt-0.5">{l.name}</div>
+                </div>
+                <p className="layer__body">{l.body}</p>
+              </>
+            );
+            return l.href ? (
+              <Link key={l.codename} href={l.href} className="layer">{card}</Link>
+            ) : (
+              <div key={l.codename} className="layer">{card}</div>
+            );
+          })}
+        </div>
+      </Reveal>
+
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- proof on mainnet */}
+      <Reveal as="section" className="band">
+        <div className="max-w-2xl">
+          <span className="kicker">proof, on chain 143</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            One complete job, settled in real USDC. No testnet screenshots.
+          </h2>
+          <p className="lead lead--wide mt-5 text-muted">
+            1.40 escrowed at two cents a call, 30 of 70 used, 0.60 to the agent, 0.80 returned in the
+            same transaction that pays, 0 retained. The buyer held zero MON at every point.
+          </p>
+        </div>
+        <div className="mt-7 grid gap-5 lg:grid-cols-2">
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
+            <p className="eyebrow">the settlement</p>
+            <div className="mt-3 font-mono text-[12px]">
+              <Proof k="escrow" tx="0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e" />
+              <Proof k="deliver" tx="0xc259c7a6067c051c01ed75a2b12d5c64380216275a43417ddf407913582a6724" />
+              <Proof k="settle" tx="0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5" />
+              <Proof k="x402 payment" tx="0xf044c7543ef4519d0db8d29c9cd5e6baa3a5611e735905d4173ce401ee526d8a" />
+            </div>
+            <p className="mt-4 text-[12px] leading-relaxed text-muted">
+              The agent in that run is ours, so this is evidence the machinery works in real USDC on
+              mainnet. It is not evidence a stranger paid us. Both are stated wherever it appears.
+            </p>
+          </div>
+          <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
+            <p className="eyebrow">read it back yourself</p>
+            <div className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
+              <pre className="sql">{`# the buyer's MON balance, start to finish
+cast balance 0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92 \\
+  --rpc-url https://rpc.monad.xyz    # 0
+
+# the escrow, immutable, no admin function
+cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
+  --rpc-url https://rpc.monad.xyz | wc -c`}</pre>
+            </div>
+            <p className="mt-4 text-[12px] leading-relaxed text-muted">
+              Every page here prints the query behind its own numbers, and every JSON response carries
+              a <code className="font-mono text-[var(--color-brand)]">reproduce</code> field. If a
+              number disagrees with the command beside it, the page is wrong.
+            </p>
+          </div>
+        </div>
+      </Reveal>
+
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- the measurement, as evidence */}
+      <Reveal as="section" className="band">
+        <div className="max-w-2xl">
+          <span className="kicker">why the market needs this</span>
+          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
+            We checked every payment claim on Monad against the chain it names.
+          </h2>
+          <p className="lead lead--wide mt-5 text-muted">
+            Every one of these documents is hash-perfect, so every tool that checks integrity calls
+            them verified. Integrity is not truth. This is the gap the escrow above closes by
+            construction.
           </p>
         </div>
 
-        <div className="mt-8 grid gap-px overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-line)] sm:grid-cols-2 lg:grid-cols-4">
-          <Cell
-            outcome="true"
-            n={d.resolve}
-            of={d.verdicts}
-            head="check out"
-            body="The cited transaction is on the chain the document names, at a block we record."
-            href="/claims?outcome=true"
-          />
-          <Cell
-            outcome="false"
-            n={d.doNotResolve}
-            of={d.verdicts}
-            head="cite a transaction that is not there"
-            body="We read the chain the document names and the transaction is not on it. Never inferred, never assumed from a timeout."
-            href="/claims?outcome=false"
-          />
-          <Cell
-            outcome="noClaim"
-            n={d.noClaim}
-            of={d.verdicts}
-            head="assert no payment"
-            body="A rating or a plain comment. Read fine, claims nothing, so it cannot be wrong."
-            href="/claims?outcome=noClaim"
-          />
-          <Cell
-            outcome="unknown"
-            n={d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed}
-            of={d.verdicts}
-            head="we could not check"
-            body={`${d.unknownBytesMoved} serve bytes that no longer match their own on-chain hash. ${d.unknownUnreachable} would not answer.`}
-            href="/claims?outcome=unknown"
-          />
+        <div className="mt-7 auto-grid">
+          <StatTile label="payment claims checked" value={d.paymentClaims} hint="Documents that assert a payment and were taken through the whole ladder." />
+          <StatTile label="on the chain they name" value={d.resolve} tone="true" hint="The cited transaction is on the chain the document names." />
+          <StatTile label="not on the chain they name" value={d.doNotResolve} tone="false" hint="We read that chain successfully and the transaction is not there." />
+          <StatTile label="could not check" value={unknownTotal} tone="unknown" hint="A failure to look is never an accusation and never zero." />
         </div>
-        <div className="mt-4">
-          <Link href="/method" className="cta-ghost">how each rung is decided →</Link>
+
+        <div className="mt-6 max-w-3xl">
+          <DistBar
+            segments={[
+              { value: d.noClaim, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
+              { value: d.doNotResolve, className: "bg-[var(--color-false)]", label: "not on the named chain" },
+              { value: d.resolve, className: "bg-[var(--color-true)]", label: "on the named chain" },
+              { value: unknownTotal, className: "bg-[var(--color-unknown)]", label: "could not check" },
+            ]}
+          />
+          <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted">
+            <Legend className="bg-[var(--color-noclaim)]" label={`${d.noClaim.toLocaleString()} no claim`} />
+            <Legend className="bg-[var(--color-false)]" label={`${d.doNotResolve.toLocaleString()} false`} />
+            <Legend className="bg-[var(--color-true)]" label={`${d.resolve.toLocaleString()} true`} />
+            <Legend className="bg-[var(--color-unknown)]" label={`${unknownTotal.toLocaleString()} unknown`} />
+          </div>
+          <p className="mt-4 text-[13px] leading-relaxed text-muted">
+            Nobody here is accused of anything. <span className="unknown-value">unknown</span> is never{" "}
+            <span className="text-[var(--color-false)]">false</span> and never zero, because these rows
+            carry real operators&apos; names and a failure on our side to look is not evidence a
+            payment did not happen.{" "}
+            <Link href="/method" className="text-[var(--color-brand)] hover:underline">How each rung is decided →</Link>
+          </p>
+          <Derivation sql={m.sql} note="One row per claim, latest verdict only. The full history of every re-check stays in fovea.verdict." />
         </div>
       </Reveal>
 
       <hr className="rule-soft" />
 
-      {/* ---------------------------------------------------------------- the one finding, as a case study */}
+      {/* ---------------------------------------------------------------- the finding that names the customer */}
       <Reveal as="section" className="band">
         <div className="finding p-6 sm:p-9">
-          <span className="kicker">the finding</span>
+          <span className="kicker">who this is for</span>
           <div className="mt-6 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
             <div>
-              <div className="finding__figure">
-                <CountUp value={s.largestMemberCount} />
-              </div>
+              <div className="finding__figure"><CountUp value={s.largestMemberCount} /></div>
               <p className="mt-2 font-mono text-[12px] text-muted">
-                agents across {s.largestDistinctOwners.toLocaleString()} distinct wallets
+                agents across {s.largestDistinctOwners.toLocaleString()} wallets
                 {" · "}<Pct of={s.largestMemberCount} total={p.agentsIndexed} /> of the registry
               </p>
             </div>
             <div>
               <h2 className="fluid-2 font-semibold leading-tight tracking-tight">
-                point at one document that returns a deletion.
+                share one registration document that no longer answers.
               </h2>
-              <p className="mt-4 text-[length:var(--step-0)] leading-relaxed text-muted max-w-xl">
-                Not many documents shared by a few agents. One dead file, cited by thousands of
-                agents across thousands of wallets — every one of them still reading as a valid
-                registration to anything that checks only the hash.
+              <p className="mt-4 max-w-xl text-[length:var(--step-0)] leading-relaxed text-muted">
+                An expired preview deployment. Nobody&apos;s misconduct, and fatal to anyone trying to
+                use this registry to find somebody to pay: the registry reports no difference between
+                those and the live ones. That filter is the product.
+              </p>
+              <p className="mt-4 max-w-xl text-[13px] leading-relaxed text-muted">
+                So we are not waiting for the agent economy to grow. We sell to the people already
+                taking a percentage of it who cannot evidence what they settled. Our named first user
+                is <span className="text-[var(--color-text)]">Execution Market</span>, the largest
+                single source of ERC-8004 feedback on Monad: their documents are canonical and
+                hash-correct, and their payment claims name Monad while the transactions sit
+                elsewhere. A per-document pass or fail costs them nothing and fixes their record.
               </p>
               <div className="mt-6 flex flex-wrap gap-2.5">
                 <Link href="/operators" className="cta">what that document is →</Link>
-                <Link href="/agents" className="cta-ghost">browse the agents →</Link>
+                <Link href="/compare" className="cta-ghost">compare two agents →</Link>
               </div>
             </div>
           </div>
@@ -242,43 +408,7 @@ export default async function Home() {
 
       <hr className="rule-soft" />
 
-      {/* ---------------------------------------------------------------- what the claims name */}
-      <Reveal as="section" className="band grid gap-8 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div>
-          <span className="kicker">the shape of it</span>
-          <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
-            Every claim names Monad. {d.doNotResolve} of them are not on Monad.
-          </h2>
-          <p className="lead mt-5 text-muted">
-            This was built expecting documents that cite one chain while the payment sits on
-            another. That is not what is happening. The failure is simpler than the one it was
-            designed for, so the site says the simpler thing.
-          </p>
-          <div className="mt-6">
-            <Link href="/claims" className="cta-ghost">read every checked claim →</Link>
-          </div>
-        </div>
-        <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
-          <DistBar
-            segments={[
-              { value: d.resolve, className: "bg-[var(--color-true)]", label: "on the named chain" },
-              { value: d.doNotResolve, className: "bg-[var(--color-false)]", label: "not on the named chain" },
-              { value: d.noClaim, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
-              { value: unknownTotal, className: "bg-[var(--color-unknown)]", label: "could not check" },
-            ]}
-          />
-          <div className="mt-4 space-y-2.5 font-mono text-[12px]">
-            <LegendRow className="bg-[var(--color-true)]" label="on the named chain" value={d.resolve} />
-            <LegendRow className="bg-[var(--color-false)]" label="not on the named chain" value={d.doNotResolve} />
-            <LegendRow className="bg-[var(--color-noclaim)]" label="assert no payment" value={d.noClaim} />
-            <LegendRow className="bg-[var(--color-unknown)]" label="could not check" value={unknownTotal} />
-          </div>
-        </div>
-      </Reveal>
-
-      <hr className="rule-soft" />
-
-      {/* ---------------------------------------------------------------- for agents */}
+      {/* ---------------------------------------------------------------- built for software */}
       <Reveal as="section" className="band">
         <div className="max-w-2xl">
           <span className="kicker">built for software</span>
@@ -286,23 +416,28 @@ export default async function Home() {
             An agent should never need to read HTML.
           </h2>
           <p className="lead lead--wide mt-5 text-muted">
-            Every surface here is served as plain data too, with live numbers, a{" "}
+            Every surface is served as data too, with live numbers, a{" "}
             <code className="font-mono text-[var(--color-brand)]">reproduce</code> field on every
             response, and a null rendered as <span className="unknown-value">unknown</span> rather
             than defaulted to zero.
           </p>
         </div>
         <div className="mt-8 auto-grid">
-          {SURFACES.map((surface) => (
+          {SURFACES.map((x) => (
             <a
-              key={surface.href}
-              href={surface.href}
+              key={x.href}
+              href={x.href}
               className="glow-lift block rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
             >
-              {surface.label}
+              {x.label}
             </a>
           ))}
         </div>
+        <p className="mt-5 text-[13px] text-muted">
+          <code className="font-mono text-[var(--color-brand)]">POST /api/verify</code> answers 402
+          with an x402 challenge, settles through the Monad facilitator, then does the work. The thing
+          that audits payments is paid for over the rail it audits.
+        </p>
       </Reveal>
 
       {/* ---------------------------------------------------------------- closing */}
@@ -313,14 +448,15 @@ export default async function Home() {
         <div className="grid-faint pointer-events-none absolute inset-0" />
         <div className="closing relative">
           <h2 className="mx-auto max-w-3xl fluid-3 font-semibold leading-tight tracking-tight">
-            Check the second thing yourself.
+            Make your track record load-bearing.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-[length:var(--step-0)] text-muted">
-            Paste any claim and get a verdict, with the command to re-derive it without us.
+            Check any claim free, in the browser or over the API, with the command to re-derive it
+            without us.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-2.5">
             <Link href="/verify" className="cta">verify a claim →</Link>
-            <Link href="/method" className="cta-ghost">how a verdict is decided →</Link>
+            <Link href="/agents" className="cta-ghost">browse every agent →</Link>
             <Link href="/status" className="cta-ghost">is the index fresh? →</Link>
           </div>
         </div>
@@ -329,60 +465,41 @@ export default async function Home() {
   );
 }
 
-/** A calm comparison card for the stakes band. `tone` borrows brand only as an accent, never as a
-    verdict. */
-function GlanceCard({ tone, head, body }: { tone: "neutral" | "brand"; head: string; body: string }) {
-  const accent = tone === "brand" ? "border-[var(--brand-line)]" : "border-[var(--color-line)]";
+/** One checkable fact in the hero. The value is large, the note says what would falsify it. */
+function HeroFact({ k, v, note }: { k: string; v: string; note: string }) {
   return (
-    <div className={`rounded-[var(--radius)] border ${accent} bg-[var(--color-panel)] p-4`}>
-      <p className={`text-[13px] font-semibold ${tone === "brand" ? "text-[var(--color-brand)]" : "text-[var(--color-text)]"}`}>
-        {head}
-      </p>
+    <div>
+      <dt className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint">{k}</dt>
+      <dd className="stat-value mt-1 text-[length:var(--step-2)] text-[var(--color-text)]">{v}</dd>
+      <p className="mt-1 text-[11.5px] leading-snug text-muted">{note}</p>
+    </div>
+  );
+}
+
+/** A labelled mainnet transaction, linked to the explorer. */
+function Proof({ k, tx }: { k: string; tx: string }) {
+  return (
+    <div className="proof-row">
+      <span className="text-faint">{k}</span>
+      <a
+        href={`https://monadexplorer.com/tx/${tx}`}
+        target="_blank"
+        rel="noreferrer noopener"
+        className="text-[var(--color-brand)] hover:underline"
+      >
+        {tx.slice(0, 10)}…{tx.slice(-8)}
+      </a>
+    </div>
+  );
+}
+
+/** A calm comparison card. `brand` accents the border only, never a verdict colour as a fill. */
+function GlanceCard({ head, body, brand }: { head: string; body: string; brand?: boolean }) {
+  return (
+    <div className={`rounded-[var(--radius)] border bg-[var(--color-panel)] p-4 ${brand ? "border-[var(--brand-line)]" : "border-[var(--color-line)]"}`}>
+      <p className={`text-[13px] font-semibold ${brand ? "text-[var(--color-brand)]" : "text-[var(--color-text)]"}`}>{head}</p>
       <p className="mt-2 text-[13px] leading-relaxed text-muted">{body}</p>
     </div>
-  );
-}
-
-/** One labelled row in a distribution legend, colour swatch, name, and its count. */
-function LegendRow({ className, label, value }: { className: string; label: string; value: number }) {
-  return (
-    <div className="flex items-center justify-between gap-3 border-b border-[var(--color-line)]/50 pb-2 last:border-0">
-      <span className="inline-flex items-center gap-2 text-muted">
-        <span className={`h-2.5 w-2.5 rounded-sm ${className}`} />
-        {label}
-      </span>
-      <span className="tnum text-[var(--color-text)]">{value.toLocaleString()}</span>
-    </div>
-  );
-}
-
-function Cell({
-  outcome,
-  n,
-  of,
-  head,
-  body,
-  href,
-}: {
-  outcome: "true" | "false" | "noClaim" | "unknown";
-  n: number;
-  of: number;
-  head: string;
-  body: string;
-  href: string;
-}) {
-  return (
-    <Link href={href} className="group block bg-[var(--color-panel)] p-4 transition-colors hover:bg-[var(--color-panel-2)]">
-      <div className="flex items-baseline justify-between">
-        <span className="tnum text-3xl font-semibold tracking-tight">{n.toLocaleString()}</span>
-        <OutcomeBadge outcome={outcome} />
-      </div>
-      <p className="mt-1 text-[13px] text-[var(--color-text)]">{head}</p>
-      <p className="mt-0.5 font-mono text-[11px] text-faint">
-        <Pct of={n} total={of} /> of all checked
-      </p>
-      <p className="mt-2 text-[12px] leading-relaxed text-muted">{body}</p>
-    </Link>
   );
 }
 

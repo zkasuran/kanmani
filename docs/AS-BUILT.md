@@ -14,11 +14,27 @@ CLI that produces them. [`16-METHOD.md`](16-METHOD.md) reproduces every publishe
 hand. Claims about tests carry the command that runs them.
 
 ```bash
-npm test                              # 56 pass, the site
-cd verifier && npm test               # 94 pass
-cd contracts && forge test            # 55 pass, 6 fork tests skipped without a fork URL
-npx next build                        # compiles clean, every route dynamic
+npm test                              # 172 tests, 169 pass, 3 skip. the site
+cd verifier && npm test               # 189 tests, 172 pass, 17 skip without a database
+cd contracts && forge test            # 121 tests, 113 pass, 8 fork tests skipped without a fork URL
+npx next build                        # compiles clean, every data route dynamic
 ```
+
+**454 tests pass across the three suites.** That is the number quoted on the site.
+
+---
+
+## Status vocabulary, used everywhere below
+
+Two words, and the difference decides whether a claim survives a check.
+
+| word | means | how a stranger checks it |
+|---|---|---|
+| **live** | deployed and running, on Monad mainnet or at `kanmani.xyz` | a `cast` call or an HTTP request that answers right now |
+| **built** | written, tested and readable in this repository, **not** deployed or wired to a live stream | `ls`, `forge test`, `npm test` |
+
+Nothing in this document is called live unless a command in it returns. A layer that is built and
+described as live would be the exact failure this project exists to attack.
 
 ---
 
@@ -126,55 +142,158 @@ Thirteen pages and nine machine-readable surfaces. Every page can print the SQL 
 `/verify` imports the verifier's own `judge()` rather than reimplementing the ladder, so the site
 and the command line cannot give different answers.
 
+**It is live at [https://kanmani.xyz](https://kanmani.xyz).** Verify the way a judge would, signed
+out:
+
+```bash
+curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/          # 200
+curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/verify    # 200
+curl -sS https://kanmani.xyz/llms.txt | head -5
+```
+
+Self-hosted on a dedicated box behind Caddy, systemd unit `kanmani-web.service`, with the Envio
+indexer running alongside it so the displayed count tracks the chain rather than a snapshot. The
+site has no dependency on a laptop. The domain is paid to 2027-09-21, so it outlasts judging.
+
+**The landing page leads with the product, not the measurement.** It reads: what Kanmani is, why
+the market needs it, how the money moves, the stack it composes into, then the evidence underneath.
+The measurement is proof the engine works rather than the pitch, which is the tone this project set
+for itself: a clearing house, never an exposé. Every layer on the stack carries a `live` or `built`
+chip, and those chips deliberately borrow neither the verdict green nor the verdict red, because a
+statement about our build must never be readable as a verdict about an agent.
+
+---
+
+## Built, not yet live
+
+**This section replaces one that said these were "not started". That was true when it was written
+and it is now false.** Leaving it up would be a published claim that no longer matches what a check
+returns, which is the failure this project exists to attack. Each line below says what exists, what
+does not, and the command that shows which.
+
+### Sclera, the bond that makes "trust becomes a price" a mechanism
+
+An agent stakes USDC against a floor on its own claim-truth rate over a block window, with a
+minimum sample below which nothing can slash. Stay above the floor and the stake returns when the
+window matures. Fall below it and the bond is forfeit.
+
+```bash
+wc -l contracts/src/Sclera.sol                    # 410
+cd contracts && forge test --match-path 'test/Sclera*'   # 33 pass in ScleraCrossSign, plus Sclera.t.sol and ScleraFork.t.sol
+```
+
+The slash is authorised by a signature, not by the caller. Monad's CRE forwarder
+`0x9eF6468C5f37b976E57d52054c693269479A784d` reports `MockKeystoneForwarder 1.0.0` and its `report`
+function is permissionless, so a contract gating on `msg.sender == forwarder` would be gating on
+nothing. Sclera recovers the signer and requires one key fixed at deploy. That key is derived from
+the same passkey ceremony as everything else and is pinned in two independent implementations:
+
+```bash
+grep -rn 0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf contracts/ lib/
+# contracts/script/DeploySclera.s.sol, contracts/test/ScleraCrossSign.t.sol, lib/iris.test.ts
+```
+
+**What is missing is the deployment.** No Sclera address is recorded and no `SCLERA` variable is set
+in the running environment, so the site calls this layer `built` rather than `live`. The one
+remaining join is a signature produced by our code, accepted by the deployed contract, in a single
+test. Everything up to that line is green.
+
+### The claim-truth endpoint a slashing oracle reads
+
+`GET /api/sla/<agentId>?fromBlock=&toBlock=` is live. It is a pure function of the agent id and the
+block range, because a CRE workflow reaches consensus by having independent nodes compute the same
+answer, and anything keyed on a wall clock drifts between them.
+
+```bash
+curl -sS 'https://kanmani.xyz/api/sla/10182' | jq '{rateBps, sample, true: .trueCount}'
+```
+
+`rateBps` is null on an empty sample rather than 0, because 0 reads as "every claim was false" and
+would slash an agent nobody has rated yet.
+
+### The CRE slashing workflow
+
+```bash
+wc -l cre/kanmani-oracle/slashing/main.ts     # 280
+```
+
+Written against `@chainlink/cre-sdk`. It reads the endpoint above and signs a verdict. Not deployed
+to the CRE network, which the bounty explicitly permits: a CLI simulation or a live deployment is
+accepted, and the workflow is real either way.
+
+### Alchemy self-healing re-verification
+
+```bash
+wc -l app/api/webhooks/alchemy/route.ts       # 45
+```
+
+A `MetadataUpdate`, which is the ERC-4906 event an agent emits when it repoints its own document,
+re-runs the exact ladder the command line runs and appends a fresh verdict. The store was always
+append only, so a repaired document reads as `false` then `true` with both timestamps. What was
+missing was only the trigger.
+
+Signature verification is HMAC-SHA256 over the raw body, compared in constant time, and the route
+**refuses every delivery when no signing key is configured** rather than skipping the check, because
+a webhook that fails open is worse than one that is down. The delivery id is a primary key, so a
+retry after success appends nothing.
+
+**What has not happened is a delivery from a webhook created in Alchemy's own dashboard.** It is
+wired and tested, not yet fed by a live stream.
+
+### The two ladder rungs the design promised
+
+```bash
+ls verifier/src/ladder/    # intact locate parse payable resolve settled verdict (+ .test.ts each)
+grep -n 'export type Rung' verifier/src/ladder/verdict.ts
+# "declared" | "resolvable" | "intact" | "parsed" | "true"
+```
+
+`payable.ts` and `settled.ts` exist with their own tests. **They are not wired into `verdict.ts`,
+so the live ladder is five rungs and is described as five everywhere.** A promised rung that does
+not run is a claim; an absent one is a boundary.
+
+### CleanverseGate and Chiasm
+
+```bash
+wc -l contracts/src/CleanverseGate.sol          # 326
+ls indexer/src/handlers/                        # Retina.ts  Chiasm.ts
+wc -l lib/cleanverse.ts lib/intents.ts          # 189, 504
+```
+
+The compliance-gated release contract, the cross-chain handler and the Aurora Intents funding path
+all exist as real code with no stubs. None has a recorded mainnet deployment, so all are `built`.
+
 ---
 
 ## Not shipped
 
-Listed because a plan that only records its successes is a brochure. Each says why.
+Listed because a plan that only records its successes is a brochure.
 
-### The live deployment. This is the largest gap
+### Layers that remain absent, not partial
 
-**The site is not deployed.** It runs on `localhost:3400` against a Postgres in local Docker.
-`kanmani.xyz` does not resolve. The repository is still private.
+| planned | what it was for | state |
+|---|---|---|
+| **Cone**, odds market | a crowd price on whether an agent delivers | not started |
+| **Choroid**, credit | borrowing power from real settlement history, with a funded pool | not started |
+| **Lens**, route | Agent Hub services proxied with measured failover | not started |
+| jobs board with bidding | post, bid, accept, deliver, release by a real counterparty | not started |
 
-The submission requires a live product link on Monad mainnet with judge access instructions, so
-until this is fixed there is no entry, whatever else is built. It is first in
-[`14-GAPS.md`](14-GAPS.md) and it is the next thing being worked on.
+### Traction
 
-Everything on chain is real and reachable today without us: the contracts, the settlements and the
-validation row are all on mainnet and every command in [`16-METHOD.md`](16-METHOD.md) that hits a
-chain works right now. What is missing is the hosted surface over the index.
-
-### Two rungs of the planned ladder
-
-The design had `payable` (a live x402 probe of an agent's own endpoint) and `settled` (a payment to
-that agent provably cleared). Neither is implemented. The ladder ships with five rungs and says so
-rather than describing six.
-
-`/api/verify` is payable, which is a different claim: it means somebody can pay **us** to check a
-document. It does not mean we have probed whether a given agent can be paid.
-
-### Integrations that were planned and are absent
-
-| planned | state |
+| | count |
 |---|---|
-| Chainlink CRE | not started |
-| Aurora Intents | not started |
-| Nansen, paid per call over x402 | not started |
-| Cleanverse, Qwen, Alchemy, Kimi | not started |
-| Bonds and SLA markets | not started |
-| A jobs board with escrowed bounties and bidding | not started |
-| Agent onboarding doors | not started, the closest thing that exists is `/validate` and `agents.md` |
-| Cross-chain merge | not started |
-| Credit scoring from on-chain history | not started |
+| operators contacted | 0 |
+| operators integrated | 0 |
+| jobs settled that we did not create ourselves | 0 |
 
-Each was real scope. None of them shipped. A document claiming otherwise would be caught in
-five minutes by anyone reading the repository.
+Outreach targets three agents named in [`14-GAPS.md`](14-GAPS.md), chosen because the whole
+population was measured. This is the weakest part of the entry and it is not fixable at the end.
 
 ### Submission artifacts
 
-The demo video, the pitch video and the logo do not exist yet. The repository visibility flip has
-not happened.
+The demo video, the pitch video and the logo do not exist yet. The repository is still private; the
+flip is scheduled for the day the submission window opens, 2026-10-02.
+
 
 ---
 

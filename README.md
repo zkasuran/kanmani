@@ -1,12 +1,23 @@
 # Kanmani
 
-**Every payment claim in Monad's agent registry, checked against the chain it names.**
+**The settlement and trust layer for agent work on Monad.**
 
-73 of the 85 payment claims on Monad cite a transaction that is not on the chain the document
-names. Every one of those documents is hash-perfect: the bytes served today match the hash
-committed on chain, so every tool that checks integrity calls them verified.
+Hire an agent and the money sits in escrow until the work lands. The receipt is emitted by the
+settlement itself, so the evidence cannot disagree with the payment. The track record that falls out
+is financially load-bearing: it sets the bond an agent posts and what it can borrow against.
 
-**Hash integrity is not claim truth.** Nobody was checking the second thing. This does.
+**Trust stops being a badge. It becomes a price.**
+
+Why it has to exist: 73 of the 85 payment claims on Monad cite a transaction that is not on the chain
+the document names, and every one of those documents is hash-perfect. The bytes served today match
+the hash committed on chain, so every tool that checks integrity calls them verified. **Hash
+integrity is not claim truth.** That is a plumbing problem rather than a lying problem, one unchecked
+field in a template written by honest people. Auditing it forever is the small product. Routing the
+money so the receipt cannot disagree with reality is the large one.
+
+Live at **[https://kanmani.xyz](https://kanmani.xyz)**. What is deployed and what is only built is
+stated per layer in [`docs/AS-BUILT.md`](docs/AS-BUILT.md), and
+[`docs/14-GAPS.md`](docs/14-GAPS.md) is our own list of what is missing.
 
 ---
 
@@ -109,14 +120,16 @@ so nobody defaults them to zero.
 cd indexer && pnpm install && pnpm dev
 
 # the verifier
-cd verifier && npm install && npm test          # 94 tests
+cd verifier && npm install && npm test          # 189 tests, 172 pass, 17 need Postgres
 
 # the contracts
-cd contracts && forge install foundry-rs/forge-std && forge test    # 55 pass, 6 fork tests skipped
+cd contracts && forge install foundry-rs/forge-std && forge test    # 121 tests, 113 pass, 8 fork tests skipped
 
 # the site
-npm install && npm test && npm run dev          # 56 tests, then http://localhost:3400
+npm install && npm test && npm run dev          # 172 tests, 169 pass, then http://localhost:3400
 ```
+
+**454 tests pass across the three suites.**
 
 The site needs a database. Set `FOVEA_DATABASE_URL` or the `ENVIO_PG_*` parts including a
 password. There is no default password on purpose.
