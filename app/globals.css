@@ -116,3 +116,155 @@ details[open] > summary::before {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------------------------ the top-tier layer
+ *
+ * Everything above sets meaning: the verdict colours and the unknown rule. Everything below sets
+ * craft: depth, a type scale, motion and the field the hero floats on. None of it touches the
+ * semantics, so a redesign can never turn a false red into something softer.
+ */
+:root {
+  --radius: 0.625rem;
+  --radius-lg: 0.9rem;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 18px 50px -24px rgba(0, 0, 0, 0.85), 0 4px 14px -8px rgba(0, 0, 0, 0.6);
+  --edge: inset 0 1px 0 0 rgba(255, 255, 255, 0.04);
+  --brand-soft: color-mix(in oklab, var(--color-brand) 16%, transparent);
+  --brand-line: color-mix(in oklab, var(--color-brand) 40%, transparent);
+}
+
+/* The field the hero and the header sit on: Monad purple bleeding out of the top-left into ink,
+   plus a hairline grid so the dark has texture rather than being a flat void. Drawn, never an
+   image, so there is no asset to license. */
+.field {
+  position: relative;
+  background:
+    radial-gradient(120% 90% at 12% -10%, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent 60%),
+    radial-gradient(90% 70% at 100% 0%, color-mix(in oklab, #1d9bf0 10%, transparent), transparent 55%);
+}
+.grid-faint {
+  background-image:
+    linear-gradient(var(--color-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-line) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(80% 60% at 50% 0%, #000 30%, transparent 75%);
+  mask-image: radial-gradient(80% 60% at 50% 0%, #000 30%, transparent 75%);
+  opacity: 0.35;
+}
+
+
+/* Elevation. A panel that reads as a surface above the page rather than a box drawn on it. */
+.elevated {
+  box-shadow: var(--shadow-2), var(--edge);
+}
+.hairline {
+  box-shadow: var(--edge);
+}
+
+/* One eyebrow, one big number, one section head. A page built from these reads as one system. */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+}
+.stat-value {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+/* Calls to action. The brand one glows, the ghost one is quiet. Both lift a hair on hover so a
+   pointer feels answered. */
+.cta,
+.cta-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: var(--radius);
+  padding: 0.55rem 0.9rem;
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.cta {
+  border: 1px solid var(--brand-line);
+  background: var(--brand-soft);
+  color: var(--color-text);
+}
+.cta:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-brand);
+  box-shadow: 0 10px 30px -14px color-mix(in oklab, var(--color-brand) 60%, transparent);
+}
+.cta-ghost {
+  border: 1px solid var(--color-line-bright);
+  color: var(--color-muted);
+}
+.cta-ghost:hover {
+  transform: translateY(-1px);
+  color: var(--color-text);
+  border-color: var(--color-faint);
+}
+
+/* Cards and rows lift on hover to say they are a way in, not just a box. */
+.hover-lift {
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* A distribution drawn as one bar, each segment a verdict colour, a 2px ink gap between fills so
+   two segments never blur into one. The gap is the surface showing through, per the mark rules. */
+.dist {
+  display: flex;
+  height: 0.6rem;
+  gap: 2px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--color-ink);
+}
+.dist > span {
+  display: block;
+  height: 100%;
+}
+.dist > span:first-child {
+  border-radius: 999px 0 0 999px;
+}
+.dist > span:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+/* Content rises in as the page settles. One name, staggered by an inline delay at the call site,
+   and the reduced-motion block above already neutralises it for anyone who asked. */
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.rise {
+  animation: rise 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* One focus ring for everything reachable by keyboard, in brand rather than the browser default. */
+:where(a, button, summary, [tabindex]):focus-visible {
+  outline: none;
+  border-radius: 4px;
+  box-shadow: 0 0 0 2px var(--color-ink), 0 0 0 4px var(--color-brand);
+}
+
+/* Panels animate their border on hover without moving, for the ones that are not links. */
+.panel-hover {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.panel-hover:hover {
+  border-color: var(--color-line-bright);
+}

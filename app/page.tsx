@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Derivation, Num, OutcomeBadge, Panel, Pct } from "@/components/ui.tsx";
+import { Derivation, DistBar, Num, OutcomeBadge, Panel, Pct, StatTile } from "@/components/ui.tsx";
 import { clusterShape, mappingCoverage, measurement, networkSplit, population } from "@/lib/queries.ts";
 
 /** Nothing on this page may be captured at build time. See next.config.ts. */
@@ -23,48 +23,72 @@ export default async function Home() {
   // read failed, never zero, because "the index is complete" and "we could not check" are not the
   // same statement.
   const gap = p.counterSlotCount === null ? null : p.counterSlotCount - p.agentsIndexed;
+  const unknownTotal = d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed;
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-12">
       {/* ---------------------------------------------------------------- the one number */}
-      <section>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-faint">
-          erc-8004 · monad mainnet · chain 143
-        </p>
-        <h1 className="mt-3 text-[clamp(1.75rem,4vw,2.75rem)] font-semibold leading-[1.15] tracking-tight">
-          <span className="text-[var(--color-false)]">
-            <Num value={d.doNotResolve} />
-          </span>{" "}
-          of <Num value={d.paymentClaims} /> payment claims on Monad name a transaction
-          <br className="hidden sm:block" /> that is not on the chain they name.
-        </h1>
-        <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-muted">
-          Every one of those {d.paymentClaims} documents is hash-perfect. The bytes served today are
-          the bytes committed on chain, so every tool that checks integrity calls them verified.
-          Integrity is not truth. This site checks the second thing.
-        </p>
+      <section className="field rise -mx-5 -mt-10 overflow-hidden border-b border-[var(--color-line)] px-5 pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+          <p className="eyebrow">erc-8004 · monad mainnet · chain 143</p>
+          <h1 className="mt-4 max-w-4xl text-[clamp(1.9rem,4.4vw,3rem)] font-semibold leading-[1.12] tracking-tight">
+            <span className="text-[var(--color-false)]">
+              <Num value={d.doNotResolve} />
+            </span>{" "}
+            of <Num value={d.paymentClaims} /> payment claims on Monad name a transaction
+            <br className="hidden sm:block" /> that is not on the chain they name.
+          </h1>
+          <p className="mt-5 max-w-3xl text-[15px] leading-relaxed text-muted">
+            Every one of those {d.paymentClaims} documents is hash-perfect. The bytes served today are
+            the bytes committed on chain, so every tool that checks integrity calls them verified.
+            Integrity is not truth. This site checks the second thing.
+          </p>
 
-        <div className="mt-6 flex flex-wrap gap-2">
-          <Link
-            href="/claims?outcome=false"
-            className="rounded border border-[var(--color-false)]/40 bg-[var(--color-false-bg)] px-3 py-1.5 font-mono text-xs text-[var(--color-false)] hover:border-[var(--color-false)]"
-          >
-            see the {d.doNotResolve} that do not resolve →
-          </Link>
-          <Link
-            href="/claims?outcome=true"
-            className="rounded border border-[var(--color-true)]/40 bg-[var(--color-true-bg)] px-3 py-1.5 font-mono text-xs text-[var(--color-true)] hover:border-[var(--color-true)]"
-          >
-            the {d.resolve} that do →
-          </Link>
-          <Link
-            href="/verify"
-            className="rounded border border-[var(--color-line-bright)] px-3 py-1.5 font-mono text-xs text-muted hover:text-[var(--color-text)]"
-          >
-            check one yourself →
-          </Link>
+          <div className="mt-7 flex flex-wrap gap-2.5">
+            <Link
+              href="/claims?outcome=false"
+              className="cta"
+              style={{ borderColor: "color-mix(in oklab, var(--color-false) 45%, transparent)", background: "var(--color-false-bg)", color: "var(--color-false)" }}
+            >
+              see the {d.doNotResolve} that do not resolve →
+            </Link>
+            <Link href="/verify" className="cta-ghost">
+              check one yourself →
+            </Link>
+            <Link href="/method" className="cta-ghost">
+              how a verdict is decided →
+            </Link>
+          </div>
+
+          {/* the distribution of every checked claim, as one bar */}
+          <div className="mt-8 max-w-3xl">
+            <DistBar
+              segments={[
+                { value: d.noClaim, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
+                { value: d.doNotResolve, className: "bg-[var(--color-false)]", label: "not on the named chain" },
+                { value: d.resolve, className: "bg-[var(--color-true)]", label: "on the named chain" },
+                { value: unknownTotal, className: "bg-[var(--color-unknown)]", label: "could not check" },
+              ]}
+            />
+            <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted">
+              <Legend className="bg-[var(--color-noclaim)]" label={`${d.noClaim.toLocaleString()} no claim`} />
+              <Legend className="bg-[var(--color-false)]" label={`${d.doNotResolve.toLocaleString()} false`} />
+              <Legend className="bg-[var(--color-true)]" label={`${d.resolve.toLocaleString()} true`} />
+              <Legend className="bg-[var(--color-unknown)]" label={`${unknownTotal.toLocaleString()} unknown`} />
+            </div>
+          </div>
         </div>
       </section>
+
+      {/* ---------------------------------------------------------------- the numbers at a glance */}
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label="agents indexed" value={p.agentsIndexed} hint="Every ERC-8004 agent Retina has seen registered on Monad." />
+        <StatTile label="distinct evidence documents" value={s.records} tone="brand" hint="Agents share documents, so this is far below the agent count. It is the real number of things to check." />
+        <StatTile label="payment claims checked" value={d.paymentClaims} hint="Documents that assert a payment and were taken through the whole ladder." />
+        <StatTile label="claims that resolve" value={d.resolve} tone="true" hint="The cited transaction is on the chain the document names." />
+      </section>
+
 
       {/* ---------------------------------------------------------------- the breakdown */}
       <Panel
@@ -261,6 +285,15 @@ function Cell({
       </p>
       <p className="mt-2 text-[12px] leading-relaxed text-muted">{body}</p>
     </Link>
+  );
+}
+
+function Legend({ className, label }: { className: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`h-2 w-2 rounded-sm ${className}`} />
+      {label}
+    </span>
   );
 }
 

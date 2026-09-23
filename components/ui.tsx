@@ -147,18 +147,124 @@ export function Panel({
   right?: ReactNode;
 }) {
   return (
-    <section className="rounded-lg border border-[var(--color-line)] bg-[var(--color-panel)]">
+    <section className="elevated panel-hover overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)]">
       {title ? (
-        <header className="flex items-baseline justify-between gap-4 border-b border-[var(--color-line)] px-4 py-3">
+        <header className="flex items-baseline justify-between gap-4 border-b border-[var(--color-line)] bg-[var(--color-panel-2)]/40 px-5 py-3.5">
           <div>
             <h2 className="font-mono text-sm tracking-tight text-[var(--color-text)]">{title}</h2>
-            {subtitle ? <p className="mt-1 text-xs text-muted">{subtitle}</p> : null}
+            {subtitle ? <p className="mt-1 text-xs leading-relaxed text-muted">{subtitle}</p> : null}
           </div>
           {right}
         </header>
       ) : null}
-      <div className="px-4 py-3">{children}</div>
+      <div className="px-5 py-4">{children}</div>
     </section>
+  );
+}
+
+/* ------------------------------------------------------------------ the top-tier primitives */
+
+/** A small monospace kicker above a heading. One line, upper, wide. */
+export function Eyebrow({ children }: { children: ReactNode }) {
+  return <p className="eyebrow">{children}</p>;
+}
+
+/** A section heading with an optional kicker and trailing slot, outside a Panel. */
+export function SectionHead({
+  eyebrow,
+  title,
+  children,
+}: {
+  eyebrow?: ReactNode;
+  title: ReactNode;
+  children?: ReactNode;
+}) {
+  return (
+    <div className="mb-4 flex items-end justify-between gap-4">
+      <div>
+        {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
+        <h2 className="mt-1 text-lg font-semibold tracking-tight text-[var(--color-text)]">{title}</h2>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * One measured figure with a label. The number is large and tabular, the label quiet. `tone`
+ * borrows a verdict colour when the figure IS a verdict count and stays neutral otherwise, so a
+ * number never wears a colour that means something it does not.
+ */
+export function StatTile({
+  label,
+  value,
+  suffix,
+  hint,
+  tone = "neutral",
+}: {
+  label: ReactNode;
+  value: number | null | undefined;
+  suffix?: string;
+  hint?: string;
+  tone?: "neutral" | "brand" | "true" | "false" | "unknown";
+}) {
+  const toneClass =
+    tone === "brand"
+      ? "text-[var(--color-brand)]"
+      : tone === "true"
+        ? "text-[var(--color-true)]"
+        : tone === "false"
+          ? "text-[var(--color-false)]"
+          : tone === "unknown"
+            ? "text-[var(--color-unknown)]"
+            : "text-[var(--color-text)]";
+  return (
+    <div className="rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3.5" title={hint}>
+      <div className={`stat-value text-[1.9rem] ${toneClass}`}>
+        <Num value={value} suffix={suffix} title={hint} />
+      </div>
+      <div className="mt-1.5 text-[12px] leading-snug text-muted">{label}</div>
+    </div>
+  );
+}
+
+/** A link styled as a call to action. `brand` glows, the default is quiet. */
+export function Cta({
+  href,
+  children,
+  variant = "ghost",
+}: {
+  href: string;
+  children: ReactNode;
+  variant?: "brand" | "ghost";
+}) {
+  return (
+    <Link href={href} className={variant === "brand" ? "cta" : "cta-ghost"}>
+      {children}
+    </Link>
+  );
+}
+
+/**
+ * A distribution drawn as one bar. Each segment is a share of the whole and carries its verdict
+ * colour, with a 2px ink gap so two segments never blur together. A segment under a floor width is
+ * still shown, because a share that reads as zero when it is not is the error this site is about.
+ */
+export function DistBar({ segments }: { segments: { value: number; className: string; label: string }[] }) {
+  const total = segments.reduce((s, x) => s + x.value, 0) || 1;
+  return (
+    <div className="dist" role="img" aria-label={segments.map((s) => `${s.label} ${s.value}`).join(", ")}>
+      {segments.map((s) =>
+        s.value > 0 ? (
+          <span
+            key={s.label}
+            className={s.className}
+            style={{ width: `${Math.max((s.value / total) * 100, 0.8)}%` }}
+            title={`${s.label}: ${s.value.toLocaleString()}`}
+          />
+        ) : null,
+      )}
+    </div>
   );
 }
 
