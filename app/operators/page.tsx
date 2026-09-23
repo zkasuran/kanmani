@@ -374,6 +374,14 @@ export default async function Operators() {
                   <Num value={c.distinctOwners} /> wallets
                 </span>
                 <RecordStateBadge state={c.state} />
+                {c.chainCount > 1 ? (
+                  <span
+                    className="chip chip--live"
+                    title={`This document is registered on ${c.chainCount} chains: ${c.chainIds.join(", ")}. Matched on the document's content hash, which is the only key that means the same thing on two chains.`}
+                  >
+                    also on {c.chainIds.filter((id) => id !== 143).join(", ")}
+                  </span>
+                ) : null}
                 <span className="min-w-0 flex-1 truncate font-mono text-[12.5px] text-muted">
                   {c.uri || <span className="unknown-value">no document declared</span>}
                 </span>

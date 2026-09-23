@@ -186,14 +186,41 @@ export type Cluster = {
   byteLength: number | null;
   parsedName: string | null;
   firstSeenBlock: number;
+  /**
+   * How many chains this DOCUMENT is registered on, Monad included. 1 for almost everything.
+   *
+   * Not a measure of the agent's quality and not a ranking input. It answers one question a buyer
+   * actually has: did this operator's standing start here, or does it come from somewhere we can
+   * also read?
+   */
+  chainCount: number;
+  /** The chain ids sharing this document, ascending. Always contains Monad for a row on this page. */
+  chainIds: number[];
 };
 
+/*
+ * Monad's records, with one fact from elsewhere.
+ *
+ * The subject stays Monad: the row is a Monad `AgentRecord` and the ordering is Monad's. The LEFT
+ * JOIN adds only whether the same DOCUMENT is registered on another chain, read from Chiasm's merged
+ * row, which is keyed on the document's content hash because that is the only key that means the
+ * same thing on two chains.
+ *
+ * Deliberately a join rather than a second population. This site is not an ERC-8004 explorer and
+ * BSC is not a second list to browse; 356,647 BSC agents exist in the index to tell you something
+ * about the Monad agent in front of you, which is that its standing did not start here.
+ *
+ * LEFT, so a record with no cross-chain row reads as 1 chain rather than disappearing.
+ */
 const CLUSTERS_SQL = `
-SELECT id AS uri_hash, uri, "memberCount", "distinctOwners", kind,
-       resolves, "httpStatus", "byteLength", "parsedName", "firstSeenBlock"
-FROM "AgentRecord"
-WHERE "chainId" = $1
-ORDER BY "memberCount" DESC, "firstSeenBlock" ASC
+SELECT r.id AS uri_hash, r.uri, r."memberCount", r."distinctOwners", r.kind,
+       r.resolves, r."httpStatus", r."byteLength", r."parsedName", r."firstSeenBlock",
+       COALESCE(c."chainCount", 1) AS chain_count,
+       COALESCE(c."chainIds", ARRAY[$1]::integer[]) AS chain_ids
+FROM "AgentRecord" r
+LEFT JOIN "ChiasmRecord" c ON c.id = r.id
+WHERE r."chainId" = $1
+ORDER BY r."memberCount" DESC, r."firstSeenBlock" ASC
 LIMIT $2 OFFSET $3`;
 
 export async function clusters(limit = 50, offset = 0): Promise<Sourced<Cluster[]>> {
@@ -211,8 +238,23 @@ export async function clusters(limit = 50, offset = 0): Promise<Sourced<Cluster[
       byteLength: r.byteLength === null ? null : Number(r.byteLength),
       parsedName: r.parsedName as string | null,
       firstSeenBlock: Number(r.firstSeenBlock),
+      chainCount: Number(r.chain_count),
+      chainIds: parseChainIds(r.chain_ids),
     })),
   );
+}
+
+/**
+ * Postgres hands an integer[] back as either an array or the string `{56,143}` depending on the
+ * driver path. Parsed defensively rather than assumed, because guessing wrong here would silently
+ * report every record as single-chain, which is a claim.
+ */
+function parseChainIds(raw: unknown): number[] {
+  if (Array.isArray(raw)) return raw.map(Number).filter(Number.isFinite);
+  if (typeof raw === "string") {
+    return raw.replace(/[{}]/g, "").split(",").map(Number).filter(Number.isFinite);
+  }
+  return [];
 }
 
 /**
@@ -287,9 +329,13 @@ export async function clusterOwners(uriHash: string, limit = 100): Promise<Sourc
 }
 
 export const CLUSTER_SQL = `
-SELECT id AS uri_hash, uri, "memberCount", "distinctOwners", kind,
-       resolves, "httpStatus", "byteLength", "parsedName", "firstSeenBlock"
-FROM "AgentRecord" WHERE "chainId" = $1 AND id = $2`;
+SELECT r.id AS uri_hash, r.uri, r."memberCount", r."distinctOwners", r.kind,
+       r.resolves, r."httpStatus", r."byteLength", r."parsedName", r."firstSeenBlock",
+       COALESCE(c."chainCount", 1) AS chain_count,
+       COALESCE(c."chainIds", ARRAY[$1]::integer[]) AS chain_ids
+FROM "AgentRecord" r
+LEFT JOIN "ChiasmRecord" c ON c.id = r.id
+WHERE r."chainId" = $1 AND r.id = $2`;
 
 export async function cluster(uriHash: string): Promise<Cluster | undefined> {
   const r = await q1<Record<string, string | null>>(CLUSTER_SQL, [CHAIN_ID, uriHash]);
@@ -305,6 +351,8 @@ export async function cluster(uriHash: string): Promise<Cluster | undefined> {
     byteLength: r.byteLength === null ? null : Number(r.byteLength),
     parsedName: r.parsedName as string | null,
     firstSeenBlock: Number(r.firstSeenBlock),
+    chainCount: Number(r.chain_count ?? 1),
+    chainIds: parseChainIds(r.chain_ids),
   };
 }
 
@@ -874,9 +922,12 @@ export type ClusterWithProbe = Cluster & RecordProbeRow;
 export const CLUSTERS_PROBED_SQL = `
 SELECT r.id AS uri_hash, r.uri, r."memberCount", r."distinctOwners", r.kind, r."firstSeenBlock",
        p.scheme, p.reachable, p.http_status, p.byte_length, p.media_type,
-       p.parsed_name, p.reason, p.checked_at, p.state
+       p.parsed_name, p.reason, p.checked_at, p.state,
+       COALESCE(c."chainCount", 1) AS chain_count,
+       COALESCE(c."chainIds", ARRAY[$1]::integer[]) AS chain_ids
 FROM "AgentRecord" r
 LEFT JOIN fovea.record_state p ON p.uri_hash = r.id
+LEFT JOIN "ChiasmRecord" c ON c.id = r.id
 WHERE r."chainId" = $1
 ORDER BY r."memberCount" DESC, r."firstSeenBlock" ASC
 LIMIT $2 OFFSET $3`;
@@ -900,6 +951,8 @@ function toProbedCluster(x: Record<string, unknown>): ClusterWithProbe {
     reason: (x.reason as string | null) ?? null,
     state: (x.state as RecordState | null) ?? null,
     checkedAt: x.checked_at == null ? null : new Date(x.checked_at as string).toISOString(),
+    chainCount: Number(x.chain_count ?? 1),
+    chainIds: parseChainIds(x.chain_ids),
   };
 }
 

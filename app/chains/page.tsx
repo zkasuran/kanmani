@@ -20,16 +20,16 @@ export default function Chains() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="coverage · erc-8004 · one registry entry per chain"
-        title="Register on Monad. Settle anywhere we can read."
+        kicker="monad is home · the rest is evidence"
+        title="Built on Monad. Verified wherever the money landed."
         lead={
           <>
-            ERC-8004 says an agent registered on one chain{" "}
-            <span className="text-[var(--color-text)]">can still operate and transact on others</span>.
-            So identity and track record are anchored where writes are cheap, and the payment is
-            verified on whatever chain it actually landed on. This page publishes exactly which chains
-            those are, because a &quot;not found&quot; means nothing without the list of places it was
-            looked for.
+            Monad is the chain this is for: the population we measure, the escrow, the receipts, the
+            registry we write to. Every other chain here exists to answer a question about a{" "}
+            <span className="text-[var(--color-text)]">Monad</span> agent — did the payment it cites
+            actually land, and did its standing start here or arrive from somewhere else. ERC-8004
+            anticipates exactly that: an agent registered on one chain can still operate and transact
+            on others.
           </>
         }
       />
@@ -222,21 +222,32 @@ npm test                 # conformance + drift, and it names what is missing`}</
             Not &quot;runs on any chain&quot;. {rows.length} chains are declared here and the list is
             on this page beside every claim that depends on it. A chain outside it is{" "}
             <span className="unknown-value">unknown</span>, which is a statement about our reach and
-            never about an operator.{" "}
+            never about an operator.
+          </p>
+          <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
+            <span className="text-[var(--color-text)]">
+              And this is not a multi-chain explorer, deliberately.
+            </span>{" "}
             {live.length > 1 ? (
               <>
-                {live.length} chains are in the live index, so an operator registered on more than one
-                reads as one history rather than as strangers.{" "}
+                {live.length} chains are in the index, but only Monad is a population you can browse
+                here. The {live.length - 1} other indexed chain
+                {live.length - 1 === 1 ? " is" : "s are"} present to enrich a Monad row, not to be a
+                second list: an operator whose document also appears elsewhere is marked on{" "}
                 <Link href="/operators" className="text-[var(--color-brand)] hover:underline">
-                  Clusters, including the ones that span chains →
+                  /operators
                 </Link>
+                , matched on the document&apos;s content hash. Browsing BNB Smart Chain&apos;s own
+                356,647 agents is not something this site does, and 8004scan already does it well.
               </>
             ) : (
               <>
-                One chain is in the live index today, so the cross-chain merge has nothing to merge
-                yet and this page says so rather than implying a network that is not there.
+                One chain is in the index today, so there is nothing to merge yet and this page says
+                so rather than implying a network that is not there.
               </>
-            )}{" "}
+            )}
+          </p>
+          <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
             <Link href="/method" className="text-[var(--color-brand)] hover:underline">
               How coverage decides a verdict →
             </Link>
