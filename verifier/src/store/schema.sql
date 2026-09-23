@@ -206,6 +206,46 @@ CREATE TABLE IF NOT EXISTS fovea.vault (
   PRIMARY KEY (address, context)
 );
 
+-- Who authorised a change to an agent's registration document.
+--
+-- An action receipt is signed by the ATTESTATION key, which is ed25519 and cannot move money, so a
+-- row here proves who authorised a change without granting the signer anything. The account key
+-- sends the transaction; this key makes the statement about it. Keeping them apart is why
+-- lib/iris.ts derives four keys rather than one.
+--
+-- **The signature is verified before insert and kept afterwards**, the same posture as fovea.vault:
+-- a reader checks it themselves rather than trusting that we checked. verifyAction in
+-- lib/authority.ts is self-contained, because the did:key inside a receipt carries the public key it
+-- must be checked against, so a receipt cannot be verified against a key it does not name.
+--
+-- Append only. A second receipt for the same agent is a new row, not an update, because the history
+-- of who repointed a document and when is the whole value. `uri_hash` is keccak256 of the agentURI
+-- that was intended, which is what makes a receipt a defence against a page that previewed one
+-- document and sent another.
+--
+-- agent_id is NULL for a registration: the registry assigns the id and it does not exist when the
+-- intent is signed. NULL rather than 0, for the reason every count on this site is null rather than
+-- zero when it is not known.
+CREATE TABLE IF NOT EXISTS fovea.agent_action (
+  id          bigserial   PRIMARY KEY,
+  action      text        NOT NULL CHECK (action IN ('register', 'setAgentURI')),
+  chain_id    integer     NOT NULL,
+  agent_id    bigint,
+  uri_hash    text        NOT NULL,
+  signer      text        NOT NULL,
+  identity    text        NOT NULL,
+  signature   text        NOT NULL,
+  -- When the signer says they signed it, from the receipt itself.
+  signed_at   timestamptz NOT NULL,
+  -- When we received it. Kept apart from signed_at, because a gap between them is information and
+  -- collapsing the two would let a caller rewrite our own clock.
+  received_at timestamptz NOT NULL DEFAULT now(),
+  -- One receipt per identity per document per action. A replay is the same row, not a second one.
+  UNIQUE (identity, uri_hash, action)
+);
+
+CREATE INDEX IF NOT EXISTS agent_action_agent_idx ON fovea.agent_action (agent_id, signed_at DESC);
+
 -- Whether a buyer could pay an agent's own SERVICE endpoint, right now.
 --
 -- **Not the same question as fovea.record_probe.** That one asks whether an agent's registration

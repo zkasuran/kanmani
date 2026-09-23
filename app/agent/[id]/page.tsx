@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile, TxLink } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
-import { agent, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
+import { agent, agentActions, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
 
 export const dynamic = "force-dynamic";
@@ -25,10 +25,11 @@ export default async function AgentPage({ params }: Props) {
   const a = await agent(decodeURIComponent(id));
   if (!a) notFound();
 
-  const [record, feedback, ownerLabel] = await Promise.all([
+  const [record, feedback, ownerLabel, trail] = await Promise.all([
     a.uriHash ? probedCluster(a.uriHash) : Promise.resolve(undefined),
     claims({ agentId: a.id, withUri: false, limit: 100 }),
     walletLabel(a.owner),
+    agentActions(a.agentId),
   ]);
 
   const checked = feedback.rows.filter((c) => c.outcome !== null);
@@ -288,6 +289,59 @@ export default async function AgentPage({ params }: Props) {
           </div>
         )}
         <Derivation sql={feedback.sql} />
+      </Panel>
+
+      {/* ---------------------------------------------------------------- who authorised the document */}
+      <Panel
+        title={`authorisation trail · ${trail.rows.length}`}
+        subtitle="Signed statements that somebody authorised this agent's document. Ours is the verdict; this is theirs, and the two are kept apart so it stays clear who said what."
+      >
+        {trail.rows.length === 0 ? (
+          <p className="py-2 text-[13px] leading-relaxed text-muted">
+            No receipt has been published for this agent. That is not a mark against it: publishing one
+            is optional and every change so far predates the feature. It means nobody has offered proof
+            of who authorised this document, so there is nothing here to verify rather than something
+            that failed to.{" "}
+            <Link href="/studio" className="text-[var(--color-brand)] hover:underline">
+              Sign one in the studio →
+            </Link>
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {trail.rows.map((t) => (
+              <div key={t.signature} className="rounded border border-[var(--color-line)] p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Mono className="text-[var(--color-brand)]">{t.action}</Mono>
+                  <Mono className="text-[11px] text-faint">
+                    signed {t.signedAt.replace("T", " ").slice(0, 16)}Z
+                  </Mono>
+                </div>
+                <dl className="mt-2 space-y-1">
+                  <Row label="document">
+                    <Mono className="break-all text-[12px] text-muted">{t.uriHash}</Mono>
+                  </Row>
+                  <Row label="authorised by">
+                    <Mono className="break-all text-[12px] text-muted">{t.identity}</Mono>
+                  </Row>
+                  <Row label="sending account">
+                    <Addr value={t.signer} />
+                  </Row>
+                </dl>
+                <p className="mt-2 text-[11.5px] leading-relaxed text-faint">
+                  The signing identity is ed25519 and cannot move money, so this proves who authorised
+                  the document without granting them anything. It does not say the transaction landed,
+                  that this account owns the agent, or that the document is good.
+                </p>
+              </div>
+            ))}
+            <p className="pt-1 text-[12px] leading-relaxed text-muted">
+              Every signature is served by{" "}
+              <Mono className="text-[11.5px]">GET /api/receipt/action?agentId={a.agentId}</Mono>, so
+              they can be checked without trusting us.
+            </p>
+          </div>
+        )}
+        <Derivation sql={trail.sql} />
       </Panel>
 
       <div className="flex flex-wrap gap-2 font-mono text-[12px]">

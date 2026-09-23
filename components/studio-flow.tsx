@@ -71,6 +71,7 @@ export function StudioFlow() {
   const [busy, setBusy] = useState<string | null>(null);
   const [authority, setAuthority] = useState<Authority | null>(null);
   const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string } | null>(null);
+  const [published, setPublished] = useState<"no" | "yes" | "already">("no");
   const [note, setNote] = useState<{ kind: "error" | "info"; text: string } | null>(null);
 
   // A stale "you own this" is the one piece of state that must never outlive its inputs, so it is
@@ -78,6 +79,7 @@ export function StudioFlow() {
   useEffect(() => {
     setAuthority(null);
     setReceipt(null);
+    setPublished("no");
   }, [agentId, keys, door]);
 
   const json = useMemo(() => recordJson(draft), [draft]);
@@ -159,6 +161,35 @@ export function StudioFlow() {
       setNote({ kind: "error", text: (e as Error).message ?? "Could not sign." });
     }
   }, [keys, uri, door, chainId, agentId]);
+
+  /**
+   * Publish the receipt so it is an audit trail rather than a personal artifact.
+   *
+   * Optional on purpose. A receipt is already complete and verifiable in the holder's hands; sending
+   * it only makes it visible to somebody else. So this is a button, not a step.
+   */
+  const publish = useCallback(async () => {
+    if (!receipt) return;
+    setBusy("publish");
+    setNote(null);
+    try {
+      const res = await fetch("/api/receipt/action", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(receipt),
+      });
+      const body = (await res.json().catch(() => null)) as { data?: { firstTime?: boolean }; detail?: string } | null;
+      if (!res.ok) {
+        setNote({ kind: "error", text: body?.detail ?? `The receipt was refused (HTTP ${res.status}).` });
+        return;
+      }
+      setPublished(body?.data?.firstTime ? "yes" : "already");
+    } catch (e) {
+      setNote({ kind: "error", text: (e as Error).message ?? "The request failed." });
+    } finally {
+      setBusy(null);
+    }
+  }, [receipt]);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {
@@ -450,18 +481,36 @@ export function StudioFlow() {
               Signed by the attestation key, which is ed25519 and cannot move money, so the receipt
               proves who authorised this change without granting anything. It commits to the document
               by hash, so a page that previewed one document and sent another would not match it.
+              Publishing is optional: the receipt is already complete and verifiable in your hands,
+              and sending it only makes it visible on the agent&apos;s own page.
             </p>
             {receipt ? (
               <div className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={LABEL}>action receipt</span>
-                  <button
-                    type="button"
-                    onClick={() => copy(JSON.stringify({ ...receipt.receipt, signature: receipt.signature }, null, 2), "Receipt")}
-                    className="font-mono text-[11px] text-[var(--color-brand)] hover:underline"
-                  >
-                    copy
-                  </button>
+                  <span className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => copy(JSON.stringify({ ...receipt.receipt, signature: receipt.signature }, null, 2), "Receipt")}
+                      className="font-mono text-[11px] text-[var(--color-brand)] hover:underline"
+                    >
+                      copy
+                    </button>
+                    <button
+                      type="button"
+                      onClick={publish}
+                      disabled={busy === "publish" || published !== "no"}
+                      className="font-mono text-[11px] text-[var(--color-brand)] hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                    >
+                      {busy === "publish"
+                        ? "publishing…"
+                        : published === "yes"
+                          ? "published"
+                          : published === "already"
+                            ? "already published"
+                            : "publish"}
+                    </button>
+                  </span>
                 </div>
                 <pre className="sql mt-2 max-h-40 overflow-auto">
                   {JSON.stringify({ ...receipt.receipt, signature: receipt.signature }, null, 2)}

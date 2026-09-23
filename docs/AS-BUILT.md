@@ -338,6 +338,22 @@ opened to pay for a verification cannot silently also repoint an agent.
 node --test --experimental-strip-types 'lib/authority.test.ts'   # 12 pass
 ```
 
+**A receipt is now an audit trail rather than a personal artifact.** `POST /api/receipt/action`
+verifies the signature before writing anything and stores it in `fovea.agent_action`, append only,
+with the signature kept so a reader checks it themselves. `GET /api/receipt/action?agentId=<id>` reads
+it back and `/agent/<id>` renders the trail in its own panel, separate from the verdicts, because a
+verdict is our measurement and a receipt is somebody's statement.
+
+Exercised end to end against the live site: a genuine receipt returns 201 `firstTime: true`, the same
+one again returns 200 `firstTime: false` because idempotency is a database constraint rather than a
+flag we remember, and a receipt with a mutated `uriHash` is refused with 400 and stored nowhere.
+
+**No real receipt exists yet**, because publishing is optional and every document change predates the
+feature. The page says that in words rather than rendering an absence as a clean record. And the
+boundary is stated on both the endpoint and the page: a receipt says one identity authorised one
+document, not that the transaction landed, that the signer owns the agent, or that the document is
+good.
+
 ### Cornea, the surface
 
 Eighteen pages, seven machine-readable surfaces and 7 API routes. Every page can print

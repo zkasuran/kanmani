@@ -116,7 +116,7 @@ export default async function Developers() {
                 <Verdict outcome={null} />
                 <Verdict outcome="false" size="lg" />
               </Demo>
-              <Snippet code={`import { Verdict, outcomeMeaning } from "@kanmani/kit";
+              <Snippet code={`import { Verdict, outcomeMeaning } from "@/components/kit.tsx";
 
 <Verdict outcome="unknown" />          // renders the word, in slate, never red
 <Verdict outcome={null} />             // "unchecked", which is not "clean"
@@ -229,6 +229,34 @@ curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps 
 
 export RPC_UNICHAIN=https://…
 npm test    # conformance + drift, and it names what is missing`} />
+        </Panel>
+      </Reveal>
+
+      <Reveal>
+        <Panel title="how to actually get these">
+          <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
+            <span className="text-[var(--color-text)]">There is no npm package yet.</span> An earlier
+            version of this page showed{" "}
+            <Mono>import … from &quot;@kanmani/kit&quot;</Mono>, which was an import path nobody could
+            resolve — exactly the kind of claim this project exists to check, on our own page. Until a
+            package is published, the honest instruction is to copy{" "}
+            <Mono>components/kit.tsx</Mono> from the repository. It is one file, has no dependency
+            beyond React, and carries the rule with it.
+          </p>
+          <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
+            <span className="text-[var(--color-text)]">
+              <Mono>embed.js</Mono> needs nothing.
+            </span>{" "}
+            It is a script tag against a live origin, so the badge is available today whatever happens
+            to the package question.
+          </p>
+          <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
+            On licensing: the repository is source-available with no derivatives, which sits awkwardly
+            beside a component layer whose whole purpose is to be embedded. That tension is real, it is
+            written down in <Mono>docs/14-GAPS.md</Mono>, and it is not resolved here. Embedding{" "}
+            <Mono>embed.js</Mono> by script tag is plainly intended and needs no licence grant, because
+            it is a request to our server rather than a copy of our code.
+          </p>
         </Panel>
       </Reveal>
 

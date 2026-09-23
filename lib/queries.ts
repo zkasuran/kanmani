@@ -1162,3 +1162,56 @@ export async function clusterMembers(
     })),
   );
 }
+
+/* ------------------------------------------------------------------ authorisation trail */
+
+/**
+ * Who authorised a change to this agent's document, and when.
+ *
+ * Distinct from a verdict in a way worth keeping distinct: a verdict is our measurement of whether a
+ * claim is true, and a receipt is somebody's signed statement that they authorised a document. One is
+ * ours, the other is theirs. Rendering them in the same list would blur who said what.
+ *
+ * The signature comes back so a reader can check it rather than trust that we did.
+ */
+export type ActionRow = {
+  action: string;
+  chainId: number;
+  uriHash: string;
+  signer: string;
+  identity: string;
+  signature: string;
+  signedAt: string;
+  receivedAt: string;
+};
+
+export const AGENT_ACTIONS_SQL = `
+SELECT action, chain_id, uri_hash, signer, identity, signature, signed_at, received_at
+FROM fovea.agent_action
+WHERE agent_id = $1
+ORDER BY signed_at DESC
+LIMIT 20`;
+
+export async function agentActions(agentId: number): Promise<Sourced<ActionRow[]>> {
+  try {
+    const rows = await q<Record<string, string | number>>(AGENT_ACTIONS_SQL, [agentId]);
+    return src(
+      AGENT_ACTIONS_SQL,
+      rows.map((r) => ({
+        action: String(r.action),
+        chainId: Number(r.chain_id),
+        uriHash: String(r.uri_hash),
+        signer: String(r.signer),
+        identity: String(r.identity),
+        signature: String(r.signature),
+        signedAt: String(r.signed_at),
+        receivedAt: String(r.received_at),
+      })),
+    );
+  } catch {
+    // The table may not exist yet on an installation that has not applied the schema. An empty trail
+    // is the correct answer there: nobody has published a receipt. It is not an error page, and it is
+    // not a claim that none were ever signed.
+    return src(AGENT_ACTIONS_SQL, []);
+  }
+}

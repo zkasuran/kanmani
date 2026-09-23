@@ -188,42 +188,53 @@ this is scoped small and is not scheduled, which is the honest state rather than
 
 ---
 
-## 6. The component layer is published and is not packaged
+## 6. The kit is vendored rather than published, and the licence is unresolved
 
-**Added 2026-09-23**, the same day the kit shipped, because the gap was created by shipping it.
+**Half closed 2026-09-23.** This section previously recorded that `/developers` showed
+`import … from "@kanmani/kit"` while no such package existed. **That overclaim is gone**: the page now
+imports from `@/components/kit.tsx` and says plainly that there is no npm package, that the honest
+instruction is to copy one file, and that `embed.js` needs nothing because it is a script tag against
+a live origin.
 
-`components/kit.tsx` is the public component surface and `/developers` documents it. Two things about
-that are not yet true in the way the page implies.
-
-| | |
-|---|---|
-| **Missing** | The snippets on `/developers` read `import { Verdict } from "@kanmani/kit"`. **There is no such package on npm.** The import path is aspirational, which makes it exactly the kind of claim a check contradicts, and the check is `npm view @kanmani/kit` |
-| **Missing** | A licence posture for the component layer. The repository is `LicenseRef-zkasuran-SAND-1.0`, source-available with **no derivatives**. An embeddable badge invites reuse and a no-derivatives licence discourages precisely the adoption that scores under Traction. The two are in tension and the tension is not resolved |
-| **Exists** | The components, working, rendering live data on `/developers`; `embed.js`, which needs no package because it is a script tag |
-| **Closes** | either publish the package, or change the snippets to a relative import and say the kit is vendored rather than installed. The second is a ten-minute fix and is the honest one until the first happens |
-
-**`embed.js` is the part that does work today**, needs no install, and is the whole distribution
-argument, so nothing about the product depends on resolving this. It is listed because the page says
-`@kanmani/kit` and a reader will try it.
-
----
-
-## 7. An action receipt is signed and then goes nowhere
-
-`lib/authority.ts` signs a statement of intent with the attestation key before an agent is registered
-or repointed, and `/studio` shows it and offers to copy it. That is the whole lifecycle.
+What is still open is smaller and is a decision rather than work.
 
 | | |
 |---|---|
-| **Missing** | Nothing persists a receipt and nothing verifies one on a page. `/agent/<id>` does not display who authorised the document it is looking at, so the receipt is a personal artifact rather than a public audit trail |
-| **Missing** | No endpoint accepts one. A third party cannot submit "here is proof I authorised this change" and have it render beside the verdict |
-| **Exists** | Signing, canonical bytes, and `verifyAction`, which is self-contained: a holder needs nothing from us to check a receipt, because the did:key inside it carries the public key |
-| **Closes** | a table and a render on the agent page. Small. It is not done, so the receipt currently proves something to its holder and to nobody else |
+| **Missing** | A published package. Copying a file works and does not scale to versioning: a consumer has no way to learn that `Verdict` changed |
+| **Missing** | A resolved licence posture. The repository is `LicenseRef-zkasuran-SAND-1.0`, source-available with **no derivatives**, which sits badly beside a component layer whose purpose is to be embedded. Embedding `embed.js` by script tag needs no grant, because it is a request to our server rather than a copy of our code, and that is the path we actually recommend. Copying `kit.tsx` does need one, and the licence does not give it |
+| **Exists** | Working components, honest import paths, and a distribution route (`embed.js`) that the licence question does not block |
+| **Closes** | either a permissive carve-out for `components/kit.tsx` and `app/embed.js` specifically, or a decision that the script tag is the only supported integration and the kit is reference code. **Not decided, and it is an author's decision rather than an engineering task** |
 
-This is a real limit on the claim. A receipt that only its author can see is a weaker thing than an
-audit trail, and the difference should not be blurred.
+## 7. The authorisation trail is live and nobody has used it
 
----
+**Closed 2026-09-23.** This section previously said a receipt was signed and then went nowhere, so it
+proved something to its holder and to nobody else. That is fixed.
+
+`POST /api/receipt/action` accepts a receipt, **verifies the signature before writing anything**, and
+stores it in `fovea.agent_action`. `GET /api/receipt/action?agentId=<id>` reads it back with the
+signature included, and `/agent/<id>` renders an authorisation trail beside the verdicts, kept in a
+separate panel because a verdict is our measurement and a receipt is somebody's statement, and mixing
+them would blur who said what.
+
+Exercised end to end against the live site:
+
+```bash
+POST a genuine receipt   -> 201, firstTime true
+POST the same one again  -> 200, firstTime false     # idempotent by a database constraint
+POST a mutated uriHash   -> 400 "Signature does not verify", nothing stored
+GET  ?agentId=10252      -> the row, with its signature
+```
+
+**What remains is honest emptiness rather than a gap.** No real receipt exists, because publishing is
+optional and every document change on Monad predates the feature. The agent page says so in those
+words rather than rendering an absence as a clean record: *"nobody has offered proof of who authorised
+this document, so there is nothing here to verify rather than something that failed to."*
+
+One boundary worth keeping visible, and it is stated on the endpoint and on the page: a receipt says
+one identity authorised one document. It does **not** say the transaction landed, that the signer owns
+the agent, or that the document is good. The registry decides ownership and the ladder decides truth.
+An endpoint implying otherwise would be manufacturing standing out of a signature, which is the shape
+of claim this project exists to check rather than to produce.
 
 ## 8. Traction is zero and this is the weakest part of the entry
 
