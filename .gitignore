@@ -52,3 +52,6 @@ tsconfig.tsbuildinfo
 # Generated exports. tools/export-d1.py writes a full copy of the measurement
 # database here, which is 19 MB of SQL and is rebuilt on demand.
 /build/
+
+# Build-journey and announce pages. Publishing material, kept local, never in the public repo.
+CONTENT-*.html
