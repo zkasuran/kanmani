@@ -22,8 +22,9 @@
  * copyable, and decodes back to what the preview showed.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { Mono } from "@/components/ui.tsx";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import { type IrisKeys } from "@/lib/iris.ts";
 import {
@@ -40,6 +41,13 @@ import {
   type UriKind,
 } from "@/lib/registration.ts";
 import { registrable } from "@/lib/chains.ts";
+import {
+  checkAuthority,
+  signAction,
+  verifyAction,
+  type ActionReceipt,
+  type Authority,
+} from "@/lib/authority.ts";
 
 type Door = "create" | "manage";
 
@@ -61,7 +69,16 @@ export function StudioFlow() {
   const [agentId, setAgentId] = useState("");
   const [keys, setKeys] = useState<IrisKeys | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const [authority, setAuthority] = useState<Authority | null>(null);
+  const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string } | null>(null);
   const [note, setNote] = useState<{ kind: "error" | "info"; text: string } | null>(null);
+
+  // A stale "you own this" is the one piece of state that must never outlive its inputs, so it is
+  // cleared whenever the id, the account or the door changes rather than refreshed in place.
+  useEffect(() => {
+    setAuthority(null);
+    setReceipt(null);
+  }, [agentId, keys, door]);
 
   const json = useMemo(() => recordJson(draft), [draft]);
   const uri = useMemo(() => agentUri(draft, kind, hostedAt), [draft, kind, hostedAt]);
@@ -103,6 +120,45 @@ export function StudioFlow() {
       setBusy(null);
     }
   }, []);
+
+  /** Ask the registry, via our own API, whether this passkey account actually holds the agent. */
+  const verifyOwnership = useCallback(async () => {
+    if (!keys || !/^\d+$/.test(agentId)) return;
+    setBusy("authority");
+    setNote(null);
+    try {
+      setAuthority(await checkAuthority(Number(agentId), keys.account.address));
+    } finally {
+      setBusy(null);
+    }
+  }, [keys, agentId]);
+
+  /**
+   * Sign a statement of intent before the transaction is sent.
+   *
+   * Signed with the attestation key, which cannot move money, so the receipt proves who authorised
+   * this change to this document without granting anything. It commits to the URI by hash, which is
+   * what makes it a defence against a page that previews one document and sends another.
+   */
+  const signIntent = useCallback(() => {
+    if (!keys || !uri) return;
+    setNote(null);
+    try {
+      setReceipt(
+        signAction(
+          {
+            action: door === "create" ? "register" : "setAgentURI",
+            chainId,
+            agentId: door === "create" ? null : Number(agentId),
+            agentURI: uri,
+          },
+          keys,
+        ),
+      );
+    } catch (e) {
+      setNote({ kind: "error", text: (e as Error).message ?? "Could not sign." });
+    }
+  }, [keys, uri, door, chainId, agentId]);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {
@@ -304,14 +360,16 @@ export function StudioFlow() {
         </div>
       </div>
 
-      {/* ---------------------------------------------------------------- sign it yourself */}
+      {/* ---------------------------------------------------------------- authority */}
       <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4">
-        <p className="eyebrow">sign it with your own key</p>
+        <p className="eyebrow">authority</p>
         <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
-          Two ways, offered on equal footing. Take the calldata above and send it from any wallet you
-          already use, or sign in with a passkey and send it from the account that passkey derives.
-          Either way the key is yours: nothing is stored here and we hold nothing that could sign on
-          your behalf.
+          The registry decides who may write: <Mono>setAgentURI</Mono> reverts for anyone who is not
+          the owner, and nothing here can add to that. What a passkey adds is the three things the
+          chain cannot do for you — tell you that you are not the owner{" "}
+          <span className="text-[var(--color-text)]">before</span> you pay gas to find out, bind the
+          transaction to the document you actually previewed, and give you an authority that
+          reconstructs on another device instead of living in one browser profile.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
@@ -319,6 +377,7 @@ export function StudioFlow() {
             <>
               <span className="chip chip--live">signed in</span>
               <code className="font-mono text-[12px] text-[var(--color-text)]">{keys.account.address}</code>
+              <span className="font-mono text-[11px] text-faint">{keys.attestation.id.slice(0, 28)}…</span>
             </>
           ) : (
             <>
@@ -332,17 +391,105 @@ export function StudioFlow() {
           )}
         </div>
 
+        {/* ---- ownership, only meaningful when repointing something that exists ---- */}
+        {keys && door === "manage" ? (
+          <div className="mt-4 border-t border-[var(--color-line)] pt-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={verifyOwnership}
+                disabled={!/^\d+$/.test(agentId) || busy === "authority"}
+                className="cta-ghost"
+              >
+                {busy === "authority" ? "asking the registry…" : "check that you own this agent →"}
+              </button>
+              {authority?.kind === "owner" ? <span className="chip chip--live">you own #{authority.agentId}</span> : null}
+            </div>
+
+            {authority?.kind === "notOwner" ? (
+              <p className="mt-3 rounded border border-[var(--color-line-bright)] bg-[var(--color-panel-2)] p-3 text-[12.5px] leading-relaxed text-muted">
+                <span className="text-[var(--color-false)]">This agent is held by another account.</span>{" "}
+                The registry owner is <Mono className="break-all">{authority.owner}</Mono> and you are
+                signed in as <Mono className="break-all">{authority.connected}</Mono>. Sending{" "}
+                <Mono>setAgentURI</Mono> would revert and cost gas. Usually this means a different
+                passkey, not a problem with the agent.
+              </p>
+            ) : null}
+
+            {authority?.kind === "noSuchAgent" ? (
+              <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+                No agent <Mono>#{authority.agentId}</Mono> is in the index. If you meant to create one,
+                use <span className="text-[var(--color-text)]">register a new agent</span> above.
+              </p>
+            ) : null}
+
+            {authority?.kind === "unknown" ? (
+              <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+                <span className="unknown-value">unknown</span> — we could not find out ({authority.reason}).
+                That is our failure to look, not a statement about your ownership, so nothing here is
+                blocked on it. The registry will still refuse a write you are not entitled to make.
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {/* ---- intent, bound to the document by hash ---- */}
+        {keys && uri && probs.length === 0 ? (
+          <div className="mt-4 border-t border-[var(--color-line)] pt-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button type="button" onClick={signIntent} className="cta-ghost">
+                sign what you are about to send →
+              </button>
+              {receipt ? (
+                <span className="chip chip--live">
+                  {verifyAction(receipt.receipt, receipt.signature) ? "receipt verifies" : "receipt invalid"}
+                </span>
+              ) : null}
+            </div>
+            <p className="mt-2 max-w-3xl text-[11.5px] leading-relaxed text-muted">
+              Signed by the attestation key, which is ed25519 and cannot move money, so the receipt
+              proves who authorised this change without granting anything. It commits to the document
+              by hash, so a page that previewed one document and sent another would not match it.
+            </p>
+            {receipt ? (
+              <div className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={LABEL}>action receipt</span>
+                  <button
+                    type="button"
+                    onClick={() => copy(JSON.stringify({ ...receipt.receipt, signature: receipt.signature }, null, 2), "Receipt")}
+                    className="font-mono text-[11px] text-[var(--color-brand)] hover:underline"
+                  >
+                    copy
+                  </button>
+                </div>
+                <pre className="sql mt-2 max-h-40 overflow-auto">
+                  {JSON.stringify({ ...receipt.receipt, signature: receipt.signature }, null, 2)}
+                </pre>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         {keys ? (
           <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
-            This address owns whatever it registers. It needs MON for gas, because a registration is
-            the one action here that is not relayed: the registry records{" "}
-            <code className="font-mono text-[var(--color-brand)]">msg.sender</code> as the owner, so a
-            relayer would end up owning your agent.{" "}
+            This address owns whatever it registers, and it needs MON for gas: a registration is the
+            one action here that is not relayed, because the registry records{" "}
+            <Mono>msg.sender</Mono> as the owner and a relayer would end up owning your agent. The key
+            comes from the passkey rather than from anything stored here, so the same passkey on
+            another device reaches the same agent.{" "}
             <Link href="/account" className="text-[var(--color-brand)] hover:underline">
               What the four keys are →
             </Link>
           </p>
-        ) : null}
+        ) : (
+          <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
+            You can also skip the passkey entirely, take the calldata above and send it from any
+            wallet. Nothing here is custodial either way: there is no key on our server that could
+            sign for you. The passkey path exists because it can check ownership first and leave you a
+            receipt.
+          </p>
+        )}
 
         {note ? (
           <p className={`mt-3 text-[12.5px] ${note.kind === "error" ? "text-[var(--color-false)]" : "text-muted"}`}>
