@@ -29,6 +29,7 @@ import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "
 import { type IrisKeys } from "@/lib/iris.ts";
 import {
   EMPTY_DRAFT,
+  IDENTITY_ABI,
   agentUri,
   byteLength,
   consequences,
@@ -40,8 +41,11 @@ import {
   type RegistrationDraft,
   type UriKind,
 } from "@/lib/registration.ts";
-import { registrable } from "@/lib/chains.ts";
+import { registrable, viemChain } from "@/lib/chains.ts";
+import { createWalletClient, createPublicClient, http } from "viem";
+import { openSession } from "@/lib/session.ts";
 import {
+  agentScope,
   checkAuthority,
   signAction,
   verifyAction,
@@ -72,6 +76,7 @@ export function StudioFlow() {
   const [authority, setAuthority] = useState<Authority | null>(null);
   const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string } | null>(null);
   const [published, setPublished] = useState<"no" | "yes" | "already">("no");
+  const [sent, setSent] = useState<{ hash: string; agentId?: string } | null>(null);
   const [note, setNote] = useState<{ kind: "error" | "info"; text: string } | null>(null);
 
   // A stale "you own this" is the one piece of state that must never outlive its inputs, so it is
@@ -80,6 +85,7 @@ export function StudioFlow() {
     setAuthority(null);
     setReceipt(null);
     setPublished("no");
+    setSent(null);
   }, [agentId, keys, door]);
 
   const json = useMemo(() => recordJson(draft), [draft]);
@@ -190,6 +196,73 @@ export function StudioFlow() {
       setBusy(null);
     }
   }, [receipt]);
+
+  /**
+   * Send the transaction from the passkey-derived account.
+   *
+   * A registration is the one action here that cannot be relayed: the registry records `msg.sender` as
+   * the owner, so a relayer would end up owning the agent. That is why this account needs MON for gas
+   * and why the gasless path used everywhere else does not apply.
+   *
+   * The session is scoped to authority rather than to a spend — `maxAmountAtomic` is 0n — so a session
+   * opened to pay for a verification cannot silently also register an agent. It is ended in a `finally`
+   * so the key is zeroed whether the send succeeded or threw.
+   */
+  const send = useCallback(async () => {
+    if (!keys || !calldata || !uri) return;
+    const chain = viemChain(chainId);
+    const registry = identityRegistryFor(chainId);
+    if (!chain || !registry) {
+      setNote({ kind: "error", text: "This chain has no browser endpoint configured, so it cannot be written to here." });
+      return;
+    }
+    setBusy("send");
+    setNote(null);
+    let session: ReturnType<typeof openSession> | null = null;
+    try {
+      session = openSession({
+        privateKey: keys.account.privateKey,
+        scope: agentScope(door === "create" ? "register" : "setAgentURI", window.location.host),
+        ttlMs: 120_000,
+      });
+      const wallet = createWalletClient({ account: session.account, chain, transport: http() });
+      const pub = createPublicClient({ chain, transport: http() });
+
+      const hash =
+        door === "create"
+          ? await wallet.writeContract({ address: registry, abi: IDENTITY_ABI, functionName: "register", args: [uri] })
+          : await wallet.writeContract({
+              address: registry,
+              abi: IDENTITY_ABI,
+              functionName: "setAgentURI",
+              args: [BigInt(agentId), uri],
+            });
+
+      setSent({ hash });
+      const rec = await pub.waitForTransactionReceipt({ hash });
+      if (rec.status !== "success") {
+        setNote({ kind: "error", text: "The transaction was mined and reverted. Nothing changed on chain." });
+        return;
+      }
+      // The registry is an ERC-721, so a mint emits Transfer with the token id as the fourth topic.
+      // Read rather than assumed: a registration has no return value a transaction can carry.
+      const mint = rec.logs.find(
+        (l) => l.address.toLowerCase() === registry.toLowerCase() && l.topics.length === 4,
+      );
+      setSent({ hash, agentId: mint?.topics[3] ? String(BigInt(mint.topics[3])) : undefined });
+    } catch (e) {
+      const m = (e as Error).message ?? "The send failed.";
+      setNote({
+        kind: "error",
+        text: /insufficient funds/i.test(m)
+          ? "That account has no MON for gas. A registration cannot be relayed, because the registry records msg.sender as the owner."
+          : m.slice(0, 400),
+      });
+    } finally {
+      session?.end();
+      setBusy(null);
+    }
+  }, [keys, calldata, uri, chainId, door, agentId]);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {
@@ -520,6 +593,54 @@ export function StudioFlow() {
           </div>
         ) : null}
 
+        {/* ---- send it, from the passkey account ---- */}
+        {keys && calldata && probs.length === 0 ? (
+          <div className="mt-4 border-t border-[var(--color-line)] pt-4">
+            <div className="flex flex-wrap items-center gap-2.5">
+              <button type="button" onClick={send} disabled={busy === "send" || Boolean(sent?.agentId)} className="cta">
+                {busy === "send"
+                  ? "signing and sending…"
+                  : sent?.agentId
+                    ? "sent"
+                    : door === "create"
+                      ? "register it from this account →"
+                      : "repoint it from this account →"}
+              </button>
+              {door === "manage" && authority?.kind !== "owner" ? (
+                <span className="font-mono text-[11px] text-muted">
+                  check ownership first, or the registry will reject it
+                </span>
+              ) : null}
+            </div>
+
+            {sent ? (
+              <div className="mt-3 rounded border border-[var(--brand-line)] bg-[var(--color-panel)] p-3 text-[12.5px]">
+                <a
+                  href={`https://monadexplorer.com/tx/${sent.hash}`}
+                  target="_blank"
+                  rel="noreferrer noopener"
+                  className="font-mono text-[var(--color-brand)] hover:underline"
+                >
+                  {sent.hash.slice(0, 12)}…{sent.hash.slice(-10)}
+                </a>
+                {sent.agentId ? (
+                  <span className="ml-2 text-muted">
+                    — registered as agent <Mono className="text-[var(--color-text)]">#{sent.agentId}</Mono>. It appears
+                    on this site once the indexer sees it.
+                  </span>
+                ) : (
+                  <span className="ml-2 text-muted">— sent, waiting for the receipt…</span>
+                )}
+              </div>
+            ) : null}
+
+            <p className="mt-2 max-w-3xl text-[11.5px] leading-relaxed text-muted">
+              Signed by a session scoped to this one action and nothing else: it may not move a token,
+              and the key is zeroed the moment the send finishes. We never hold it.
+            </p>
+          </div>
+        ) : null}
+
         {keys ? (
           <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
             This address owns whatever it registers, and it needs MON for gas: a registration is the
@@ -533,10 +654,11 @@ export function StudioFlow() {
           </p>
         ) : (
           <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
-            You can also skip the passkey entirely, take the calldata above and send it from any
-            wallet. Nothing here is custodial either way: there is no key on our server that could
-            sign for you. The passkey path exists because it can check ownership first and leave you a
-            receipt.
+            Or skip the passkey entirely: take the calldata above and send it from any wallet. Nothing
+            here is custodial either way, because there is no key on our server that could sign for you.
+            Signing in adds three things a copied calldata cannot — it checks you own the agent before
+            you pay gas, it leaves a receipt bound to the document, and it can send the transaction
+            itself from the account your passkey derives.
           </p>
         )}
 

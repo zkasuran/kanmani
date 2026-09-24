@@ -60,6 +60,15 @@ export type Chain = {
   explorer: string;
   /** null when the registries are not deployed there. */
   erc8004: Erc8004Deployment | null;
+  /**
+   * A browser-usable endpoint, present only where an agent can be registered.
+   *
+   * Deliberately distinct from `rpcEnv`, which names the server's own endpoint and may carry a key
+   * that must never reach a client. A chain with no `publicRpc` cannot be written to from the
+   * browser, and the studio offers only chains it can actually send on rather than failing later.
+   */
+  publicRpc?: string;
+  nativeCurrency?: { name: string; symbol: string; decimals: number };
 };
 
 type RawChain = Omit<Chain, "erc8004"> & {
@@ -84,7 +93,26 @@ export const CHAINS: readonly Chain[] = RAW.chains.map((c) => ({
   erc8004: c.erc8004
     ? { startBlock: c.erc8004.startBlock, indexed: c.erc8004.indexed, note: c.erc8004.note }
     : null,
+  publicRpc: c.publicRpc,
+  nativeCurrency: c.nativeCurrency,
 }));
+
+/**
+ * A viem chain definition built from the registry, so the browser and the server cannot disagree
+ * about what chain 143 is. Returns null when the chain has no browser endpoint, which the caller must
+ * treat as "cannot send here" rather than falling back to a default.
+ */
+export function viemChain(chainId: number) {
+  const c = byId(chainId);
+  if (!c?.publicRpc) return null;
+  return {
+    id: c.id,
+    name: c.displayName,
+    nativeCurrency: c.nativeCurrency ?? { name: c.displayName, symbol: "ETH", decimals: 18 },
+    rpcUrls: { default: { http: [c.publicRpc] } },
+    blockExplorers: { default: { name: c.displayName, url: c.explorer } },
+  } as const;
+}
 
 /**
  * The registries for a chain: its own override when it has one, the canonical set otherwise.

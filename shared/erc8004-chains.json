@@ -70,6 +70,12 @@
         "startBlock": 0,
         "indexed": true,
         "note": "start_block stays 0 deliberately. The population and the USDC rail are both here, so a full scan is worth it once."
+      },
+      "publicRpc": "https://rpc.monad.xyz",
+      "nativeCurrency": {
+        "name": "Monad",
+        "symbol": "MON",
+        "decimals": 18
       }
     },
     {
@@ -90,6 +96,12 @@
         "startBlock": 79027268,
         "indexed": true,
         "note": "The proxy deployment block, found by asking HyperSync for the first log at the three addresses from block 0. Saves scanning 79M empty blocks. A separate population from Monad, not a mirror: 356,647 agents against Monad's 10,256, backfilled 2026-09-23. Chiasm merges the two on the content hash of the registration document and finds 3 documents referenced from both chains, 6 agents, no URI conflict."
+      },
+      "publicRpc": "https://bsc-dataseed.bnbchain.org",
+      "nativeCurrency": {
+        "name": "BNB",
+        "symbol": "BNB",
+        "decimals": 18
       }
     },
     {
@@ -183,5 +195,11 @@
       "attestor": "0x358c591aD7D60aC36bC223472B41518A7FA7b44A",
       "slashBeneficiary": "0xDB6c6340342e71A63cD11Ebac2185204b7777777"
     }
-  }
+  },
+  "$publicRpc": [
+    "publicRpc is a browser-usable endpoint, present only on chains an agent can be registered on.",
+    "Separate from rpcEnv, which is the server's own key-bearing endpoint and must never reach a client.",
+    "A chain without publicRpc simply cannot be written to from the browser, which is a boundary rather",
+    "than a bug: the studio offers only chains it can actually send on."
+  ]
 }
