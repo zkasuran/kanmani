@@ -21,18 +21,22 @@ stated per layer in [`docs/AS-BUILT.md`](docs/AS-BUILT.md), and
 
 ---
 
-## The 60 second path
+## The 90 second path
 
-If you have one minute, do these four things in this order.
+Six pages, in the order the header puts them, which is the order somebody actually moves through the
+product. Nothing here needs a login, a key or a payment.
 
 | | Where | What you should see |
 |---|---|---|
-| 1 | [`/`](https://kanmani.xyz) | The measurement, live, with the SQL that produced it |
-| 2 | [`/operators`](https://kanmani.xyz/operators) | 8,093 agents across 7,962 wallets sharing one document that returns 404 |
-| 3 | [`/verify`](https://kanmani.xyz/verify) | Paste anything, get a verdict, with the command to re-derive it |
-| 4 | [`/studio`](https://kanmani.xyz/studio) | Compose a registration document and get the exact call to send. We generate it; you sign it |
-| 5 | [`/developers`](https://kanmani.xyz/developers) | The components, the API and the one-line badge. Render a verdict without being able to render it wrongly |
-| 6 | [`/validate`](https://kanmani.xyz/validate) | Why Monad's Validation Registry had zero rows, which took a reverted transaction to learn |
+| 1 | [`/`](https://kanmani.xyz) | What this is, in two lines, then the stack with each layer marked `live` or `built` |
+| 2 | [`/studio`](https://kanmani.xyz/studio) | **create** — compose a registration document and send it from a passkey, or take the calldata to any wallet. Every field shows its consequence live |
+| 3 | [`/verify`](https://kanmani.xyz/verify) | **verify** — paste anything, get a verdict, with the command to re-derive it without us |
+| 4 | [`/bond`](https://kanmani.xyz/bond) | **settle** — 0.02 USDC staked on mainnet against an 80% claim-truth floor. Immutable, no admin override |
+| 5 | [`/operators`](https://kanmani.xyz/operators) | **explore** — 8,093 agents across 7,962 wallets sharing one document that returns 404, and the three records that exist on two chains |
+| 6 | [`/developers`](https://kanmani.xyz/developers) | **developers** — the components, the API, and a one-line badge. Render a verdict without being able to render it wrongly |
+
+Then [`/status`](https://kanmani.xyz/status) answers the question you only have once you have believed
+something: how old is that number.
 
 Then read [`docs/AS-BUILT.md`](docs/AS-BUILT.md), which says what shipped against the plan
 including what did not. [`docs/14-GAPS.md`](docs/14-GAPS.md) is our own list of what this build is

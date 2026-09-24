@@ -150,6 +150,13 @@ deployment list, on both 143 and 56: a 130-byte ERC-1967 proxy at all three addr
 `getIdentityRegistry()` with the identity address. The runbook is
 [`23-ADDING-A-CHAIN.md`](23-ADDING-A-CHAIN.md).
 
+A third field, `publicRpc`, carries a **browser-usable** endpoint and exists only on chains an agent can
+be registered on. Deliberately separate from `rpcEnv`, which names the server's own endpoint and may
+carry a key that must never reach a client. `viemChain()` builds the viem definition from the same
+registry, so the browser and the server cannot disagree about what chain 143 is, and a chain with no
+`publicRpc` cannot be written to from the browser — the studio offers only chains it can actually send
+on rather than failing at the last step.
+
 Two dimensions are kept apart on purpose. **Readable** means we can fetch a receipt there.
 **Registrable** means ERC-8004 is deployed there. Ethereum is readable and hosts no registry, which
 is what makes "registered on Monad, paid on Ethereum" a checkable statement rather than a hope, and
@@ -208,11 +215,30 @@ specified:
 * **Repoint an agent you own.** `setAgentURI(agentId, newURI)`, which the registry refuses for anyone
   who is not the owner.
 
-**We generate the call and never sign it.** There is no key on the server that could: the operator
-either takes the calldata to any wallet, or signs in with a passkey and sends it from the account
-that passkey derives. Both paths are offered on equal footing, because a project that publishes
-measurements about other people's registrations must not be able to manufacture one, and the honest
-guarantee is having no means to.
+**We never sign for the operator and we hold no key that could.** There are two paths and both are
+theirs: take the calldata to any wallet, or sign in with a passkey and **send it from the browser**,
+from the account that passkey derives. A project that publishes measurements about other people's
+registrations must not be able to manufacture one, and the honest guarantee is having no means to.
+
+**The passkey path sends the transaction, as of 2026-09-24.** It did not at first: the passkey derived
+the account, checked ownership and signed an intent receipt, and then stopped, while the page implied it
+would send. That was an unbacked claim on the page that teaches people how to use this, so it is
+recorded rather than quietly patched. What it does now:
+
+* `openSession` with `agentScope`, whose `maxAmountAtomic` is `0n`, so a session opened to pay for a
+  verification cannot silently also register an agent. `ScopedSession.account` is already a viem
+  `LocalAccount`, so it drops into `createWalletClient` unchanged. The session is ended in a `finally`,
+  so the key is zeroed whether the send succeeded or threw.
+* **The agent id is read, not assumed.** A registration has no return value a transaction can carry, so
+  the ERC-721 mint's `Transfer` log is located by address and topic count and the id taken from the
+  fourth topic. A reverted receipt is reported as reverted.
+* `insufficient funds` gets its own message, because the cause is structural: a registration **cannot be
+  relayed**, since the registry records `msg.sender` as the owner and a relayer would end up owning the
+  agent. That is why this is the one action here that is not gasless.
+
+Proven before shipping rather than asserted: a browser-style viem client reaches Monad at block
+107471803, and simulating the exact `register()` call the studio builds returns agent id `10256`, the
+next id the registry would mint.
 
 Two rules are enforced in code rather than asserted here. The calldata decodes back to the document
 that was previewed, and a draft that mentions a payment proof fails its own consequence check,
@@ -356,7 +382,7 @@ good.
 
 ### Cornea, the surface
 
-Eighteen pages, seven machine-readable surfaces and 7 API routes. Every page can print
+Nineteen pages, seven machine-readable surfaces and 8 API routes. Every page can print
 the SQL behind its numbers. `/verify` imports the verifier's own `judge()` rather than
 reimplementing the ladder, so the site and the command line cannot give different answers.
 
@@ -372,6 +398,21 @@ handful of breakpoints, container-query-ready shells, auto-fitting grids, and a 
 folds into a sheet on a phone. Motion follows monad.xyz's language — a drifting aurora behind the
 hero, a one-shot brand sweep, a marquee of the machine-readable surfaces, scroll-reveal and a
 count-up on the headline figure — and all of it is neutralised under `prefers-reduced-motion`.
+
+**The navigation states the product's order rather than an index.** Six categorised groups with hover
+menus, sequenced the way somebody moves through the thing: `create`, `verify`, `settle`, `explore`,
+`developers`, `status`. It replaced two worse shapes — first eleven flat tabs, which read as a filing
+cabinet, then four groups whose order was arbitrary, so `explore` came first and the first thing a
+visitor saw was somebody else's data instead of anything they could do. `status` is last and is a
+destination rather than a group, because "how old is that number" is a question a reader only has after
+they have believed something. The hero offers the same four actions in the same order, so the page and
+the navigation cannot teach different sequences.
+
+`/bond` is the surface for Sclera and was written the day Sclera went live, because a `settle → bond`
+menu entry pointing at nothing would have been exactly the clumsiness the reordering was meant to
+remove. It carries the contract address, the first bond transaction, the floor and window committed to,
+the command to check the stake by where the money is, why the CRE forwarder is not trusted, and what
+has not been proven.
 
 One defect in that layer is worth recording because it shipped and had to be fixed: the reveal
 originally hid every wrapped section with `opacity: 0` and relied on JavaScript to reveal it. When

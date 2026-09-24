@@ -8,7 +8,19 @@ items that are embarrassing.
 Each entry says what is missing, what exists instead and what it would take to close. Where a
 decision has already been made to cut something, the reason is given rather than implied.
 
-**State as of 2026-09-23.** Submission closes 2026-10-14T03:59Z. I am one person.
+**State as of 2026-09-24.** Submission closes 2026-10-14T03:59Z. I am one person.
+
+**What moved on 2026-09-23/24**, so a reader can see which entries are fresh: Sclera passed its gating
+security review, which found a real blocker (§3, audit Finding 9), got fixed, deployed to mainnet, and
+took its first real bond. The authorisation trail went from signed-and-discarded to persisted and
+rendered (§7). The `@kanmani/kit` import path stopped naming a package that did not exist (§6). Three
+operators were contacted and a forum thread submitted (§8). BSC was indexed beside Monad so the
+cross-chain merge has data. And the passkey went from a showcase to the thing that actually sends a
+registration.
+
+**Two headings in this document were stale within hours of being written** — §3 said Sclera was not
+deployed and §8 said traction was zero — which is the failure mode this page exists to prevent,
+happening to the page itself. Both are corrected above rather than left to be found.
 
 ---
 
@@ -92,7 +104,7 @@ that is not wired.
 
 ---
 
-## 3. Sclera is built and not deployed. Three layers above it remain absent
+## 3. Sclera is live. Three layers above it remain absent
 
 **Corrected 2026-09-23.** This section used to say "Layer 2 and Layer 3 do not exist" and that
 Sclera was not started. Both are now wrong, and the grep it offered as proof now returns matches.
@@ -260,15 +272,16 @@ the agent, or that the document is good. The registry decides ownership and the 
 An endpoint implying otherwise would be manufacturing standing out of a signature, which is the shape
 of claim this project exists to check rather than to produce.
 
-## 8. Traction is zero and this is the weakest part of the entry
+## 8. Traction is three contacts and zero integrations, and it is still the weakest part
 
-Traction is 20% of the score. The honest count today:
+Traction is 20% of the score. The honest count today, 2026-09-24:
 
 | | count |
 |---|---|
 | operators contacted | **3** |
 | operators integrated | **0** |
 | jobs settled that we did not create ourselves | **0** |
+| forum threads | **1 submitted, held for moderation** |
 | progress updates posted | 6 |
 | mentor questions asked / fielded / answered | 6 / 5 / 1 |
 | forum threads | 1 submitted, awaiting moderation |
