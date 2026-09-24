@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="public/banner.png" alt="Kanmani. Trust stops being a badge. It becomes a price. 85 payment claims checked, 73 did not resolve." width="100%">
+</p>
+
 # Kanmani
 
 **The settlement and trust layer for agent work on Monad.**

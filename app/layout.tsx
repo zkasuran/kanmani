@@ -16,6 +16,18 @@ export const metadata: Metadata = {
     title: "Kanmani",
     description: "Every payment claim in Monad's agent registry, checked against the chain it names.",
     type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Kanmani. Every payment claim on Monad, checked against the chain it names." }],
+  },
+  /**
+   * summary_large_image, because the card carries a real measurement (85 claims checked, 73 did not
+   * resolve) and a thumbnail would make that unreadable. The figures are drawn at build time from our
+   * own feed, so the card cannot quote a number the site contradicts.
+   */
+  twitter: {
+    card: "summary_large_image",
+    title: "Kanmani",
+    description: "Every payment claim in Monad's agent registry, checked against the chain it names.",
+    images: ["/og.png"],
   },
   robots: { index: true, follow: true },
 };
