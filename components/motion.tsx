@@ -46,7 +46,7 @@ export function Reveal({
     }
     // Arm from JS only. The server rendered this element visible; we hide it now, on the client,
     // knowing the observer below will reveal it. If this effect never runs the element simply stays
-    // visible — the page can never be trapped blank by the reveal layer.
+    // visible, so the page can never be trapped blank by the reveal layer.
     el.setAttribute("data-reveal", "pending");
     // If it is already in view on mount (above the fold), reveal on the next frame so the transition
     // still plays from hidden to shown rather than snapping.

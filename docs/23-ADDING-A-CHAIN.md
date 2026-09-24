@@ -1,12 +1,12 @@
 # 23. Adding a chain
 
 **The whole point of this document is that it should be short.** Adding a chain is one entry in
-[`../shared/erc8004-chains.json`](../shared/erc8004-chains.json), one environment variable, and a
+[`../shared/erc8004-chains.json`](../shared/erc8004-chains.json), one environment variable and a
 test run that names anything still missing.
 
 It was not always. Chains used to be declared in three places that nothing compared:
-`verifier/src/chains.ts` for verification, `indexer/config.yaml` for indexing, and a hardcoded
-address for writing. A chain could be added to one, missed in another, and still look integrated.
+`verifier/src/chains.ts` for verification, `indexer/config.yaml` for indexing and a hardcoded
+address for writing. A chain could be added to one, missed in another and still look integrated.
 That is the same shape of defect this project exists to point at in other people's data, one floor
 down, so it is now a test rather than a convention.
 
@@ -73,7 +73,7 @@ config exists would be a published claim that a check contradicts.
 
 **Aliases are the part that decides whether a claim is readable at all**, because authors type a word
 rather than a chain id. They must be lowercase and must not collide with another chain: two chains
-claiming `base` makes a document ambiguous, and the conformance test refuses it rather than resolving
+claiming `base` makes a document ambiguous and the conformance test refuses it rather than resolving
 by declaration order.
 
 ### 2. Find the start block, without scanning an empty chain
@@ -92,7 +92,7 @@ deployment. Ask HyperSync for the first log at the three addresses from block 0:
 export RPC_UNICHAIN=https://…
 ```
 
-**Without it the chain reads as uncovered**, and every claim naming it is `unknown`, never `false`.
+**Without it the chain reads as uncovered** and every claim naming it is `unknown`, never `false`.
 That is not a degraded mode, it is the correct one: we did not look, so we cannot say.
 
 ### 4. Run the tests
@@ -101,7 +101,7 @@ That is not a degraded mode, it is the correct one: we did not look, so we canno
 npm test          # lib/chains.test.ts is the gate
 ```
 
-17 tests, and the ones that matter here are the last three. They read
+17 tests and the ones that matter here are the last three. They read
 `verifier/src/chains.ts` and `indexer/config.yaml` and fail naming exactly what has drifted, so the
 test tells you what is left to do rather than you remembering.
 
@@ -111,8 +111,8 @@ The registry is the source of truth; these two still hold their own copies and t
 them. Collapsing them entirely is worth doing and is not done: the indexer is Envio and reads YAML,
 so its config would have to be generated, which is a build step nobody has needed yet.
 
-* `verifier/src/chains.ts` — add the same id, aliases and `rpcEnv`.
-* `indexer/config.yaml` — add the chain **only if `erc8004` is not null**, with the addresses and the
+* `verifier/src/chains.ts`: add the same id, aliases and `rpcEnv`.
+* `indexer/config.yaml`: add the chain **only if `erc8004` is not null**, with the addresses and the
   start block.
 
 ### 6. Say that it changed
@@ -138,7 +138,7 @@ project: a check that passes on the shape of the data rather than its content.
 ## What this does not make easy
 
 * **Escrow on another chain.** `Aqueous` is deployed on Monad. Settling elsewhere means either
-  deploying it there or verifying the receipt cross-chain, and the second is already possible with
+  deploying it there or verifying the receipt cross-chain and the second is already possible with
   `locate`. This document does not cover either.
 * **Merging standing across chains.** `Chiasm` merges an operator's rows on the content hash of the
   registration document, which is the only key that means the same thing on both chains. It is built
@@ -146,4 +146,4 @@ project: a check that passes on the shape of the data rather than its content.
   [`14-GAPS.md`](14-GAPS.md).
 * **Claiming "any chain".** The number of chains is on `/chains` beside every claim that depends on
   it. A chain outside the list is `unknown`. "Runs on any chain" would be precisely the unbacked
-  claim this project exists to attack, and a reader would test it by naming one that is not there.
+  claim this project exists to attack and a reader would test it by naming one that is not there.

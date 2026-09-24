@@ -5,7 +5,7 @@
  *
  * Both gates are pass/fail tests a judge runs on their own machine:
  *
- *   UX:  "judges clear local storage or open the app on a fresh device mid-demo, and
+ *   UX:  "judges clear local storage or open the app on a fresh device mid-demo and
  *         identity/access must fully reconstruct from the passkey"
  *   PRF: "same passkey on a second device or fresh browser profile reproduces the same
  *         derived keys / decrypts the same state, live"

@@ -43,11 +43,11 @@ export default async function Developers() {
         title="Render a verdict in your own product, without being able to render it wrongly."
         lead={
           <>
-            The data has always been open. The hard part is that a verdict is easy to display badly, and
+            The data has always been open. The hard part is that a verdict is easy to display badly and
             displaying it badly is worse than not displaying it. Everything below makes the three
             available mistakes unavailable: a null cannot print as{" "}
             <Mono>0</Mono>, <span className="unknown-value">unknown</span> cannot wear the colour of{" "}
-            <span className="text-[var(--color-false)]">false</span>, and there is no score to average
+            <span className="text-[var(--color-false)]">false</span> and there is no score to average
             the distinction away into.
           </>
         }
@@ -198,7 +198,7 @@ GET  /agents.md                             the access contract, addressed to so
 GET  /.well-known/agent-registration.json   our own ERC-8004 record`} />
           <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
             Fields with no answer are <Mono>null</Mono> rather than absent, so nobody defaults them to
-            zero. That is the one thing to know before consuming this by hand, and it is the reason the
+            zero. That is the one thing to know before consuming this by hand and it is the reason the
             components above exist.
           </p>
           <Snippet code={`curl -sS https://kanmani.xyz/api/agent/10182 | jq '.data.claims'
@@ -211,7 +211,7 @@ curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps 
       <Reveal>
         <Panel
           title="adding a chain is one entry"
-          subtitle="The chain registry is a data file, and the conformance tests fail naming whatever is missing."
+          subtitle="The chain registry is a data file and the conformance tests fail naming whatever is missing."
         >
           <p className="max-w-3xl text-[13px] leading-relaxed text-muted">
             {CHAINS.length} chains declared, {registrable().length} carrying ERC-8004 registries. The
@@ -228,7 +228,7 @@ curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps 
   "erc8004": { "startBlock": 1234567, "indexed": false } }
 
 export RPC_UNICHAIN=https://…
-npm test    # conformance + drift, and it names what is missing`} />
+npm test    # conformance + drift and it names what is missing`} />
         </Panel>
       </Reveal>
 
@@ -238,10 +238,10 @@ npm test    # conformance + drift, and it names what is missing`} />
             <span className="text-[var(--color-text)]">There is no npm package yet.</span> An earlier
             version of this page showed{" "}
             <Mono>import … from &quot;@kanmani/kit&quot;</Mono>, which was an import path nobody could
-            resolve — exactly the kind of claim this project exists to check, on our own page. Until a
+            resolve, exactly the kind of claim this project exists to check, on our own page. Until a
             package is published, the honest instruction is to copy{" "}
             <Mono>components/kit.tsx</Mono> from the repository. It is one file, has no dependency
-            beyond React, and carries the rule with it.
+            beyond React and carries the rule with it.
           </p>
           <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
             <span className="text-[var(--color-text)]">
@@ -253,9 +253,9 @@ npm test    # conformance + drift, and it names what is missing`} />
           <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
             <span className="text-[var(--color-text)]">Licensing is resolved: copy it.</span>{" "}
             <Mono>components/kit.tsx</Mono> and <Mono>app/embed.js</Mono> are released under <Mono>MIT</Mono>
-            — the only two files in the repository that are, since the rest is source-available with no
+            the only two files in the repository that are, since the rest is source-available with no
             derivatives. A component that exists to be rendered inside somebody else&apos;s product cannot
-            be read-only, and what the kit publishes is a constraint rather than an asset: a restrictive
+            be read-only and what the kit publishes is a constraint rather than an asset: a restrictive
             licence on a safety property works against its own purpose. The reasoning is in{" "}
             <Mono>docs/24-KIT-LICENCE.md</Mono>.
           </p>
@@ -271,7 +271,7 @@ npm test    # conformance + drift, and it names what is missing`} />
           </p>
           <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
             These verdicts carry real operators&apos; names. A failure on our side to look is not
-            evidence that a payment did not happen, and collapsing the two would let somebody
+            evidence that a payment did not happen and collapsing the two would let somebody
             else&apos;s outage publish as an accusation, at scale, automatically. Every component here
             enforces that so you do not have to remember it.{" "}
             <Link href="/method" className="text-[var(--color-brand)] hover:underline">

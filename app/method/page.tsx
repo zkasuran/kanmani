@@ -60,7 +60,7 @@ export default function Method() {
         lead={
           <>
             Every verdict here is reproducible by hand. Each rung says what question it answers, how
-            it decides, what happens when it cannot decide, and the command that gets the same answer
+            it decides, what happens when it cannot decide and the command that gets the same answer
             without this site. If any of them disagree with what a page here says, the page is wrong.
           </>
         }

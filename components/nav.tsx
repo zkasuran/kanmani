@@ -4,13 +4,13 @@
  * The navigation, as a product spine rather than a list of documents.
  *
  * It used to be eleven flat entries: agents, operators, claims, verify, studio, chains, account,
- * validate, compare, method, status. That reads as an index of reports, and a reader arriving at it
+ * validate, compare, method, status. That reads as an index of reports and a reader arriving at it
  * has to build the product's model in their own head before they can choose. Nothing was wrong with
  * any single page; the shape was wrong.
  *
  * Four groups now, each answering one question a visitor actually has:
  *
- *   Explore    what is out there, and what is true about it
+ *   Explore    what is out there and what is true about it
  *   Build      do something: check a claim, register or repoint an agent
  *   Trust      how a verdict is decided, how fresh it is, what was covered
  *   Developers render this in your own product
@@ -34,7 +34,7 @@ type Group = { label: string; href: string; items: Item[] };
  * states it rather than making a reader infer it from an alphabetical list.
  *
  * It replaced two worse shapes. First eleven flat tabs, which read as an index of documents. Then four
- * groups whose order was arbitrary — `explore` first meant the first thing a visitor saw was somebody
+ * groups whose order was arbitrary. `explore` first meant the first thing a visitor saw was somebody
  * else's data rather than anything they could do.
  *
  * `status` is last and is a destination rather than a group, because it answers a question a reader
@@ -45,7 +45,7 @@ const GROUPS: Group[] = [
     label: "create",
     href: "/studio",
     items: [
-      { href: "/studio", label: "studio", hint: "register an agent, or repoint one you own" },
+      { href: "/studio", label: "studio", hint: "register an agent or repoint one you own" },
       { href: "/account", label: "account", hint: "one passkey, four keys, nothing stored" },
     ],
   },
@@ -75,7 +75,7 @@ const GROUPS: Group[] = [
       { href: "/agents", label: "agents", hint: "every registered agent, filterable" },
       { href: "/operators", label: "operators", hint: "clustered by the document they registered" },
       { href: "/compare", label: "compare", hint: "two to four agents, rung first" },
-      { href: "/chains", label: "chains", hint: "what we read, and what hosts agents" },
+      { href: "/chains", label: "chains", hint: "what we read and what hosts agents" },
     ],
   },
   { label: "developers", href: "/developers", items: [] },

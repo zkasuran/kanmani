@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /*
- * Cornea's one visual rule: the four verdict states must be told apart at a glance, and
+ * Cornea's one visual rule: the four verdict states must be told apart at a glance and
  * `unknown` must never look like `false`.
  *
  * That is not decoration. This site publishes judgments about named operators. If a document we
@@ -24,7 +24,7 @@
  *
  * Light mode uses darker, more saturated verdict hues because the same pastels that separate well
  * on ink turn into indistinguishable wash on white. `unknown` becomes slate-600 rather than
- * slate-400 for exactly that reason, and `noClaim` takes the lighter slate so the relationship in
+ * slate-400 for exactly that reason and `noClaim` takes the lighter slate so the relationship in
  * question 3 survives the inversion.
  *
  * Dark is the default. A reader who has expressed a system preference gets it; a reader who picks
@@ -101,7 +101,7 @@
   --field-strength: 9%;
   --field-strength-2: 5%;
   --grid-opacity: 0.55;
-  /* Paper takes far less shadow before it reads as dirt, and the lit top edge has to become a
+  /* Paper takes far less shadow before it reads as dirt and the lit top edge has to become a
      darkening one or every panel grows a bright stripe. */
   --shadow-a: 0.06;
   --shadow-b: 0.10;
@@ -152,7 +152,7 @@
  * every utility, so `text-muted` would be frozen to whichever palette compiled first and the
  * switch would move only the hand-written `var()` call sites. With `inline` the utility emits
  * `var(--color-muted)`, which points at `var(--muted)`, which is what the selectors above
- * redefine at runtime. One word, and it is the difference between a working toggle and half a page
+ * redefine at runtime. One word and it is the difference between a working toggle and half a page
  * changing.
  */
 @theme inline {
@@ -298,7 +298,7 @@ details[open] > summary::before {
   --shadow-1: 0 1px 2px rgb(0 0 0 / var(--shadow-a, 0.4));
   --shadow-2: 0 18px 50px -24px rgb(0 0 0 / var(--shadow-b, 0.85)), 0 4px 14px -8px rgb(0 0 0 / var(--shadow-c, 0.6));
   /* A hairline top edge. White on ink reads as a lit rim; on paper the same rule has to darken
-     instead, or every panel gets a bright line across its top for no reason. */
+     instead or every panel gets a bright line across its top for no reason. */
   --edge: inset 0 1px 0 0 rgb(var(--edge-rgb, 255 255 255) / var(--edge-a, 0.04));
   --brand-soft: color-mix(in oklab, var(--color-brand) 16%, transparent);
   --brand-line: color-mix(in oklab, var(--color-brand) 40%, transparent);
@@ -546,8 +546,8 @@ details[open] > summary::before {
  * that toggles [data-reveal="in"]. Falls back to fully visible if JS never runs, so nothing is
  * ever trapped invisible. */
 /* Reveal is opt-in and fail-safe: content is visible by default and at every stage of SSR. Only
- * when the client hook has mounted and armed an element does it hide, and it hides for at most the
- * observer's first tick before flipping to "in". If JS never runs, never mounts, or throws, the
+ * when the client hook has mounted and armed an element does it hide and it hides for at most the
+ * observer's first tick before flipping to "in". If JS never runs, never mounts or throws, the
  * default `[data-reveal]` state is fully visible, so the page can never be trapped blank. */
 [data-reveal] {
   opacity: 1;
@@ -555,7 +555,7 @@ details[open] > summary::before {
   transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
   transition-delay: var(--reveal-delay, 0ms);
 }
-/* Armed by the client hook only. This is the sole state that hides, and only briefly. */
+/* Armed by the client hook only. This is the sole state that hides and only briefly. */
 [data-reveal="pending"] {
   opacity: 0;
   transform: translateY(18px);
@@ -641,7 +641,7 @@ details[open] > summary::before {
  * them and the hero. No verdict colour is defined or altered here.
  * ================================================================== */
 
-/* A section lead: a small brand kicker, a fluid heading, and a calm supporting line, centred or
+/* A section lead: a small brand kicker, a fluid heading and a calm supporting line, centred or
    left as the band wants. Generous top margin so each idea lands on its own. */
 .band {
   padding-block: clamp(1rem, 0.5rem + 2vw, 2.5rem);
@@ -672,7 +672,7 @@ details[open] > summary::before {
 }
 .lead--wide { max-width: 62ch; }
 
-/* The one finding, as a single band with a large figure and a sentence — monad's case-study beat,
+/* The one finding, as a single band with a large figure and a sentence, monad's case-study beat,
    not a table. Brand tint kept to a hairline and a soft glow so it never reads as a verdict. */
 .finding {
   position: relative;

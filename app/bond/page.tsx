@@ -41,7 +41,7 @@ export default function Bond() {
         lead={
           <>
             An agent locks USDC against a floor on its own future claim-truth rate. Stay above the floor
-            and the stake comes back. Fall below it, and a signed verdict takes it. There is no admin
+            and the stake comes back. Fall below it and a signed verdict takes it. There is no admin
             function and no override anywhere in that path.
           </>
         }
@@ -68,20 +68,20 @@ export default function Bond() {
               <Tx hash={FIRST_RELEASE}>returned in full after the window, block 107719555</Tx>
             </Row>
             <Row label="floor committed to">
-              <Mono>8000 bps</Mono> <span className="text-muted">— 80% of decided claims must resolve true</span>
+              <Mono>8000 bps</Mono> <span className="text-muted">80% of decided claims must resolve true</span>
             </Row>
             <Row label="window">
-              <Mono>216,000 blocks</Mono> <span className="text-muted">— about a day at 400ms</span>
+              <Mono>216,000 blocks</Mono> <span className="text-muted">about a day at 400ms</span>
             </Row>
             <Row label="minimum sample">
-              <Mono>5</Mono> <span className="text-muted">— below this nothing can slash</span>
+              <Mono>5</Mono> <span className="text-muted">below this nothing can slash</span>
             </Row>
           </dl>
 
           <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
             Verified by where the money went rather than by an event we emitted. While the bond was open the
             contract held 20,000 units and the agent was down by exactly that; on release both reversed.
-            The bond now reads state <Mono>3</Mono>, <Mono>Released</Mono>, with its amount zeroed, and a
+            The bond now reads state <Mono>3</Mono>, <Mono>Released</Mono>, with its amount zeroed and a
             second release reverts <Mono>WrongState()</Mono>.
           </p>
           <div className="mt-2 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
@@ -96,7 +96,7 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
           <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
             <span className="text-[var(--color-text)]">What the release does not prove:</span> the window ran
             with no verdict submitted, so this demonstrates the timelock, the state machine and the return
-            path — not that a measurement fed the outcome. <Mono>release</Mono> is callable by anyone on
+            path. It does not show that a measurement fed the outcome. <Mono>release</Mono> is callable by anyone on
             purpose, because the money can only go to the agent that posted it, which keeps a bond from being
             stranded by an operator who has lost access to the gas token.
           </p>
@@ -159,7 +159,7 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
             <span className="text-[var(--color-text)]">
               A contract gating on <Mono>msg.sender == forwarder</Mono> would be gating on nothing
             </span>
-            , and this contract holds bonds.
+             and this contract holds bonds.
           </p>
           <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
             So authorisation travels with the verdict instead. The attestor signs it, the contract
@@ -181,20 +181,20 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
       <Reveal>
         <Panel title="what this does not prove yet">
           <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
-            <span className="text-[var(--color-text)]">No bond has been slashed, and we declined to fake
+            <span className="text-[var(--color-text)]">No bond has been slashed and we declined to fake
             one.</span> Two things block it independently. The attestor key is derived from a passkey, so
-            nothing in the repository can author a slashing verdict at all — that is the key separation
+            nothing in the repository can author a slashing verdict at all. That is the key separation
             working rather than a gap. And agent 10252&apos;s real claim-truth sample is empty, because our
             own record asserts no payment claims, so an honest verdict carries a sample of zero and the
             contract refuses it before computing a rate. Manufacturing a slash would mean signing numbers
-            that are not a measurement, or publishing false payment claims about our own agent. Both are the
+            that are not a measurement or publishing false payment claims about our own agent. Both are the
             thing this project exists to detect, so the absence stays and the slashing path rests on the
             contract test suite and fork tests against real mainnet state.
           </p>
           <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
             The review that preceded this deployment found a real one and is published with the exploit
             rather than summarised: <Mono>postBond</Mono> originally never checked who owned the agent,
-            so anyone could bond anyone, and a stranger could have created an unslashable bond that made
+            so anyone could bond anyone and a stranger could have created an unslashable bond that made
             an agent read as staked. A badge that costs one atomic unit to fake is the thing this project
             exists to attack, so the fix is enforced by the registry and mutation-tested.{" "}
             <Link href="/method" className="text-[var(--color-brand)] hover:underline">

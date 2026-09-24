@@ -9,7 +9,7 @@ export const revalidate = 0;
 export const metadata = {
   title: "Chains",
   description:
-    "Which chains Kanmani reads, which carry ERC-8004 registries, and what it takes to add one. Coverage is published, because a negative means nothing without the list of places it was looked for.",
+    "Which chains Kanmani reads, which carry ERC-8004 registries and what it takes to add one. Coverage is published, because a negative means nothing without the list of places it was looked for.",
 };
 
 export default function Chains() {
@@ -26,8 +26,8 @@ export default function Chains() {
           <>
             Monad is the chain this is for: the population we measure, the escrow, the receipts, the
             registry we write to. Every other chain here exists to answer a question about a{" "}
-            <span className="text-[var(--color-text)]">Monad</span> agent — did the payment it cites
-            actually land, and did its standing start here or arrive from somewhere else. ERC-8004
+            <span className="text-[var(--color-text)]">Monad</span> agent. Did the payment it cites
+            actually land and did its standing start here or arrive from somewhere else. ERC-8004
             anticipates exactly that: an agent registered on one chain can still operate and transact
             on others.
           </>
@@ -42,7 +42,7 @@ export default function Chains() {
             <>
               {rows.length} chains declared, {hosting.length} carrying ERC-8004 registries,{" "}
               {live.length} present in the live index. A chain with no endpoint configured reads as
-              uncovered, and a claim naming it is <span className="unknown-value">unknown</span>,
+              uncovered and a claim naming it is <span className="unknown-value">unknown</span>,
               never false.
             </>
           }
@@ -138,7 +138,7 @@ export default function Chains() {
             Established on chain rather than from a deployment list, because a wrong address indexes
             nothing and still looks like a working integration. On both 143 and 56:{" "}
             <Mono>eth_getCode</Mono> returns a 130-byte ERC-1967 proxy at all three,{" "}
-            <Mono>getVersion()</Mono> is <Mono>2.0.0</Mono>, and the reputation and validation
+            <Mono>getVersion()</Mono> is <Mono>2.0.0</Mono> and the reputation and validation
             registries each answer <Mono>getIdentityRegistry()</Mono> with the identity address above.
             That last check is the load-bearing one: the set is self-consistent on chain, so nothing
             here rests on a document.
@@ -161,7 +161,7 @@ cast call 0x8004BAa17C55a88189AE136b182e5fdA19dE9b63 \\
       <Reveal>
         <Panel
           title="adding a chain"
-          subtitle="One entry, one env var, and a test that fails with whatever is still missing."
+          subtitle="One entry, one env var and a test that fails with whatever is still missing."
         >
           <div className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
             <pre className="sql">{`// shared/erc8004-chains.json
@@ -177,13 +177,13 @@ cast call 0x8004BAa17C55a88189AE136b182e5fdA19dE9b63 \\
 
 # then
 export RPC_UNICHAIN=https://…
-npm test                 # conformance + drift, and it names what is missing`}</pre>
+npm test                 # conformance + drift and it names what is missing`}</pre>
           </div>
           <ul className="mt-4 space-y-2 text-[13.5px] leading-relaxed text-muted">
             <li>
               <span className="text-[var(--color-text)]">The registry is the only source of truth.</span>{" "}
               Chains used to live in three places that nothing compared, so a chain could be added to
-              the verifier, missed in the indexer, and still look integrated. Drift tests now bind
+              the verifier, missed in the indexer and still look integrated. Drift tests now bind
               them.
             </li>
             <li>
@@ -238,7 +238,7 @@ npm test                 # conformance + drift, and it names what is missing`}</
                   /operators
                 </Link>
                 , matched on the document&apos;s content hash. Browsing BNB Smart Chain&apos;s own
-                356,647 agents is not something this site does, and 8004scan already does it well.
+                356,647 agents is not something this site does and 8004scan already does it well.
               </>
             ) : (
               <>

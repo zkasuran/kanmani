@@ -19,22 +19,22 @@ export const dynamic = "force-dynamic";
  *
  * `verifyAction` re-derives the canonical bytes and checks the signature against the public key
  * carried inside the receipt's own `did:key`. So a receipt cannot be verified against a key it does
- * not name, and a forged or mutated one is refused with 400 rather than stored and rendered. The
+ * not name and a forged or mutated one is refused with 400 rather than stored and rendered. The
  * signature is then kept alongside, the same posture as `fovea.vault`: a reader checks it themselves
  * rather than trusting that we did.
  *
  * ## What this does NOT claim
  *
  * A stored receipt says one identity authorised one document. It does **not** say the transaction
- * landed, that the signer owns the agent, or that the document is good. The registry decides
+ * landed, that the signer owns the agent or that the document is good. The registry decides
  * ownership and the verdict ladder decides truth; this is neither. An endpoint that implied
  * otherwise would be manufacturing standing out of a signature, which is the shape of claim this
  * whole project exists to check rather than to produce.
  *
  * `agentId` is null for a registration, because the registry assigns the id after the fact.
  *
- * POST `{ receipt, signature }` — the exact object `/studio` offers to copy.
- * GET  `?agentId=<id>` — receipts for one agent, newest first.
+ * POST `{ receipt, signature }` is the exact object `/studio` offers to copy.
+ * GET  `?agentId=<id>` returns receipts for one agent, newest first.
  */
 
 type Body = { receipt?: unknown; signature?: unknown };
@@ -123,7 +123,7 @@ export async function POST(req: Request) {
         firstTime: row?.fresh ?? false,
         id: row?.id ?? null,
         receivedAt: row?.received_at ?? null,
-        note: "A receipt says one identity authorised one document. It does not say the transaction landed, that the signer owns the agent, or that the document is good.",
+        note: "A receipt says one identity authorised one document. It does not say the transaction landed, that the signer owns the agent or that the document is good.",
       },
       `curl -sS ${SITE}/api/receipt/action?agentId=${receipt.agentId ?? ""}`,
     ),
@@ -173,7 +173,7 @@ export async function GET(req: Request) {
           signedAt: r.signed_at,
           receivedAt: r.received_at,
         })),
-        note: "Signatures are included so a reader can verify them without trusting us. POST /api/receipt/verify, or check offline against the did:key in each identity.",
+        note: "Signatures are included so a reader can verify them without trusting us. POST /api/receipt/verify or check offline against the did:key in each identity.",
       },
       `curl -sS ${SITE}/api/receipt/action${raw ? `?agentId=${raw}` : ""}`,
     ),

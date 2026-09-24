@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
  * attributed without handing the signer any spending authority.
  *
  * This endpoint exists so that attribution is checkable by someone who does not trust us and does
- * not run our code. It takes the receipt, the signature and the public key, and re-derives the
+ * not run our code. It takes the receipt, the signature and the public key and re-derives the
  * answer. It holds no key material, consults no database and has no opinion: a receipt we never
  * issued verifies here exactly as well as one we did, provided the signature is good. That is the
  * property worth having. An endpoint that only validated our own receipts would be a loyalty check,
@@ -20,7 +20,7 @@ export const dynamic = "force-dynamic";
  *
  * POST with `{ receipt, signature, publicKey }`.
  *   `signature`  64 bytes, hex, with or without 0x
- *   `publicKey`  32 bytes, hex, or the `did:key:kanmani:<base64url>` form the account page shows
+ *   `publicKey`  32 bytes, hex or the `did:key:kanmani:<base64url>` form the account page shows
  *
  * The bytes that get signed are canonical and documented in `receiptBytes`: a versioned tag then
  * the fields in fixed order, newline separated. So a third party can reproduce the digest from the
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
   const b = body as Record<string, unknown>;
   const receipt = parseReceipt(b.receipt);
   if (!receipt) {
-    return problem(400, "Bad receipt", "receipt needs claimId, outcome, checkedAt, and may carry checkedAtBlock and mapping.", {
+    return problem(400, "Bad receipt", "receipt needs claimId, outcome, checkedAt and may carry checkedAtBlock and mapping.", {
       outcomes: [...OUTCOMES],
     });
   }
@@ -109,7 +109,7 @@ export async function POST(req: Request) {
     envelope(
       {
         valid,
-        // Echoed so a caller can see exactly which bytes were checked, and reproduce them.
+        // Echoed so a caller can see exactly which bytes were checked and reproduce them.
         checked: {
           claimId: receipt.claimId,
           outcome: receipt.outcome,
@@ -121,7 +121,7 @@ export async function POST(req: Request) {
           "kanmani.receipt.v1\\n<claimId>\\n<outcome>\\n<checkedAtBlock>\\n<checkedAt>\\n<mapping>, UTF-8, ed25519 over exactly those bytes",
         note: valid
           ? "This signature is good for this receipt under this key. It says who attested, never that the outcome is correct."
-          : "This signature does not verify for these bytes under this key. Either the receipt was altered, the key is a different identity, or the signature is not ours to check.",
+          : "This signature does not verify for these bytes under this key. Either the receipt was altered, the key is a different identity or the signature is not ours to check.",
       },
       "ed25519 verify over receiptBytes(receipt), see lib/iris.ts receiptBytes and verifyReceipt",
     ),
@@ -135,7 +135,7 @@ export async function GET() {
         how: "POST { receipt, signature, publicKey } to this URL.",
         receipt: { claimId: "143_10182_0xabc_1", outcome: "false", checkedAtBlock: "106462031", checkedAt: "2026-09-20T00:00:00.000Z", mapping: "execution-market.v1" },
         signature: "64 bytes hex, ed25519",
-        publicKey: "32 bytes hex, or did:key:kanmani:<base64url>",
+        publicKey: "32 bytes hex or did:key:kanmani:<base64url>",
         why: "Attribution should be checkable by someone who does not trust us. This endpoint holds no keys and verifies any receipt, not only ours.",
       },
       "static usage document",

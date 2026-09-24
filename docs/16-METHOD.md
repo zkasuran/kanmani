@@ -500,7 +500,7 @@ one where our own check was wrong rather than the chain.
 ## 11. What this document cannot give you
 
 The site itself is not deployed yet, so `kanmani.xyz` does not resolve and the URLs in section 0 and
-section 9 will not answer. Every chain command here works today against public infrastructure, and
+section 9 will not answer. Every chain command here works today against public infrastructure and
 every SQL command works against a local index. **The hosted surface is the gap and it is first in
 [`14-GAPS.md`](14-GAPS.md).** Until it is closed, reproduce the measurements from this document
 rather than from the site.

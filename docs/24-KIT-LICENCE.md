@@ -7,12 +7,12 @@ into a competing submission.
 It is the wrong posture for two files. The tension was recorded in
 [`docs/14-GAPS.md`](docs/14-GAPS.md) §6 before it was resolved here.
 
-## The two files, and how they differ
+## The two files and how they differ
 
 | file | why it must be permissive |
 |---|---|
 | [`components/kit.tsx`](../components/kit.tsx) | It exists to be rendered inside somebody else's product. A component you may read but not copy is not a component, it is a screenshot |
-| [`app/embed.js/route.ts`](../app/embed.js/route.ts) | It is served to third-party pages by design. Embedding it needs no grant, because a script tag is a request to our server rather than a copy of our code — but the source is in this repository and a reader should not have to reason about that |
+| [`app/embed.js/route.ts`](../app/embed.js/route.ts) | It is served to third-party pages by design. Embedding it needs no grant, because a script tag is a request to our server rather than a copy of our code, but the source is in this repository and a reader should not have to reason about that |
 
 **These two files are released under the MIT licence**, reproduced in full below. Everything else in the
 repository stays under SAND-1.0.

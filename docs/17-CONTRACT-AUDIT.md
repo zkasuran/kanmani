@@ -626,12 +626,12 @@ grep -cE "ownerOf|IdentityRegistry|0x8004A169" contracts/src/Sclera.sol    # 0
 ```
 
 The contract validates that the id is non-zero, that the amount is non-zero, that the rate is within
-bounds, and that no bond already exists. It then writes `b.agent = msg.sender` and pulls the token.
+bounds and that no bond already exists. It then writes `b.agent = msg.sender` and pulls the token.
 Nowhere does it consult the ERC-721 identity registry that decides who actually holds agent `id`.
 
 ### The exploit
 
-Two things follow, and the second is worse than the first.
+Two things follow and the second is worse than the first.
 
 **It is a denial of service on bonding.** `if (b.state != State.None) revert BondExists()` means one
 bond per agent, forever, whoever got there first. A stranger posts the smallest bond the token allows
@@ -648,7 +648,7 @@ postBond(10182, USDC, 1, /* minTruthRateBps */ 0, window, minSample)
 ```
 
 Agent 10182 now reads as bonded. A buyer who takes that as evidence the operator has money at risk
-has been misled, and the misleading is cheap, permanent and available to anyone. **A badge that costs
+has been misled and the misleading is cheap, permanent and available to anyone. **A badge that costs
 one atomic unit of USDC to fake is the exact thing this project was built to attack**, which is what
 makes this a design failure rather than a missing input check.
 
@@ -659,8 +659,8 @@ Three options and they are not equivalent:
 1. **Require `ownerOf(agentId) == msg.sender`** at post time, reading the identity registry. Correct
    and costs an external call. It also means a bond cannot survive the agent being transferred, which
    has to be decided rather than discovered.
-2. **Let anyone bond, and publish who bonded.** A bond by a non-owner is then a third party's wager
-   rather than the agent's stake, which is a different and defensible product — but every surface
+2. **Let anyone bond and publish who bonded.** A bond by a non-owner is then a third party's wager
+   rather than the agent's stake, which is a different and defensible product, but every surface
    saying "the agent staked" would have to stop saying it.
 3. **Allow one bond per (agent, poster)** instead of per agent, removing the denial of service while
    leaving option 2's disclosure problem.
@@ -684,12 +684,12 @@ defaults to the canonical address and asserts there is code at it, because a wro
 contract inert rather than dangerous: every `postBond` would revert.
 
 `ownerOf` reverts for an unregistered token, which is the behaviour we want, so there is no existence
-check of our own. The mock in the tests reverts the same way on purpose — a mock returning
+check of our own. The mock in the tests reverts the same way on purpose. A mock returning
 `address(0)` instead would let a test pass while the real registry reverted.
 
 ### The proof
 
-Six tests, and the mutation that proves they are load-bearing rather than decorative. Replacing the
+Six tests and the mutation that proves they are load-bearing rather than decorative. Replacing the
 check with `if (false) revert NotAgentOwner();` turns **four of them red**:
 
 ```
@@ -700,14 +700,14 @@ check with `if (false) revert NotAgentOwner();` turns **four of them red**:
 Suite result: FAILED. 35 passed; 4 failed
 ```
 
-Restored, the suite is green at 39. The specific shape that made a bond meaningless —
-`minTruthRateBps = 0`, which no verdict can fall below — is named in its own test rather than left
+Restored, the suite is green at 39. The specific shape that made a bond meaningless,
+`minTruthRateBps = 0`, which no verdict can fall below, is named in its own test rather than left
 implied.
 
 ### Status
 
 **Closed 2026-09-24.** The gate is satisfied for this finding.
-`.hq/plan/09-SECURITY.md` says the security review is *"gating, not advisory"*, and this is the
+`.hq/plan/09-SECURITY.md` says the security review is *"gating, not advisory"* and this is the
 finding that gate exists for. No test covered it:
 
 ```bash
@@ -716,7 +716,7 @@ grep -niE "notOwner|ownerOf|squat" contracts/test/Sclera.t.sol    # no matches
 
 ## Finding 10: every ReportRefused event is discarded
 
-**Sclera. Low severity, and it makes debugging a live slashing harder.**
+**Sclera. Low severity and it makes debugging a live slashing harder.**
 
 `onReport` emits a refusal reason and then reverts:
 
@@ -727,16 +727,16 @@ revert BadSignature();
 
 A revert discards the whole transaction including its logs, so **no `ReportRefused` event can ever be
 observed.** The contract appears to publish why a report was refused and in fact publishes nothing.
-Either the reason belongs in the revert data, or the paths that are meant to be observable must
+Either the reason belongs in the revert data or the paths that are meant to be observable must
 return rather than revert. The tests pass because they assert the revert selector, which is the part
 that works.
 
 ### The fix, applied
 
-**Closed 2026-09-24.** The event and all six unreachable `emit`s are removed, and the declaration is
+**Closed 2026-09-24.** The event and all six unreachable `emit`s are removed and the declaration is
 replaced by a comment explaining why so the absence does not read as an oversight. The custom errors
 already carry the reason in revert data, where a caller can read it. Nothing was added: deleting a
-thing that could never be observed is the smaller change than making it observable, and no caller
+thing that could never be observed is the smaller change than making it observable and no caller
 could have depended on a log that was never emitted.
 
 ### What was checked and found sound
@@ -745,7 +745,7 @@ Recorded so the review is not only a list of complaints. Reentrancy: `nonReentra
 state-changing entry points, with effects written before token interaction in `onReport` and
 `release`. Fee-on-transfer: `_requireExactlyReceived` refuses a token that does not deliver the exact
 amount, which is Finding 2 from Aqueous already applied here. Replay: verdict nonces are monotonic per
-agent, and a reverted report correctly does **not** record its nonce, asserted directly in
+agent and a reverted report correctly does **not** record its nonce, asserted directly in
 `test_verdict_smallSampleStillConsumesTheNonce`. Forwarder trust: `onReport` deliberately ignores the
 forwarder's metadata and authorises on the attestor's own signature, which is correct on a chain where
 the forwarder validates nothing. The deploy script refuses the demo attestor by address, because that

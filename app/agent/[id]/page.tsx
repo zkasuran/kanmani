@@ -294,7 +294,7 @@ export default async function AgentPage({ params }: Props) {
       {/* ---------------------------------------------------------------- who authorised the document */}
       <Panel
         title={`authorisation trail · ${trail.rows.length}`}
-        subtitle="Signed statements that somebody authorised this agent's document. Ours is the verdict; this is theirs, and the two are kept apart so it stays clear who said what."
+        subtitle="Signed statements that somebody authorised this agent's document. Ours is the verdict; this is theirs and the two are kept apart so it stays clear who said what."
       >
         {trail.rows.length === 0 ? (
           <p className="py-2 text-[13px] leading-relaxed text-muted">
@@ -330,7 +330,7 @@ export default async function AgentPage({ params }: Props) {
                 <p className="mt-2 text-[11.5px] leading-relaxed text-faint">
                   The signing identity is ed25519 and cannot move money, so this proves who authorised
                   the document without granting them anything. It does not say the transaction landed,
-                  that this account owns the agent, or that the document is good.
+                  that this account owns the agent or that the document is good.
                 </p>
               </div>
             ))}

@@ -26,7 +26,7 @@ npx next build                        # compiles clean, every data route dynamic
 
 ## Status vocabulary, used everywhere below
 
-Two words, and the difference decides whether a claim survives a check.
+Two words and the difference decides whether a claim survives a check.
 
 | word | means | how a stranger checks it |
 |---|---|---|
@@ -47,11 +47,11 @@ census time, matching the registry's own counter slot exactly, **2,012 distinct 
 documents** and **9,188 feedbacks**.
 
 The live index reads **10,253** and **2,013** today, because we then registered ourselves as agent
-10252. That is the registry growing rather than a corrected error, it can only ever grow, and
+10252. That is the registry growing rather than a corrected error, it can only ever grow and
 [`16-METHOD.md`](16-METHOD.md) section 1 says which figure is which.
 
 Load-bearing rather than an integration: `feedbackURI` and `feedbackHash` exist only as
-non-indexed fields of the `NewFeedback` event, `readFeedback()` does not return them, and
+non-indexed fields of the `NewFeedback` event, `readFeedback()` does not return them and
 `eth_getLogs` caps at a 100-block span on every free Monad provider. Without an index there is no
 way to reach the evidence at all.
 
@@ -139,27 +139,27 @@ that follows the contract went from 0 to 1.
 ### The chain registry, so a new chain is one entry
 
 [`shared/erc8004-chains.json`](../shared/erc8004-chains.json) is the single source of truth for every
-chain: EIP-155 id, the aliases documents actually write, the RPC env var, the explorer, and whether
+chain: EIP-155 id, the aliases documents actually write, the RPC env var, the explorer and whether
 ERC-8004 is deployed there. `/chains` publishes it, which is required rather than decorative: a
 `false` means "not found on the chains in this registry", so a reader has to be able to see the list.
 
 **Adding a chain is one entry plus one env var**, because the registries are per-chain singletons and
 the mainnet deployments share one address set. That was established on chain rather than from a
 deployment list, on both 143 and 56: a 130-byte ERC-1967 proxy at all three addresses,
-`getVersion()` of `2.0.0`, and the reputation and validation registries each answering
+`getVersion()` of `2.0.0` and the reputation and validation registries each answering
 `getIdentityRegistry()` with the identity address. The runbook is
 [`23-ADDING-A-CHAIN.md`](23-ADDING-A-CHAIN.md).
 
 A third field, `publicRpc`, carries a **browser-usable** endpoint and exists only on chains an agent can
 be registered on. Deliberately separate from `rpcEnv`, which names the server's own endpoint and may
 carry a key that must never reach a client. `viemChain()` builds the viem definition from the same
-registry, so the browser and the server cannot disagree about what chain 143 is, and a chain with no
-`publicRpc` cannot be written to from the browser — the studio offers only chains it can actually send
+registry, so the browser and the server cannot disagree about what chain 143 is and a chain with no
+`publicRpc` cannot be written to from the browser, so the studio offers only chains it can actually send
 on rather than failing at the last step.
 
 Two dimensions are kept apart on purpose. **Readable** means we can fetch a receipt there.
 **Registrable** means ERC-8004 is deployed there. Ethereum is readable and hosts no registry, which
-is what makes "registered on Monad, paid on Ethereum" a checkable statement rather than a hope, and
+is what makes "registered on Monad, paid on Ethereum" a checkable statement rather than a hope and
 it is the topology ERC-8004 itself describes.
 
 ```bash
@@ -168,7 +168,7 @@ npm test    # lib/chains.test.ts, 17 tests
 
 Those tests are the reason this is safe rather than merely tidy. They refuse an alias claimed by two
 chains, refuse a chain marked `indexed` that is not registrable, return null rather than plausible
-addresses for a chain with no deployment, and **read `verifier/src/chains.ts` and
+addresses for a chain with no deployment and **read `verifier/src/chains.ts` and
 `indexer/config.yaml` to fail naming whatever has drifted.** Chains used to live in three places that
 nothing compared, so one could be half-added and still look integrated.
 
@@ -180,19 +180,19 @@ nothing compared, so one could be half-added and still look integrated.
 agents on BSC against 10,256 on Monad**, a separate population rather than a mirror.
 
 Chiasm merges the two on the content hash of the registration document, which is the only key that
-means the same thing on both chains. 205,597 merged records, and the result worth reporting:
+means the same thing on both chains. 205,597 merged records and the result worth reporting:
 
 | documents referenced from | records | agents |
 |---|---|---|
 | one chain | 205,594 | 355,142 |
 | **both Monad and BSC** | **3** | **6** |
 
-No URI conflict on any of the three, and **all three are `data:` URIs**, one of them gzip-compressed.
+No URI conflict on any of the three and **all three are `data:` URIs**, one of them gzip-compressed.
 That is the observation rather than the count: the records that appear on two chains are precisely
 the ones with no host to ask, because a self-contained document is the only kind that travels.
 
 The resync was the honest cost. Envio refused to start when the chain was added, rather than
-destroying data, and named the three options. The reset then rebuilt Monad to exactly its previous
+destroying data and named the three options. The reset then rebuilt Monad to exactly its previous
 figures, 10,256 agents and 9,188 feedbacks, while **`fovea.verdict` kept all 2,384 rows** because it
 lives outside the schema Envio drops. That separation was designed for this and this is the first
 time it was load-bearing.
@@ -216,12 +216,12 @@ specified:
   who is not the owner.
 
 **We never sign for the operator and we hold no key that could.** There are two paths and both are
-theirs: take the calldata to any wallet, or sign in with a passkey and **send it from the browser**,
+theirs: take the calldata to any wallet or sign in with a passkey and **send it from the browser**,
 from the account that passkey derives. A project that publishes measurements about other people's
-registrations must not be able to manufacture one, and the honest guarantee is having no means to.
+registrations must not be able to manufacture one and the honest guarantee is having no means to.
 
 **The passkey path sends the transaction, as of 2026-09-24.** It did not at first: the passkey derived
-the account, checked ownership and signed an intent receipt, and then stopped, while the page implied it
+the account, checked ownership and signed an intent receipt and then stopped, while the page implied it
 would send. That was an unbacked claim on the page that teaches people how to use this, so it is
 recorded rather than quietly patched. What it does now:
 
@@ -237,11 +237,11 @@ recorded rather than quietly patched. What it does now:
   agent. That is why this is the one action here that is not gasless.
 
 Proven before shipping rather than asserted: a browser-style viem client reaches Monad at block
-107471803, and simulating the exact `register()` call the studio builds returns agent id `10256`, the
+107471803 and simulating the exact `register()` call the studio builds returns agent id `10256`, the
 next id the registry would mint.
 
 Two rules are enforced in code rather than asserted here. The calldata decodes back to the document
-that was previewed, and a draft that mentions a payment proof fails its own consequence check,
+that was previewed and a draft that mentions a payment proof fails its own consequence check,
 because a registration document is not the place for a payment claim.
 
 ```bash
@@ -249,25 +249,25 @@ node --test --experimental-strip-types 'lib/registration.test.ts'    # 14 pass
 curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/studio # 200
 ```
 
-`register()` with no argument is deliberately not offered. It mints an agent whose URI is empty, and
+`register()` with no argument is deliberately not offered. It mints an agent whose URI is empty and
 80 of those already exist on Monad: the one population no verifier can help.
 
-### The kit, the embed, and /developers
+### The kit, the embed and /developers
 
 **The output used to be a site with eleven nav tabs.** The track this enters asks for *"a protocol,
-primitive, or infrastructure layer that other applications build on — not a standalone consumer
-product"*, and scores Design as developer experience rather than visuals. Meanwhile
+primitive or infrastructure layer that other applications build on, not a standalone consumer
+product"* and scores Design as developer experience rather than visuals. Meanwhile
 `components/ui.tsx` already was a component library and was private. The architecture existed and was
 not the product.
 
 [`components/kit.tsx`](../components/kit.tsx) is now the public boundary. `ui.tsx` stays internal
-layout; everything in the kit is meant to be rendered by somebody else, and the distinction matters
+layout; everything in the kit is meant to be rendered by somebody else and the distinction matters
 because an internal helper can change shape on a Tuesday and a published component cannot. `Verdict`,
 `Count`, `Share`, `Ladder`, `Distribution`, `TrustBadge`, `RecordState`, `Reproduce`.
 
 **What it publishes is not the data.** The API has been open and CORS-enabled since the beginning, so
 the numbers were never the hard part. The hard part is that three mistakes are available to anyone
-consuming `/api/agent/<id>` by hand: printing a null as `0`, colouring `unknown` like `false`, and
+consuming `/api/agent/<id>` by hand: printing a null as `0`, colouring `unknown` like `false` and
 averaging the four outcomes into a score. Every component makes all three unavailable and there is no
 prop that turns it off. A marketplace embedding `<Verdict>` gets the `unknown` rule whether or not it
 has read a word of this documentation. **The primitive is the discipline, not the figures.**
@@ -280,7 +280,7 @@ has read a word of this documentation. **The primitive is the discipline, not th
 
 No framework and no build step, because a host page cannot be asked to adopt our toolchain. It renders
 inside a **closed shadow root**, which matters beyond tidiness: a badge that inherited a host page's
-error red could show `unknown` in the colour of an accusation. It fails quiet — a network error, a bad
+error red could show `unknown` in the colour of an accusation. It fails quiet. A network error, a bad
 id or a missing agent removes the element rather than drawing an error box in somebody else's page.
 Served from a route rather than committed as a static asset so the origin follows
 `NEXT_PUBLIC_SITE_URL` instead of being hardcoded twice.
@@ -304,9 +304,9 @@ explicit three-state switch (system, light, dark) applied by an inline head scri
 paint** so a returning light-mode reader does not get a dark flash.
 
 **Two palettes rather than an inversion, for the same reason the colours exist at all.** A hue that
-reads as "absence" on near-black does not automatically read as absence on white, and a green legible
+reads as "absence" on near-black does not automatically read as absence on white and a green legible
 on ink fails contrast on paper. Each mode names its own values and both were checked against three
-questions: is `false` unmistakably an alarm colour, is `unknown` unmistakably not one, and does
+questions: is `false` unmistakably an alarm colour, is `unknown` unmistakably not one and does
 `unknown` stay more present than `noClaim`. Light mode therefore takes darker verdict hues and uses
 slate-600 for `unknown` against slate-500 for `noClaim`, so that third relationship survives the
 inversion rather than flipping.
@@ -319,24 +319,24 @@ hand-written `var()` call sites would move.
 curl -sS https://kanmani.xyz/_next/static/chunks/*.css | grep -o '\.text-muted{color:var(--muted)}'
 ```
 
-**Contrast was measured rather than eyeballed, and two failures were found**, one of them
-pre-existing: light `noClaim` was 2.56:1 on white and is now 4.76, and dark `faint` was already
+**Contrast was measured rather than eyeballed and two failures were found**, one of them
+pre-existing: light `noClaim` was 2.56:1 on white and is now 4.76 and dark `faint` was already
 failing at 2.86:1 and is now 3.65. Everything else is AA or better in both modes.
 
 Per-mode too, because each was tuned for near-black and reads as dirt or a stray bright stripe on
-paper: the drawn field strength, the grid opacity, the elevation shadows, and the inset top edge,
+paper: the drawn field strength, the grid opacity, the elevation shadows and the inset top edge,
 which has to darken on light instead of lighting. `::selection` stopped hardcoding white text, which
 would have vanished on the light lilac fill.
 
 ### Authority over an agent: the passkey as a protection layer
 
 The passkey layer was a showcase. `/account` demonstrated four keys from one ceremony and `/pay`
-opened a scoped session, but the one place authority actually matters — creating an agent and
-changing an existing one — treated it as one of two equal options and used it to protect nothing.
+opened a scoped session, but the one place authority actually matters (creating an agent and
+changing an existing one) treated it as one of two equal options and used it to protect nothing.
 
 **What is actually at risk, stated precisely.** Not "someone repoints an agent they do not own":
 `setAgentURI` reverts for anyone who is not the owner, so the chain already refuses that and no
-front-end care adds to it. Three real risks remain, and [`lib/authority.ts`](../lib/authority.ts)
+front-end care adds to it. Three real risks remain and [`lib/authority.ts`](../lib/authority.ts)
 answers each:
 
 | risk | answer |
@@ -353,7 +353,7 @@ parsing.
 
 **The rule this project runs on applies to itself here.** A failure to reach the API is `unknown`,
 never `notOwner`. Telling somebody they do not own their own agent on the strength of our network
-problem is the same error as rendering a timeout as `false`, and nothing is blocked on it because the
+problem is the same error as rendering a timeout as `false` and nothing is blocked on it because the
 registry still refuses a write nobody is entitled to make. A mismatch reports **both** addresses
 rather than only refusing, because it is usually a different passkey rather than an attack.
 
@@ -372,12 +372,12 @@ verdict is our measurement and a receipt is somebody's statement.
 
 Exercised end to end against the live site: a genuine receipt returns 201 `firstTime: true`, the same
 one again returns 200 `firstTime: false` because idempotency is a database constraint rather than a
-flag we remember, and a receipt with a mutated `uriHash` is refused with 400 and stored nowhere.
+flag we remember and a receipt with a mutated `uriHash` is refused with 400 and stored nowhere.
 
 **No real receipt exists yet**, because publishing is optional and every document change predates the
 feature. The page says that in words rather than rendering an absence as a clean record. And the
 boundary is stated on both the endpoint and the page: a receipt says one identity authorised one
-document, not that the transaction landed, that the signer owns the agent, or that the document is
+document, not that the transaction landed, that the signer owns the agent or that the document is
 good.
 
 ### Cornea, the surface
@@ -394,14 +394,14 @@ done
 ```
 
 **The surface is fully adaptive.** One fluid `clamp()` scale for type and rhythm rather than a
-handful of breakpoints, container-query-ready shells, auto-fitting grids, and a navigation that
-folds into a sheet on a phone. Motion follows monad.xyz's language — a drifting aurora behind the
+handful of breakpoints, container-query-ready shells, auto-fitting grids and a navigation that
+folds into a sheet on a phone. Motion follows monad.xyz's language: a drifting aurora behind the
 hero, a one-shot brand sweep, a marquee of the machine-readable surfaces, scroll-reveal and a
-count-up on the headline figure — and all of it is neutralised under `prefers-reduced-motion`.
+count-up on the headline figure. All of it is neutralised under `prefers-reduced-motion`.
 
 **The navigation states the product's order rather than an index.** Six categorised groups with hover
 menus, sequenced the way somebody moves through the thing: `create`, `verify`, `settle`, `explore`,
-`developers`, `status`. It replaced two worse shapes — first eleven flat tabs, which read as a filing
+`developers`, `status`. It replaced two worse shapes. First eleven flat tabs, which read as a filing
 cabinet, then four groups whose order was arbitrary, so `explore` came first and the first thing a
 visitor saw was somebody else's data instead of anything they could do. `status` is last and is a
 destination rather than a group, because "how old is that number" is a question a reader only has after
@@ -411,13 +411,13 @@ the navigation cannot teach different sequences.
 `/bond` is the surface for Sclera and was written the day Sclera went live, because a `settle → bond`
 menu entry pointing at nothing would have been exactly the clumsiness the reordering was meant to
 remove. It carries the contract address, the first bond transaction, the floor and window committed to,
-the command to check the stake by where the money is, why the CRE forwarder is not trusted, and what
+the command to check the stake by where the money is, why the CRE forwarder is not trusted and what
 has not been proven.
 
 One defect in that layer is worth recording because it shipped and had to be fixed: the reveal
 originally hid every wrapped section with `opacity: 0` and relied on JavaScript to reveal it. When
 that did not arm as expected the page rendered **blank** while the server HTML and every asset were
-correct. It is inverted now — content is visible by default and only a JS-armed `pending` state
+correct. It is inverted now. Content is visible by default and only a JS-armed `pending` state
 hides it, with a failsafe that force-reveals anything still hidden after 1.2s. A motion layer must
 not be able to swallow the page.
 
@@ -438,7 +438,7 @@ site has no dependency on a laptop. The domain is paid to 2027-09-21, so it outl
 the market needs it, how the money moves, the stack it composes into, then the evidence underneath.
 The measurement is proof the engine works rather than the pitch, which is the tone this project set
 for itself: a clearing house, never an exposé. Every layer on the stack carries a `live` or `built`
-chip, and those chips deliberately borrow neither the verdict green nor the verdict red, because a
+chip and those chips deliberately borrow neither the verdict green nor the verdict red, because a
 statement about our build must never be readable as a verdict about an agent.
 
 ---
@@ -448,9 +448,9 @@ statement about our build must never be readable as a verdict about an agent.
 **This section replaces one that said these were "not started". That was true when it was written
 and it is now false.** Leaving it up would be a published claim that no longer matches what a check
 returns, which is the failure this project exists to attack. Each line below says what exists, what
-does not, and the command that shows which.
+does not and the command that shows which.
 
-### Sclera, the bond that makes "trust becomes a price" a mechanism — LIVE
+### Sclera, the bond that makes "trust becomes a price" a mechanism. LIVE
 
 An agent stakes USDC against a floor on its own claim-truth rate over a block window, with a
 minimum sample below which nothing can slash. Stay above the floor and the stake returns when the
@@ -548,21 +548,21 @@ second release reverts `WrongState()`.
 So post, hold, mature and return are all proven on mainnet by balance rather than by event.
 
 **What this does and does not prove.** It proves the stake is real: money is locked by an immutable
-contract against a floor its poster chose, and only the ownership check let that poster in. It does not
+contract against a floor its poster chose and only the ownership check let that poster in. It does not
 prove a slash, because our own record asserts no payment claims, so the sample is below the minimum and
 nothing can fall below the floor. The slashing path is proven in the test suite and against a fork of
 mainnet, not by a live slash of our own money. Both sentences belong together.
 
 **The attestor is a passkey-derived key that owns nothing.** It is the fourth Iris key, namespace
 `kanmani.optic-onchain.v1`, secp256k1 because `ecrecover` is the only scheme the EVM verifies cheaply.
-It signs verdicts and cannot move money, and it is deliberately not the deployer: the deploy script
-refuses `attestor == msg.sender`, and refuses the demo attestor by address because that key derives
+It signs verdicts and cannot move money and it is deliberately not the deployer: the deploy script
+refuses `attestor == msg.sender` and refuses the demo attestor by address because that key derives
 from a test vector committed to this repository.
 
 **The original pre-deploy review and its blocker.**
 [`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) Finding 9 found that `postBond` never checked who owned
 the agent, so anyone could bond anyone and a bond proved nothing. `postBond` now reads `ownerOf` from
-the Identity Registry, the registry is an immutable constructor argument with no setter, and the fix is
+the Identity Registry, the registry is an immutable constructor argument with no setter and the fix is
 mutation-tested: disabling the check turns four tests red. Finding 10, six unreachable refusal emits, is
 also closed.
 
@@ -575,7 +575,7 @@ test. Everything up to that line is green.
 
 `GET /api/sla/<agentId>?fromBlock=&toBlock=` is live. It is a pure function of the agent id and the
 block range, because a CRE workflow reaches consensus by having independent nodes compute the same
-answer, and anything keyed on a wall clock drifts between them.
+answer and anything keyed on a wall clock drifts between them.
 
 ```bash
 curl -sS 'https://kanmani.xyz/api/sla/10182' | jq '{rateBps, sample, true: .trueCount}'
@@ -592,7 +592,7 @@ wc -l cre/kanmani-oracle/slashing/main.ts     # 280
 
 Written against `@chainlink/cre-sdk`. It reads the endpoint above and signs a verdict. Not deployed
 to the CRE network, which the bounty explicitly permits: a CLI simulation or a live deployment is
-accepted, and the workflow is real either way.
+accepted and the workflow is real either way.
 
 ### Alchemy self-healing re-verification
 
@@ -605,7 +605,7 @@ re-runs the exact ladder the command line runs and appends a fresh verdict. The 
 append only, so a repaired document reads as `false` then `true` with both timestamps. What was
 missing was only the trigger.
 
-Signature verification is HMAC-SHA256 over the raw body, compared in constant time, and the route
+Signature verification is HMAC-SHA256 over the raw body, compared in constant time and the route
 **refuses every delivery when no signing key is configured** rather than skipping the check, because
 a webhook that fails open is worse than one that is down. The delivery id is a primary key, so a
 retry after success appends nothing.

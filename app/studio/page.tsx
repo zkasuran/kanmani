@@ -17,7 +17,7 @@ export default function Studio() {
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
         kicker="register · repoint · monad mainnet · chain 143"
-        title="Register an agent, or fix the record of one you already own."
+        title="Register an agent or fix the record of one you already own."
         lead={
           <>
             Compose the document, watch what each field would mean, then send the transaction with your
@@ -44,7 +44,7 @@ export default function Studio() {
             </li>
             <li>
               <span className="text-[var(--color-text)]">It will not sign for you.</span> There is no
-              key on our server that could. Send the calldata from any wallet, or sign in with a
+              key on our server that could. Send the calldata from any wallet or sign in with a
               passkey and send it from the account that passkey derives. Both are yours.
             </li>
             <li>
@@ -61,7 +61,7 @@ export default function Studio() {
             </li>
             <li>
               <span className="text-[var(--color-text)]">Verifying yourself is free.</span> A failing
-              verdict is not a scarlet letter. Repoint the document, and the{" "}
+              verdict is not a scarlet letter. Repoint the document and the{" "}
               <code className="font-mono">MetadataUpdate</code> re-runs the ladder so the record
               corrects itself with both readings kept.{" "}
               <Link href="/status" className="text-[var(--color-brand)] hover:underline">
@@ -75,13 +75,13 @@ export default function Studio() {
       <Reveal>
         <Panel
           title="why data: is the default"
-          subtitle="The recommendation carries our own measurement, and we took it ourselves."
+          subtitle="The recommendation carries our own measurement and we took it ourselves."
         >
           <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
             We probed all 2,012 distinct registration documents on Monad. 8,640 agents point at a
             document whose host answered and said it is not there, 8,093 of them sharing one expired
             preview deployment across 7,962 wallets. Those registrations are still valid on chain, with
-            a valid owner and a valid URI, and they will stay that way forever while describing
+            a valid owner and a valid URI and they will stay that way forever while describing
             nothing. A <code className="font-mono">data:</code> URI cannot 404 because there is no host
             to ask.
           </p>

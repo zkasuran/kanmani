@@ -9,14 +9,14 @@ is financially load-bearing: it sets the bond an agent posts and what it can bor
 **Trust stops being a badge. It becomes a price.**
 
 Why it has to exist: 73 of the 85 payment claims on Monad cite a transaction that is not on the chain
-the document names, and every one of those documents is hash-perfect. The bytes served today match
+the document names and every one of those documents is hash-perfect. The bytes served today match
 the hash committed on chain, so every tool that checks integrity calls them verified. **Hash
 integrity is not claim truth.** That is a plumbing problem rather than a lying problem, one unchecked
 field in a template written by honest people. Auditing it forever is the small product. Routing the
 money so the receipt cannot disagree with reality is the large one.
 
 Live at **[https://kanmani.xyz](https://kanmani.xyz)**. What is deployed and what is only built is
-stated per layer in [`docs/AS-BUILT.md`](docs/AS-BUILT.md), and
+stated per layer in [`docs/AS-BUILT.md`](docs/AS-BUILT.md) and
 [`docs/14-GAPS.md`](docs/14-GAPS.md) is our own list of what is missing.
 
 ---
@@ -29,11 +29,11 @@ product. Nothing here needs a login, a key or a payment.
 | | Where | What you should see |
 |---|---|---|
 | 1 | [`/`](https://kanmani.xyz) | What this is, in two lines, then the stack with each layer marked `live` or `built` |
-| 2 | [`/studio`](https://kanmani.xyz/studio) | **create** — compose a registration document and send it from a passkey, or take the calldata to any wallet. Every field shows its consequence live |
-| 3 | [`/verify`](https://kanmani.xyz/verify) | **verify** — paste anything, get a verdict, with the command to re-derive it without us |
-| 4 | [`/bond`](https://kanmani.xyz/bond) | **settle** — 0.02 USDC staked on mainnet against an 80% claim-truth floor. Immutable, no admin override |
-| 5 | [`/operators`](https://kanmani.xyz/operators) | **explore** — 8,093 agents across 7,962 wallets sharing one document that returns 404, and the three records that exist on two chains |
-| 6 | [`/developers`](https://kanmani.xyz/developers) | **developers** — the components, the API, and a one-line badge. Render a verdict without being able to render it wrongly |
+| 2 | [`/studio`](https://kanmani.xyz/studio) | **create**: compose a registration document and send it from a passkey or take the calldata to any wallet. Every field shows its consequence live |
+| 3 | [`/verify`](https://kanmani.xyz/verify) | **verify**: paste anything, get a verdict, with the command to re-derive it without us |
+| 4 | [`/bond`](https://kanmani.xyz/bond) | **settle**: 0.02 USDC staked on mainnet against an 80% claim-truth floor. Immutable, no admin override |
+| 5 | [`/operators`](https://kanmani.xyz/operators) | **explore**: 8,093 agents across 7,962 wallets sharing one document that returns 404 and the three records that exist on two chains |
+| 6 | [`/developers`](https://kanmani.xyz/developers) | **developers**: the components, the API and a one-line badge. Render a verdict without being able to render it wrongly |
 
 Then [`/status`](https://kanmani.xyz/status) answers the question you only have once you have believed
 something: how old is that number.
@@ -143,7 +143,7 @@ password. There is no default password on purpose.
 
 ## Verifying the claims rather than believing them
 
-Every number on the site carries a "re-derive this" control that shows the query behind it, and
+Every number on the site carries a "re-derive this" control that shows the query behind it and
 [`docs/16-METHOD.md`](docs/16-METHOD.md) reproduces every one of them by hand. Three worth doing:
 
 ```bash

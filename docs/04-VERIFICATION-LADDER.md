@@ -261,7 +261,7 @@ now unverifiable.** Not wrong. Unverifiable, which is a different and more awkwa
 **This is an argument about how evidence should be stored, not about anyone's conduct.** Editing your
 own agent card is normal maintenance. Publishing it at a mutable URL is the default thing to do,
 because that is what a web server is. The combination is what breaks: a hash commitment plus a
-mutable endpoint means the commitment silently expires the first time the content changes, and
+mutable endpoint means the commitment silently expires the first time the content changes and
 nobody gets told.
 
 The fix is not a rule about behaviour. It is content addressing or writing the record into
@@ -655,7 +655,7 @@ at it.
 test asserting today's behaviour would pass against both versions and prove nothing. The mutation
 only bites when viem or a provider rewords the string, at which point every genuine absence silently
 becomes `unknown` and the `false` count collapses to zero with no error anywhere. The reverse failure
-is worse: any unrelated error whose message happens to contain those words gets read as absence, and
+is worse: any unrelated error whose message happens to contain those words gets read as absence and
 a failure turns into an accusation.
 
 That is a real gap, it is recorded in [14-GAPS.md](14-GAPS.md) and it is published here rather than

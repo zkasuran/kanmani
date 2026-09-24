@@ -13,13 +13,13 @@
  *   `register(agentURI)`.
  *
  * **We never sign for you and we never hold a key.** The transaction is signed either by the account
- * key your own passkey derives, in this browser, or by any wallet you already use if you would
+ * key your own passkey derives, in this browser or by any wallet you already use if you would
  * rather take the calldata and send it yourself. Both paths are offered on equal footing because a
- * project that measures other people's registrations must not be able to manufacture one, and the
+ * project that measures other people's registrations must not be able to manufacture one and the
  * honest way to guarantee that is to have no means of doing it.
  *
  * Everything shown before the send is the exact bytes that will be sent. The calldata is on screen,
- * copyable, and decodes back to what the preview showed.
+ * copyable and decodes back to what the preview showed.
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -98,7 +98,7 @@ export function StudioFlow() {
 
   const json = useMemo(() => recordJsonPreserving(draft, carried), [draft, carried]);
   // When a document was adopted, the URI must be built over the preserved record rather than only the
-  // edited fields, or sending would silently strip whatever this form does not show.
+  // edited fields or sending would silently strip whatever this form does not show.
   const uri = useMemo(
     () => (kind === "data" ? `data:application/json;base64,${btoa(unescape(encodeURIComponent(json)))}` : hostedAt.trim()),
     [kind, json, hostedAt],
@@ -146,12 +146,12 @@ export function StudioFlow() {
    * Door A: load the operator's own record and diagnose it, rather than showing an empty form.
    *
    * Retyping a document you already published is the friction that makes a one-field fix feel like a
-   * project, and it is the reason the plan specified "their own data, already measured" as the first
+   * project and it is the reason the plan specified "their own data, already measured" as the first
    * screen. The consequence list then does the diagnosis, so the operator sees what is wrong with the
    * record they have rather than being told in prose.
    *
-   * A `data:` document decodes locally with no network at all. A hosted one has to be fetched, and the
-   * host may refuse a browser — in which case we say so and offer the paste, instead of pretending the
+   * A `data:` document decodes locally with no network at all. A hosted one has to be fetched and the
+   * host may refuse a browser, in which case we say so and offer the paste, instead of pretending the
    * document is unreadable.
    */
   const loadMine = useCallback(async () => {
@@ -282,7 +282,7 @@ export function StudioFlow() {
    * the owner, so a relayer would end up owning the agent. That is why this account needs MON for gas
    * and why the gasless path used everywhere else does not apply.
    *
-   * The session is scoped to authority rather than to a spend — `maxAmountAtomic` is 0n — so a session
+   * The session is scoped to authority rather than to a spend (`maxAmountAtomic` is 0n) so a session
    * opened to pay for a verification cannot silently also register an agent. It is ended in a `finally`
    * so the key is zeroed whether the send succeeded or threw.
    */
@@ -393,7 +393,7 @@ export function StudioFlow() {
           Only chains where the ERC-8004 registries are actually deployed are offered, read from the
           chain registry rather than hardcoded.{" "}
           <Link href="/chains" className="text-[var(--color-brand)] hover:underline">
-            Which chains, and what it takes to add one →
+            Which chains and what it takes to add one →
           </Link>{" "}
           Your identity lives here; the work can settle on any chain we can read.
         </p>
@@ -573,10 +573,10 @@ export function StudioFlow() {
         <p className="eyebrow">authority</p>
         <p className="mt-2 max-w-3xl text-[13px] leading-relaxed text-muted">
           The registry decides who may write: <Mono>setAgentURI</Mono> reverts for anyone who is not
-          the owner, and nothing here can add to that. What a passkey adds is the three things the
-          chain cannot do for you — tell you that you are not the owner{" "}
+          the owner and nothing here can add to that. What a passkey adds is the three things the
+          chain cannot do for you. It tells you that you are not the owner{" "}
           <span className="text-[var(--color-text)]">before</span> you pay gas to find out, bind the
-          transaction to the document you actually previewed, and give you an authority that
+          transaction to the document you actually previewed and give you an authority that
           reconstructs on another device instead of living in one browser profile.
         </p>
 
@@ -633,7 +633,7 @@ export function StudioFlow() {
 
             {authority?.kind === "unknown" ? (
               <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
-                <span className="unknown-value">unknown</span> — we could not find out ({authority.reason}).
+                <span className="unknown-value">unknown</span> because we could not find out ({authority.reason}).
                 That is our failure to look, not a statement about your ownership, so nothing here is
                 blocked on it. The registry will still refuse a write you are not entitled to make.
               </p>
@@ -712,7 +712,7 @@ export function StudioFlow() {
               </button>
               {door === "manage" && authority?.kind !== "owner" ? (
                 <span className="font-mono text-[11px] text-muted">
-                  check ownership first, or the registry will reject it
+                  check ownership first or the registry will reject it
                 </span>
               ) : null}
             </div>
@@ -729,11 +729,11 @@ export function StudioFlow() {
                 </a>
                 {sent.agentId ? (
                   <span className="ml-2 text-muted">
-                    — registered as agent <Mono className="text-[var(--color-text)]">#{sent.agentId}</Mono>. It appears
+                    registered as agent <Mono className="text-[var(--color-text)]">#{sent.agentId}</Mono>. It appears
                     on this site once the indexer sees it.
                   </span>
                 ) : (
-                  <span className="ml-2 text-muted">— sent, waiting for the receipt…</span>
+                  <span className="ml-2 text-muted">sent, waiting for the receipt…</span>
                 )}
               </div>
             ) : null}
@@ -747,7 +747,7 @@ export function StudioFlow() {
 
         {keys ? (
           <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
-            This address owns whatever it registers, and it needs MON for gas: a registration is the
+            This address owns whatever it registers and it needs MON for gas: a registration is the
             one action here that is not relayed, because the registry records{" "}
             <Mono>msg.sender</Mono> as the owner and a relayer would end up owning your agent. The key
             comes from the passkey rather than from anything stored here, so the same passkey on
@@ -760,8 +760,8 @@ export function StudioFlow() {
           <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
             Or skip the passkey entirely: take the calldata above and send it from any wallet. Nothing
             here is custodial either way, because there is no key on our server that could sign for you.
-            Signing in adds three things a copied calldata cannot — it checks you own the agent before
-            you pay gas, it leaves a receipt bound to the document, and it can send the transaction
+            Signing in adds three things a copied calldata cannot. It checks you own the agent before
+            you pay gas, it leaves a receipt bound to the document and it can send the transaction
             itself from the account your passkey derives.
           </p>
         )}

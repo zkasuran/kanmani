@@ -11,15 +11,15 @@ decision has already been made to cut something, the reason is given rather than
 **State as of 2026-09-24.** Submission closes 2026-10-14T03:59Z. I am one person.
 
 **What moved on 2026-09-23/24**, so a reader can see which entries are fresh: Sclera passed its gating
-security review, which found a real blocker (§3, audit Finding 9), got fixed, deployed to mainnet, and
+security review, which found a real blocker (§3, audit Finding 9), got fixed, deployed to mainnet and
 took its first real bond. The authorisation trail went from signed-and-discarded to persisted and
 rendered (§7). The `@kanmani/kit` import path stopped naming a package that did not exist (§6). Three
 operators were contacted and a forum thread submitted (§8). BSC was indexed beside Monad so the
 cross-chain merge has data. And the passkey went from a showcase to the thing that actually sends a
 registration.
 
-**Two headings in this document were stale within hours of being written** — §3 said Sclera was not
-deployed and §8 said traction was zero — which is the failure mode this page exists to prevent,
+**Two headings in this document were stale within hours of being written**. §3 said Sclera was not
+deployed and §8 said traction was zero, which is the failure mode this page exists to prevent,
 happening to the page itself. Both are corrected above rather than left to be found.
 
 ---
@@ -73,7 +73,7 @@ path that a stranger can walk without us in the room. That is tracked in section
 ## 2. Two rungs of the ladder exist in the repository and do not run
 
 **Corrected 2026-09-23.** This section used to say the two rungs were "not implemented". The files
-exist with their own tests. What is still true, and is the part that matters, is that they are not
+exist with their own tests. What is still true and is the part that matters, is that they are not
 wired into the live ladder.
 
 | rung | state |
@@ -107,7 +107,7 @@ That is a migration touching every published verdict. Doing it in the last hour 
 close a checklist item is how a measurement layer acquires a silent inconsistency between old and new
 rows. **The honest five-rung ladder is better than a hasty seven-rung one**. The boundary costs
 nothing while it is described accurately. **A promised rung that does not run is a claim; an absent one is a boundary.** Having the
-code in the tree does not upgrade the claim, and this document would be worth less if it did.
+code in the tree does not upgrade the claim and this document would be worth less if it did.
 
 **One thing here is easy to misread, so it is stated plainly.** `POST /api/verify` is payable. That
 means somebody can pay **us** to check a document. It does not mean we have probed whether a given
@@ -119,7 +119,7 @@ that is not wired.
 ## 3. Sclera is live. Three layers above it remain absent
 
 **Corrected 2026-09-23.** This section used to say "Layer 2 and Layer 3 do not exist" and that
-Sclera was not started. Both are now wrong, and the grep it offered as proof now returns matches.
+Sclera was not started. Both are now wrong and the grep it offered as proof now returns matches.
 The corrected picture:
 
 ```bash
@@ -143,12 +143,12 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 **The pre-deploy security review has run and its blocker is now closed.**
 [`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) Finding 9: `postBond` never checks who owns the agent
 it is bonding, so anyone can post a bond for any agent. That is a denial of service on bonding and,
-worse, it means a bond does not prove the agent staked anything — a stranger can bond any agent with
-`minTruthRateBps = 0`, which can never be slashed, and the agent then reads as bonded. A badge that
+worse, it means a bond does not prove the agent staked anything, because a stranger can bond any agent with
+`minTruthRateBps = 0`, which can never be slashed and the agent then reads as bonded. A badge that
 costs one atomic unit to fake is the thing this project exists to attack.
 
 **Fixed 2026-09-24.** `postBond` reads `ownerOf` from the ERC-8004 Identity Registry, which is an
-immutable constructor argument with no setter. Six new tests, and the mutation that proves they matter:
+immutable constructor argument with no setter. Six new tests and the mutation that proves they matter:
 replacing the check with `if (false)` turns four of them red. Finding 10 is closed too. The contract
 suite is 127 tests, 119 passing, 8 fork tests skipped without a fork URL.
 
@@ -272,7 +272,7 @@ Two details that make it safe rather than merely convenient:
   we have no input for it would be a worse edit than the one they came to make. The page names how many
   are being carried. A round-trip test asserts adoption changes nothing it did not need to.
 * **Skills are read from `skills`, `services` or `endpoints`**, because all three occur in the live
-  corpus, and `services` is what Monad's own Agent Hub writes. A reader that only knew `skills` would adopt
+  corpus and `services` is what Monad's own Agent Hub writes. A reader that only knew `skills` would adopt
   nothing from most real records and look broken.
 
 A `data:` document decodes locally with no network. A hosted one is fetched. When the host refuses a
@@ -312,10 +312,10 @@ qualify, which is friction on the exact thing we want adopted.
 **Closed 2026-09-23.** This section previously said a receipt was signed and then went nowhere, so it
 proved something to its holder and to nobody else. That is fixed.
 
-`POST /api/receipt/action` accepts a receipt, **verifies the signature before writing anything**, and
+`POST /api/receipt/action` accepts a receipt, **verifies the signature before writing anything** and
 stores it in `fovea.agent_action`. `GET /api/receipt/action?agentId=<id>` reads it back with the
-signature included, and `/agent/<id>` renders an authorisation trail beside the verdicts, kept in a
-separate panel because a verdict is our measurement and a receipt is somebody's statement, and mixing
+signature included and `/agent/<id>` renders an authorisation trail beside the verdicts, kept in a
+separate panel because a verdict is our measurement and a receipt is somebody's statement and mixing
 them would blur who said what.
 
 Exercised end to end against the live site:
@@ -332,13 +332,13 @@ optional and every document change on Monad predates the feature. The agent page
 words rather than rendering an absence as a clean record: *"nobody has offered proof of who authorised
 this document, so there is nothing here to verify rather than something that failed to."*
 
-One boundary worth keeping visible, and it is stated on the endpoint and on the page: a receipt says
+One boundary worth keeping visible and it is stated on the endpoint and on the page: a receipt says
 one identity authorised one document. It does **not** say the transaction landed, that the signer owns
-the agent, or that the document is good. The registry decides ownership and the ladder decides truth.
+the agent or that the document is good. The registry decides ownership and the ladder decides truth.
 An endpoint implying otherwise would be manufacturing standing out of a signature, which is the shape
 of claim this project exists to check rather than to produce.
 
-## 8. Traction is three contacts and zero integrations, and it is still the weakest part
+## 8. Traction is three contacts and zero integrations and it is still the weakest part
 
 Traction is 20% of the score. The honest count today, 2026-09-24:
 
@@ -386,7 +386,7 @@ here: I can name every payable agent on Monad because I checked all 10,253 and t
 3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
 
 **Three contacts made, 2026-09-23 to 09-24.** All on GitHub, because `gh` is authenticated, a public
-issue is re-derivable where private mail is not, and there are no mail credentials in this environment.
+issue is re-derivable where private mail is not and there are no mail credentials in this environment.
 
 | target | agents | issue |
 |---|---|---|
@@ -403,7 +403,7 @@ re-checked (356,647 + 10,256 = 366,903).
 
 Two of the three are not findings against the recipient, which matters for the tone rule. The Agora's
 records are healthy and the note is preventive, about a mutable branch pointer rather than a defect.
-Envio is a contribution offer with two `@crossChain` notes and a caution, and it credits their resync
+Envio is a contribution offer with two `@crossChain` notes and a caution and it credits their resync
 refusal as correct behaviour.
 
 **Original first contact, 2026-09-23**, as
@@ -411,7 +411,7 @@ refusal as correct behaviour.
 
 Target 1, via a public GitHub issue on the org's own ERC-8004 reputation SDK rather than by email,
 because that repo reads reputation across chains so its maintainers are the people the distinction
-matters to, and because a public channel is re-derivable in a way a private mail is not.
+matters to and because a public channel is re-derivable in a way a private mail is not.
 
 Both cited transactions were verified **directly against `rpc.monad.xyz`** before posting, not merely
 through our own API: `0x6004e1bd…3c1cc7` returns a null receipt, `0xd0df2994…fcf1847` is found at block
@@ -420,11 +420,11 @@ to survive being checked by them.
 
 The tone rule was applied literally: the finding is framed as a field that is probably not set from the
 chain the settlement landed on, the one claim that *does* resolve is cited as evidence their pipeline
-can write a correct reference, and the message states plainly that no misstatement is being alleged.
+can write a correct reference and the message states plainly that no misstatement is being alleged.
 It also offers to be corrected if `network` means something we have misread.
 
-**Targets 2 and 3 are not yet approached**, and the honest reason is channel rather than intent: ADEXTO
-and Mogmatic publish no contact beyond an endpoint, and there are no mail credentials in this
+**Targets 2 and 3 are not yet approached** and the honest reason is channel rather than intent: ADEXTO
+and Mogmatic publish no contact beyond an endpoint and there are no mail credentials in this
 environment, so an email to `ultravioletadao@gmail.com` could not be sent either. Drafts for all three
 are ready in `.hq/outreach/DRAFTS-2026-09-23.md` and need a person with a mailbox, not more work. Outreach was scheduled to start 2026-10-01 and that is late for
 the criterion least fixable at the end. **There is no cut trigger on this one:** if no integration

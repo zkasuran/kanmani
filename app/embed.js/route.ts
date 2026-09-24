@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: MIT
 //
-// This file, and app/embed.js/route.ts, are the ONLY two files in this repository under MIT. The rest is
+// This file and app/embed.js/route.ts, are the ONLY two files in this repository under MIT. The rest is
 // LicenseRef-zkasuran-SAND-1.0, source-available with no derivatives. The carve-out is deliberate and is
 // explained in docs/24-KIT-LICENCE.md: a component that exists to be rendered inside somebody else's
-// product cannot be read-only, and what this file publishes is a constraint rather than an asset. Copy it.
+// product cannot be read-only and what this file publishes is a constraint rather than an asset. Copy it.
 /**
  * `embed.js`: the drop-in trust badge, for a page that is not ours.
  *
  *   <script src="https://kanmani.xyz/embed.js" data-agent="10182"></script>
  *
  * One line in somebody else's agent directory and a listing shows MEASURED status instead of
- * DECLARED status. That is the whole point: directories publish claims, and the gap this project
+ * DECLARED status. That is the whole point: directories publish claims and the gap this project
  * exists to close is that nobody checks them. Asking an operator to adopt a backend integration is a
  * project; asking them to paste a script tag is a minute.
  *
@@ -22,7 +22,7 @@
  *
  * **Shadow DOM.** Styles are sealed inside a shadow root so the badge cannot inherit a host page's
  * CSS and, more importantly, cannot leak into it. A badge that changes somebody's layout gets
- * removed, and a badge that silently restyles itself could show `unknown` in the host's error red,
+ * removed and a badge that silently restyles itself could show `unknown` in the host's error red,
  * which is the one thing that must never happen.
  *
  * **The `unknown` rule travels with it.** A null count renders as the word, in slate, never as `0`
@@ -135,7 +135,7 @@ const SCRIPT = (origin: string) => `/* Kanmani trust badge. ${origin}/developers
         wrap.appendChild(line);
         if (c.couldNotCheck > 0) {
           var un = el("span", "u", c.couldNotCheck + " unknown");
-          un.title = "We could not look, or could not read what we fetched. Never an accusation.";
+          un.title = "We could not look or could not read what we fetched. Never an accusation.";
           wrap.appendChild(un);
         }
       } else {

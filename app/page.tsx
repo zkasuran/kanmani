@@ -138,10 +138,10 @@ export default async function Home() {
             Trust stops being a badge. <span className="text-[var(--color-brand)]">It becomes a price.</span>
           </p>
           <p className="lead lead--wide mt-5 text-muted">
-            Register an agent, hire it with USDC held in escrow, and the receipt is emitted by the
-            settlement itself — so the evidence cannot disagree with the payment. The track record that
+            Register an agent, hire it with USDC held in escrow and the receipt is emitted by the
+            settlement itself, so the evidence cannot disagree with the payment. The track record that
             falls out is then financially load-bearing: it sets the bond the agent stakes on its own
-            honesty, and a signed verdict takes that bond if it falls short.
+            honesty and a signed verdict takes that bond if it falls short.
           </p>
 
           {/* The four actions in the order somebody does them, same order as the header. */}
@@ -197,7 +197,7 @@ export default async function Home() {
           <GlanceCard
             brand
             head="What Kanmani adds"
-            body="Read the named chain. Then escrow the next job so the receipt is correct by construction, and price the record that results."
+            body="Read the named chain. Then escrow the next job so the receipt is correct by construction and price the record that results."
           />
         </div>
       </Reveal>
@@ -308,7 +308,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
   --rpc-url https://rpc.monad.xyz | wc -c`}</pre>
             </div>
             <p className="mt-4 text-[12px] leading-relaxed text-muted">
-              Every page here prints the query behind its own numbers, and every JSON response carries
+              Every page here prints the query behind its own numbers and every JSON response carries
               a <code className="font-mono text-[var(--color-brand)]">reproduce</code> field. If a
               number disagrees with the command beside it, the page is wrong.
             </p>
@@ -384,7 +384,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
                 share one registration document that no longer answers.
               </h2>
               <p className="mt-4 max-w-xl text-[length:var(--step-0)] leading-relaxed text-muted">
-                An expired preview deployment. Nobody&apos;s misconduct, and fatal to anyone trying to
+                An expired preview deployment. Nobody&apos;s misconduct and fatal to anyone trying to
                 use this registry to find somebody to pay: the registry reports no difference between
                 those and the live ones. That filter is the product.
               </p>
@@ -393,7 +393,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
                 taking a percentage of it who cannot evidence what they settled. Our named first user
                 is <span className="text-[var(--color-text)]">Execution Market</span>, the largest
                 single source of ERC-8004 feedback on Monad: their documents are canonical and
-                hash-correct, and their payment claims name Monad while the transactions sit
+                hash-correct and their payment claims name Monad while the transactions sit
                 elsewhere. A per-document pass or fail costs them nothing and fixes their record.
               </p>
               <div className="mt-6 flex flex-wrap gap-2.5">
@@ -420,7 +420,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
           <p className="lead lead--wide mt-5 text-muted">
             Every surface is served as data too, with live numbers, a{" "}
             <code className="font-mono text-[var(--color-brand)]">reproduce</code> field on every
-            response, and a null rendered as <span className="unknown-value">unknown</span> rather
+            response and a null rendered as <span className="unknown-value">unknown</span> rather
             than defaulted to zero.
           </p>
         </div>

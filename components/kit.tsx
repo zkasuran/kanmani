@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: MIT
 //
-// This file, and app/embed.js/route.ts, are the ONLY two files in this repository under MIT. The rest is
+// This file and app/embed.js/route.ts, are the ONLY two files in this repository under MIT. The rest is
 // LicenseRef-zkasuran-SAND-1.0, source-available with no derivatives. The carve-out is deliberate and is
 // explained in docs/24-KIT-LICENCE.md: a component that exists to be rendered inside somebody else's
-// product cannot be read-only, and what this file publishes is a constraint rather than an asset. Copy it.
+// product cannot be read-only and what this file publishes is a constraint rather than an asset. Copy it.
 /**
  * The Kanmani kit: the public component surface.
  *
  * **This file is the product boundary.** Everything exported here is something another application is
  * meant to render. Everything in `ui.tsx` is internal layout that happens to be shared between our
- * own pages, and the difference matters: an internal helper can change shape on a Tuesday, a
+ * own pages and the difference matters: an internal helper can change shape on a Tuesday, a
  * published component cannot.
  *
  * ## Why components rather than only an API
  *
  * The API has been open and CORS-enabled from the start, so the data was never the hard part. The
- * hard part is that **a verdict is easy to render wrongly**, and rendering it wrongly is worse than
+ * hard part is that **a verdict is easy to render wrongly** and rendering it wrongly is worse than
  * not rendering it. Three mistakes are available to anyone consuming `/api/agent/<id>` by hand:
  *
  *   1. Printing a null as `0`. "We could not check" becomes "zero payments resolved".
@@ -36,7 +36,7 @@ import type { ReactNode } from "react";
 
 /* ================================================================== outcomes */
 
-/** The four outcomes. There is no fifth, and `unknown` is not a kind of `false`. */
+/** The four outcomes. There is no fifth and `unknown` is not a kind of `false`. */
 export type Outcome = "true" | "false" | "noClaim" | "unknown";
 
 /** How far down the ladder a claim got. */
@@ -67,7 +67,7 @@ const OUTCOME: Record<Outcome, { label: string; fg: string; bg: string; meaning:
     label: "unknown",
     fg: "var(--kan-unknown, #94a3b8)",
     bg: "var(--kan-unknown-bg, #171f2b)",
-    meaning: "We could not look, or could not read what we fetched. This is never an accusation.",
+    meaning: "We could not look or could not read what we fetched. This is never an accusation.",
   },
 };
 
@@ -118,10 +118,10 @@ function chrome(padding: string, fontSize: string) {
 /* ================================================================== numbers */
 
 /**
- * A number, or the word `unknown`.
+ * A number or the word `unknown`.
  *
  * The single most important component in the kit and it is four lines long. A count that failed to
- * read is not zero, and rendering one as the other is the exact failure this project exists to point
+ * read is not zero and rendering one as the other is the exact failure this project exists to point
  * at. There is no prop to disable this.
  */
 export function Count({ value, suffix }: { value: number | null | undefined; suffix?: string }) {
@@ -158,7 +158,7 @@ const RUNGS: Rung[] = ["declared", "resolvable", "intact", "parsed", "true"];
  *
  * Rungs past where it stopped are drawn faint rather than hidden, so a reader sees what was NOT
  * checked. A claim that stopped at `resolvable` and one that reached `true` differ in kind, not in
- * degree, and a single score would hide that.
+ * degree and a single score would hide that.
  */
 export function Ladder({ rung }: { rung: Rung | null }) {
   const at = rung ? RUNGS.indexOf(rung) : -1;
@@ -240,7 +240,7 @@ export type AgentSummary = {
 /**
  * The drop-in trust badge.
  *
- * One component, the whole judgment: what the registration document does when you ask it, and how
+ * One component, the whole judgment: what the registration document does when you ask it and how
  * its payment claims turned out. Designed to sit in somebody else's agent directory beside a listing,
  * which is why it takes a plain object rather than fetching: the host decides when and how to load.
  *
@@ -303,7 +303,7 @@ export function TrustBadge({ agent, href }: { agent: AgentSummary; href?: string
 export function RecordState({ state }: { state: string }) {
   // Grouped by what the state says about WHOSE failure it is. `answered` is fine, `gone`/`nohost`/
   // `refused` are the document being unavailable, `onchain`/`paywalled` are alive and well (402 is a
-  // host asking for payment, not a death), and anything else is our own failure to find out.
+  // host asking for payment, not a death) and anything else is our own failure to find out.
   const fg =
     state === "answered"
       ? OUTCOME.true.fg
