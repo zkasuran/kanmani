@@ -26,39 +26,60 @@ import { useEffect, useRef, useState } from "react";
 type Item = { href: string; label: string; hint: string };
 type Group = { label: string; href: string; items: Item[] };
 
+/**
+ * The groups, in the order somebody actually moves through the product.
+ *
+ * Create an agent, verify a claim about one, settle money against it, explore the population, build on
+ * it, then check how fresh any of it is. That sequence is the product's own argument, so the navigation
+ * states it rather than making a reader infer it from an alphabetical list.
+ *
+ * It replaced two worse shapes. First eleven flat tabs, which read as an index of documents. Then four
+ * groups whose order was arbitrary — `explore` first meant the first thing a visitor saw was somebody
+ * else's data rather than anything they could do.
+ *
+ * `status` is last and is a destination rather than a group, because it answers a question a reader
+ * only has after they have believed something: how old is that number.
+ */
 const GROUPS: Group[] = [
+  {
+    label: "create",
+    href: "/studio",
+    items: [
+      { href: "/studio", label: "studio", hint: "register an agent, or repoint one you own" },
+      { href: "/account", label: "account", hint: "one passkey, four keys, nothing stored" },
+    ],
+  },
+  {
+    label: "verify",
+    href: "/verify",
+    items: [
+      { href: "/verify", label: "verify", hint: "paste anything, get a verdict" },
+      { href: "/claims", label: "claims", hint: "every evidence document and what checking it found" },
+      { href: "/method", label: "method", hint: "how each rung is decided, reproducible by hand" },
+      { href: "/validate", label: "validate", hint: "the on-chain validation registry" },
+    ],
+  },
+  {
+    label: "settle",
+    href: "/pay",
+    items: [
+      { href: "/pay", label: "pay", hint: "settle a job without a wallet" },
+      { href: "/bond", label: "bond", hint: "stake on your own claim-truth rate" },
+      { href: "/fund", label: "fund", hint: "pay from another chain" },
+    ],
+  },
   {
     label: "explore",
     href: "/agents",
     items: [
       { href: "/agents", label: "agents", hint: "every registered agent, filterable" },
       { href: "/operators", label: "operators", hint: "clustered by the document they registered" },
-      { href: "/claims", label: "claims", hint: "every evidence document and what checking it found" },
       { href: "/compare", label: "compare", hint: "two to four agents, rung first" },
-    ],
-  },
-  {
-    label: "build",
-    href: "/verify",
-    items: [
-      { href: "/verify", label: "verify", hint: "paste anything, get a verdict" },
-      { href: "/studio", label: "studio", hint: "register an agent, or fix one you own" },
-      { href: "/pay", label: "pay", hint: "settle a job without a wallet" },
-      { href: "/fund", label: "fund", hint: "pay from another chain" },
-      { href: "/account", label: "account", hint: "one passkey, four keys" },
-    ],
-  },
-  {
-    label: "trust",
-    href: "/method",
-    items: [
-      { href: "/method", label: "method", hint: "how each rung is decided" },
-      { href: "/chains", label: "chains", hint: "what we can read, and what hosts agents" },
-      { href: "/status", label: "status", hint: "how fresh every number is" },
-      { href: "/validate", label: "validate", hint: "the on-chain validation registry" },
+      { href: "/chains", label: "chains", hint: "what we read, and what hosts agents" },
     ],
   },
   { label: "developers", href: "/developers", items: [] },
+  { label: "status", href: "/status", items: [] },
 ];
 
 export function Nav() {

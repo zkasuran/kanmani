@@ -138,23 +138,25 @@ export default async function Home() {
             Trust stops being a badge. <span className="text-[var(--color-brand)]">It becomes a price.</span>
           </p>
           <p className="lead lead--wide mt-5 text-muted">
-            Hire an agent and the money sits in escrow until the work lands. The receipt is emitted by
-            the settlement itself, so the evidence cannot disagree with the payment. The track record
-            that falls out is financially load-bearing: it sets the bond an agent posts and what it
-            can borrow against.
+            Register an agent, hire it with USDC held in escrow, and the receipt is emitted by the
+            settlement itself — so the evidence cannot disagree with the payment. The track record that
+            falls out is then financially load-bearing: it sets the bond the agent stakes on its own
+            honesty, and a signed verdict takes that bond if it falls short.
           </p>
 
+          {/* The four actions in the order somebody does them, same order as the header. */}
           <div className="mt-7 flex flex-wrap gap-2.5">
-            <Link href="/verify" className="cta">verify an agent →</Link>
+            <Link href="/studio" className="cta">register an agent →</Link>
+            <Link href="/verify" className="cta-ghost">verify a claim →</Link>
             <Link href="/pay" className="cta-ghost">settle a job →</Link>
-            <Link href="/method" className="cta-ghost">how a verdict is decided →</Link>
+            <Link href="/bond" className="cta-ghost">stake a bond →</Link>
           </div>
 
           {/* Live, checkable facts. Every one is a link to a chain or a page, not an assertion. */}
           <dl className="mt-9 grid gap-x-8 gap-y-3 border-t border-[var(--color-line)]/70 pt-5 sm:grid-cols-2 lg:grid-cols-4">
             <HeroFact k="agents measured" v={p.agentsIndexed === null ? "unknown" : p.agentsIndexed.toLocaleString()} note="the whole ERC-8004 population on Monad" />
             <HeroFact k="settled in real USDC" v="1 job" note="buyer held zero MON throughout" />
-            <HeroFact k="validation registry rows" v="1 of 1" note="the first ever written on Monad" />
+            <HeroFact k="bond staked" v="0.02 USDC" note="live on mainnet, immutable, no admin override" />
             <HeroFact k="tests passing" v="503" note="site, verifier and contracts" />
           </dl>
 
