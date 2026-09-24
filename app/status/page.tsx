@@ -160,6 +160,7 @@ export default async function Status() {
       {/* ---------------------------------------------------------------- corrections */}
       <Reveal>
       <Panel
+        id="corrections"
         title={`verdicts that have changed · ${changed.rows.length}`}
         subtitle="Either we were wrong and corrected it or somebody fixed their document and the page moved on its own. Both are worth showing and neither is visible in a store that updates in place."
       >

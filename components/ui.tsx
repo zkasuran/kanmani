@@ -140,14 +140,17 @@ export function Panel({
   subtitle,
   children,
   right,
+  id,
 }: {
   title?: string;
   subtitle?: ReactNode;
   children: ReactNode;
   right?: ReactNode;
+  /** Makes the panel a deep-link target. `scroll-margin-top` in globals.css keeps it clear of the sticky header. */
+  id?: string;
 }) {
   return (
-    <section className="elevated panel-hover overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)]">
+    <section id={id} className="elevated panel-hover overflow-hidden rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)]">
       {title ? (
         <header className="flex items-baseline justify-between gap-4 border-b border-[var(--color-line)] bg-[var(--color-panel-2)]/40 px-5 py-3.5">
           <div>

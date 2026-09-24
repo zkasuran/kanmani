@@ -56,6 +56,7 @@ export default async function Developers() {
       {/* ---------------------------------------------------------------- the embed */}
       <Reveal>
         <Panel
+          id="embed"
           title="one line, for a directory that lists agents"
           subtitle="Measured status instead of declared status, in somebody else's page. No build step, no framework, no styles escaping into your layout."
         >
@@ -98,6 +99,7 @@ export default async function Developers() {
       {/* ---------------------------------------------------------------- components */}
       <Reveal>
         <Panel
+          id="components"
           title="the components"
           subtitle="Every one of these is rendering live data on this page right now, from the same functions our own pages use. If a component here is broken, our site is broken too."
         >
@@ -184,6 +186,7 @@ outcomeMeaning("unknown")
       {/* ---------------------------------------------------------------- the api */}
       <Reveal>
         <Panel
+          id="api"
           title="the api"
           subtitle="Open, CORS-enabled, no key. Every response carries checkedAt, checkedAtBlock and a reproduce field with the command that gets the same answer without us."
         >
@@ -210,6 +213,7 @@ curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps 
       {/* ---------------------------------------------------------------- chains */}
       <Reveal>
         <Panel
+          id="chains"
           title="adding a chain is one entry"
           subtitle="The chain registry is a data file and the conformance tests fail naming whatever is missing."
         >
@@ -263,7 +267,8 @@ npm test    # conformance + drift and it names what is missing`} />
       </Reveal>
 
       <Reveal>
-        <Panel title="the one rule, if you read nothing else">
+        <Panel id="rule"
+          title="the one rule, if you read nothing else">
           <p className="max-w-3xl text-[14px] leading-relaxed">
             <span className="unknown-value">unknown</span> is never{" "}
             <span className="text-[var(--color-false)]">false</span> and never{" "}

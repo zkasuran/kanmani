@@ -210,6 +210,26 @@
 
 html {
   scrollbar-color: var(--color-line-bright) var(--color-ink);
+
+  /**
+   * The header is sticky, so an anchor jump would otherwise land the target underneath it. These two
+   * rules are the whole fix: the scroll root reserves the header height and every deep-link target
+   * repeats it for jumps the browser handles itself. `--header-h` is set on the shell in layout.tsx,
+   * with a fallback so this still holds if the variable ever goes missing.
+   */
+  scroll-padding-top: calc(var(--header-h, 3.25rem) + 1rem);
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Any element that can be linked to clears the header. Cheap, with no per-section opt-in to forget. */
+[id] {
+  scroll-margin-top: calc(var(--header-h, 3.25rem) + 1rem);
 }
 
 body {
@@ -517,7 +537,7 @@ details[open] > summary::before {
 }
 
 /* ---- marquee ------------------------------------------------------------------------
- * monad.xyz scrolls its partner logos in a seamless loop. Here it carries the machine-readable
+ * monad.xyz scrolls its partner logos in one unbroken loop. Here it carries the machine-readable
  * surfaces. Two copies of the track sit end to end and the whole thing translates by exactly half,
  * so the seam is invisible. Pauses on hover and honours reduced motion. */
 .marquee {

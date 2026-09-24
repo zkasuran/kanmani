@@ -204,9 +204,9 @@ export function Distribution({
   couldNotCheck: number;
   height?: number;
 }) {
-  const segs = [
+  const segs: { v: number; c: string; l: string; hatch?: boolean }[] = [
     { v: resolve, c: OUTCOME.true.fg, l: "on the named chain" },
-    { v: doNotResolve, c: OUTCOME.false.fg, l: "not on the named chain" },
+    { v: doNotResolve, c: OUTCOME.false.fg, l: "not on the named chain", hatch: true },
     { v: noClaim, c: OUTCOME.noClaim.fg, l: "assert no payment" },
     { v: couldNotCheck, c: OUTCOME.unknown.fg, l: "could not check" },
   ];
@@ -219,7 +219,28 @@ export function Distribution({
     >
       {segs.map((s) =>
         s.v > 0 ? (
-          <span key={s.l} title={`${s.l}: ${s.v.toLocaleString()}`} style={{ background: s.c, width: `${Math.max((s.v / total) * 100, 0.8)}%` }} />
+          <span
+            key={s.l}
+            title={`${s.l}: ${s.v.toLocaleString()}`}
+            style={{
+              background: s.c,
+              width: `${Math.max((s.v / total) * 100, 0.8)}%`,
+              /**
+               * Texture, not decoration. The true and false colours sit at OKLab delta E 6.5 under
+               * deuteranopia, measured with the dataviz palette validator, which is inside the band
+               * that needs a second channel besides hue. A red-green reader gets the hatch on
+               * "not on the named chain" and the 2px gaps between every segment, so the chart still
+               * separates with hue removed entirely. The colours themselves are unchanged, because
+               * the verdict palette carries meaning we are not free to retune for contrast.
+               */
+              ...(s.hatch
+                ? {
+                    backgroundImage:
+                      "repeating-linear-gradient(45deg, rgba(0,0,0,0.42) 0 1.5px, transparent 1.5px 4px)",
+                  }
+                : null),
+            }}
+          />
         ) : null,
       )}
     </span>

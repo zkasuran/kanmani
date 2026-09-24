@@ -55,8 +55,6 @@ const GROUPS: Group[] = [
     items: [
       { href: "/verify", label: "verify", hint: "paste anything, get a verdict" },
       { href: "/claims", label: "claims", hint: "every evidence document and what checking it found" },
-      { href: "/method", label: "method", hint: "how each rung is decided, reproducible by hand" },
-      { href: "/validate", label: "validate", hint: "the on-chain validation registry" },
     ],
   },
   {
@@ -78,8 +76,26 @@ const GROUPS: Group[] = [
       { href: "/chains", label: "chains", hint: "what we read and what hosts agents" },
     ],
   },
-  { label: "developers", href: "/developers", items: [] },
-  { label: "status", href: "/status", items: [] },
+  {
+    label: "reports",
+    href: "/status",
+    items: [
+      { href: "/method", label: "method", hint: "how each rung is decided, reproducible by hand" },
+      { href: "/validate", label: "validate", hint: "the on-chain validation registry" },
+      { href: "/status", label: "coverage", hint: "what is measured, how fresh it is, what is missing" },
+      { href: "/status#corrections", label: "corrections", hint: "every published claim we have had to withdraw" },
+    ],
+  },
+  {
+    label: "developers",
+    href: "/developers",
+    items: [
+      { href: "/developers#components", label: "components", hint: "the kit, rendering live data on the page" },
+      { href: "/developers#embed", label: "embed", hint: "one script tag, no build step" },
+      { href: "/developers#api", label: "api", hint: "open, no key, every response carries its own proof" },
+      { href: "/developers#chains", label: "add a chain", hint: "one registry entry and the tests name what is missing" },
+    ],
+  },
 ];
 
 export function Nav() {
@@ -87,6 +103,9 @@ export function Nav() {
   const [open, setOpen] = useState(false);
   const [hover, setHover] = useState<string | null>(null);
   const timer = useRef<number | null>(null);
+  /* Item anchors per group, so arrow keys can move focus without querying the DOM by selector. */
+  const itemRefs = useRef<Record<string, (HTMLAnchorElement | null)[]>>({});
+  const labelRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   useEffect(() => {
     setOpen(false);
@@ -119,6 +138,44 @@ export function Nav() {
     timer.current = window.setTimeout(() => setHover(null), 120);
   };
 
+  /**
+   * Keyboard parity with the pointer. Touch has no hover and a keyboard has no pointer, so the
+   * submenu has to open from focus as well, otherwise every item in it is unreachable without a mouse.
+   * Down opens and enters, Up enters at the end, Escape closes and hands focus back to the label.
+   */
+  const onLabelKey = (e: React.KeyboardEvent, g: Group) => {
+    if (g.items.length === 0) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      enter(g.label);
+      const idx = e.key === "ArrowDown" ? 0 : g.items.length - 1;
+      window.setTimeout(() => itemRefs.current[g.label]?.[idx]?.focus(), 0);
+    } else if (e.key === "Escape") {
+      setHover(null);
+    }
+  };
+
+  const onItemKey = (e: React.KeyboardEvent, g: Group, i: number) => {
+    const list = itemRefs.current[g.label] ?? [];
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      list[(i + 1) % list.length]?.focus();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      list[(i - 1 + list.length) % list.length]?.focus();
+    } else if (e.key === "Home") {
+      e.preventDefault();
+      list[0]?.focus();
+    } else if (e.key === "End") {
+      e.preventDefault();
+      list[list.length - 1]?.focus();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setHover(null);
+      labelRefs.current[g.label]?.focus();
+    }
+  };
+
   return (
     <>
       <nav className="ml-auto hidden items-center gap-x-1 md:flex">
@@ -126,10 +183,25 @@ export function Nav() {
           const active = inGroup(g);
           const shown = hover === g.label && g.items.length > 0;
           return (
-            <div key={g.label} className="relative" onMouseEnter={() => enter(g.label)} onMouseLeave={leave}>
+            <div
+              key={g.label}
+              className="relative"
+              onMouseEnter={() => enter(g.label)}
+              onMouseLeave={leave}
+              onFocus={() => enter(g.label)}
+              onBlur={(e) => {
+                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null);
+              }}
+            >
               <Link
                 href={g.href}
+                ref={(el) => {
+                  labelRefs.current[g.label] = el;
+                }}
                 aria-current={active ? "page" : undefined}
+                aria-haspopup={g.items.length > 0 ? "menu" : undefined}
+                aria-expanded={g.items.length > 0 ? shown : undefined}
+                onKeyDown={(e) => onLabelKey(e, g)}
                 className={`inline-block rounded px-2.5 py-1.5 font-mono text-[12px] transition-colors ${
                   active ? "text-[var(--color-text)]" : "text-muted hover:text-[var(--color-text)]"
                 }`}
@@ -138,14 +210,22 @@ export function Nav() {
               </Link>
               {shown ? (
                 <div
+                  role="menu"
+                  aria-label={g.label}
                   className="absolute left-0 top-full z-30 w-[19rem] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-1.5 shadow-[var(--shadow-2)]"
                   onMouseEnter={() => enter(g.label)}
                   onMouseLeave={leave}
                 >
-                  {g.items.map((i) => (
+                  {g.items.map((i, idx) => (
                     <Link
                       key={i.href}
                       href={i.href}
+                      role="menuitem"
+                      ref={(el) => {
+                        if (!itemRefs.current[g.label]) itemRefs.current[g.label] = [];
+                        itemRefs.current[g.label][idx] = el;
+                      }}
+                      onKeyDown={(e) => onItemKey(e, g, idx)}
                       className={`block rounded px-2.5 py-2 transition-colors hover:bg-[var(--color-panel-2)] ${
                         path === i.href ? "bg-[var(--color-panel-2)]" : ""
                       }`}
