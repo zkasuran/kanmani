@@ -476,7 +476,7 @@ and we had read only one. Darby at Chainlink Labs supplied both and both were th
 | `0x9eF6468C5f37b976E57d52054c693269479A784d` | `MockKeystoneForwarder 1.0.0` | 4,579 |
 
 Our permissionless-`report` finding was read off the **mock**, so calling it "the forwarder" was
-imprecise. **The security conclusion does not move**, and that is the point of the design: Sclera trusts
+imprecise. **The security conclusion does not move**, which is the point of the design: Sclera trusts
 neither address. It authorises on the attestor's signature, so it is safe whichever forwarder a report
 arrives through, including one we have never read. A consumer that had gated on
 `msg.sender == forwarder` would now have to know which of the two it meant.
@@ -542,7 +542,7 @@ one-bond-per-agent rule working on the live contract.
 **The bond completed its lifecycle on 2026-09-25.** It ran the full window with no slash and was
 released: [`0x06082587…1fb41b92`](https://monadexplorer.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92),
 block 107719555, 137,697 gas. The contract's USDC balance went 20,000 to 0 and the agent's 14,081 to
-34,081, so the exact amount came back. State reads `3` (`Released`), the amount field is zeroed, and a
+34,081, so the exact amount came back. State reads `3` (`Released`), the amount field is zeroed. A
 second release reverts `WrongState()`.
 
 So post, hold, mature and return are all proven on mainnet by balance rather than by event.

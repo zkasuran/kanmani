@@ -4,10 +4,10 @@
 posture for a hackathon entry, where the point is that the work can be read and checked but not forked
 into a competing submission.
 
-It is the wrong posture for two files, and the tension was recorded in
+It is the wrong posture for two files. The tension was recorded in
 [`docs/14-GAPS.md`](docs/14-GAPS.md) §6 before it was resolved here.
 
-## The two files, and why they are different
+## The two files, and how they differ
 
 | file | why it must be permissive |
 |---|---|
@@ -21,11 +21,11 @@ repository stays under SAND-1.0.
 
 A narrower licence was considered and rejected: "you may copy this for the purpose of displaying Kanmani
 verdicts" sounds tighter and is worse. It makes every consumer read a bespoke grant and decide whether
-their use qualifies, which is friction on exactly the thing we want adopted, and it invites the question
+their use qualifies, which is friction on exactly the thing we want adopted. It also invites the question
 of what happens if they later stop displaying our verdicts.
 
 More importantly, **the thing being published is a constraint, not an asset.** `kit.tsx` makes three
-mistakes unavailable: printing a null as `0`, colouring `unknown` like `false`, and averaging four
+mistakes unavailable: printing a null as `0`, colouring `unknown` like `false` and averaging four
 outcomes into a score. Those are properties we want propagated as widely as possible, including by people
 who never mention us. A restrictive licence on a safety constraint works against its own purpose.
 

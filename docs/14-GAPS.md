@@ -100,12 +100,12 @@ So the ladder **runs** as five rungs and is described as five everywhere on the 
 which is worth recording as a decision rather than as an omission. The two rungs are not appendable
 steps: `payable` probes an agent's **own service endpoint** and `settled` needs proof a payment to that
 agent cleared, so neither can be computed from what `judge()` currently receives. Both would change the
-function's input shape, the sweep that calls it, the `Rung` type stored on every historical verdict, and
+function's input shape, the sweep that calls it, the `Rung` type stored on every historical verdict plus
 the five-bead ladder the UI draws.
 
-That is a migration touching every published verdict, and doing it in the last hour of a session to
+That is a migration touching every published verdict. Doing it in the last hour of a session to
 close a checklist item is how a measurement layer acquires a silent inconsistency between old and new
-rows. **The honest five-rung ladder is better than a hasty seven-rung one**, and the boundary costs
+rows. **The honest five-rung ladder is better than a hasty seven-rung one**. The boundary costs
 nothing while it is described accurately. **A promised rung that does not run is a claim; an absent one is a boundary.** Having the
 code in the tree does not upgrade the claim, and this document would be worth less if it did.
 
@@ -164,13 +164,13 @@ and neither is a missing feature:
 
 1. **We cannot sign a verdict at all.** The attestor is `0x358c591a…7b44A`, derived from a passkey. No key
    in this environment is that key, so there is physically no way for this repository to author a slashing
-   verdict. That is the four-key separation working exactly as designed, and discovering it as a blocker is
+   verdict. That is the four-key separation working exactly as designed. Discovering it as a blocker is
    the strongest evidence it holds.
-2. **There is nothing true to sign.** Agent 10252's real claim-truth sample reads `null` — our own record
-   asserts no payment claims — so an honest verdict carries `sampleSize = 0` and the contract refuses it
+2. **There is nothing true to sign.** Agent 10252's real claim-truth sample reads `null`, because our own record
+   asserts no payment claims, so an honest verdict carries `sampleSize = 0` and the contract refuses it
    with `SampleTooSmall` before any rate is computed.
 
-Producing a live slash would therefore require either signing numbers that are not a measurement, or
+Producing a live slash would therefore require either signing numbers that are not a measurement or
 publishing false payment claims about our own agent to manufacture a sub-floor rate. **Both are precisely
 the thing this project exists to detect.** A demonstration bought that way would be worth less than the
 absence, so the absence stays.
@@ -187,7 +187,7 @@ Verified by balances rather than by events: the contract went 20,000 → 0 and t
 which is exactly the amount back. The bond's state is now `3` (`Released`) and the amount field is zeroed.
 
 An honest note on what the release proves. The window ran with **no verdict submitted at all**, so this
-demonstrates the timelock, the state machine and the return path — not that a measurement fed the outcome.
+demonstrates the timelock, the state machine and the return path. It does not show that a measurement fed the outcome.
 `release` is also callable by anyone, deliberately, because the money can only go to the agent that posted
 it; that keeps a bond from being stranded by an operator who has lost access to the gas token.
 
@@ -203,7 +203,7 @@ cast call $S 'release(uint256)' 99999 $F --rpc-url https://rpc.monad.xyz   # 0x2
 ```
 
 **A correction worth recording.** An earlier draft of this section claimed `release(10252)` reverts
-`WindowOpen`. By the time it was checked, the window had matured and the call succeeded — so the claim was
+`WindowOpen`. By the time it was checked, the window had matured and the call succeeded, so the claim was
 true when written and false within hours. It was caught by re-running the command before publishing rather
 than by a reader, which is the only reason it is a footnote instead of a defect.
 
@@ -258,7 +258,7 @@ delivered to us" are different claims and only the first is currently true.
 ## 5. Onboarding: both doors are open, the skill.md import is not
 
 **Door A closed 2026-09-24.** `/studio` now loads an operator's **own** record rather than showing an
-empty form: enter an agent id, press *load my record*, and the existing document is fetched, parsed and
+empty form: enter an agent id, press *load my record*, then the existing document is fetched, parsed and
 prefilled, with the consequence list retitled *"what your record currently does"* so the diagnosis is of
 the record they have rather than of a draft they typed.
 
@@ -267,43 +267,43 @@ which is exactly the barrier standing between three contacts and one integration
 
 Two details that make it safe rather than merely convenient:
 
-* **Fields this form does not model are carried through unchanged** and written back in place —
+* **Fields this form does not model are carried through unchanged** and written back in place.
   `image`, `registrations`, `supportedTrust`, anything vendor-specific. Dropping somebody's field because
   we have no input for it would be a worse edit than the one they came to make. The page names how many
   are being carried. A round-trip test asserts adoption changes nothing it did not need to.
 * **Skills are read from `skills`, `services` or `endpoints`**, because all three occur in the live
-  corpus — `services` is what Monad's own Agent Hub writes. A reader that only knew `skills` would adopt
+  corpus, and `services` is what Monad's own Agent Hub writes. A reader that only knew `skills` would adopt
   nothing from most real records and look broken.
 
-A `data:` document decodes locally with no network. A hosted one is fetched, and when the host refuses a
+A `data:` document decodes locally with no network. A hosted one is fetched. When the host refuses a
 browser the page says it is a CORS setting rather than a fault and offers the paste.
 
 | | |
 |---|---|
 | **Missing** | The `skill.md` / agent-card import. An operator with an existing card still retypes it, though they no longer retype an existing *registration* |
-| **Exists** | Door A, Door B, `/agent/<id>`, `/validate`, `agents.md`, and a re-check that fires on `MetadataUpdate` |
+| **Exists** | Door A, Door B, `/agent/<id>`, `/validate`, `agents.md` plus a re-check that fires on `MetadataUpdate` |
 | **Closes** | a parser from the Agent Hub format into a `RegistrationDraft`. `adopt()` is already that shape, so this is a mapping rather than new machinery |
 
 ---
 
-## 6. The kit is MIT, and there is still no package
+## 6. The kit is MIT, but there is still no package
 
 **Licence resolved 2026-09-24.** `components/kit.tsx` and `app/embed.js/route.ts` are released under
-**MIT** — the only two files in the repository that are, since everything else stays SAND-1.0,
+**MIT**, the only two files in the repository that are, since everything else stays SAND-1.0,
 source-available with no derivatives. The reasoning is in [`24-KIT-LICENCE.md`](24-KIT-LICENCE.md) and it
-is short: a component that exists to be rendered inside somebody else's product cannot be read-only, and
-**what the kit publishes is a constraint rather than an asset.** It makes three mistakes unavailable, and
+is short: a component that exists to be rendered inside somebody else's product cannot be read-only, because
+**what the kit publishes is a constraint rather than an asset.** It makes three mistakes unavailable. It also
 a restrictive licence on a safety property works against its own purpose.
 
 A narrower grant was considered and rejected: "you may copy this to display Kanmani verdicts" sounds
 tighter and is worse, because it makes every consumer read a bespoke licence and decide whether they
-qualify — friction on the exact thing we want adopted.
+qualify, which is friction on the exact thing we want adopted.
 
 | | |
 |---|---|
 | **Missing** | A published npm package. Copying one file works and does not version: a consumer has no way to learn that `Verdict` changed |
-| **Exists** | MIT-licensed components with honest import paths, and `embed.js`, which needs no install at all |
-| **Closes** | `npm publish`. Not done, and it is the smaller half now that the licence no longer blocks it |
+| **Exists** | MIT-licensed components with honest import paths plus `embed.js`, which needs no install at all |
+| **Closes** | `npm publish`. Not done. It is the smaller half now that the licence no longer blocks it |
 
 ---
 
@@ -362,18 +362,18 @@ three answers had arrived and had not been read.
 | Denham, Envio | 2026-09-21 | `@crossChain` is correct and putting `chainId` in the id is the right shape |
 | Kai Jun Eer, Category Labs | 2026-09-21 | PRF output is deterministic per passkey, so cross-device needs no enrolment and no persisted key |
 
-Every one confirmed a decision already shipped rather than forcing a change, and one produced a correction
+Every one confirmed a decision already shipped rather than forcing a change. One produced a correction
 to our own audit: Chainlink's answer revealed **two** forwarders on Monad mainnet where we had read one, so
 the permissionless-`report` finding was about the mock. The conclusion held because Sclera trusts neither.
 
 **All four are replied to, 2026-09-25.** The reply to Chainlink carries the two-forwarder correction
-back, since Darby said he would feed the addresses to his team, and asks the one question left worth
+back, since Darby said he would feed the addresses to his team. It asks the one question left worth
 asking: whether the real `KeystoneForwarder` validates the DON signature set before calling, so that a
-consumer gating on `msg.sender` would be safe. Our design does not depend on the answer — the signature
-check stays either way — but the audit should state the reason correctly rather than assert a property of
+consumer gating on `msg.sender` would be safe. Our design does not depend on the answer, because the signature
+check stays either way, but the audit should state the reason correctly rather than assert a property of
 a contract we have not read.
 
-**Two remain unanswered**, both fielded: the x402 `upto` scheme with Axal, and Aurora Intents
+**Two remain unanswered**, both fielded: the x402 `upto` scheme with Axal plus Aurora Intents
 short-landing behaviour.
 
 The three targets are named because the whole population was measured, which is the one advantage
