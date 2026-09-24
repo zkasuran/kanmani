@@ -26,14 +26,28 @@ export const revalidate = 0;
  * to attack.
  */
 
-/** The machine-readable surfaces. Design in this track is developer experience, so these are the craft. */
-const SURFACES: { href: string; label: string }[] = [
-  { href: "/llms.txt", label: "GET /llms.txt" },
-  { href: "/agents.md", label: "GET /agents.md" },
-  { href: "/feed.json", label: "GET /feed.json" },
-  { href: "/schema.json", label: "GET /schema.json" },
-  { href: "/api/claims?outcome=false", label: "GET /api/claims" },
-  { href: "/.well-known/agent-registration.json", label: "GET /.well-known/agent-registration.json" },
+/**
+ * The machine-readable surfaces, laid out three by three.
+ *
+ * Nine is not a design conceit, it is how many there are. The grid reads as a contract sheet rather
+ * than a link list, which is the point: an agent picking a surface wants to scan verbs and shapes,
+ * not prose. Each carries one line saying what it answers, because a bare path tells a reader the
+ * route exists and nothing about whether it is the one they want.
+ *
+ * The two parameterised routes are linked against agent 10252, which is ours. Pointing them at a
+ * real id means every cell on this grid is a live request a reader can click, rather than a template
+ * they have to fill in before finding out whether it works.
+ */
+const SURFACES: { href: string; label: string; hint: string }[] = [
+  { href: "/llms.txt", label: "GET /llms.txt", hint: "what this is, for a model with no context" },
+  { href: "/agents.md", label: "GET /agents.md", hint: "the access contract, in prose an agent can follow" },
+  { href: "/feed.json", label: "GET /feed.json", hint: "every verdict, newest first" },
+  { href: "/schema.json", label: "GET /schema.json", hint: "the response shape, as JSON Schema" },
+  { href: "/api/claims?outcome=false", label: "GET /api/claims", hint: "filter by outcome, chain or agent" },
+  { href: "/api/agent/10252", label: "GET /api/agent/<id>", hint: "one agent, its rung and its sample" },
+  { href: "/api/sla/10252", label: "GET /api/sla/<id>", hint: "claim-truth rate over a window" },
+  { href: "/.well-known/agent-registration.json", label: "GET /.well-known/…", hint: "our own ERC-8004 record, self-hosted" },
+  { href: "/embed.js", label: "GET /embed.js", hint: "the badge, no install and no framework" },
 ];
 
 /**
@@ -424,14 +438,15 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
             than defaulted to zero.
           </p>
         </div>
-        <div className="mt-8 auto-grid">
+        <div className="surface-grid mt-8">
           {SURFACES.map((x) => (
             <a
               key={x.href}
               href={x.href}
-              className="glow-lift block rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4 font-mono text-[12px] text-muted hover:text-[var(--color-text)]"
+              className="glow-lift block rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4"
             >
-              {x.label}
+              <span className="block font-mono text-[12px] text-[var(--color-text)]">{x.label}</span>
+              <span className="mt-1.5 block text-[11.5px] leading-snug text-muted">{x.hint}</span>
             </a>
           ))}
         </div>

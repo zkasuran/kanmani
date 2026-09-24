@@ -382,7 +382,7 @@ good.
 
 ### Cornea, the surface
 
-Nineteen pages, seven machine-readable surfaces and 8 API routes. Every page can print
+Nineteen pages, nine machine-readable GET surfaces and 14 route handlers. Every page can print
 the SQL behind its numbers. `/verify` imports the verifier's own `judge()` rather than
 reimplementing the ladder, so the site and the command line cannot give different answers.
 
