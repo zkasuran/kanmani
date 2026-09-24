@@ -89,19 +89,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/status" className="hover:text-muted">
                 status
               </Link>
-              <a href="/llms.txt" className="hover:text-muted">
+              <a href="/llms.txt" target="_blank" rel="noopener" className="hover:text-muted">
                 llms.txt
               </a>
-              <a href="/agents.md" className="hover:text-muted">
+              <a href="/agents.md" target="_blank" rel="noopener" className="hover:text-muted">
                 agents.md
               </a>
-              <a href="/feed.json" className="hover:text-muted">
+              <a href="/feed.json" target="_blank" rel="noopener" className="hover:text-muted">
                 feed.json
               </a>
-              <a href="/schema.json" className="hover:text-muted">
+              <a href="/schema.json" target="_blank" rel="noopener" className="hover:text-muted">
                 schema.json
               </a>
-              <a href="/.well-known/agent-registration.json" className="hover:text-muted">
+              <a href="/.well-known/agent-registration.json" target="_blank" rel="noopener" className="hover:text-muted">
                 our own record
               </a>
             </div>

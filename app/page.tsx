@@ -443,6 +443,15 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
             <a
               key={x.href}
               href={x.href}
+              /**
+               * New tab, because every one of these returns a document rather than a page. Navigating
+               * away in place would replace the site with raw JSON and leave back as the only way out,
+               * which is a bad trade for a reader who was mid-scroll. `noopener` is hygiene: these are
+               * our own paths, but a target of _blank without it hands the opened document a handle on
+               * this window.
+               */
+              target="_blank"
+              rel="noopener"
               className="glow-lift block rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-4"
             >
               <span className="block font-mono text-[12px] text-[var(--color-text)]">{x.label}</span>
