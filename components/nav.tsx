@@ -212,7 +212,20 @@ export function Nav() {
                 <div
                   role="menu"
                   aria-label={g.label}
-                  className="absolute left-0 top-full z-30 w-[19rem] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-1.5 shadow-[var(--shadow-2)]"
+                  /**
+                   * Anchored to the RIGHT edge of its label, not the left.
+                   *
+                   * The nav sits flush right (`ml-auto`), so a 19rem panel opening rightward from the
+                   * last groups ran off the viewport: `developers` is the final label, so its panel had
+                   * almost no room to its right at all. Opening inward means the panel grows back across
+                   * the page, where there is always space because the nav is the rightmost thing in a
+                   * centred container.
+                   *
+                   * `max-w` is the belt to that braces: at a narrow desktop width the leftmost group
+                   * could otherwise push past the left gutter, so the panel shrinks rather than
+                   * overflowing on the other side.
+                   */
+                  className="absolute right-0 top-full z-30 w-[19rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-1.5 shadow-[var(--shadow-2)]"
                   onMouseEnter={() => enter(g.label)}
                   onMouseLeave={leave}
                 >
