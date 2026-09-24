@@ -131,10 +131,14 @@ suite is 127 tests, 119 passing, 8 fork tests skipped without a fork URL.
 **Deployed 2026-09-24** at `0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`, source verified `exact_match`, 0.250 MON of gas. The ownership
 check is proven on the live contract: `postBond` for an agent we do not own reverts `NotAgentOwner()`.
 
-**What is still true is that no bond has been posted.** The mechanism exists and nothing is staked on
-it yet, which is a different sentence from the one this section used to carry and a weaker claim than
-"trust becomes a price" fully realised. Posting the first real bond needs an agent we own plus USDC,
-and it is not done.
+**The first bond is posted.** Agent 10252 staked 0.02 USDC against an 80% claim-truth floor,
+transaction `0x72970dc0…26697e7c` at block 107460188. The contract holds the tokens and the poster's
+balance fell by exactly that amount, so the stake is real rather than signalled.
+
+**What remains unproven is a live slash.** Our own record asserts no payment claims, so the sample sits
+below the minimum and nothing can fall below the floor. The slashing path is covered by the test suite
+and by fork tests against real mainnet state, not by a slash of our own money on chain. Those are
+different strengths of evidence and the difference is not collapsed here.
 
 **What "built, not deployed" costs, stated exactly.** No Sclera address is recorded anywhere and no
 `SCLERA` variable is set in the running environment, so no bond has ever been posted or slashed with

@@ -461,6 +461,35 @@ cast call 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf 'postBond(uint256,address,u
 So "an agent stakes against its own promise" is now enforced by a deployed contract rather than
 asserted by a sentence.
 
+**The first bond is posted, in real USDC, on mainnet.** Agent 10252, which we own, staked 0.02 USDC
+against a floor of 80% claim truth over roughly one day of blocks with a minimum sample of 5:
+
+| | |
+|---|---|
+| transaction | [`0x72970dc0…26697e7c`](https://monadexplorer.com/tx/0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c) |
+| block | 107460188, 261,828 gas |
+| locked | 20,000 units of USDC, held by the contract |
+| matures | block 107676188 |
+
+Verified by where the money is rather than by an event:
+
+```bash
+cast call 0x754704Bc059F8C67012fEd69BC8A327a5aafb603 'balanceOf(address)(uint256)' \
+  0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf --rpc-url https://rpc.monad.xyz    # 20000
+cast call 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf 'maturesAt(uint256)(uint64)' 10252 \
+  --rpc-url https://rpc.monad.xyz                                               # 107676188
+```
+
+The house balance moved 34,081 to 14,081, so the tokens left the poster and are held by the contract.
+A second bond on the same agent is refused with `BondExists()` (`0x2e01e311`), which is the
+one-bond-per-agent rule working on the live contract.
+
+**What this does and does not prove.** It proves the stake is real: money is locked by an immutable
+contract against a floor its poster chose, and only the ownership check let that poster in. It does not
+prove a slash, because our own record asserts no payment claims, so the sample is below the minimum and
+nothing can fall below the floor. The slashing path is proven in the test suite and against a fork of
+mainnet, not by a live slash of our own money. Both sentences belong together.
+
 **The attestor is a passkey-derived key that owns nothing.** It is the fourth Iris key, namespace
 `kanmani.optic-onchain.v1`, secp256k1 because `ecrecover` is the only scheme the EVM verifies cheaply.
 It signs verdicts and cannot move money, and it is deliberately not the deployer: the deploy script
