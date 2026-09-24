@@ -366,9 +366,15 @@ Every one confirmed a decision already shipped rather than forcing a change, and
 to our own audit: Chainlink's answer revealed **two** forwarders on Monad mainnet where we had read one, so
 the permissionless-`report` finding was about the mock. The conclusion held because Sclera trusts neither.
 
+**All four are replied to, 2026-09-25.** The reply to Chainlink carries the two-forwarder correction
+back, since Darby said he would feed the addresses to his team, and asks the one question left worth
+asking: whether the real `KeystoneForwarder` validates the DON signature set before calling, so that a
+consumer gating on `msg.sender` would be safe. Our design does not depend on the answer — the signature
+check stays either way — but the audit should state the reason correctly rather than assert a property of
+a contract we have not read.
+
 **Two remain unanswered**, both fielded: the x402 `upto` scheme with Axal, and Aurora Intents
-short-landing behaviour. Replies to the four answers are drafted and **not sent**, because every write to
-the portal API returns `403 CSRF_INVALID` with the session we hold.
+short-landing behaviour.
 
 The three targets are named because the whole population was measured, which is the one advantage
 here: I can name every payable agent on Monad because I checked all 10,253 and there are three.
