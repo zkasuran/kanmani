@@ -467,6 +467,20 @@ function is permissionless, so a contract gating on `msg.sender == forwarder` wo
 nothing. Sclera recovers the signer and requires one key fixed at deploy. That key is derived from
 the same passkey ceremony as everything else and is pinned in two independent implementations:
 
+**Corrected 2026-09-25, from Chainlink's own answer.** There are **two** forwarders on Monad mainnet
+and we had read only one. Darby at Chainlink Labs supplied both and both were then checked on chain:
+
+| address | `typeAndVersion()` | bytes |
+|---|---|---|
+| `0x76c9cf548b4179F8901cda1f8623568b58215E62` | `KeystoneForwarder 1.0.0` | 8,591 |
+| `0x9eF6468C5f37b976E57d52054c693269479A784d` | `MockKeystoneForwarder 1.0.0` | 4,579 |
+
+Our permissionless-`report` finding was read off the **mock**, so calling it "the forwarder" was
+imprecise. **The security conclusion does not move**, and that is the point of the design: Sclera trusts
+neither address. It authorises on the attestor's signature, so it is safe whichever forwarder a report
+arrives through, including one we have never read. A consumer that had gated on
+`msg.sender == forwarder` would now have to know which of the two it meant.
+
 ```bash
 grep -rn 0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf contracts/ lib/
 # contracts/script/DeploySclera.s.sol, contracts/test/ScleraCrossSign.t.sol, lib/iris.test.ts

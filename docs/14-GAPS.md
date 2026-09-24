@@ -349,8 +349,26 @@ Traction is 20% of the score. The honest count today, 2026-09-24:
 | jobs settled that we did not create ourselves | **0** |
 | forum threads | **1 submitted, held for moderation** |
 | progress updates posted | 6 |
-| mentor questions asked / fielded / answered | 6 / 5 / 1 |
+| mentor questions asked / fielded / answered | 6 / 6 / 4 |
 | forum threads | 1 submitted, awaiting moderation |
+
+**Four of six mentor questions are answered, read 2026-09-25.** This document said one, which was stale:
+three answers had arrived and had not been read.
+
+| mentor | answered | what it settled |
+|---|---|---|
+| Kai Jun Eer, Category Labs | 2026-09-18 | HKDF namespacing from one PRF output is sound |
+| Darby, Chainlink Labs | 2026-09-20 | **CLI simulation is what they judge**, no testnet DON exists for participants, plus both Monad forwarder addresses |
+| Denham, Envio | 2026-09-21 | `@crossChain` is correct and putting `chainId` in the id is the right shape |
+| Kai Jun Eer, Category Labs | 2026-09-21 | PRF output is deterministic per passkey, so cross-device needs no enrolment and no persisted key |
+
+Every one confirmed a decision already shipped rather than forcing a change, and one produced a correction
+to our own audit: Chainlink's answer revealed **two** forwarders on Monad mainnet where we had read one, so
+the permissionless-`report` finding was about the mock. The conclusion held because Sclera trusts neither.
+
+**Two remain unanswered**, both fielded: the x402 `upto` scheme with Axal, and Aurora Intents
+short-landing behaviour. Replies to the four answers are drafted and **not sent**, because every write to
+the portal API returns `403 CSRF_INVALID` with the session we hold.
 
 The three targets are named because the whole population was measured, which is the one advantage
 here: I can name every payable agent on Monad because I checked all 10,253 and there are three.
