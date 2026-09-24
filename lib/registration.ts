@@ -285,3 +285,117 @@ export function problems(d: RegistrationDraft, kind: UriKind, hostedAt = ""): st
   }
   return out;
 }
+
+/* ------------------------------------------------------------------ adopting what exists */
+
+/**
+ * Turn a document that is already on chain into an editable draft.
+ *
+ * This is the load-bearing half of "Door A" from the plan: an operator should land on **their own data,
+ * already measured**, not on an empty form. Retyping a record you already published is the friction that
+ * makes a one-field fix feel like a project.
+ *
+ * Deliberately lossy in one direction and honest about it. Fields this editor does not model —
+ * `image`, `registrations`, `supportedTrust`, anything an operator invented — are preserved in
+ * `carried` and written back out unchanged by `buildRecordPreserving`. Dropping somebody's fields
+ * because our form has no input for them would be a worse edit than the one they came to make.
+ */
+export type Adopted = {
+  draft: RegistrationDraft;
+  /** Fields we parsed but do not edit, written back unchanged. */
+  carried: Record<string, unknown>;
+  /** True when the source was a `data:` URI, so it had no host to ask. */
+  wasOnChain: boolean;
+};
+
+const EDITED_KEYS = new Set(["name", "description", "url", "skills", "refuses"]);
+
+/**
+ * Decode a `data:` URI, base64 or percent-encoded.
+ *
+ * Both appear in the live corpus: most are base64 and a few are plain percent-encoded JSON, so a reader
+ * that only handles one silently fails on real records.
+ */
+export function decodeDataUri(uri: string): string | null {
+  const comma = uri.indexOf(",");
+  if (!uri.startsWith("data:") || comma === -1) return null;
+  const meta = uri.slice(5, comma);
+  const payload = uri.slice(comma + 1);
+  try {
+    if (/;base64/i.test(meta)) {
+      const bin = atob(payload);
+      const bytes = Uint8Array.from(bin, (c) => c.charCodeAt(0));
+      return new TextDecoder().decode(bytes);
+    }
+    return decodeURIComponent(payload);
+  } catch {
+    return null;
+  }
+}
+
+/** Parse a registration document into a draft plus the fields we do not edit. */
+export function adopt(json: string, wasOnChain: boolean): Adopted | null {
+  let obj: unknown;
+  try {
+    obj = JSON.parse(json);
+  } catch {
+    return null;
+  }
+  if (!obj || typeof obj !== "object" || Array.isArray(obj)) return null;
+  const o = obj as Record<string, unknown>;
+
+  // Skills appear under several names in the wild. `services` is what Monad's own Agent Hub writes and
+  // `endpoints` is what the ERC-8004 examples use, so a reader that only knows `skills` adopts nothing
+  // from most real records.
+  const rawSkills =
+    (Array.isArray(o.skills) && o.skills) ||
+    (Array.isArray(o.services) && o.services) ||
+    (Array.isArray(o.endpoints) && o.endpoints) ||
+    [];
+
+  const skills: SkillDraft[] = (rawSkills as Record<string, unknown>[])
+    .filter((x) => x && typeof x === "object")
+    .map((x) => ({
+      id: String(x.id ?? x.name ?? "").trim(),
+      endpoint: String(x.endpoint ?? x.url ?? "").trim(),
+      // x402 is declared several ways. Any of them counts as declared; none of them is a measurement.
+      x402:
+        x.payment === "x402" ||
+        x.x402Support === true ||
+        x.x402support === true ||
+        o.x402Support === true ||
+        o.x402support === true,
+    }))
+    .filter((x) => x.id || x.endpoint);
+
+  const carried: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(o)) {
+    if (!EDITED_KEYS.has(k) && k !== "services" && k !== "endpoints") carried[k] = v;
+  }
+
+  return {
+    draft: {
+      name: String(o.name ?? "").trim(),
+      description: String(o.description ?? "").trim(),
+      url: String(o.url ?? "").trim(),
+      skills: skills.length ? skills : [{ id: "", endpoint: "", x402: false }],
+      refuses: Array.isArray(o.refuses) ? o.refuses.map(String) : [],
+    },
+    carried,
+    wasOnChain,
+  };
+}
+
+/**
+ * Build the record for an adopted document, keeping the fields we never modelled.
+ *
+ * Key order puts our edited fields first and the carried ones after, so a diff between the old and new
+ * document is readable rather than a reshuffle.
+ */
+export function buildRecordPreserving(d: RegistrationDraft, carried: Record<string, unknown>): Record<string, unknown> {
+  return { ...buildRecord(d), ...carried };
+}
+
+export function recordJsonPreserving(d: RegistrationDraft, carried: Record<string, unknown>): string {
+  return JSON.stringify(buildRecordPreserving(d, carried), null, 2);
+}

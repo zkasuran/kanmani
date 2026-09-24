@@ -18,6 +18,10 @@ import {
   dataUri,
   problems,
   recordJson,
+  adopt,
+  buildRecordPreserving,
+  decodeDataUri,
+  recordJsonPreserving,
   registerCalldata,
   setAgentUriCalldata,
   type RegistrationDraft,
@@ -132,4 +136,71 @@ test("a record over the reader's own byte cap is refused rather than silently tr
   const huge: RegistrationDraft = { ...good, description: "x".repeat(70_000) };
   assert.ok(problems(huge, "data").some((p) => /65,536 byte cap/.test(p)));
   assert.equal(consequences(huge, "data").find((x) => x.label === "fits on chain")?.met, false);
+});
+
+/* ------------------------------------------------------------------ adopting what exists */
+
+test("a data: URI decodes from base64 and from percent-encoding, both of which occur live", () => {
+  const json = '{"name":"A"}';
+  assert.equal(decodeDataUri(dataUri(json)), json);
+  assert.equal(decodeDataUri(`data:application/json,${encodeURIComponent(json)}`), json);
+  assert.equal(decodeDataUri("not a data uri"), null);
+  assert.equal(decodeDataUri("data:application/json;base64,!!!not-base64"), null);
+});
+
+test("skills are adopted from skills, services or endpoints, because real records use all three", () => {
+  for (const key of ["skills", "services", "endpoints"]) {
+    const a = adopt(JSON.stringify({ name: "A", [key]: [{ id: "x", endpoint: "https://e" }] }), true);
+    assert.equal(a?.draft.skills[0]?.id, "x", `${key} was not adopted`);
+    assert.equal(a?.draft.skills[0]?.endpoint, "https://e");
+  }
+});
+
+test("a service named rather than id'd still adopts, and url counts as endpoint", () => {
+  const a = adopt(JSON.stringify({ name: "A", services: [{ name: "web", url: "https://e" }] }), true);
+  assert.equal(a?.draft.skills[0]?.id, "web");
+  assert.equal(a?.draft.skills[0]?.endpoint, "https://e");
+});
+
+test("x402 is recognised however it was declared, and remains a declaration not a measurement", () => {
+  assert.equal(adopt('{"name":"A","skills":[{"id":"s","payment":"x402"}]}', true)?.draft.skills[0]?.x402, true);
+  assert.equal(adopt('{"name":"A","x402Support":true,"skills":[{"id":"s"}]}', true)?.draft.skills[0]?.x402, true);
+  assert.equal(adopt('{"name":"A","skills":[{"id":"s"}]}', true)?.draft.skills[0]?.x402, false);
+});
+
+test("fields we do not edit are carried and written back unchanged", () => {
+  const src = {
+    name: "A", description: "d",
+    image: "https://img", supportedTrust: ["reputation"],
+    registrations: [{ agentId: 1 }], weirdVendorField: { deep: [1, 2] },
+  };
+  const a = adopt(JSON.stringify(src), true);
+  assert.ok(a);
+  assert.deepEqual(a!.carried.registrations, src.registrations);
+  assert.deepEqual(a!.carried.weirdVendorField, src.weirdVendorField);
+
+  const out = buildRecordPreserving(a!.draft, a!.carried);
+  assert.equal(out.image, "https://img", "dropping a field the form cannot show would be a worse edit");
+  assert.deepEqual(out.supportedTrust, ["reputation"]);
+  assert.deepEqual(out.weirdVendorField, src.weirdVendorField);
+  // and our own edited fields still lead, so a diff reads rather than reshuffles
+  assert.equal(Object.keys(out)[0], "name");
+});
+
+test("a round trip through adopt changes nothing it did not need to", () => {
+  const original = recordJson(good);
+  const a = adopt(original, true);
+  assert.ok(a);
+  assert.equal(recordJsonPreserving(a!.draft, a!.carried), original);
+});
+
+test("garbage is refused rather than adopted as an empty draft", () => {
+  for (const bad of ["not json", "[]", "null", '"a string"', "42"]) {
+    assert.equal(adopt(bad, true), null, `${bad} must not adopt`);
+  }
+});
+
+test("wasOnChain is carried through, because it decides whether the record can 404", () => {
+  assert.equal(adopt('{"name":"A"}', true)?.wasOnChain, true);
+  assert.equal(adopt('{"name":"A"}', false)?.wasOnChain, false);
 });

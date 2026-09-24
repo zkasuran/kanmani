@@ -17,6 +17,7 @@ const USDC = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
 const REGISTRY = "0x8004A169FB4a3325136EB29fA0ceB6D2e539a432";
 const ATTESTOR = "0x358c591aD7D60aC36bC223472B41518A7FA7b44A";
 const FIRST_BOND = "0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c";
+const FIRST_RELEASE = "0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92";
 
 function Tx({ hash, children }: { hash: string; children: React.ReactNode }) {
   return (
@@ -48,7 +49,7 @@ export default function Bond() {
 
       {/* ---------------------------------------------------------------- it is live */}
       <Reveal>
-        <Panel title="live on mainnet, with money in it" subtitle="Not a testnet screenshot and not a plan.">
+        <Panel title="one complete bond, on mainnet" subtitle="Posted, held for its full window, released. Not a testnet screenshot and not a plan.">
           <dl className="space-y-1">
             <Row label="contract">
               <a
@@ -60,8 +61,11 @@ export default function Bond() {
                 {SCLERA}
               </a>
             </Row>
-            <Row label="first bond">
+            <Row label="bond posted">
               <Tx hash={FIRST_BOND}>0.02 USDC staked on agent 10252, block 107460188</Tx>
+            </Row>
+            <Row label="bond released">
+              <Tx hash={FIRST_RELEASE}>returned in full after the window, block 107719555</Tx>
             </Row>
             <Row label="floor committed to">
               <Mono>8000 bps</Mono> <span className="text-muted">— 80% of decided claims must resolve true</span>
@@ -75,17 +79,27 @@ export default function Bond() {
           </dl>
 
           <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
-            Check the stake by where the money is rather than by an event we emitted:
+            Verified by where the money went rather than by an event we emitted. While the bond was open the
+            contract held 20,000 units and the agent was down by exactly that; on release both reversed.
+            The bond now reads state <Mono>3</Mono>, <Mono>Released</Mono>, with its amount zeroed, and a
+            second release reverts <Mono>WrongState()</Mono>.
           </p>
           <div className="mt-2 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
-            <pre className="sql">{`# the contract is holding it
+            <pre className="sql">{`# the contract holds nothing now, because it gave it back
 cast call ${USDC} 'balanceOf(address)(uint256)' \\
-  ${SCLERA} --rpc-url https://rpc.monad.xyz    # 20000
+  ${SCLERA} --rpc-url https://rpc.monad.xyz    # 0
 
-# and when it can be released
-cast call ${SCLERA} 'maturesAt(uint256)(uint64)' 10252 \\
-  --rpc-url https://rpc.monad.xyz    # 107676188`}</pre>
+# and the bond is settled rather than open
+cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
+# state 3 == Released, amount 0`}</pre>
           </div>
+          <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
+            <span className="text-[var(--color-text)]">What the release does not prove:</span> the window ran
+            with no verdict submitted, so this demonstrates the timelock, the state machine and the return
+            path — not that a measurement fed the outcome. <Mono>release</Mono> is callable by anyone on
+            purpose, because the money can only go to the agent that posted it, which keeps a bond from being
+            stranded by an operator who has lost access to the gas token.
+          </p>
         </Panel>
       </Reveal>
 
@@ -167,11 +181,15 @@ cast call ${SCLERA} 'maturesAt(uint256)(uint64)' 10252 \\
       <Reveal>
         <Panel title="what this does not prove yet">
           <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
-            <span className="text-[var(--color-text)]">No bond has been slashed.</span> Our own agent
-            record asserts no payment claims, so its sample sits below the minimum and nothing can fall
-            below the floor. The slashing path is covered by the contract test suite and by fork tests
-            against real mainnet state — not by a live slash of our own money, and those are different
-            strengths of evidence.
+            <span className="text-[var(--color-text)]">No bond has been slashed, and we declined to fake
+            one.</span> Two things block it independently. The attestor key is derived from a passkey, so
+            nothing in the repository can author a slashing verdict at all — that is the key separation
+            working rather than a gap. And agent 10252&apos;s real claim-truth sample is empty, because our
+            own record asserts no payment claims, so an honest verdict carries a sample of zero and the
+            contract refuses it before computing a rate. Manufacturing a slash would mean signing numbers
+            that are not a measurement, or publishing false payment claims about our own agent. Both are the
+            thing this project exists to detect, so the absence stays and the slashing path rests on the
+            contract test suite and fork tests against real mainnet state.
           </p>
           <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
             The review that preceded this deployment found a real one and is published with the exploit

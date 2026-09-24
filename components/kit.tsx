@@ -1,3 +1,9 @@
+// SPDX-License-Identifier: MIT
+//
+// This file, and app/embed.js/route.ts, are the ONLY two files in this repository under MIT. The rest is
+// LicenseRef-zkasuran-SAND-1.0, source-available with no derivatives. The carve-out is deliberate and is
+// explained in docs/24-KIT-LICENCE.md: a component that exists to be rendered inside somebody else's
+// product cannot be read-only, and what this file publishes is a constraint rather than an asset. Copy it.
 /**
  * The Kanmani kit: the public component surface.
  *

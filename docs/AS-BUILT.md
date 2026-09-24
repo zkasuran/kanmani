@@ -525,6 +525,14 @@ The house balance moved 34,081 to 14,081, so the tokens left the poster and are 
 A second bond on the same agent is refused with `BondExists()` (`0x2e01e311`), which is the
 one-bond-per-agent rule working on the live contract.
 
+**The bond completed its lifecycle on 2026-09-25.** It ran the full window with no slash and was
+released: [`0x06082587…1fb41b92`](https://monadexplorer.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92),
+block 107719555, 137,697 gas. The contract's USDC balance went 20,000 to 0 and the agent's 14,081 to
+34,081, so the exact amount came back. State reads `3` (`Released`), the amount field is zeroed, and a
+second release reverts `WrongState()`.
+
+So post, hold, mature and return are all proven on mainnet by balance rather than by event.
+
 **What this does and does not prove.** It proves the stake is real: money is locked by an immutable
 contract against a floor its poster chose, and only the ownership check let that poster in. It does not
 prove a slash, because our own record asserts no payment claims, so the sample is below the minimum and

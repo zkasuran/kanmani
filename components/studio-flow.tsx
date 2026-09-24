@@ -30,6 +30,9 @@ import { type IrisKeys } from "@/lib/iris.ts";
 import {
   EMPTY_DRAFT,
   IDENTITY_ABI,
+  adopt,
+  decodeDataUri,
+  recordJsonPreserving,
   agentUri,
   byteLength,
   consequences,
@@ -77,6 +80,9 @@ export function StudioFlow() {
   const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string } | null>(null);
   const [published, setPublished] = useState<"no" | "yes" | "already">("no");
   const [sent, setSent] = useState<{ hash: string; agentId?: string } | null>(null);
+  /** Fields the existing document carried that this form does not model. Written back unchanged. */
+  const [carried, setCarried] = useState<Record<string, unknown>>({});
+  const [adopted, setAdopted] = useState<{ uri: string; onChain: boolean } | null>(null);
   const [note, setNote] = useState<{ kind: "error" | "info"; text: string } | null>(null);
 
   // A stale "you own this" is the one piece of state that must never outlive its inputs, so it is
@@ -86,10 +92,17 @@ export function StudioFlow() {
     setReceipt(null);
     setPublished("no");
     setSent(null);
+    setCarried({});
+    setAdopted(null);
   }, [agentId, keys, door]);
 
-  const json = useMemo(() => recordJson(draft), [draft]);
-  const uri = useMemo(() => agentUri(draft, kind, hostedAt), [draft, kind, hostedAt]);
+  const json = useMemo(() => recordJsonPreserving(draft, carried), [draft, carried]);
+  // When a document was adopted, the URI must be built over the preserved record rather than only the
+  // edited fields, or sending would silently strip whatever this form does not show.
+  const uri = useMemo(
+    () => (kind === "data" ? `data:application/json;base64,${btoa(unescape(encodeURIComponent(json)))}` : hostedAt.trim()),
+    [kind, json, hostedAt],
+  );
   const cons = useMemo(() => consequences(draft, kind, hostedAt), [draft, kind, hostedAt]);
   const probs = useMemo(() => problems(draft, kind, hostedAt), [draft, kind, hostedAt]);
 
@@ -128,6 +141,71 @@ export function StudioFlow() {
       setBusy(null);
     }
   }, []);
+
+  /**
+   * Door A: load the operator's own record and diagnose it, rather than showing an empty form.
+   *
+   * Retyping a document you already published is the friction that makes a one-field fix feel like a
+   * project, and it is the reason the plan specified "their own data, already measured" as the first
+   * screen. The consequence list then does the diagnosis, so the operator sees what is wrong with the
+   * record they have rather than being told in prose.
+   *
+   * A `data:` document decodes locally with no network at all. A hosted one has to be fetched, and the
+   * host may refuse a browser — in which case we say so and offer the paste, instead of pretending the
+   * document is unreadable.
+   */
+  const loadMine = useCallback(async () => {
+    if (!/^\d+$/.test(agentId)) return;
+    setBusy("load");
+    setNote(null);
+    try {
+      const res = await fetch(`/api/agent/${agentId}`, { headers: { accept: "application/json" } });
+      if (!res.ok) {
+        setNote({ kind: "error", text: `No agent #${agentId} in the index (HTTP ${res.status}).` });
+        return;
+      }
+      const body = (await res.json()) as { data?: { registration?: { uri?: string } | null } };
+      const u = body.data?.registration?.uri ?? "";
+      if (!u) {
+        setNote({ kind: "info", text: "That agent declares no document at all, so there is nothing to load. 80 agents on Monad are in that state." });
+        return;
+      }
+
+      let text: string | null = decodeDataUri(u);
+      const onChain = text !== null;
+      if (!onChain) {
+        try {
+          const r = await fetch(u);
+          text = r.ok ? await r.text() : null;
+          if (!r.ok) {
+            setNote({ kind: "error", text: `The document answered HTTP ${r.status}, so there is nothing to adopt. That is the finding, not a problem with this page.` });
+            return;
+          }
+        } catch {
+          setNote({ kind: "error", text: "Your host refused a browser fetch, which is a CORS setting rather than a fault. Paste the JSON into the fields below and the diagnosis still works." });
+          setAdopted({ uri: u, onChain: false });
+          return;
+        }
+      }
+
+      const a = text ? adopt(text, onChain) : null;
+      if (!a) {
+        setNote({ kind: "error", text: "The document fetched but did not parse as a registration object." });
+        return;
+      }
+      setDraft(a.draft);
+      setCarried(a.carried);
+      setAdopted({ uri: u, onChain });
+      // Default the hosting choice to what they already use, so nothing changes unless they choose to.
+      setKind(onChain ? "data" : "https");
+      if (!onChain) setHostedAt(u);
+      setNote({ kind: "info", text: "Loaded. Every field below is yours; the consequence list says what this record currently does." });
+    } catch (e) {
+      setNote({ kind: "error", text: (e as Error).message ?? "Could not load." });
+    } finally {
+      setBusy(null);
+    }
+  }, [agentId]);
 
   /** Ask the registry, via our own API, whether this passkey account actually holds the agent. */
   const verifyOwnership = useCallback(async () => {
@@ -331,7 +409,31 @@ export function StudioFlow() {
             value={agentId}
             onChange={(e) => setAgentId(e.target.value.replace(/[^\d]/g, ""))}
           />
-          <span className="mt-1 block text-[11.5px] leading-snug text-muted">
+          <div className="mt-2 flex flex-wrap items-center gap-2.5">
+            <button
+              type="button"
+              onClick={loadMine}
+              disabled={!/^\d+$/.test(agentId) || busy === "load"}
+              className="cta"
+            >
+              {busy === "load" ? "loading your record…" : "load my record →"}
+            </button>
+            {adopted ? (
+              <span className={`chip ${adopted.onChain ? "chip--live" : "chip--built"}`}>
+                {adopted.onChain ? "loaded from chain" : "loaded from your host"}
+              </span>
+            ) : null}
+          </div>
+          {adopted && Object.keys(carried).length > 0 ? (
+            <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
+              {Object.keys(carried).length} field
+              {Object.keys(carried).length === 1 ? "" : "s"} this form does not edit (
+              <Mono className="text-[11px]">{Object.keys(carried).slice(0, 4).join(", ")}</Mono>
+              {Object.keys(carried).length > 4 ? "…" : ""}) are carried through unchanged. Dropping a
+              field because we have no input for it would be a worse edit than the one you came to make.
+            </p>
+          ) : null}
+          <span className="mt-2 block text-[11.5px] leading-snug text-muted">
             `setAgentURI` reverts for anyone who is not the owner, so this can only work on an agent
             you hold. Read what we already measured about it on{" "}
             {agentId ? (
@@ -415,7 +517,9 @@ export function StudioFlow() {
 
         {/* -------------------------------------------------------------- consequences and bytes */}
         <div className="flex flex-col gap-3">
-          <p className="eyebrow">what this document would mean</p>
+          <p className="eyebrow">
+            {adopted ? "what your record currently does" : "what this document would mean"}
+          </p>
           <ul className="space-y-1.5">
             {cons.map((c) => (
               <li key={c.label} className="flex gap-2 text-[12.5px] leading-snug">

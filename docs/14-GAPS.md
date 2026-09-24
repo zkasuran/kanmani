@@ -94,7 +94,19 @@ grep -nE '^import' verifier/src/ladder/verdict.ts
 ```
 
 So the ladder **runs** as five rungs and is described as five everywhere on the site, including on
-`/method`. **A promised rung that does not run is a claim; an absent one is a boundary.** Having the
+`/method`.
+
+**Considered and declined 2026-09-24.** Wiring them was attempted as a task and stopped on inspection,
+which is worth recording as a decision rather than as an omission. The two rungs are not appendable
+steps: `payable` probes an agent's **own service endpoint** and `settled` needs proof a payment to that
+agent cleared, so neither can be computed from what `judge()` currently receives. Both would change the
+function's input shape, the sweep that calls it, the `Rung` type stored on every historical verdict, and
+the five-bead ladder the UI draws.
+
+That is a migration touching every published verdict, and doing it in the last hour of a session to
+close a checklist item is how a measurement layer acquires a silent inconsistency between old and new
+rows. **The honest five-rung ladder is better than a hasty seven-rung one**, and the boundary costs
+nothing while it is described accurately. **A promised rung that does not run is a claim; an absent one is a boundary.** Having the
 code in the tree does not upgrade the claim, and this document would be worth less if it did.
 
 **One thing here is easy to misread, so it is stated plainly.** `POST /api/verify` is payable. That
@@ -147,6 +159,54 @@ check is proven on the live contract: `postBond` for an agent we do not own reve
 transaction `0x72970dc0…26697e7c` at block 107460188. The contract holds the tokens and the poster's
 balance fell by exactly that amount, so the stake is real rather than signalled.
 
+**A live slash was attempted on 2026-09-24 and refused, on purpose.** Two independent things block it
+and neither is a missing feature:
+
+1. **We cannot sign a verdict at all.** The attestor is `0x358c591a…7b44A`, derived from a passkey. No key
+   in this environment is that key, so there is physically no way for this repository to author a slashing
+   verdict. That is the four-key separation working exactly as designed, and discovering it as a blocker is
+   the strongest evidence it holds.
+2. **There is nothing true to sign.** Agent 10252's real claim-truth sample reads `null` — our own record
+   asserts no payment claims — so an honest verdict carries `sampleSize = 0` and the contract refuses it
+   with `SampleTooSmall` before any rate is computed.
+
+Producing a live slash would therefore require either signing numbers that are not a measurement, or
+publishing false payment claims about our own agent to manufacture a sub-floor rate. **Both are precisely
+the thing this project exists to detect.** A demonstration bought that way would be worth less than the
+absence, so the absence stays.
+
+**The full happy path IS proven on mainnet, end to end.** The bond posted on 2026-09-24 ran its window
+without a slash and was released on 2026-09-25:
+
+| step | transaction | effect |
+|---|---|---|
+| post | [`0x72970dc0…26697e7c`](https://monadexplorer.com/tx/0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c) | 20,000 units of USDC left the agent and were held by the contract |
+| release | [`0x06082587…1fb41b92`](https://monadexplorer.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92) | 20,000 returned to the agent, contract balance back to 0 |
+
+Verified by balances rather than by events: the contract went 20,000 → 0 and the agent 14,081 → 34,081,
+which is exactly the amount back. The bond's state is now `3` (`Released`) and the amount field is zeroed.
+
+An honest note on what the release proves. The window ran with **no verdict submitted at all**, so this
+demonstrates the timelock, the state machine and the return path — not that a measurement fed the outcome.
+`release` is also callable by anyone, deliberately, because the money can only go to the agent that posted
+it; that keeps a bond from being stranded by an operator who has lost access to the gas token.
+
+Three guards, confirmed by call on the deployed contract:
+
+```bash
+S=0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf
+F=--from\ 0xDB6c6340342e71A63cD11Ebac2185204b7777777
+
+cast call $S 'release(uint256)' 10252 $F --rpc-url https://rpc.monad.xyz   # 0xde4168ba WrongState()
+cast call $S 'release(uint256)' 99999 $F --rpc-url https://rpc.monad.xyz   # 0x27d46a91 NoSuchBond()
+# and before maturity it reverted 0xa4229fab WindowOpen(), which is why the release waited a day
+```
+
+**A correction worth recording.** An earlier draft of this section claimed `release(10252)` reverts
+`WindowOpen`. By the time it was checked, the window had matured and the call succeeded — so the claim was
+true when written and false within hours. It was caught by re-running the command before publishing rather
+than by a reader, which is the only reason it is a footnote instead of a defect.
+
 **What remains unproven is a live slash.** Our own record asserts no payment claims, so the sample sits
 below the minimum and nothing can fall below the floor. The slashing path is covered by the test suite
 and by fork tests against real mainnet state, not by a slash of our own money on chain. Those are
@@ -195,51 +255,57 @@ delivered to us" are different claims and only the first is currently true.
 
 ---
 
-## 5. Onboarding: one door is open, the operator-side half of the other is not
+## 5. Onboarding: both doors are open, the skill.md import is not
 
-**This section was accidentally deleted on 2026-09-23** while §4 was being rewritten, and for a few
-hours the onboarding gap was tracked nowhere at all. That is worse than the gap itself: this page's
-own rule in §10 is that anything absent should be findable here. It is restored, and what has since
-shipped is recorded with it.
+**Door A closed 2026-09-24.** `/studio` now loads an operator's **own** record rather than showing an
+empty form: enter an agent id, press *load my record*, and the existing document is fetched, parsed and
+prefilled, with the consequence list retitled *"what your record currently does"* so the diagnosis is of
+the record they have rather than of a draft they typed.
 
-**What shipped.** `/studio` composes a registration document and generates both calls:
-`register(string agentURI)` for a new agent and `setAgentURI(uint256, string)` for one the operator
-already owns. Every field shows its consequence, the exact bytes and calldata are shown before
-sending, and the operator signs with their own key. `lib/registration.test.ts` has 14 tests including
-one asserting the calldata decodes back to the previewed document.
+Retyping a document you already published is the friction that made a one-field fix feel like a project,
+which is exactly the barrier standing between three contacts and one integration.
 
-**What is still missing, and it is the half that serves the named first user.**
+Two details that make it safe rather than merely convenient:
+
+* **Fields this form does not model are carried through unchanged** and written back in place —
+  `image`, `registrations`, `supportedTrust`, anything vendor-specific. Dropping somebody's field because
+  we have no input for it would be a worse edit than the one they came to make. The page names how many
+  are being carried. A round-trip test asserts adoption changes nothing it did not need to.
+* **Skills are read from `skills`, `services` or `endpoints`**, because all three occur in the live
+  corpus — `services` is what Monad's own Agent Hub writes. A reader that only knew `skills` would adopt
+  nothing from most real records and look broken.
+
+A `data:` document decodes locally with no network. A hosted one is fetched, and when the host refuses a
+browser the page says it is a CORS setting rather than a fault and offers the paste.
 
 | | |
 |---|---|
-| **Missing** | Door A as the plan described it: paste a registry id or wallet and land on **your own data, already measured**, with a claim action. Today `/studio` asks for an id to repoint and `/agent/<id>` shows the measurement, but they are two pages and neither says "this is yours, here is the one field that is wrong, fix it here" |
-| **Missing** | Door B's `skill.md` import. The plan named Monad's Agent Hub format as the first one to support. `/studio` composes a document by hand instead, so an operator with an existing agent card retypes it |
-| **Exists** | `/studio`, `/agent/<id>`, `/validate`, `/agents.md`, and a re-check that fires on `MetadataUpdate` |
-| **Blocks** | the shortest path for Execution Market, whose payment claims are the majority of the 73. Their fix is one field in a template. Today they would have to read `/method`, find their agents, and compose a corrected document by hand |
-
-**Why this matters more than its size.** Traction is 20% of the score and is section 6 below with a
-count of zero. The cheapest thing that could change that is a page where a named operator sees their
-own broken record and a button that fixes it. Door A is mostly a query against data already held, so
-this is scoped small and is not scheduled, which is the honest state rather than a plan.
+| **Missing** | The `skill.md` / agent-card import. An operator with an existing card still retypes it, though they no longer retype an existing *registration* |
+| **Exists** | Door A, Door B, `/agent/<id>`, `/validate`, `agents.md`, and a re-check that fires on `MetadataUpdate` |
+| **Closes** | a parser from the Agent Hub format into a `RegistrationDraft`. `adopt()` is already that shape, so this is a mapping rather than new machinery |
 
 ---
 
-## 6. The kit is vendored rather than published, and the licence is unresolved
+## 6. The kit is MIT, and there is still no package
 
-**Half closed 2026-09-23.** This section previously recorded that `/developers` showed
-`import … from "@kanmani/kit"` while no such package existed. **That overclaim is gone**: the page now
-imports from `@/components/kit.tsx` and says plainly that there is no npm package, that the honest
-instruction is to copy one file, and that `embed.js` needs nothing because it is a script tag against
-a live origin.
+**Licence resolved 2026-09-24.** `components/kit.tsx` and `app/embed.js/route.ts` are released under
+**MIT** — the only two files in the repository that are, since everything else stays SAND-1.0,
+source-available with no derivatives. The reasoning is in [`24-KIT-LICENCE.md`](24-KIT-LICENCE.md) and it
+is short: a component that exists to be rendered inside somebody else's product cannot be read-only, and
+**what the kit publishes is a constraint rather than an asset.** It makes three mistakes unavailable, and
+a restrictive licence on a safety property works against its own purpose.
 
-What is still open is smaller and is a decision rather than work.
+A narrower grant was considered and rejected: "you may copy this to display Kanmani verdicts" sounds
+tighter and is worse, because it makes every consumer read a bespoke licence and decide whether they
+qualify — friction on the exact thing we want adopted.
 
 | | |
 |---|---|
-| **Missing** | A published package. Copying a file works and does not scale to versioning: a consumer has no way to learn that `Verdict` changed |
-| **Missing** | A resolved licence posture. The repository is `LicenseRef-zkasuran-SAND-1.0`, source-available with **no derivatives**, which sits badly beside a component layer whose purpose is to be embedded. Embedding `embed.js` by script tag needs no grant, because it is a request to our server rather than a copy of our code, and that is the path we actually recommend. Copying `kit.tsx` does need one, and the licence does not give it |
-| **Exists** | Working components, honest import paths, and a distribution route (`embed.js`) that the licence question does not block |
-| **Closes** | either a permissive carve-out for `components/kit.tsx` and `app/embed.js` specifically, or a decision that the script tag is the only supported integration and the kit is reference code. **Not decided, and it is an author's decision rather than an engineering task** |
+| **Missing** | A published npm package. Copying one file works and does not version: a consumer has no way to learn that `Verdict` changed |
+| **Exists** | MIT-licensed components with honest import paths, and `embed.js`, which needs no install at all |
+| **Closes** | `npm publish`. Not done, and it is the smaller half now that the licence no longer blocks it |
+
+---
 
 ## 7. The authorisation trail is live and nobody has used it
 

@@ -251,11 +251,13 @@ npm test    # conformance + drift, and it names what is missing`} />
             to the package question.
           </p>
           <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
-            On licensing: the repository is source-available with no derivatives, which sits awkwardly
-            beside a component layer whose whole purpose is to be embedded. That tension is real, it is
-            written down in <Mono>docs/14-GAPS.md</Mono>, and it is not resolved here. Embedding{" "}
-            <Mono>embed.js</Mono> by script tag is plainly intended and needs no licence grant, because
-            it is a request to our server rather than a copy of our code.
+            <span className="text-[var(--color-text)]">Licensing is resolved: copy it.</span>{" "}
+            <Mono>components/kit.tsx</Mono> and <Mono>app/embed.js</Mono> are released under <Mono>MIT</Mono>
+            — the only two files in the repository that are, since the rest is source-available with no
+            derivatives. A component that exists to be rendered inside somebody else&apos;s product cannot
+            be read-only, and what the kit publishes is a constraint rather than an asset: a restrictive
+            licence on a safety property works against its own purpose. The reasoning is in{" "}
+            <Mono>docs/24-KIT-LICENCE.md</Mono>.
           </p>
         </Panel>
       </Reveal>
