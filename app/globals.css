@@ -46,6 +46,7 @@
      borrows it, so brand colour can never be mistaken for a measurement. */
   --brand: #836ef9;
   --brand-dim: #4b3f8f;
+  --brand-accent: #22d3ee;
 
   --true: #34d399;
   --true-bg: #06281f;
@@ -86,6 +87,7 @@
      background rather than as ink. */
   --brand: #6d28d9;
   --brand-dim: #c4b5fd;
+  --brand-accent: #0891b2;
 
   --true: #047857;
   --true-bg: #ecfdf5;
@@ -125,6 +127,7 @@
     --faint: #64748b;
     --brand: #6d28d9;
     --brand-dim: #c4b5fd;
+  --brand-accent: #0891b2;
     --true: #047857;
     --true-bg: #ecfdf5;
     --false: #b91c1c;
@@ -167,6 +170,8 @@
 
   --color-brand: var(--brand);
   --color-brand-dim: var(--brand-dim);
+  --color-brand-accent: var(--brand-accent);
+  --color-logo-node: var(--brand-accent);
 
   --color-true: var(--true);
   --color-true-bg: var(--true-bg);
@@ -177,8 +182,9 @@
   --color-noclaim: var(--noclaim);
   --color-noclaim-bg: var(--noclaim-bg);
 
-  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Fira Code", Menlo, monospace;
-  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", var(--font-sans);
 
   /* A tiny breakpoint below Tailwind's `sm`, so the header badge can shed its label on the
      narrowest phones without losing the chain id. Craft only. */
@@ -911,4 +917,133 @@ details[open] > summary::before {
   .surface-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
+
+
+/* ==================================================================
+ * LUCID DEPTH — visual refinement only. Product meaning, copy, page order,
+ * navigation, measurements and verdict semantics remain untouched.
+ * ================================================================== */
+:root {
+  --radius: 0.75rem;
+  --radius-lg: 1rem;
+  --glass: color-mix(in oklab, var(--color-panel) 82%, transparent);
+  --glass-strong: color-mix(in oklab, var(--color-panel) 94%, transparent);
+  --depth-shadow: 0 24px 70px -38px color-mix(in oklab, var(--color-brand) 42%, transparent), 0 8px 30px -22px rgb(0 0 0 / 42%);
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(52rem 30rem at -10% 12rem, color-mix(in oklab, var(--color-brand-accent) 10%, transparent), transparent 72%),
+    radial-gradient(58rem 38rem at 105% 38rem, color-mix(in oklab, var(--color-brand) 13%, transparent), transparent 72%),
+    var(--color-ink);
+  background-attachment: fixed;
+}
+
+.font-display,
+h1,
+h2,
+h3,
+.layer__name,
+.stat-value,
+.finding__figure {
+  font-family: var(--font-display);
+}
+
+.site-header {
+  border-bottom: 0;
+  padding: 0.75rem var(--gutter) 0;
+  background: transparent;
+}
+.header-shell {
+  min-height: 3.5rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid color-mix(in oklab, var(--color-line-bright) 68%, transparent);
+  border-radius: var(--radius-lg);
+  background: var(--glass);
+  box-shadow: var(--depth-shadow), var(--edge);
+  backdrop-filter: blur(20px) saturate(135%);
+}
+.brand-logo {
+  filter: drop-shadow(0 0 10px color-mix(in oklab, var(--color-brand) 45%, transparent));
+}
+.site-main { padding-top: clamp(2.5rem, 1.7rem + 3vw, 4.5rem); }
+.site-footer { background: color-mix(in oklab, var(--color-panel) 44%, transparent); backdrop-filter: blur(18px); }
+
+.field {
+  background:
+    radial-gradient(70% 90% at 12% -8%, color-mix(in oklab, var(--color-brand) calc(var(--field-strength) * 1.35), transparent), transparent 66%),
+    radial-gradient(55% 80% at 100% 16%, color-mix(in oklab, var(--color-brand-accent) calc(var(--field-strength-2) * 1.25), transparent), transparent 68%),
+    var(--glass);
+  box-shadow: var(--depth-shadow), var(--edge);
+  backdrop-filter: blur(24px) saturate(130%);
+}
+.field-live::after {
+  background:
+    radial-gradient(35% 50% at 20% 20%, color-mix(in oklab, var(--color-brand) var(--field-strength), transparent), transparent 72%),
+    radial-gradient(34% 48% at 80% 18%, color-mix(in oklab, var(--color-brand-accent) var(--field-strength-2), transparent), transparent 72%);
+  filter: blur(34px);
+}
+.grid-faint { background-size: 56px 56px; opacity: calc(var(--grid-opacity) * .62); }
+
+h1 { letter-spacing: -0.035em; }
+h2 { letter-spacing: -0.025em; }
+.eyebrow, .kicker { font-weight: 500; }
+.lead { line-height: 1.62; }
+
+.cta, .cta-ghost {
+  min-height: 2.5rem;
+  border-radius: 0.7rem;
+  padding-inline: 1rem;
+  backdrop-filter: blur(12px);
+}
+.cta {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-ink);
+  box-shadow: 0 12px 30px -18px color-mix(in oklab, var(--color-text) 68%, transparent);
+}
+.cta:hover {
+  border-color: var(--color-brand);
+  background: var(--color-brand);
+  color: #fff;
+}
+.cta-ghost { background: color-mix(in oklab, var(--color-panel) 54%, transparent); }
+
+.layer,
+.flow__step,
+.rail__step,
+.finding,
+.glow-lift,
+.panel-hover,
+.elevated {
+  background: var(--glass-strong);
+  backdrop-filter: blur(16px) saturate(125%);
+}
+.layer,
+.flow__step,
+.rail__step,
+.glow-lift {
+  border-color: color-mix(in oklab, var(--color-line-bright) 72%, transparent);
+}
+.layer:hover,
+.rail__step:hover,
+.glow-lift:hover {
+  border-color: var(--brand-line);
+  box-shadow: 0 22px 54px -32px color-mix(in oklab, var(--color-brand) 58%, transparent), var(--edge);
+}
+.finding { padding: clamp(1.5rem, 1rem + 2vw, 2.5rem); }
+.finding__figure { text-shadow: 0 0 34px color-mix(in oklab, var(--color-brand) 28%, transparent); }
+
+.proof-row { padding-block: 0.7rem; }
+.rule-soft { opacity: .72; }
+
+@media (max-width: 47.99rem) {
+  .site-header { padding-inline: 0.5rem; padding-top: 0.5rem; }
+  .header-shell { border-radius: 0.8rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body { background-attachment: scroll; }
 }

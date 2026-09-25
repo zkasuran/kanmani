@@ -42,6 +42,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           site is likelier to parse the head than to guess a filename. The whole machine-readable
           surface is discoverable from any page.
         */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
+          rel="stylesheet"
+        />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="Summary for a language model" />
         <link rel="alternate" type="application/json" href="/feed.json" title="The verified population" />
         <link rel="alternate" type="application/schema+json" href="/schema.json" title="Response schemas" />
@@ -66,15 +72,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-screen antialiased">
         <header
-          className="sticky top-0 z-20 border-b border-[var(--color-line)] bg-[var(--color-ink)]/80 backdrop-blur-md"
+          className="site-header sticky top-0 z-20"
           style={{ ["--header-h" as string]: "3.25rem" }}
         >
-          <div className="shell flex items-center gap-x-6 gap-y-2 py-3">
+          <div className="header-shell shell flex items-center gap-x-6 gap-y-2">
             <Link href="/" className="group flex items-center gap-2">
               {/* Brand colour on the mark, text colour on the word, so the pair reads as one lockup
                   without the logo competing with the nav for attention. */}
-              <Logo size={20} className="shrink-0 text-[var(--color-brand)] transition-transform duration-200 group-hover:-translate-y-px" />
-              <span className="font-mono text-base font-semibold tracking-tight text-[var(--color-text)]">
+              <Logo size={20} className="brand-logo shrink-0 text-[var(--color-brand)] transition-transform duration-200 group-hover:-translate-y-px" />
+              <span className="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
                 kanmani
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10.5px] text-faint group-hover:border-[var(--brand-line)] group-hover:text-muted">
@@ -88,9 +94,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <main className="shell py-[var(--section-gap)]">{children}</main>
+        <main className="site-main shell py-[var(--section-gap)]">{children}</main>
 
-        <footer className="mt-[var(--section-gap)] border-t border-[var(--color-line)]">
+        <footer className="site-footer mt-[var(--section-gap)] border-t border-[var(--color-line)]">
           <div className="shell py-8 text-[12px] text-faint">
             <Logo size={26} className="mb-3 text-[var(--color-brand-dim)]" label="Kanmani" />
             <p className="max-w-3xl leading-relaxed">

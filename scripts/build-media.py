@@ -4,8 +4,8 @@ Build the logo and the media package.
 
 ## What is drawn and what is generated
 
-The mark is drawn, not generated. It is five rungs rising left to right, the one idea the product rests
-on and it has to stay legible at 16px in a browser tab where an image model's output turns to mush. It
+The mark is drawn, not generated. Two counterparties close around one proof node: the settlement
+aperture. It has to stay legible at 16px in a browser tab where an image model's output turns to mush. It
 is also the one asset that must be identical everywhere, so it comes from a single 32-unit geometry that
 both the SVG and every raster size share.
 
@@ -41,7 +41,8 @@ BRAND.mkdir(parents=True, exist_ok=True)
 INK = (5, 7, 10)
 TEXT = (232, 240, 250)
 MUTED = (148, 163, 184)
-GREEN = (52, 211, 153)
+VIOLET = (131, 110, 249)
+CYAN = (34, 211, 238)
 
 MONO = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf"
 SANS_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -49,28 +50,30 @@ SANS_B = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 # The single source of the mark. Both the SVG and every raster below read these points, so the logo
 # cannot drift between a favicon and a header the way two hand-drawn copies would.
 GRID = 32
-LADDER = [(5, 25), (10, 25), (10, 21), (15, 21), (15, 17), (20, 17), (20, 13), (25, 13), (25, 9), (27, 9)]
-NODE = (27, 9, 2.2)
+LEFT = [(13, 7), (4.5, 16), (13, 25)]
+RIGHT = [(19, 7), (27.5, 16), (19, 25)]
+NODE = (16, 16, 2.35)
 
 
-def svg(stroke: str = "#34d399", bg: str = "#05070a", rounded: bool = True) -> str:
-    d = "M" + "L".join(f"{x} {y}" for x, y in LADDER)
+def svg(stroke: str = "#836ef9", node: str = "#22d3ee", bg: str = "#05070a", rounded: bool = True) -> str:
+    left = "M" + "L".join(f"{x} {y}" for x, y in LEFT)
+    right = "M" + "L".join(f"{x} {y}" for x, y in RIGHT)
     rect = f'<rect width="{GRID}" height="{GRID}" rx="7" fill="{bg}"/>' if rounded else ""
     return (
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {GRID} {GRID}" role="img" aria-label="Kanmani">\n'
         f"  {rect}\n"
-        f'  <path d="{d}" fill="none" stroke="{stroke}" stroke-width="2.1" stroke-linecap="square"/>\n'
-        f'  <circle cx="{NODE[0]}" cy="{NODE[1]}" r="{NODE[2]}" fill="{stroke}"/>\n'
+        f'  <path d="{left}" fill="none" stroke="{stroke}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>\n'
+        f'  <path d="{right}" fill="none" stroke="{stroke}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>\n'
+        f'  <circle cx="{NODE[0]}" cy="{NODE[1]}" r="{NODE[2]}" fill="{node}"/>\n'
         f"</svg>\n"
     )
 
 
-# At 16px a five-rung ladder is about two pixels per rung and reads as a smudge, which the first pass
-# proved by eye. Small sizes get three rungs and a heavier stroke filling more of the canvas: the same
-# idea at lower resolution, which is what a favicon is for. This is the normal reason a mark has a
-# simplified variant rather than a scaled one.
-LADDER_SMALL = [(5, 26), (13, 26), (13, 18), (21, 18), (21, 10), (27, 10)]
-NODE_SMALL = (27, 10, 3.0)
+# At 16px the same aperture uses a slightly heavier stroke and a larger proof node. The silhouette
+# stays unchanged, while the optical correction keeps both parties and the verified center legible.
+LEFT_SMALL = [(12.5, 8), (5, 16), (12.5, 24)]
+RIGHT_SMALL = [(19.5, 8), (27, 16), (19.5, 24)]
+NODE_SMALL = (16, 16, 2.8)
 
 
 def raster(size: int, transparent: bool = False, pad: float = 0.0) -> Image.Image:
@@ -82,13 +85,15 @@ def raster(size: int, transparent: bool = False, pad: float = 0.0) -> Image.Imag
     inset = big * pad
     k = (big - inset * 2) / GRID
     small = size <= 48
-    path = LADDER_SMALL if small else LADDER
+    left = LEFT_SMALL if small else LEFT
+    right = RIGHT_SMALL if small else RIGHT
     node = NODE_SMALL if small else NODE
-    pts = [(inset + x * k, inset + y * k) for x, y in path]
-    d.line(pts, fill=GREEN, width=max(int((3.4 if small else 2.1) * k), 1), joint="curve")
+    for path in (left, right):
+        pts = [(inset + x * k, inset + y * k) for x, y in path]
+        d.line(pts, fill=VIOLET, width=max(int((3.2 if small else 2.6) * k), 1), joint="curve")
     r = node[2] * k
     cx, cy = inset + node[0] * k, inset + node[1] * k
-    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=GREEN)
+    d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=CYAN)
     return im.resize((size, size), Image.LANCZOS)
 
 
@@ -96,7 +101,7 @@ def generate(prompt: str, ratio: str, dest: Path, key: str) -> bool:
     body = json.dumps(
         {
             "model": "image-01",
-            "prompt": f"{prompt}, deep near-black navy background, one thin emerald line, fine faint grid, "
+            "prompt": f"{prompt}, deep near-black navy background, sparse violet and cyan signal lines, fine faint grid, "
             "flat vector, generous negative space, technical and calm, no text, no words, no letters, no logos",
             "aspect_ratio": ratio,
             "n": 1,
@@ -163,7 +168,7 @@ def card(src: Path, dest: Path, size: tuple, tag: str, title: str, sub: str, log
         m = raster(int(size[1] * 0.085), transparent=True)
         base.alpha_composite(m, (pad, pad - int(m.height * 0.18)))
         x = pad + m.width + int(size[0] * 0.014)
-    d.text((x, pad), tag, font=f_tag, fill=GREEN)
+    d.text((x, pad), tag, font=f_tag, fill=CYAN)
 
     words, lines, cur = title.split(), [], ""
     for w in words:
@@ -181,7 +186,7 @@ def card(src: Path, dest: Path, size: tuple, tag: str, title: str, sub: str, log
     for ln in lines:
         d.text((pad, y), ln, font=f_title, fill=TEXT)
         y += lh
-    d.line([(pad, rule_y), (pad + int(size[0] * 0.055), rule_y)], fill=GREEN, width=3)
+    d.line([(pad, rule_y), (pad + int(size[0] * 0.055), rule_y)], fill=VIOLET, width=3)
     d.text((pad, size[1] - pad - int(size[1] * 0.05)), sub, font=f_sub, fill=MUTED)
     base.convert("RGB").save(dest, "PNG", optimize=True)
     print(f"    {dest.relative_to(ROOT)}  {size[0]}x{size[1]}  {dest.stat().st_size // 1024} KB")
@@ -196,7 +201,7 @@ def main() -> None:
     (ROOT / "app" / "icon.svg").write_text(svg())
     (BRAND / "mark.svg").write_text(svg())
     (BRAND / "mark-transparent.svg").write_text(svg(rounded=False))
-    (BRAND / "mark-light.svg").write_text(svg(stroke="#047857", bg="#ffffff"))
+    (BRAND / "mark-light.svg").write_text(svg(stroke="#6d28d9", node="#0891b2", bg="#ffffff"))
     print("    app/icon.svg, public/brand/mark{,-transparent,-light}.svg")
 
     for n in (16, 32, 48, 180, 512):
@@ -210,10 +215,10 @@ def main() -> None:
     tmp.mkdir(exist_ok=True)
 
     jobs = [
-        ("og", "a single thin line crossing a wide dark field, one small emerald node where it settles", "16:9",
+        ("og", "two precise angular signal paths converging around one small cyan proof node", "16:9",
          (1200, 630), "the settlement and trust layer",
          "Every payment claim on Monad, checked against the chain it names."),
-        ("banner", "an ascending five step ladder drawn as one continuous thin line", "16:9",
+        ("banner", "two mirrored angular signal paths framing a luminous cyan verification point", "16:9",
          (1280, 640), "settlement and trust for agent work",
          "Trust stops being a badge. It becomes a price."),
         ("header", "one long horizontal thin line with a faint grid receding behind it", "16:9",
