@@ -1,5 +1,6 @@
 import { envelope, json, problem } from "@/lib/api.ts";
 import { agent, claims, probedCluster } from "@/lib/queries.ts";
+import { bondFor } from "@/lib/bonds.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +18,12 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return problem(404, "No such agent", `Agent ${id} is not in this index. That is not the same as it not existing on chain.`);
   }
 
-  const [record, fb] = await Promise.all([
+  const [record, fb, bond] = await Promise.all([
     a.uriHash ? probedCluster(a.uriHash) : Promise.resolve(undefined),
     claims({ agentId: a.id, withUri: false, limit: 200 }),
+    // Read live from Sclera rather than from an index. A window matures when a block number passes and
+    // emits nothing, so an event-derived state would keep reporting "active" after maturity.
+    bondFor(Number(a.agentId)),
   ]);
 
   const checked = fb.rows.filter((c) => c.outcome !== null);
@@ -36,6 +40,22 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         // The operator's own assertion. Labelled as theirs so a consumer never reads it as ours.
         declaresX402: a.declaresX402,
         endpoints: a.endpoints,
+        // null means no bond was ever posted OR we could not reach the chain. Those are different and
+        // the field says which: an unreachable chain returns null with no other bond fields, which a
+        // consumer must not read as "unbonded".
+        bond: bond
+          ? {
+              state: bond.state,
+              amountAtomic: bond.amountAtomic,
+              token: bond.token,
+              minTruthRateBps: bond.minTruthRateBps,
+              minSampleSize: bond.minSampleSize,
+              postedAtBlock: bond.postedAtBlock,
+              maturesAtBlock: bond.maturesAtBlock,
+              matured: bond.matured,
+              contract: bond.address,
+            }
+          : null,
         registration: record
           ? {
               uri: record.uri,

@@ -4,6 +4,7 @@ import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, Stat
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, agentActions, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
+import { bondFor, usdc } from "@/lib/bonds.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,11 +26,12 @@ export default async function AgentPage({ params }: Props) {
   const a = await agent(decodeURIComponent(id));
   if (!a) notFound();
 
-  const [record, feedback, ownerLabel, trail] = await Promise.all([
+  const [record, feedback, ownerLabel, trail, bond] = await Promise.all([
     a.uriHash ? probedCluster(a.uriHash) : Promise.resolve(undefined),
     claims({ agentId: a.id, withUri: false, limit: 100 }),
     walletLabel(a.owner),
     agentActions(a.agentId),
+    bondFor(Number(a.agentId)),
   ]);
 
   const checked = feedback.rows.filter((c) => c.outcome !== null);
@@ -109,6 +111,54 @@ export default async function AgentPage({ params }: Props) {
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">
+        {bond ? (
+          <Panel
+            title="money staked on this record"
+            subtitle="Read live from Sclera on every load, not from an index, because a window matures when a block passes and emits nothing to index."
+          >
+            <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              <div>
+                <dt className="text-[11px] uppercase tracking-wide text-faint">state</dt>
+                <dd className="mt-0.5 font-mono text-[14px] text-[var(--color-text)]">
+                  {bond.state}
+                  {bond.state === "active" && bond.matured === true ? (
+                    <span className="ml-2 text-[11.5px] text-muted">window closed, releasable</span>
+                  ) : null}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[11px] uppercase tracking-wide text-faint">at stake</dt>
+                <dd className="mt-0.5 font-mono text-[14px] text-[var(--color-text)]">
+                  {usdc(bond.amountAtomic)} USDC
+                  {bond.state === "released" ? (
+                    <span className="ml-2 text-[11.5px] text-muted">returned in full</span>
+                  ) : null}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[11px] uppercase tracking-wide text-faint">claim-truth floor</dt>
+                <dd className="mt-0.5 font-mono text-[14px] text-[var(--color-text)]">
+                  {(bond.minTruthRateBps / 100).toFixed(0)}%
+                  <span className="ml-2 text-[11.5px] text-muted">over at least {bond.minSampleSize} decided claims</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[11px] uppercase tracking-wide text-faint">window</dt>
+                <dd className="mt-0.5 font-mono text-[14px] text-[var(--color-text)]">
+                  {bond.postedAtBlock} to {bond.maturesAtBlock}
+                </dd>
+              </div>
+            </dl>
+            <p className="mt-4 text-[12px] leading-relaxed text-muted">
+              Below the floor this stake can be taken. That is what makes the record cost something to
+              hold rather than being a badge. Check it yourself:{" "}
+              <Mono className="break-all">
+                cast call {bond.address} &apos;bonds(uint256)&apos; {a.agentId} --rpc-url https://rpc.monad.xyz
+              </Mono>
+            </p>
+          </Panel>
+        ) : null}
+
         <Panel title="the registration">
           <dl>
             <Row label="owner">

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
+import { bondsFor, usdc } from "@/lib/bonds.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -32,7 +33,18 @@ function Tx({ hash, children }: { hash: string; children: React.ReactNode }) {
   );
 }
 
-export default function Bond() {
+export default async function Bond() {
+  /**
+   * Every bond we have posted, read live from the contract on each load.
+   *
+   * This page used to be prose about one bond, which meant a second bond existed on chain and the page
+   * describing bonds did not know. The ids are ours and enumerated deliberately: Sclera has no
+   * "list all bonds" view and inventing one from events would report a matured window as still active.
+   */
+  const OURS = [10252, 10256, 10257];
+  const bonds = await bondsFor(OURS);
+  const live = OURS.map((id) => ({ id, b: bonds.get(id) })).filter((x) => x.b);
+  const staked = live.reduce((n, x) => n + Number(x.b!.amountAtomic), 0);
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
@@ -49,6 +61,41 @@ export default function Bond() {
 
       {/* ---------------------------------------------------------------- it is live */}
       <Reveal>
+        <Panel
+          title={`every bond we have posted · ${live.length}`}
+          subtitle="Read from Sclera on every load. State is the contract's, not an index's, because a window matures when a block number passes and emits nothing."
+        >
+          <div className="space-y-px">
+            {live.map(({ id, b }) => (
+              <Link
+                key={id}
+                href={`/agent/${id}`}
+                className="block rounded border border-transparent px-2 py-2.5 transition-colors hover:border-[var(--color-line)] hover:bg-[var(--color-panel-2)]"
+              >
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <Mono className="w-16 shrink-0 text-[13px]">#{id}</Mono>
+                  <span className="font-mono text-[13px] text-[var(--color-text)]">{b!.state}</span>
+                  <Mono className="text-[13px]">{usdc(b!.amountAtomic)} USDC</Mono>
+                  <span className="text-[11.5px] text-muted">
+                    floor {(b!.minTruthRateBps / 100).toFixed(0)}% over {b!.minSampleSize} claims
+                  </span>
+                  {b!.state === "active" && b!.matured === true ? (
+                    <span className="text-[11.5px] text-muted">window closed, releasable</span>
+                  ) : null}
+                  {b!.state === "released" ? (
+                    <span className="text-[11.5px] text-muted">returned in full</span>
+                  ) : null}
+                </div>
+              </Link>
+            ))}
+          </div>
+          <p className="mt-4 text-[12px] leading-relaxed text-muted">
+            {usdc(String(staked))} USDC is at stake across these right now. A released bond reads zero
+            because the money went back, which is why the state is shown beside the amount rather than
+            the amount alone.
+          </p>
+        </Panel>
+
         <Panel title="one complete bond, on mainnet" subtitle="Posted, held for its full window, released. Not a testnet screenshot and not a plan.">
           <dl className="space-y-1">
             <Row label="contract">
