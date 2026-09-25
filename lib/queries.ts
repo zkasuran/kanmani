@@ -1236,3 +1236,54 @@ export async function agentsByChain(): Promise<Sourced<{ counts: Record<number, 
   for (const r of rows) counts[Number(r.chain_id)] = Number(r.n);
   return src(AGENTS_BY_CHAIN_SQL, { counts });
 }
+
+/* ------------------------------------------------------------ where a false claim actually is */
+
+/**
+ * The single most important correction this project has made to its own headline.
+ *
+ * For months the finding was "73 of 85 payment claims do not resolve", which was true and read as an
+ * accusation: 73 operators fabricated payments. Once Alchemy made Ethereum, Optimism, Base, Arbitrum and
+ * Polygon reachable, the truth turned out to be that **64 of those 73 are real mined transactions on a
+ * different chain** and only 9 exist nowhere.
+ *
+ * So a `false` verdict splits into two findings that deserve completely different words. A mislabelled
+ * network is one wrong field in a document somebody can fix. A hash that exists on no chain is the
+ * serious one. Publishing them as a single number was the misleading part and it was misleading in the
+ * direction that harms operators, which is the worst direction for a project like this.
+ */
+export type MislabelledSplit = {
+  /** Real transactions, wrong network named. Repairable. */
+  elsewhere: number;
+  /** Hashes found on no chain we can read. The genuinely unexplained ones. */
+  nowhere: number;
+  /** Per-chain breakdown, biggest first. 45 on one chain is a defaulting tool, not scattered error. */
+  byChain: { chain: string; chainId: number | null; count: number }[];
+};
+
+const MISLABELLED_SQL = `
+SELECT found_chain, found_chain_id, count(*) AS n
+FROM fovea.verdict_latest
+WHERE outcome = 'false'
+GROUP BY 1, 2
+ORDER BY n DESC`;
+
+export async function mislabelled(): Promise<Sourced<MislabelledSplit>> {
+  const rows = await q<{ found_chain: string | null; found_chain_id: string | null; n: string }>(
+    MISLABELLED_SQL,
+    [],
+  );
+  let elsewhere = 0;
+  let nowhere = 0;
+  const byChain: MislabelledSplit["byChain"] = [];
+  for (const r of rows) {
+    const n = Number(r.n);
+    if (r.found_chain) {
+      elsewhere += n;
+      byChain.push({ chain: r.found_chain, chainId: r.found_chain_id ? Number(r.found_chain_id) : null, count: n });
+    } else {
+      nowhere += n;
+    }
+  }
+  return src(MISLABELLED_SQL, { elsewhere, nowhere, byChain });
+}

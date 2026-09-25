@@ -70,6 +70,8 @@ a URI have been taken through it. Four outcomes. `unknown` is never `false`.
 |---|---|
 | `noClaim` | 1,095 |
 | `false` | 73 |
+| of those, real transactions on another chain | 64 |
+| of those, on no chain we can read | 9 |
 | `true` | 12 |
 | `unknown` | 12 |
 

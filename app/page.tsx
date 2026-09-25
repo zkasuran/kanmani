@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Derivation, DistBar, Pct, StatTile } from "@/components/ui.tsx";
 import { CountUp, Reveal } from "@/components/motion.tsx";
-import { clusterShape, measurement, population } from "@/lib/queries.ts";
+import { clusterShape, measurement, mislabelled, population } from "@/lib/queries.ts";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
 import { TESTS_PASSING } from "@/lib/counts.ts";
 
@@ -141,13 +141,16 @@ const FLOW = [
 ];
 
 export default async function Home() {
-  const [pop, m, shape, bonds] = await Promise.all([
+  const [pop, m, shape, bonds, mis] = await Promise.all([
     population(),
     measurement(),
     clusterShape(),
     // Our own bonds, read from Sclera on load. A released bond contributes zero, so this is what is
     // genuinely at stake now rather than the sum of everything ever posted.
     bondsFor([10252, 10256, 10257]),
+    // Where a false claim's transaction actually is. The single most important correction this project
+    // has made to its own headline.
+    mislabelled(),
   ]);
   const activeBonds = [...bonds.values()].filter((b) => b.state === "active");
   const staked =
@@ -377,6 +380,49 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
           <StatTile label="not on the chain they name" value={d.doNotResolve} tone="false" hint="We read that chain successfully and the transaction is not there." />
           <StatTile label="could not check" value={unknownTotal} tone="unknown" hint="A failure to look is never an accusation and never zero." />
         </div>
+
+        {/* ------------------------------------------- what a false verdict actually turned out to be */}
+        {mis.rows.elsewhere > 0 ? (
+          <div className="finding mt-8">
+            <div className="finding__figure">
+              <CountUp value={mis.rows.elsewhere} />
+            </div>
+            <div>
+              <h3 className="text-[length:var(--step-1)] font-semibold leading-tight tracking-tight">
+                of those payments are real. The network is what is wrong.
+              </h3>
+              <p className="lead mt-3 text-muted">
+                A verdict of <span className="font-mono text-[var(--color-false)]">false</span> used to
+                mean one thing: the transaction is not on the chain this document names. Once we could
+                read the other chains, {mis.rows.elsewhere} of {d.doNotResolve} turned out to be mined
+                transactions on a different one and only{" "}
+                <span className="font-mono">{mis.rows.nowhere}</span> exist nowhere at all.
+              </p>
+              <p className="mt-3 text-[13px] leading-relaxed text-muted">
+                That is the difference between a fabricated claim and one wrong field. The second is
+                fixable in a single edit, which is what{" "}
+                <Link href="/studio" className="underline decoration-dotted hover:text-[var(--color-text)]">
+                  the studio
+                </Link>{" "}
+                is for. Publishing them as one number was misleading and it was misleading in the
+                direction that blames the operator.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                {mis.rows.byChain.map((c) => (
+                  <span
+                    key={c.chain}
+                    className="rounded-full border border-[var(--color-line)] px-2.5 py-1 font-mono text-[11.5px] text-muted"
+                  >
+                    {c.chain} <span className="text-[var(--color-text)]">{c.count}</span>
+                  </span>
+                ))}
+                <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1 font-mono text-[11.5px] text-muted">
+                  nowhere <span className="unknown-value">{mis.rows.nowhere}</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <div className="mt-6 max-w-3xl">
           <DistBar

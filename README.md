@@ -45,6 +45,8 @@ against the chain it names.
 | payment claims that exist at all | 85 |
 | claims where the cited transaction is really there | 12 |
 | claims where it is not | 73 |
+| **of those 73, real transactions on a different chain** | **64** |
+| **of those 73, found on no chain at all** | **9** |
 | agents pointing at one expired preview deployment | 8,093 |
 | wallets behind that single dead document | 7,962 |
 

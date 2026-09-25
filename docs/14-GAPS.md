@@ -389,7 +389,7 @@ The three targets are named because the whole population was measured, which is 
 here: I can name every payable agent on Monad because I checked all 10,253 and there are three.
 
 1. **Execution Market / Ultravioleta DAO**, `ultravioletadao@gmail.com`, published in their own
-   `/.well-known/x402`. Their claims are the majority of the 73 that do not resolve. A per-document
+   `/.well-known/x402`. Their claims are the majority of the 73 that do not resolve on the named chain, and 64 of those 73 are real transactions on a different chain rather than missing payments. A per-document
    pass or fail costs them nothing and fixes their record.
 2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
 3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
