@@ -11,8 +11,8 @@
 # Needs curl. `cast` (foundry) is used where a check has to read the chain directly and is skipped with
 # a visible SKIP line if absent rather than silently passing.
 #
-# IMPORTANT: seven layers are live and two are not. This script does not try to prove nine working
-# things, because two of them are not working things yet. Intents and the Alchemy hook are proven to be
+# IMPORTANT: eight layers are live and one is not. This script does not try to prove nine working
+# things, because two of them are not working things yet. Intents is proven to be
 # BUILT, which means the code and tests exist and nothing has run in production. A script that reported
 # nine greens would be the exact kind of claim this project exists to catch.
 
@@ -153,13 +153,28 @@ else
   sk "run from the repository root to check the module"
 fi
 
-# ---------------------------------------------------------------- 9. Alchemy hook, BUILT
-echo "9. Alchemy hook  ·  heal a fixed record  ·  expected BUILT, NOT live"
+# ---------------------------------------------------------------- 9. Self-heal, LIVE
+echo "9. Self-heal  ·  heal a fixed record  ·  expected LIVE"
+# Agent 10256's document was repaired on chain with setAgentURI, which emits URIUpdated. If the index
+# captured it, the Sclera address is in the indexed record. That string exists ONLY in the repaired
+# version, so this cannot pass on the original document.
+HEALED=$(curl -fsS "$SITE/api/agent/10256" | python3 -c "
+import base64, json, sys
+u = json.load(sys.stdin)['data'].get('registration', {}).get('uri', '')
+pre = 'data:application/json;base64,'
+if not u.startswith(pre):
+    print('notinline'); raise SystemExit
+print('yes' if '57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf' in base64.b64decode(u[len(pre):]).decode('utf8', 'replace') else 'no')" 2>/dev/null)
+if [ "${HEALED:-}" = "yes" ]; then
+  ok "a repaired document is reflected in the index, so URIUpdated is being captured"
+  note "before this was wired, setAgentURI moved metadataUpdateCount and left the stored URI stale forever"
+else
+  bad "the repaired document is not in the index (got '${HEALED:-empty}')"
+fi
 WH=$(curl -fsS -o /dev/null -w '%{http_code}' "$SITE/api/webhooks/alchemy" 2>/dev/null || true)
 if [ "$WH" = "200" ] || [ "$WH" = "405" ] || [ "$WH" = "401" ]; then
-  ok "the handler is deployed and answering ($WH)"
-  note "zero deliveries have ever arrived from a webhook created in Alchemy's dashboard"
-  note "signature is HMAC-SHA256 over the raw body and it refuses every delivery when no key is set rather than failing open"
+  ok "the optional Alchemy delivery path is deployed and answering ($WH)"
+  note "healing does not depend on it. Zero deliveries have ever arrived and the layer is live anyway"
 else
   bad "the webhook route did not answer, got $WH"
 fi
@@ -167,6 +182,6 @@ fi
 echo
 echo "-------------------------------------------------------------"
 printf 'PASS %d   FAIL %d   SKIP %d\n' "$pass" "$fail" "$skip"
-echo "Seven layers live, two built. If a FAIL appears above, the claim on the site is wrong and we"
+echo "Eight layers live, one built. If a FAIL appears above, the claim on the site is wrong and we"
 echo "would rather you found it with this script than by trusting the page."
 [ "$fail" -eq 0 ]

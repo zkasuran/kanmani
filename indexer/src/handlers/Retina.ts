@@ -432,6 +432,66 @@ indexer.onEvent(
 );
 
 /**
+ * `URIUpdated(uint256 agentId, string newURI, address owner)`. The event that actually carries a
+ * repaired document and it was not subscribed.
+ *
+ * This is the gap that made the self-healing layer a description rather than a behaviour. `setAgentURI`
+ * emits two things: `MetadataUpdate(tokenId)`, which says only that something changed and this, which
+ * says what it changed to. We handled the first and ignored the second, so an operator who fixed a dead
+ * URL changed it on chain and our index kept serving the old one forever. Proven by doing it: updating
+ * agent 10256 moved `metadataUpdateCount` to 2 and left `tokenUri` untouched.
+ *
+ * Re-parsing here rather than in the MetadataUpdate handler is the point. MetadataUpdate cannot heal
+ * anything on its own, because the new URI is not in it and a handler must not make a network call to
+ * go and look.
+ */
+indexer.onEvent(
+  { contract: "IdentityRegistry", event: "URIUpdated" },
+  async ({ event, context }) => {
+    const id = agentKey(event.chainId, event.params.agentId);
+    const existing = await context.Agent.get(id);
+    if (!existing) return;
+
+    const uri = event.params.newURI ?? "";
+    const inline = uri ? parseInlineRecord(uri) : undefined;
+    const newHash = uri ? uriKey(uri) : existing.uriHash;
+
+    context.Agent.set({
+      ...existing,
+      tokenUri: uri || existing.tokenUri,
+      uriHash: newHash,
+      // Inline heals now. Hosted goes back to not-yet-known and waits for the probe, because
+      // publishing the old parse against a new document would assert something we have not read.
+      name: inline ? inline.name : undefined,
+      endpoints: inline ? inline.endpoints : [],
+      declaresX402: inline ? inline.declaresX402 : false,
+      rung: inline ? existing.rung : "declared",
+      lastSeenBlock: BigInt(event.block.number),
+    });
+
+    if (uri && newHash) {
+      const rec = await context.AgentRecord.get(newHash);
+      if (!rec) {
+        context.AgentRecord.set({
+          id: newHash,
+          uri,
+          memberCount: 1,
+          distinctOwners: 1,
+          kind: recordKind(uri),
+          fetchedAt: undefined,
+          httpStatus: undefined,
+          byteLength: undefined,
+          // Inline cannot 404, so it resolves by construction. Hosted starts unknown.
+          resolves: inline ? true : undefined,
+          parsedName: inline?.name,
+          firstSeenBlock: BigInt(event.block.number),
+        });
+      }
+    }
+  },
+);
+
+/**
  * ERC-4906, which the ERC-8004 draft does not list. The Monad deployment emits it, confirmed by
  * matching topic0 0xf8e1a15a against `cast keccak "MetadataUpdate(uint256)"`. It is the signal
  * that an off-chain document changed, so a cached copy is stale.
@@ -442,11 +502,58 @@ indexer.onEvent(
     const id = agentKey(event.chainId, event.params._tokenId);
     const existing = await context.Agent.get(id);
     if (!existing) return;
+
+    /**
+     * Self-healing runs from OUR event stream, not from a third party's webhook.
+     *
+     * This used to only increment a counter, which left the healing half of the layer waiting on a
+     * webhook created in Alchemy's dashboard. That webhook has never existed, so nothing ever healed,
+     * while the site described operators watching false become true. The signal we were waiting to be
+     * told about was already arriving here: 10,205 agents on Monad have had at least one
+     * MetadataUpdate and this handler saw every one of them.
+     *
+     * Two paths, because the two document kinds cost different things to re-read.
+     *
+     * An inline `data:` document is in the event we are already decoding, so it heals here and now.
+     * A repaired record is legible within a block rather than within the probe's 44 minute cadence.
+     *
+     * A hosted document needs a network fetch we must not do inside a handler, so instead the cached
+     * judgement is INVALIDATED: `resolves` and the probe timestamps go back to undefined, which moves
+     * the record to the front of the probe's queue. That is the honest state after a change, because
+     * continuing to publish the old verdict would be asserting something about bytes we have not read.
+     * Undefined here means not yet known, never false.
+     */
+    const uri = existing.tokenUri ?? "";
+    const inline = uri ? parseInlineRecord(uri) : undefined;
+
     context.Agent.set({
       ...existing,
       metadataUpdateCount: existing.metadataUpdateCount + 1,
       lastSeenBlock: BigInt(event.block.number),
+      // An inline document re-parses immediately. A hosted one keeps what the probe last found until
+      // the probe asks again, because guessing at a document we have not fetched would be worse.
+      name: inline ? inline.name : existing.name,
+      endpoints: inline ? inline.endpoints : existing.endpoints,
+      declaresX402: inline ? inline.declaresX402 : existing.declaresX402,
+      // The ladder falls back to `declared` for a hosted record: the operator has asserted a new
+      // document and nothing has verified it yet. An inline one is verified by construction.
+      rung: inline ? existing.rung : "declared",
     });
+
+    if (existing.uriHash) {
+      const rec = await context.AgentRecord.get(existing.uriHash);
+      if (rec) {
+        context.AgentRecord.set({
+          ...rec,
+          // Inline documents cannot 404, so they stay resolved. Hosted ones go back to unknown and the
+          // probe re-asks, which is the re-run the layer promises.
+          resolves: inline ? true : undefined,
+          fetchedAt: inline ? rec.fetchedAt : undefined,
+          httpStatus: inline ? rec.httpStatus : undefined,
+          parsedName: inline ? inline.name : undefined,
+        });
+      }
+    }
   },
 );
 

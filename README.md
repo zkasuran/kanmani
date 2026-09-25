@@ -131,9 +131,8 @@ the work. The thing that audits payments is paid for over the rail it audits.
 Eleven checks across all nine layers, reading only public endpoints and public chain state. No key and
 no access to our infrastructure, so it runs from a clean machine.
 
-It reports **seven live and two built**, which is the honest shape rather than nine greens. Intents has
-never executed a cross-chain fund and the Alchemy webhook has received zero deliveries, so both are
-proven built and labelled that way. The last recorded run is in
+It reports **eight live and one built**, which is the honest shape rather than nine greens. Intents has
+never executed a cross-chain fund, so it is proven built and labelled that way. The last recorded run is in
 [docs/25-PROOF.md](docs/25-PROOF.md).
 
 ## Verify the claims rather than believing them

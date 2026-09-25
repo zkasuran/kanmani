@@ -61,8 +61,14 @@ contracts:
       # address comes from.
       - event: MetadataSet
       # ERC-4906, absent from the ERC-8004 draft. The signal that an off-chain document changed,
-      # so a cached copy is stale and the record needs re-fetching.
+      # so a cached copy is stale and the record needs re-fetching. It says only THAT something
+      # changed: the new URI is not in it.
       - event: MetadataUpdate
+      # The event that actually carries a repaired document. Absent here until 2026-09-25, which is
+      # why an operator could fix a dead URL on chain and this index would keep serving the old one
+      # forever. MetadataUpdate cannot heal anything alone, because the new URI is not in it and a
+      # handler must not make a network call to go and look.
+      - event: URIUpdated
 
   - name: ReputationRegistry
     abi_file_path: ./abis/ReputationRegistry.json

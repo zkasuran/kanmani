@@ -125,9 +125,10 @@ const STACK: {
   },
   {
     name: "Heal a fixed record",
-    codename: "Alchemy hook",
-    body: "A MetadataUpdate would re-run the ladder for that agent, so an operator who repairs a document sees false become true with both timestamps. The handler is written and tested and no delivery has yet arrived from a webhook, so nothing has healed itself yet.",
-    status: "built",
+    codename: "Self-heal",
+    body: "Repair a registration document and the record re-reads itself from our own event stream. An inline document heals within a block. A hosted one drops its stale verdict back to unknown and re-joins the probe queue, because publishing an old parse against a new document would assert something we have not read.",
+    status: "live",
+    href: "/status",
   },
 ];
 
