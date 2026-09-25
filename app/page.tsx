@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Derivation, DistBar, Pct, StatTile } from "@/components/ui.tsx";
 import { CountUp, Reveal } from "@/components/motion.tsx";
 import { clusterShape, measurement, population } from "@/lib/queries.ts";
+import { bondsFor, usdc } from "@/lib/bonds.ts";
+import { TESTS_PASSING } from "@/lib/counts.ts";
 
 /** Nothing on this page may be captured at build time. See next.config.ts. */
 export const dynamic = "force-dynamic";
@@ -130,7 +132,17 @@ const FLOW = [
 ];
 
 export default async function Home() {
-  const [pop, m, shape] = await Promise.all([population(), measurement(), clusterShape()]);
+  const [pop, m, shape, bonds] = await Promise.all([
+    population(),
+    measurement(),
+    clusterShape(),
+    // Our own bonds, read from Sclera on load. A released bond contributes zero, so this is what is
+    // genuinely at stake now rather than the sum of everything ever posted.
+    bondsFor([10252, 10256, 10257]),
+  ]);
+  const activeBonds = [...bonds.values()].filter((b) => b.state === "active");
+  const staked =
+    activeBonds.length === 0 ? null : String(activeBonds.reduce((n, b) => n + Number(b.amountAtomic), 0));
 
   const p = pop.rows;
   const d = m.rows;
@@ -170,8 +182,12 @@ export default async function Home() {
           <dl className="mt-9 grid gap-x-8 gap-y-3 border-t border-[var(--color-line)]/70 pt-5 sm:grid-cols-2 lg:grid-cols-4">
             <HeroFact k="agents measured" v={p.agentsIndexed === null ? "unknown" : p.agentsIndexed.toLocaleString()} note="the whole ERC-8004 population on Monad" />
             <HeroFact k="settled in real USDC" v="1 job" note="buyer held zero MON throughout" />
-            <HeroFact k="bond staked" v="0.02 USDC" note="live on mainnet, immutable, no admin override" />
-            <HeroFact k="tests passing" v="503" note="site, verifier and contracts" />
+            <HeroFact
+              k="bond staked"
+              v={staked === null ? "unknown" : `${usdc(staked)} USDC`}
+              note="read from the contract on load, immutable, no admin override"
+            />
+            <HeroFact k="tests passing" v={String(TESTS_PASSING)} note="site, verifier and contracts" />
           </dl>
 
           <div className="marquee mt-8 border-t border-[var(--color-line)]/70 pt-4" aria-label="Machine-readable surfaces">
