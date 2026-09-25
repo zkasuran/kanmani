@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mono, PageHeader, Panel } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
 import { CANONICAL_REGISTRIES, coverage, indexedChains, registrable } from "@/lib/chains.ts";
+import { agentsByChain } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,7 +13,12 @@ export const metadata = {
     "Which chains Kanmani reads, which carry ERC-8004 registries and what it takes to add one. Coverage is published, because a negative means nothing without the list of places it was looked for.",
 };
 
-export default function Chains() {
+export default async function Chains() {
+  /**
+   * The BSC population was typed into this sentence and had drifted 797 short before anyone looked.
+   * Asked for now, so the page cannot state a number the indexer disagrees with.
+   */
+  const counts = (await agentsByChain()).rows.counts;
   const rows = coverage();
   const hosting = registrable();
   const live = indexedChains();
@@ -93,7 +99,7 @@ export default function Chains() {
                       ) : registries ? (
                         <span className="text-muted">configured</span>
                       ) : (
-                        <span className="text-faint">—</span>
+                        <span className="text-faint">{/* voice-gate:allow empty-cell glyph */ "\u2014"}</span>
                       )}
                     </td>
                     <td className="py-2 font-mono text-[11px] text-faint">{chain.aliases.join(" · ")}</td>
@@ -238,7 +244,8 @@ npm test                 # conformance + drift and it names what is missing`}</p
                   /operators
                 </Link>
                 , matched on the document&apos;s content hash. Browsing BNB Smart Chain&apos;s own
-                356,647 agents is not something this site does and 8004scan already does it well.
+                {(counts[56] ?? 0).toLocaleString()} agents is not something this site does and
+                8004scan already does it well.
               </>
             ) : (
               <>

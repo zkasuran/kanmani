@@ -64,7 +64,12 @@ const FIELD =
   "mt-1 w-full rounded border border-[var(--color-line-bright)] bg-[var(--color-ink)] px-2.5 py-1.5 font-mono text-[12.5px] text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
 const LABEL = "font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint";
 
-export function StudioFlow() {
+/**
+ * `hostedFailureAgents` is measured, not typed. This copy used to state a figure inline, which meant a
+ * client component was asserting a population it had no way to re-check. The server page queries it and
+ * passes it down, so the sentence cannot outlive the measurement.
+ */
+export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: number | null }) {
   const [door, setDoor] = useState<Door>("create");
   const [draft, setDraft] = useState<RegistrationDraft>({
     ...EMPTY_DRAFT,
@@ -510,7 +515,7 @@ export function StudioFlow() {
             <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
               {kind === "data"
                 ? "Costs more gas once, then cannot rot. We took this option for our own record after measuring what happens to hosted ones."
-                : "8,640 agents on Monad point at a hosted document whose host answered and said it is not there. It is a valid choice and it is the failure mode we measured most."}
+                : `${hostedFailureAgents === null ? "Agents" : `${hostedFailureAgents.toLocaleString()} agents`} on Monad point at a hosted document whose host answered and said it is not there. It is a valid choice and it is the failure mode we measured most.`}
             </p>
           </div>
         </div>

@@ -30,7 +30,7 @@ const WORKERS = [
   },
   {
     name: "the record probe",
-    what: "Asks each distinct registration document whether it still answers. Deduplicated by record hash, per host, serial, with a gap, because three hosts carry 1,771 of the 2,012 documents.",
+    what: "Asks each distinct registration document whether it still answers. Deduplicated by record hash, per host, serial, with a gap, because a handful of hosts carry most of the documents.",
     cadence: "on demand",
   },
 ];

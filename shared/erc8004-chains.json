@@ -95,7 +95,7 @@
       "erc8004": {
         "startBlock": 79027268,
         "indexed": true,
-        "note": "The proxy deployment block, found by asking HyperSync for the first log at the three addresses from block 0. Saves scanning 79M empty blocks. A separate population from Monad, not a mirror: 356,647 agents against Monad's 10,256, backfilled 2026-09-23. Chiasm merges the two on the content hash of the registration document and finds 3 documents referenced from both chains, 6 agents, no URI conflict."
+        "note": "The proxy deployment block, found by asking HyperSync for the first log at the three addresses from block 0. Saves scanning 79M empty blocks. A separate population from Monad, not a mirror, backfilled 2026-09-23. Counts are deliberately not stated here: they change, and a figure frozen in a data file is a claim the indexer will eventually contradict. Ask agentsByChain(). Chiasm merges the two on the content hash of the registration document and finds 3 documents referenced from both chains, 6 agents, no URI conflict."
       },
       "publicRpc": "https://bsc-dataseed.bnbchain.org",
       "nativeCurrency": {

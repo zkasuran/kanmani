@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PageHeader, Panel } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
 import { StudioFlow } from "@/components/studio-flow.tsx";
+import { clusterShape, registryHealth } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -12,7 +13,15 @@ export const metadata = {
     "Compose an ERC-8004 registration document and put it on chain with your own key. We generate the call; you sign it.",
 };
 
-export default function Studio() {
+export default async function Studio() {
+  /**
+   * Every figure in the prose below used to be typed in. Two of them had already gone stale, so the
+   * page asked the reader to trust a number the database disagreed with. They are queried now.
+   */
+  const [shapeQ, healthQ] = await Promise.all([clusterShape(), registryHealth()]);
+  const shape = shapeQ.rows;
+  const health = healthQ.rows;
+  const notThere = health.byState.find((b) => /not there|404|absent/i.test(String(b.state)));
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
@@ -29,7 +38,7 @@ export default function Studio() {
 
       <Reveal>
         <Panel title="the studio">
-          <StudioFlow />
+          <StudioFlow hostedFailureAgents={notThere ? notThere.agents : null} />
         </Panel>
       </Reveal>
 
@@ -78,9 +87,12 @@ export default function Studio() {
           subtitle="The recommendation carries our own measurement and we took it ourselves."
         >
           <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
-            We probed all 2,012 distinct registration documents on Monad. 8,640 agents point at a
-            document whose host answered and said it is not there, 8,093 of them sharing one expired
-            preview deployment across 7,962 wallets. Those registrations are still valid on chain, with
+            We probed all {health.recordsTotal.toLocaleString()} distinct registration documents on
+            Monad.{" "}
+            {notThere ? `${notThere.agents.toLocaleString()} agents` : "Agents"} point at a document
+            whose host answered and said it is not there,{" "}
+            {shape.largestMemberCount.toLocaleString()} of them sharing one expired preview deployment
+            across {shape.largestDistinctOwners.toLocaleString()} wallets. Those registrations are still valid on chain, with
             a valid owner and a valid URI and they will stay that way forever while describing
             nothing. A <code className="font-mono">data:</code> URI cannot 404 because there is no host
             to ask.

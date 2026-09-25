@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mono, Num, PageHeader, Panel } from "@/components/ui.tsx";
 import { q1 } from "@/lib/db.ts";
 import { CHAIN_ID } from "@/lib/db.ts";
+import { clusterShape } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -17,6 +18,7 @@ const REGISTRY = "0x8004Cc8439f36fd5F9F049D9fF86523Df6dAAB58";
 const TAG = "kanmani.payment-claim.v1";
 
 export default async function Validate() {
+  const shape = (await clusterShape()).rows;
   // Our own row, read live from the index rather than stated. The count is the whole "before and
   // after" and it would be embarrassing to assert it from a constant.
   const counts = await q1<{ validations: string; feedbacks: string }>(
@@ -191,7 +193,7 @@ export default async function Validate() {
             10252
           </a>{" "}
           with our record written into <Mono>tokenURI</Mono> rather than hosted at a URL, because we
-          had just finished measuring that 8,093 agents on this chain point at one document that
+          had just finished measuring that {shape.largestMemberCount.toLocaleString()} agents on this chain point at one document that
           returns a deletion. Registering at a URL after publishing that number would be advice we
           do not take.
         </p>

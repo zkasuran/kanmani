@@ -190,7 +190,7 @@ export type Cluster = {
    * How many chains this DOCUMENT is registered on, Monad included. 1 for almost everything.
    *
    * Not a measure of the agent's quality and not a ranking input. It answers one question a buyer
-   * actually has: did this operator's standing start here, or does it come from somewhere we can
+   * actually has: did this operator's standing start here or does it come from somewhere we can
    * also read?
    */
   chainCount: number;
@@ -724,7 +724,7 @@ export async function verdictHistory(feedbackId: string): Promise<VerdictHistory
  * `blockNumber`, which comes from the chain, so two nodes reading the same range get the same rows.
  *
  * `unknown` is carried apart from the rate and excluded from both sides of it. A claim we could not
- * check is not a claim the agent failed, and folding it in would let our own rate limit or a
+ * check is not a claim the agent failed. Folding it in would let our own rate limit or a
  * transient outage slash somebody. `sampleSize` is the decided count (`true` plus `false`), which is
  * what a `minSampleSize` floor must be compared against, never the raw feedback count.
  */
@@ -1166,10 +1166,10 @@ export async function clusterMembers(
 /* ------------------------------------------------------------------ authorisation trail */
 
 /**
- * Who authorised a change to this agent's document, and when.
+ * Who authorised a change to this agent's document plus when.
  *
  * Distinct from a verdict in a way worth keeping distinct: a verdict is our measurement of whether a
- * claim is true, and a receipt is somebody's signed statement that they authorised a document. One is
+ * claim is true and a receipt is somebody's signed statement that they authorised a document. One is
  * ours, the other is theirs. Rendering them in the same list would blur who said what.
  *
  * The signature comes back so a reader can check it rather than trust that we did.
@@ -1210,8 +1210,29 @@ export async function agentActions(agentId: number): Promise<Sourced<ActionRow[]
     );
   } catch {
     // The table may not exist yet on an installation that has not applied the schema. An empty trail
-    // is the correct answer there: nobody has published a receipt. It is not an error page, and it is
+    // is the correct answer there: nobody has published a receipt. It is not an error page and it is
     // not a claim that none were ever signed.
     return src(AGENT_ACTIONS_SQL, []);
   }
+}
+
+/* ------------------------------------------------------------------ agents per chain */
+
+/**
+ * Agent counts for every chain the indexer holds, keyed by chain id.
+ *
+ * Exists because the chains page was quoting a BSC figure typed into prose. By the time anyone
+ * noticed it was 797 short, which is the precise failure this project attacks: a published number the
+ * database contradicts. Anything that states a population now has to ask for it.
+ *
+ * Not filtered to one chain, because the caller is usually comparing two and a second round trip to
+ * say "and BSC has this many" is how the two numbers end up measured at different moments.
+ */
+const AGENTS_BY_CHAIN_SQL = `SELECT "chainId" AS chain_id, count(*) AS n FROM "Agent" GROUP BY 1 ORDER BY 1`;
+
+export async function agentsByChain(): Promise<Sourced<{ counts: Record<number, number> }>> {
+  const rows = await q<{ chain_id: string; n: string }>(AGENTS_BY_CHAIN_SQL, []);
+  const counts: Record<number, number> = {};
+  for (const r of rows) counts[Number(r.chain_id)] = Number(r.n);
+  return src(AGENTS_BY_CHAIN_SQL, { counts });
 }

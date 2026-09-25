@@ -10,7 +10,7 @@ export const revalidate = 0;
 export const metadata = {
   title: "Operators",
   description:
-    "Monad's agent registry clustered by the document each agent registered. 8,093 agents across 7,962 wallets point at one URL that returns 404.",
+    "Monad's agent registry clustered by the document each agent registered, with the biggest shared document and how many wallets point at it.",
 };
 
 export default async function Operators() {
@@ -357,7 +357,7 @@ export default async function Operators() {
       {/* ---------------------------------------------------------------- the clusters */}
       <Panel
         title="every shared document, biggest cluster first"
-        subtitle="One row per distinct document. Storing 8,093 copies of one dead URL would hide the cluster, which is the only part worth knowing."
+        subtitle={`One row per distinct document. Storing ${(biggest?.memberCount ?? 0).toLocaleString()} copies of one dead URL would hide the cluster, which is the only part worth knowing.`}
       >
         <div className="space-y-px">
           {cl.rows.map((c) => (
