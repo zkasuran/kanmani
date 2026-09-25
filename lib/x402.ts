@@ -80,10 +80,26 @@ export function requirements(): PaymentRequirements {
   };
 }
 
+/**
+ * Priced endpoints do not all sell the same thing, so the description follows the URL.
+ *
+ * It used to be one hardcoded sentence about checking an evidence document, which was true of
+ * /api/verify and false of every agent under /api/service. A 402 body that misdescribes what the
+ * caller is buying is wrong information in the one place a machine has to trust us.
+ */
+const DESCRIPTIONS: Record<string, string> = {
+  sentinel:
+    "A pre-hire verdict on one agent, stamped with the block it was measured at, refused rather than served if it is older than the freshness bound you set.",
+  assay:
+    "The bond one agent should post: a floor in basis points plus a premium, derived from its measured claim-truth rate, refused when the sample is too small to price.",
+};
+
 export function resourceInfo(url: string): ResourceInfo {
+  const slug = url.split("/api/service/")[1]?.split(/[?#]/)[0] ?? "";
   return {
     url,
     description:
+      DESCRIPTIONS[slug] ??
       "Fetch and check one evidence document: resolve it, compare its bytes against the hash committed on chain, read the cited transaction on the chain the document names.",
     mimeType: "application/json",
   };
@@ -280,7 +296,7 @@ export function challenge(url: string, error: string) {
     help: {
       meaning: "402 here means pay me, not broken.",
       price: "0.01 USDC on Monad, chain 143, six decimals.",
-      why: "This endpoint fetches a document from somebody else's server and reads a chain. Reading what is already checked costs us a query, so that is free: GET /api/claims.",
+      why: "This endpoint does work against live chain state on request. Reading what we already checked costs us a query, so that is free: GET /api/claims.",
       facilitator: FACILITATOR,
       headers: "Send the payload base64 in PAYMENT-SIGNATURE. The older X-PAYMENT is accepted too.",
     },
