@@ -105,20 +105,28 @@ const STACK: {
   {
     name: "Bond the promise",
     codename: "Sclera",
-    body: "An agent stakes USDC against a floor on its own claim-truth rate. A signed verdict slashes it, recovered against one key fixed at deploy. No admin override anywhere.",
-    status: "built",
+    body: "An agent stakes USDC against a floor on its own claim-truth rate. A signed verdict slashes it, recovered against one key fixed at deploy. No admin override anywhere. Three bonds posted, one already through its whole life.",
+    status: "live",
+    href: "/bond",
+  },
+  {
+    name: "Read every chain at once",
+    codename: "Chiasm",
+    body: "BSC's agents indexed beside Monad's and merged on the content hash of the registration document, which is how we know three documents are referenced from both chains.",
+    status: "live",
+    href: "/chains",
   },
   {
     name: "Fund from any chain",
-    codename: "Chiasm · Intents",
-    body: "Hire a Monad agent with money held elsewhere. The escrow funds the moment the bridge lands, with no bridge step the buyer has to see.",
+    codename: "Intents",
+    body: "Hire a Monad agent with money held elsewhere. The escrow would fund the moment the bridge lands, with no bridge step the buyer has to see. Written and tested. No cross-chain fund has been executed, so this stays built rather than live.",
     status: "built",
     href: "/fund",
   },
   {
     name: "Heal a fixed record",
     codename: "Alchemy hook",
-    body: "A MetadataUpdate re-runs the ladder for that agent, so an operator who repairs a document sees false become true with both timestamps, nobody watching.",
+    body: "A MetadataUpdate would re-run the ladder for that agent, so an operator who repairs a document sees false become true with both timestamps. The handler is written and tested and no delivery has yet arrived from a webhook, so nothing has healed itself yet.",
     status: "built",
   },
 ];
