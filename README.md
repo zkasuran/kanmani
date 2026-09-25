@@ -179,7 +179,7 @@ need an archive node.
 | `verifier/` | the judge: resolve a document, compare bytes to the on-chain commitment, read the cited transaction |
 | `contracts/` | Aqueous (escrow), Sclera (bonds), both deployed and verified |
 | `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
-| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [25-PROOF](docs/25-PROOF.md) is how to check |
+| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
 | `public/brand/` | the [media package](public/brand/README.md) |
 
 ## Licence

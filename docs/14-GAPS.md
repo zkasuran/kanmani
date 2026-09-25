@@ -252,7 +252,7 @@ wc -l lib/intents.ts lib/cleanverse.ts cre/kanmani-oracle/slashing/main.ts \
 | integration | state |
 |---|---|
 | Alchemy self-healing re-verification | **written and tested, not fed by a live stream.** HMAC-SHA256 over the raw body in constant time, refusing every delivery when no key is configured rather than failing open; delivery id is a primary key so retries are idempotent. No delivery has yet come from a webhook created in Alchemy's own dashboard |
-| Chainlink CRE slashing workflow | **written, not deployed to the CRE network.** The bounty accepts a CLI simulation or a live deployment, so approval does not gate it |
+| Chainlink CRE slashing workflow | **simulated 2026-09-25, recorded in [26-CRE-SIMULATION](26-CRE-SIMULATION.md).** Reads bond terms from Sclera on Monad mainnet and the claim-truth rate from our API, then refuses to rate an empty sample. Darby confirmed CLI simulation is the judged bar. The run also caught a zero-address placeholder in the config that had never been exercised |
 | Aurora Intents funding path | **written, not exercised on mainnet.** `/fund` renders it |
 | Cleanverse gated release | **contract and client written, not deployed** |
 | Qwen schema atlas | **shipped.** Versioned, rendered on `/method`, every mapping carries its induced date. The before-and-after coverage article does not exist |
