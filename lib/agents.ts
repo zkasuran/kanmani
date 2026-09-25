@@ -58,11 +58,11 @@ export const AGENTS: Record<AgentSlug, AgentSpec> = {
     sells:
       "A pre-hire verdict on an agent, stamped with the block it was measured at, refused outright if the measurement is older than the caller's freshness bound.",
     needsMonad:
-      "The caller sets maxAgeBlocks. A bound of 64 blocks is about 17 seconds on Monad and about 13 minutes on a 12-second chain, so the same guarantee is useful here and meaningless there. Refusing beats answering late, which is only an affordable policy when a fresh measurement is seconds away.",
+      "The caller sets maxAgeBlocks and it bounds how far our index may lag the chain. 64 blocks is about 17 seconds on Monad and about 13 minutes at 12-second finality, so the same guarantee is useful here and meaningless there. Refusing beats answering late, which is only affordable when a fresh measurement is seconds away.",
     priceAtomic: "10000",
     skillId: "pre-hire-verdict",
     input: '{ "agentId": 10252, "maxAgeBlocks": 64 }',
-    output: 'verdict, rung, measuredAtBlock, ageBlocks, ageSeconds, reproduce',
+    output: "verdict, rung, measuredAtBlock, ageBlocks, ageSeconds, withinBound, note, reproduce",
   },
   assay: {
     slug: "assay",
@@ -87,6 +87,8 @@ export type SentinelAnswer = {
   ageSeconds: number | null;
   withinBound: boolean;
   sampleSize: number;
+  /** Says which of the two refusals happened, so a caller never has to infer it. */
+  note: string | null;
   reproduce: string;
 };
 
@@ -110,17 +112,30 @@ export type AssayAnswer = {
 export async function sentinel(agentId: number, maxAgeBlocks: number): Promise<SentinelAnswer> {
   const f = (await freshness()).rows;
   const head = f.latestIndexedBlock === null ? null : Number(f.latestIndexedBlock);
-  // The whole indexed range, because a pre-hire question is about the agent's whole record rather
-  // than a slice of it. The freshness bound is applied to the index head, not to the window.
   const t = head === null ? null : (await claimTruthWindow(String(agentId), 0n, BigInt(head))).rows;
 
-  const ageBlocks = head === null || f.latestFeedbackBlock === null
-    ? null
-    : Math.max(head - Number(f.latestFeedbackBlock), 0);
+  /**
+   * The bound is on OUR VIEW of the chain, not on the agent's last feedback.
+   *
+   * The first version measured `head - latestFeedbackBlock`, which answered a different question: how
+   * long since anyone anywhere left feedback. Feedback is rare, so that returned 4,053,760 blocks on
+   * the first real paid call and attached a twelve-day age to a fresh answer. It was a true
+   * subtraction of two real numbers that meant nothing a caller would want, which is the worst kind
+   * of wrong number because it looks computed.
+   *
+   * What a buyer actually needs to know is whether the index they are being answered from reflects
+   * current chain state. So the age is the index lag, taken from the indexer's own last write and
+   * converted to blocks at the measured block time.
+   */
+  // Unix SECONDS, not milliseconds. Treating it as ms put the index in 1970 and reported an age of
+  // 56 years on a live answer, which the first paid call surfaced. Units get asserted here now.
+  const updatedAt = f.indexStateUpdatedAt === null ? null : f.indexStateUpdatedAt * 1000;
+  const ageSeconds = updatedAt === null ? null : Math.max(Math.round((Date.now() - updatedAt) / 1000), 0);
+  const ageBlocks = ageSeconds === null ? null : Math.round((ageSeconds * 1000) / MONAD_BLOCK_MS);
   const withinBound = ageBlocks !== null && ageBlocks <= maxAgeBlocks;
 
-  // A decided sample with no falses reads true, any false reads false, an empty sample stays unknown.
-  // `unknown` is never collapsed into `false`, which is the rule the rest of this project holds to.
+  // `unknown` is never collapsed into `false`. An empty sample means nothing has been decided about
+  // this agent, which is not the same as the agent having failed anything.
   let verdict: SentinelAnswer["verdict"] = "unknown";
   if (withinBound && t) {
     if (t.sampleSize === 0) verdict = t.noClaimCount > 0 ? "noClaim" : "unknown";
@@ -130,12 +145,17 @@ export async function sentinel(agentId: number, maxAgeBlocks: number): Promise<S
   return {
     agentId,
     verdict,
-    rung: t === null ? null : t.rateBps === null ? null : `${(t.rateBps / 100).toFixed(1)}% claim truth`,
+    rung: t === null || t.rateBps === null ? null : `${(t.rateBps / 100).toFixed(1)}% claim truth`,
     measuredAtBlock: head,
     ageBlocks,
-    ageSeconds: ageBlocks === null ? null : Math.round((ageBlocks * MONAD_BLOCK_MS) / 1000),
+    ageSeconds,
     withinBound,
     sampleSize: t?.sampleSize ?? 0,
+    note: !withinBound
+      ? "Refused on freshness. The index is further behind the chain than your maxAgeBlocks allowed, so no verdict is given."
+      : (t?.sampleSize ?? 0) === 0
+        ? "Fresh, but nothing has been decided about this agent yet. That is not a failing grade."
+        : null,
     reproduce: `curl -s https://kanmani.xyz/api/agent/${agentId} | jq '{rung, checkedAtBlock}'`,
   };
 }
@@ -164,7 +184,33 @@ export async function assay(agentId: number): Promise<AssayAnswer> {
     };
   }
 
-  const floorBps = Math.max(0, Math.min(10000, Math.round(rate * 10000) - 500));
+  /**
+   * A floor must be able to slash or it is not a floor.
+   *
+   * The first version clamped to zero and the first paid call against a 2.38% agent duly returned
+   * floorBps 0. No verdict can fall below zero, so that is a bond nobody can ever take: precisely the
+   * unslashable-bond defect that audit Finding 9 closed inside the contract, re-created in the thing
+   * that advises people what to post. Quoting it would have been worse than refusing, because the
+   * caller would have paid for advice that buys them a badge with no risk behind it.
+   *
+   * Below MIN_FLOOR_BPS there is no honest quote. A floor beneath a very low rate cannot bite and a
+   * floor above it slashes on the next measurement, so the answer is that the rate has to improve
+   * before a bond means anything.
+   */
+  const MIN_FLOOR_BPS = 100;
+  const floorBps = Math.min(10000, Math.round(rate * 10000) - 500);
+  if (floorBps < MIN_FLOOR_BPS) {
+    return {
+      agentId,
+      floorBps: null,
+      premiumBps: null,
+      sampleSize,
+      rate,
+      quotedAtBlock: head,
+      refusalReason: `Measured claim truth is ${(rate * 100).toFixed(1)}%. Any floor below that cannot slash and any floor above it slashes on the next measurement, so there is no floor worth posting until the rate improves.`,
+      reproduce,
+    };
+  }
   const premiumBps = Math.round((1 - rate) * 2000);
   return { agentId, floorBps, premiumBps, sampleSize, rate, quotedAtBlock: head, refusalReason: null, reproduce };
 }
