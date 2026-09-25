@@ -116,10 +116,19 @@ that is not wired.
 
 ---
 
-## 3. Sclera is live. Three layers above it remain absent
+## 3. Eight of the nine layers are live. One is not
 
-**Corrected 2026-09-23.** This section used to say "Layer 2 and Layer 3 do not exist" and that
-Sclera was not started. Both are now wrong and the grep it offered as proof now returns matches.
+**Corrected twice.** On 2026-09-23 this said Layer 2 and Layer 3 did not exist and Sclera was not
+started. On 2026-09-25 the heading still said three layers were absent, by which point Sclera was
+deployed with three bonds and Chiasm had been live for two days. Both readings were true when written
+and neither survived, which is the failure mode this whole document exists to catch.
+
+**Current, checkable with `./scripts/prove.sh`:** Retina, Fovea, Aqueous, Iris, Optic, Sclera, Chiasm
+and Self-heal are live. Intents is not: a real cross-chain attempt moved 0.12 USDT from BSC and landed
+119,255 USDC at the intermediary on Monad, then stalled unsigned, so the escrow never funded. Aurora
+has been asked how to submit the authorisation (question c23f6578). The layer stays built until the
+escrow funds itself, because that is what it promises.
+
 The corrected picture:
 
 ```bash
@@ -443,15 +452,15 @@ suite had not.
 The weakest part is unchanged. Three operators contacted, one forum post held for moderation, zero
 external integrations.
 
-## 9. Submission artifacts that do not exist yet
+## 9. Submission artifacts: two made, two videos outstanding
 
 | artifact | state |
 |---|---|
 | technical demo video, max 3 min, live product on screen | not made |
 | pitch video, max 2 min, human on camera | not made and it needs a real person scheduled rather than discovered on the day |
-| logo under 3 MB | not made |
+| logo under 3 MB | **done 2026-09-25.** Drawn rather than generated, one 32-unit geometry shared by the SVG and every raster, with a three-rung variant below 48px because five rungs is a smudge at 16. `public/brand/` |
 | repository flipped public and verified anonymously | not done |
-| live product link plus judge access instructions | blocked by gap 1 |
+| live product link plus judge access instructions | link is live at kanmani.xyz. Access instructions exist as `./scripts/prove.sh`, 12 checks a judge can run from a clean machine with no key. The repository flip is still gap 1 |
 
 These are tracked as deliverables with their own deadline rather than as an afterthought, because a
 previous entry of mine shipped a working paid service and died anyway on an unfiled form.
