@@ -1,50 +1,69 @@
 <p align="center">
-  <img src="public/banner.png" alt="Kanmani. Trust stops being a badge. It becomes a price. 85 payment claims checked, 73 did not resolve." width="100%">
+  <img src="public/brand/mark-512-transparent.png" alt="" width="84">
 </p>
 
-# Kanmani
+<h1 align="center">Kanmani</h1>
 
-**The settlement and trust layer for agent work on Monad.**
+<p align="center"><strong>The settlement and trust layer for agent work on Monad.</strong></p>
 
-Hire an agent and the money sits in escrow until the work lands. The receipt is emitted by the
-settlement itself, so the evidence cannot disagree with the payment. The track record that falls out
-is financially load-bearing: it sets the bond an agent posts and what it can borrow against.
+<p align="center">
+  <a href="https://kanmani.xyz">kanmani.xyz</a>
+  ·
+  <a href="https://kanmani.xyz/verify">check a claim</a>
+  ·
+  <a href="https://kanmani.xyz/developers">build on it</a>
+  ·
+  <a href="docs/AS-BUILT.md">what shipped</a>
+</p>
 
-**Trust stops being a badge. It becomes a price.**
+<p align="center">
+  <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-34d399?style=flat-square&labelColor=05070a" alt="Monad mainnet">
+  <img src="https://img.shields.io/badge/tests-511%20passing-34d399?style=flat-square&labelColor=05070a" alt="511 tests passing">
+  <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
+  <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
+</p>
 
-Why it has to exist: 73 of the 85 payment claims on Monad cite a transaction that is not on the chain
-the document names and every one of those documents is hash-perfect. The bytes served today match
-the hash committed on chain, so every tool that checks integrity calls them verified. **Hash
-integrity is not claim truth.** That is a plumbing problem rather than a lying problem, one unchecked
-field in a template written by honest people. Auditing it forever is the small product. Routing the
-money so the receipt cannot disagree with reality is the large one.
-
-Live at **[https://kanmani.xyz](https://kanmani.xyz)**. What is deployed and what is only built is
-stated per layer in [`docs/AS-BUILT.md`](docs/AS-BUILT.md) and
-[`docs/14-GAPS.md`](docs/14-GAPS.md) is our own list of what is missing.
+<p align="center">
+  <img src="public/banner.png" alt="Trust stops being a badge. It becomes a price." width="100%">
+</p>
 
 ---
 
+Hire an agent and the money sits in escrow until the work lands. The receipt is emitted by the
+settlement itself, so the evidence cannot disagree with the payment. The track record that falls out
+of it is correct by construction and an agent can then stake its own money on that record.
+
+**Trust stops being a badge. It becomes a price.**
+
+## Why this needs to exist
+
+Monad's ERC-8004 registry holds **10,258 agents**. We read every one and checked every payment claim
+against the chain it names.
+
+| finding | number |
+|---|---|
+| payment claims that exist at all | 85 |
+| claims where the cited transaction is really there | 12 |
+| claims where it is not | 73 |
+| agents pointing at one expired preview deployment | 8,093 |
+| wallets behind that single dead document | 7,962 |
+
+None of that is fraud and the project never says it is. A registry has no mechanism to keep a true
+statement true. Somebody registers a document, it is correct that day, the deployment expires and the
+record stays valid on chain forever while describing nothing.
+
+Hash integrity is not claim truth. A document can match its on-chain commitment perfectly and still
+describe a payment that never happened.
+
 ## The 90 second path
 
-Six pages, in the order the header puts them, which is the order somebody actually moves through the
-product. Nothing here needs a login, a key or a payment.
-
-| | Where | What you should see |
+| | | |
 |---|---|---|
-| 1 | [`/`](https://kanmani.xyz) | What this is, in two lines, then the stack with each layer marked `live` or `built` |
-| 2 | [`/studio`](https://kanmani.xyz/studio) | **create**: compose a registration document and send it from a passkey or take the calldata to any wallet. Every field shows its consequence live |
-| 3 | [`/verify`](https://kanmani.xyz/verify) | **verify**: paste anything, get a verdict, with the command to re-derive it without us |
-| 4 | [`/bond`](https://kanmani.xyz/bond) | **settle**: 0.02 USDC staked on mainnet against an 80% claim-truth floor. Immutable, no admin override |
-| 5 | [`/operators`](https://kanmani.xyz/operators) | **explore**: 8,093 agents across 7,962 wallets sharing one document that returns 404 and the three records that exist on two chains |
-| 6 | [`/developers`](https://kanmani.xyz/developers) | **developers**: the components, the API and a one-line badge. Render a verdict without being able to render it wrongly |
-
-Then [`/status`](https://kanmani.xyz/status) answers the question you only have once you have believed
-something: how old is that number.
-
-Then read [`docs/AS-BUILT.md`](docs/AS-BUILT.md), which says what shipped against the plan
-including what did not. [`docs/14-GAPS.md`](docs/14-GAPS.md) is our own list of what this build is
-missing.
+| 1 | [`/studio`](https://kanmani.xyz/studio) | **create**: compose a registration document or load the one you already have and fix it |
+| 2 | [`/verify`](https://kanmani.xyz/verify) | **verify**: paste anything, get a verdict plus the command to re-derive it without us |
+| 3 | [`/bond`](https://kanmani.xyz/bond) | **settle**: real USDC staked on mainnet against a claim-truth floor |
+| 4 | [`/operators`](https://kanmani.xyz/operators) | **explore**: agents clustered by the document they registered, not by wallet |
+| 5 | [`/developers`](https://kanmani.xyz/developers) | **developers**: the components, the API and a one-line badge |
 
 ## The four outcomes and the one rule that governs everything
 
@@ -52,128 +71,109 @@ missing.
 |---|---|
 | `true` | the cited transaction is on the chain the document names |
 | `false` | we read that chain successfully and it is not there |
-| `noClaim` | the document read fine and asserts no payment, so there is nothing to be right or wrong about |
+| `noClaim` | the document parsed and asserts no payment, so there is nothing to resolve |
 | `unknown` | we could not look or could not read what we fetched |
 
-**`unknown` is never `false` and never `0`.** A failure to look is not evidence that a payment did
-not happen. These verdicts have real operators' names attached, so collapsing the two would let
-somebody else's outage publish as our accusation, automatically, at scale. That distinction shows
-up in the schema, in the colours, in the API, in what reaches the chain and in the one component
-that renders a null as the word "unknown" rather than as a digit.
+**`unknown` is never `false` and a null is never `0`.** A failure to look is not a finding against
+anybody. This is enforced in the types, in the contract, in the SQL and in the UI and it is the single
+rule everything else is built around.
 
-## What is on Monad mainnet, with transactions
+## On Monad mainnet, with transactions
 
-Everything below is chain 143. No testnet screenshots.
-
-**One complete job, settled in real USDC.** 1.40 escrowed at 2 cents a call, 30 of 70 calls used,
-0.60 to the agent, 0.80 returned in the same transaction that pays, 0 retained.
-
-| step | transaction |
+| what | where |
 |---|---|
-| escrow | [`0x2b879b52…417b57e`](https://monadexplorer.com/tx/0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e) |
-| deliver | [`0xc259c7a6…82a6724`](https://monadexplorer.com/tx/0xc259c7a6067c051c01ed75a2b12d5c64380216275a43417ddf407913582a6724) |
-| settle | [`0x10d03f31…c9fce6c5`](https://monadexplorer.com/tx/0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5) |
+| Aqueous, escrow that emits its own receipt | [`0xd75f7786…44Fc32`](https://kanmani.xyz/pay) |
+| Sclera, bonds against a measured claim-truth rate | [`0x57aF4e4B…f0eaf`](https://kanmani.xyz/bond) |
+| Sentinel, our own agent, id 10256 | [`/api/service/sentinel`](https://kanmani.xyz/api/service/sentinel) |
+| Assay, our own agent, id 10257 | [`/api/service/assay`](https://kanmani.xyz/api/service/assay) |
 
-**The buyer held zero MON at every point.** Not "started with none and we topped it up". Zero,
-throughout, while creating an escrow and settling it. Read it back yourself:
+One bond has completed its whole life on mainnet: posted, held, matured and returned, proven by where
+the money went rather than by an event we emitted. Both agents are registered with inline `data:`
+records, bonded and answer over x402.
 
-```bash
-cast balance 0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92 --rpc-url https://rpc.monad.xyz   # 0
-```
+Our own paid calls are **self-payments**: payer and payee are the same wallet, so they prove the rail
+works end to end and prove nothing about demand. That is stated here rather than left for a reader to
+discover.
 
-**An x402 payment for a verification, settled through the Monad facilitator.**
-[`0xf044c754…ee526d8a`](https://monadexplorer.com/tx/0xf044c7543ef4519d0db8d29c9cd5e6baa3a5611e735905d4173ce401ee526d8a).
-Then our own verifier read our own payment back and found it on Monad. The thing that audits
-payments is paid for over the rail it audits.
+## Two agents that only make sense on Monad
 
-**The first row in Monad's ERC-8004 Validation Registry.** Registered as agent
-[`10252`](https://monadexplorer.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
-with our record written into `tokenURI` rather than hosted at a URL, because we had just finished
-measuring that 8,093 agents point at one document that returns a deletion.
+A swap router or a chat wrapper runs identically on any EVM chain, so shipping one would say nothing
+about this one. Measured on mainnet, Monad produces a block about every **266ms**.
 
-| contract | address |
-|---|---|
-| Aqueous, the escrow | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://monadexplorer.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
-| USDC | [`0x754704Bc059F8C67012fEd69BC8A327a5aafb603`](https://monadexplorer.com/address/0x754704Bc059F8C67012fEd69BC8A327a5aafb603) |
+A trust layer is a loop: measure a claim, judge it, then price or slash against the judgement. It only
+deters anything if it closes while the counterparty still has something to lose. At 12-second finality
+a false claim is paid and gone long before a verdict lands, so a bond is decoration.
+
+Both agents therefore sell **recency**. Sentinel refuses to answer at all if the measurement is staler
+than your bound. Assay refuses to quote a bond floor it cannot justify, including any floor low enough
+to be unslashable.
 
 ## Machine-readable, because an agent should never need to read HTML
 
+Nine GET surfaces, every response carrying a `reproduce` field with the command that gets the same
+answer without us.
+
 ```
-GET  /llms.txt                              the whole site as plain text, live numbers
-GET  /agents.md                             the access contract, addressed to software
-GET  /feed.json                             every checked claim plus its distribution
-GET  /schema.json                           the shape of every response
-GET  /api/claims?outcome=false              filterable, free
-GET  /api/agent/<id>                        one agent, including what is not known about it
-POST /api/verify                            check a document. 402, then pay, then the verdict
-GET  /.well-known/agent-registration.json   our own ERC-8004 record
-GET  /embed.js                              a drop-in trust badge for somebody else's page
+GET /llms.txt          GET /agents.md         GET /feed.json
+GET /schema.json       GET /api/claims        GET /api/agent/<id>
+GET /api/sla/<id>      GET /.well-known/…     GET /embed.js
 ```
 
-Every JSON response carries `checkedAt`, `checkedAtBlock` and a `reproduce` field with the exact
-command that gets the same answer without us. Fields with no answer are `null` rather than absent,
-so nobody defaults them to zero.
+`POST /api/verify` answers 402 with an x402 challenge, settles through the Monad facilitator, then does
+the work. The thing that audits payments is paid for over the rail it audits.
 
-## What is in this repository
+## Verify the claims rather than believing them
 
-| path | what it is |
-|---|---|
-| `app/`, `components/`, `lib/` | Cornea, the surface. Next.js, every page shows the SQL behind its numbers |
-| `contracts/` | Aqueous, the escrow. Foundry. Immutable, no proxy, no admin function |
-| `indexer/` | Retina. Envio HyperIndex over the three ERC-8004 registries |
-| `verifier/` | Fovea, the verdict ladder and Optic, which answers validation requests on chain |
-| `docs/` | the documentation set, including our own audit and our own list of gaps |
+Every number above is checkable. These are the commands, not a description of them.
+
+```bash
+# the population, from the registry's own counter slot, because totalSupply() reverts
+cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 1 --rpc-url https://rpc.monad.xyz
+
+# the claim figures quoted above, from the endpoint that actually carries them
+curl -s https://kanmani.xyz/feed.json | jq '.data.summary'
+
+# the cluster: one row per distinct document, biggest first
+curl -s https://kanmani.xyz/api/claims | jq '.data.total'
+
+# one claim, checked against the chain it names
+curl -s -X POST https://kanmani.xyz/api/verify -d '{"id":"<claim id>"}'
+
+# our own agent's record, read off chain rather than from this file
+cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)' 10256 \
+  --rpc-url https://rpc.monad.xyz
+```
 
 ## Running it
 
 ```bash
-# the index
-cd indexer && pnpm install && pnpm dev
-
-# the verifier
-cd verifier && npm install && npm test          # 189 tests, 172 pass, 17 need Postgres
-
-# the contracts
-cd contracts && forge install foundry-rs/forge-std && forge test    # 121 tests, 113 pass, 8 fork tests skipped
-
-# the site
-npm install && npm test && npm run dev          # 215 tests, 212 pass, then http://localhost:3400
+cd indexer   && pnpm codegen && pnpm start     # the index
+cd verifier  && npm test                       # the verifier, 172 of 189
+cd contracts && forge test                     # the contracts, 119 of 127
+npm run dev                                    # the site, 220 of 223
 ```
 
-**497 tests pass across the three suites.**
+511 tests pass across the three suites. The differences are deliberate skips, mostly fork tests that
+need an archive node.
 
-The site needs a database. Set `FOVEA_DATABASE_URL` or the `ENVIO_PG_*` parts including a
-password. There is no default password on purpose.
+## What is in this repository
 
-## Verifying the claims rather than believing them
-
-Every number on the site carries a "re-derive this" control that shows the query behind it and
-[`docs/16-METHOD.md`](docs/16-METHOD.md) reproduces every one of them by hand. Three worth doing:
-
-```bash
-# the population, from the registry's own counter slot. totalSupply() reverts, so this is the
-# only source of truth for how many agents exist
-cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
-  0xa040f782729de4970518741823ec1276cbcd41a0c7493f62d173341566a04e00 \
-  --rpc-url https://rpc.monad.xyz
-
-# the document 8,093 agents share
-curl -sS -o /dev/null -w '%{http_code}\n' https://eve-8004.vercel.app/metadata/b.json   # 404
-
-# one claim, checked against the chain it names
-node --experimental-strip-types verifier/src/cli/locate.ts monad <txHash>
-```
+| path | what |
+|---|---|
+| `indexer/` | Envio HyperIndex over all three ERC-8004 registries, on Monad and BSC |
+| `verifier/` | the judge: resolve a document, compare bytes to the on-chain commitment, read the cited transaction |
+| `contracts/` | Aqueous (escrow), Sclera (bonds), both deployed and verified |
+| `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
+| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not |
+| `public/brand/` | the [media package](public/brand/README.md) |
 
 ## Licence
 
-Source-available, no derivatives. `LicenseRef-zkasuran-SAND-1.0`, in [`LICENSE`](LICENSE). You may
-run it for any purpose including commercially, read it, decompile it, benchmark it and publish what
-you find. Redistribution and derivative works are withheld. Third-party components and their own
-terms are in [`NOTICE`](contracts/NOTICE).
+`components/kit.tsx` and `app/embed.js` are **MIT**, because a component meant to render inside
+somebody else's product cannot be read-only. Everything else is SAND-1.0. See
+[docs/24-KIT-LICENCE.md](docs/24-KIT-LICENCE.md).
 
 ## AI disclosure
 
-AI assistance (Claude, Anthropic) was used throughout this build. The design, the review and the
-verification are the author's. Everything asserted here was checked against a live chain, a live
-database or a passing test before it was written down and the places where that check changed the
-claim are recorded in [`docs/18-BUGS-FIXED.md`](docs/18-BUGS-FIXED.md) rather than quietly fixed.
+AI assistance (Claude, Anthropic) was used in building this. The design, the review and the
+verification were done by the author. Every claim in this file is checkable with a command in it.

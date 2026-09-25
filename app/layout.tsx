@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Logo } from "@/components/logo.tsx";
 import { Nav } from "@/components/nav.tsx";
 import { ThemeToggle } from "@/components/theme-toggle.tsx";
 import "./globals.css";
@@ -69,7 +70,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           style={{ ["--header-h" as string]: "3.25rem" }}
         >
           <div className="shell flex items-center gap-x-6 gap-y-2 py-3">
-            <Link href="/" className="group flex items-baseline gap-2">
+            <Link href="/" className="group flex items-center gap-2">
+              {/* Brand colour on the mark, text colour on the word, so the pair reads as one lockup
+                  without the logo competing with the nav for attention. */}
+              <Logo size={20} className="shrink-0 text-[var(--color-brand)] transition-transform duration-200 group-hover:-translate-y-px" />
               <span className="font-mono text-base font-semibold tracking-tight text-[var(--color-text)]">
                 kanmani
               </span>
@@ -88,6 +92,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
         <footer className="mt-[var(--section-gap)] border-t border-[var(--color-line)]">
           <div className="shell py-8 text-[12px] text-faint">
+            <Logo size={26} className="mb-3 text-[var(--color-brand-dim)]" label="Kanmani" />
             <p className="max-w-3xl leading-relaxed">
               Kanmani reads Monad&apos;s ERC-8004 registries and checks whether what each evidence
               document says actually happened. A verdict describes what was observed, never what
