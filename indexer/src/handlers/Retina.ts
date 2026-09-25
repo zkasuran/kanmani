@@ -195,6 +195,77 @@ const readAgentCount = createEffect(
 );
 
 /**
+ * Read name, endpoints and x402 declaration straight out of a `data:` registration document.
+ *
+ * ## Why this belongs in the indexer and not in the sweep
+ *
+ * The periodic probe exists to fetch HOSTED documents over HTTP: it is serial, spaced per host and
+ * runs every 10,000 blocks, all of which is politeness owed to somebody else's server. A `data:` URI
+ * is inline in the transaction we are already decoding. There is no host to ask and no rate limit to
+ * respect, so waiting roughly 44 minutes to learn a name we are holding in memory was pure latency.
+ *
+ * It showed up the moment we registered our own two agents: both were indexed within 38 seconds and
+ * both rendered as "unnamed" on /agents, because the only thing that fills a name ran on the probe's
+ * clock rather than the chain's. On a chain with 266ms blocks that is the wrong clock.
+ *
+ * Parsing stays deliberately conservative. Anything unreadable leaves the fields undefined rather
+ * than writing a guess, because `undefined` here means "not yet known" and a wrong name is worse than
+ * an absent one. Hosted documents are untouched and still belong to the probe.
+ */
+function parseInlineRecord(uri: string): { name?: string; endpoints: string[]; declaresX402: boolean } | undefined {
+  if (!uri.startsWith("data:")) return undefined;
+  const comma = uri.indexOf(",");
+  if (comma < 0) return undefined;
+  const meta = uri.slice(5, comma);
+  const body = uri.slice(comma + 1);
+
+  let text: string;
+  try {
+    text = meta.includes("base64")
+      ? Buffer.from(body, "base64").toString("utf8")
+      : decodeURIComponent(body);
+  } catch {
+    return undefined;
+  }
+
+  let doc: Record<string, unknown>;
+  try {
+    const parsed: unknown = JSON.parse(text);
+    if (typeof parsed !== "object" || parsed === null) return undefined;
+    doc = parsed as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+
+  const name = typeof doc.name === "string" && doc.name.trim() ? doc.name.trim().slice(0, 200) : undefined;
+
+  // Skills live under `skills`, `services` or `endpoints` depending on who wrote the document. All
+  // three occur in the live corpus and `services` is what Monad's own Agent Hub emits, so a reader
+  // that only knew `skills` would find nothing in most real records.
+  const lists = [doc.skills, doc.services, doc.endpoints].filter(Array.isArray) as unknown[][];
+  const endpoints: string[] = [];
+  let declaresX402 = false;
+  for (const list of lists) {
+    for (const item of list) {
+      if (typeof item === "string") {
+        endpoints.push(item.slice(0, 500));
+        continue;
+      }
+      if (typeof item !== "object" || item === null) continue;
+      const o = item as Record<string, unknown>;
+      const ep = typeof o.endpoint === "string" ? o.endpoint : typeof o.url === "string" ? o.url : null;
+      if (ep) endpoints.push(ep.slice(0, 500));
+      if (o.x402 !== undefined && o.x402 !== false) declaresX402 = true;
+    }
+  }
+  if (doc.x402 !== undefined && doc.x402 !== false) declaresX402 = true;
+
+  return { name, endpoints: endpoints.slice(0, 32), declaresX402 };
+}
+
+
+
+/**
  * Registration. Only records a URI when the event actually carries one: an empty agentURI here
  * is normal, not an error.
  */
@@ -205,6 +276,7 @@ indexer.onEvent(
     const existing = await context.Agent.get(id);
     const uri = event.params.agentURI ?? "";
     const hasUri = uri.length > 0;
+    const inline = hasUri ? parseInlineRecord(uri) : undefined;
 
     let uriHash: string | undefined = existing?.uriHash;
     if (hasUri) {
@@ -245,8 +317,10 @@ indexer.onEvent(
           fetchedAt: undefined,
           httpStatus: undefined,
           byteLength: undefined,
-          resolves: undefined,
-          parsedName: undefined,
+          // An inline document cannot 404, so it resolves by construction. Saying so here keeps a
+          // `data:` record out of the "never probed" bucket it would otherwise sit in forever.
+          resolves: inline ? true : undefined,
+          parsedName: inline?.name,
           firstSeenBlock: BigInt(event.block.number),
         });
       }
@@ -270,9 +344,11 @@ indexer.onEvent(
       agentWallet: existing?.agentWallet,
       tokenUri: hasUri ? uri : existing?.tokenUri,
       uriHash,
-      name: existing?.name,
-      endpoints: existing?.endpoints ?? [],
-      declaresX402: existing?.declaresX402 ?? false,
+      // A `data:` document is already in hand, so read it now instead of making the probe do it in
+      // 44 minutes. Hosted URIs fall through untouched and keep whatever the probe last found.
+      name: inline?.name ?? existing?.name,
+      endpoints: inline ? inline.endpoints : (existing?.endpoints ?? []),
+      declaresX402: inline ? inline.declaresX402 : (existing?.declaresX402 ?? false),
       registeredAtBlock: BigInt(event.block.number),
       registeredAt: BigInt(event.block.timestamp),
       lastSeenBlock: BigInt(event.block.number),
