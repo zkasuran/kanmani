@@ -1,12 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Kanmani">
-  <!--
-    The verification ladder as the mark: five rungs rising left to right, which is the one idea the
-    whole product rests on. Drawn rather than generated, so it stays sharp at 16px where a raster
-    favicon turns to mush, and so the stroke can be one colour we already own.
-  -->
+  <!-- Three rungs, heavier stroke. The five-rung mark is illegible below about 48px. -->
   <rect width="32" height="32" rx="7" fill="#05070a"/>
-  <path d="M5 25h5v-4h5v-4h5v-4h5v-4h2"
-        fill="none" stroke="#34d399" stroke-width="2.1"
-        stroke-linecap="square" stroke-linejoin="miter"/>
-  <circle cx="27" cy="9" r="2.2" fill="#34d399"/>
+  <path d="M5 26L13 26L13 18L21 18L21 10L27 10" fill="none" stroke="#34d399" stroke-width="3.4" stroke-linecap="square"/>
+  <circle cx="27" cy="10" r="3" fill="#34d399"/>
 </svg>

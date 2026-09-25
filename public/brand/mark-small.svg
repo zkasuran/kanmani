@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-label="Kanmani">
+  <!-- Three rungs, heavier stroke. The five-rung mark is illegible below about 48px. -->
+  <rect width="32" height="32" rx="7" fill="#05070a"/>
+  <path d="M5 26L13 26L13 18L21 18L21 10L27 10" fill="none" stroke="#34d399" stroke-width="3.4" stroke-linecap="square"/>
+  <circle cx="27" cy="10" r="3" fill="#34d399"/>
+</svg>
