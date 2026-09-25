@@ -122,6 +122,20 @@ GET /api/sla/<id>      GET /.well-known/…     GET /embed.js
 `POST /api/verify` answers 402 with an x402 challenge, settles through the Monad facilitator, then does
 the work. The thing that audits payments is paid for over the rail it audits.
 
+## Prove it yourself in one command
+
+```bash
+./scripts/prove.sh
+```
+
+Eleven checks across all nine layers, reading only public endpoints and public chain state. No key and
+no access to our infrastructure, so it runs from a clean machine.
+
+It reports **seven live and two built**, which is the honest shape rather than nine greens. Intents has
+never executed a cross-chain fund and the Alchemy webhook has received zero deliveries, so both are
+proven built and labelled that way. The last recorded run is in
+[docs/25-PROOF.md](docs/25-PROOF.md).
+
 ## Verify the claims rather than believing them
 
 Every number above is checkable. These are the commands, not a description of them.
@@ -164,7 +178,7 @@ need an archive node.
 | `verifier/` | the judge: resolve a document, compare bytes to the on-chain commitment, read the cited transaction |
 | `contracts/` | Aqueous (escrow), Sclera (bonds), both deployed and verified |
 | `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
-| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not |
+| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [25-PROOF](docs/25-PROOF.md) is how to check |
 | `public/brand/` | the [media package](public/brand/README.md) |
 
 ## Licence
