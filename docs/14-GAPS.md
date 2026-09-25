@@ -338,7 +338,7 @@ the agent or that the document is good. The registry decides ownership and the l
 An endpoint implying otherwise would be manufacturing standing out of a signature, which is the shape
 of claim this project exists to check rather than to produce.
 
-## 8. Traction is three contacts and zero integrations and it is still the weakest part
+## 8. Traction is three contacts, zero integrations and two agents of our own
 
 Traction is 20% of the score. The honest count today, 2026-09-24:
 
@@ -392,7 +392,7 @@ issue is re-derivable where private mail is not and there are no mail credential
 |---|---|---|
 | Ultravioleta / Execution Market | 49 | [uvd-describe-sdk-typescript#4](https://github.com/UltravioletaDAO/uvd-describe-sdk-typescript/issues/4) |
 | The Agora | 32 | [The-Agora#3](https://github.com/SakshiShah29/The-Agora/issues/3) |
-| Envio HyperIndex | — | [hyperindex#1659](https://github.com/enviodev/hyperindex/issues/1659) |
+| Envio HyperIndex | n/a | [hyperindex#1659](https://github.com/enviodev/hyperindex/issues/1659) |
 
 Each message was checked against the chain or the live host **before** posting, because a public claim
 about somebody else's work has to survive them checking it. For Ultravioleta, both cited transactions
@@ -432,6 +432,16 @@ lands, the outreach record ships with what happened stated plainly, because a do
 an invented number and an invented one would be caught.
 
 ---
+
+**Two agents of our own are live, 2026-09-25.** Sentinel (10256) and Assay (10257), both registered on
+Monad mainnet with inline `data:` records, both bonded at 10,000 atomic USDC against a floor of 8000bps,
+both answering over x402. This is not traction. It is dogfooding and the distinction matters: payer and
+payee are the same wallet, so USDC did not move and nothing here shows demand. What it does show is that
+the stack is usable by an agent rather than only by a reader and it found three real bugs that the test
+suite had not.
+
+The weakest part is unchanged. Three operators contacted, one forum post held for moderation, zero
+external integrations.
 
 ## 9. Submission artifacts that do not exist yet
 

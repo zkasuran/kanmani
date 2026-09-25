@@ -20,7 +20,9 @@ cd contracts && forge test            # 127 tests, 119 pass, 8 fork tests skippe
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**503 tests pass across the three suites.** That is the number quoted on the site.
+**511 tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: 220 of 223 in the site suite, 172 of 189 in the verifier, 119 of 127 in contracts. The
+differences are deliberate skips, mostly fork tests that need an archive node.
 
 ---
 
@@ -707,3 +709,125 @@ that were our own reasoning rather than our own code: a bytecode mismatch that w
 wrong, a root-cause theory that measurement killed, a test that deleted the live index, plus a
 `Buffer` reference that passed 35 green tests and would have thrown on a judge's machine during a
 live gate.
+
+## Two agents of our own and why these two
+
+Shipped 2026-09-25 and live on Monad mainnet.
+
+| agent | id | sells | bond |
+|---|---|---|---|
+| Sentinel | 10256 | A pre-hire verdict stamped with the block it was measured at, refused if staler than the caller's bound | 10,000 atomic USDC, floor 8000bps |
+| Assay | 10257 | The bond an agent should post: a floor in bps plus a premium, from its measured claim-truth rate | 10,000 atomic USDC, floor 8000bps |
+
+The registry has 10,258 agents and most are not worth hiring, so adding another generic one would have
+been noise. A swap router or a chat wrapper also runs identically on any EVM chain, which is why neither
+is here: shipping one would demonstrate nothing about Monad beyond that it executes bytecode.
+
+**The filter was latency.** A trust layer is a loop. Measure a claim, judge it, then price or slash
+against the judgement. The loop only deters anything if it closes while the counterparty still has
+something to lose. Measured on mainnet while building this, 15 blocks in 4 seconds, about 266ms each. At
+12-second finality a false claim is paid and gone long before a verdict lands and a bond is decoration.
+Both agents therefore sell **recency**, which is only a product where blocks are cheap and fast enough
+to re-read constantly.
+
+Sentinel enforces its freshness bound rather than reporting it: outside the bound it returns
+`withinBound: false` with no verdict, because a caller who asked for fresh and got stale received the
+opposite of what they paid for. 64 blocks is about 17 seconds here and about 13 minutes at 12-second
+finality.
+
+Assay refuses more often than it quotes and the refusals are the point. Under a sample of 5 it returns
+nulls, matching the `minSample` the deployed contract enforces. It also refuses when the computed floor
+would fall below 100bps, because beneath a very low rate a floor cannot bite and above it the next
+measurement slashes.
+
+Neither invents a measurement. Both read the same corpus and judge the website uses, so an agent answer
+and a page cannot disagree. Both records are inline `data:` URIs, so they cannot rot the way the 8,093
+hosted ones did.
+
+### Using them found three bugs that reading the code had not
+
+This is the argument for paying your own endpoint.
+
+1. Sentinel reported `ageBlocks 4,053,760` on a fresh answer. The bound was measured as head minus
+   `latestFeedbackBlock`, which answers a different question: how long since anyone anywhere left
+   feedback. A true subtraction of two real numbers that meant nothing a buyer wants, which is the worst
+   kind of wrong number because it looks computed. It is index lag now.
+2. Then `ageSeconds 1,788,507,850`, about 56 years. `indexStateUpdatedAt` is Unix seconds and was read
+   as milliseconds.
+3. Assay quoted `floorBps 0` for an agent measured at 2.4% claim truth. No verdict can fall below zero,
+   so that is a bond nobody can ever slash: the unslashable-bond defect of audit Finding 9, recreated in
+   the thing that advises people what to post and worse than useless because the caller paid for it.
+
+### Six paid calls and the disclosure that belongs with them
+
+All six settled over x402 on Monad. `PAY_TO` is the deployer wallet and that is the only funded wallet,
+so **payer and payee are the same address**. USDC is unchanged at 34,081 across all six, which proves the
+circularity rather than hiding it. This shows the rail works end to end and shows nothing about demand.
+
+Bonds verified by balance rather than by event: the contract went to 20,000 and the wallet went 34,081
+to 14,081, exactly 20,000 moved. Both read back `state 1` Active. `postBond` against an agent we do not
+own still reverts.
+
+## Inline documents are parsed on ingest
+
+Our own two agents were indexed in 38 seconds and rendered as `unnamed`, because `name`, `endpoints` and
+`declaresX402` came only from the probe that runs every 10,000 blocks, about 44 minutes.
+
+That wait is owed to a **hosted** document: the probe is serial and spaced per host because it fetches
+from somebody else's server. It is not owed to a `data:` URI, which is inline in the transaction already
+being decoded. We were applying HTTP-fetch latency to a document in memory, which on a 266ms chain is
+the wrong clock and is the same latency argument the two agents exist to make.
+
+`parseInlineRecord()` reads inline documents at index time. Unreadable input leaves the fields undefined
+rather than writing a guess, because a wrong name is worse than an absent one. Hosted URIs still belong
+to the probe. A one-off backfill using the handler's own parser filled 59 of 60 existing rows and left
+one malformed document alone. A first attempt as a single SQL statement aborted on invalid UTF8, which
+was the correct outcome and the reason the backfill is a script.
+
+## Built to landing.md
+
+Audited against the house frontend recipe rather than assumed compliant. Light and dark, the split into
+real pages and an action-first hero already matched. Five things did not.
+
+* **Reports is its own category.** `method`, `validate` and `corrections` had been scattered under
+  `verify` with `status` as an orphan tab.
+* **Developers has a submenu**, deep-linking to components, embed, api and add-a-chain. It was declared
+  with an empty item list, so hovering it did nothing.
+* **The nav works from a keyboard.** It opened on hover and tap but had no `onFocus`, so every submenu
+  item was unreachable without a mouse. Arrow keys, Home, End and Escape now move focus and
+  `aria-haspopup`, `role="menu"` and `role="menuitem"` were all missing.
+* **Nothing can tuck under the header.** `scroll-padding-top` and `scroll-margin-top` were both absent.
+  Invisible until the submenus above created the first five anchor targets.
+* **The charts went through the dataviz skill.** Measured with its validator: light mode passes at OKLab
+  delta E 8.4 under deuteranopia, dark warned at 6.5 for true against false, so the false segment carries
+  a hatch. The verdict colours themselves are unchanged. The validator also flagged our lightness band
+  and chroma floor and both are refusals rather than misses, since those checks score categorical
+  identity palettes and ours is a status palette where `noClaim` and `unknown` are deliberately gray.
+
+## Every published figure is queried
+
+Two numbers on the site were contradicted by our own database: `/chains` said 356,647 BSC agents against
+a real 357,444 and `/studio` said 2,012 distinct documents against 2,016. Neither was a calculation
+error. They were true on the day somebody typed them into a sentence, which is the same mechanism this
+project publishes findings about in other people's records.
+
+Every population figure now comes from a query, including one a client component had been asserting
+inline. `agentsByChain()` was added because no per-chain count existed, which is the root cause: the
+figure was typed in for want of a function. Frozen counts were removed from the chain registry note and
+`/operators` metadata describes the finding instead of quoting a number, because static metadata cannot
+hold a live one.
+
+Three things stay hardcoded on purpose. 216,000 blocks and 20,000 units are the parameters of the bond
+actually posted, so they are history. The 10,000-block sweep cadence is configuration. Agent ids in a
+compare link are identifiers.
+
+## The writing gate is a command
+
+`bin/voice-gate.mjs` checks em dashes, comma-before-and and the AI tells in CLAUDE.md and
+`bin/portal-post.sh` runs it before a request is built and refuses to POST on a hit.
+
+It exists because the rule was already written down and relied on being remembered. A dashboard update
+and four mentor replies went out dirty and the replies cannot be edited: `PATCH` and `PUT` on a reply
+both return 404 and an answered question returns 409. It has caught violations in its author's own work
+four times since, including 11 in the draft of the next dashboard update.
+
