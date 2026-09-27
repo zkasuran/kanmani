@@ -39,24 +39,47 @@ export const dynamic = "force-dynamic";
 
 type Body = { receipt?: unknown; signature?: unknown };
 
+/** Ceilings so an anonymous signed write cannot store unbounded rows or oversized fields. */
+const MAX_BODY_BYTES = 8_192;
+const MAX_SIGNATURE_LEN = 200;
+const MAX_IDENTITY_LEN = 200;
+const MAX_ROWS_PER_IDENTITY = 500;
+const HASH = /^0x[0-9a-fA-F]{64}$/;
+const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
+
 function isReceipt(x: unknown): x is ActionReceipt {
   if (!x || typeof x !== "object") return false;
   const r = x as Record<string, unknown>;
+  // Every field is bounded in shape and size, not just type. Without this a stranger can vary the
+  // uriHash to defeat the ON CONFLICT dedup and store an unbounded number of oversized rows, since
+  // the signature is their own and costs them nothing to make.
   return (
     (r.action === "register" || r.action === "setAgentURI") &&
     typeof r.chainId === "number" &&
-    (r.agentId === null || typeof r.agentId === "number") &&
+    Number.isInteger(r.chainId) &&
+    r.chainId > 0 &&
+    r.chainId <= 1_000_000_000_000 &&
+    (r.agentId === null ||
+      (typeof r.agentId === "number" && Number.isInteger(r.agentId) && r.agentId >= 0 && r.agentId <= Number.MAX_SAFE_INTEGER)) &&
     typeof r.uriHash === "string" &&
+    HASH.test(r.uriHash) &&
     typeof r.signer === "string" &&
+    ADDRESS.test(r.signer) &&
     typeof r.identity === "string" &&
-    typeof r.at === "string"
+    r.identity.length <= MAX_IDENTITY_LEN &&
+    typeof r.at === "string" &&
+    r.at.length <= 40
   );
 }
 
 export async function POST(req: Request) {
+  const raw = await req.text();
+  if (raw.length > MAX_BODY_BYTES) {
+    return problem(413, "Body too large", `The request body must be under ${MAX_BODY_BYTES} bytes.`);
+  }
   let body: Body;
   try {
-    body = (await req.json()) as Body;
+    body = JSON.parse(raw) as Body;
   } catch {
     return problem(400, "Not JSON", "The body must be a JSON object with `receipt` and `signature`.");
   }
@@ -65,11 +88,11 @@ export async function POST(req: Request) {
     return problem(
       400,
       "Malformed receipt",
-      "`receipt` must carry action, chainId, agentId, uriHash, signer, identity and at. `agentId` is null for a registration.",
+      "`receipt` must carry action, a positive integer chainId, a null or non-negative agentId, a 0x keccak uriHash, a 0x address signer, a did:key identity and an ISO timestamp. `agentId` is null for a registration.",
     );
   }
-  if (typeof body.signature !== "string" || body.signature.length === 0) {
-    return problem(400, "Missing signature", "`signature` must be the base64url ed25519 signature over the canonical bytes.");
+  if (typeof body.signature !== "string" || body.signature.length === 0 || body.signature.length > MAX_SIGNATURE_LEN) {
+    return problem(400, "Missing or oversized signature", "`signature` must be the base64url ed25519 signature over the canonical bytes.");
   }
 
   const receipt = body.receipt;
@@ -92,6 +115,16 @@ export async function POST(req: Request) {
     if (Number.isNaN(at.getTime())) throw new Error("unparseable");
   } catch {
     return problem(400, "Bad timestamp", "`at` must be an ISO 8601 instant.");
+  }
+
+  // A cap per identity, so a single passkey cannot fill the table by varying the uriHash. The
+  // identity is authenticated by the signature just checked, so this counts real rows for a real key.
+  const count = await q1<{ n: string }>(
+    `SELECT count(*)::text AS n FROM fovea.agent_action WHERE identity = $1`,
+    [receipt.identity],
+  );
+  if (count && Number(count.n) >= MAX_ROWS_PER_IDENTITY) {
+    return problem(429, "Too many receipts for this identity", `Each identity may publish up to ${MAX_ROWS_PER_IDENTITY} receipts.`);
   }
 
   // A replay is the same row rather than a second one. The uniqueness is the database's, not a flag

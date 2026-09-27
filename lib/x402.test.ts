@@ -1,6 +1,16 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { challenge, NETWORK, paymentFrom, paymentResponseHeader, requirements } from "./x402.ts";
+import {
+  challenge,
+  confirmPaymentNonce,
+  NETWORK,
+  paymentFrom,
+  paymentResponseHeader,
+  releasePaymentNonce,
+  requirements,
+  reservePaymentNonce,
+  type PaymentPayload,
+} from "./x402.ts";
 
 const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString("base64");
 
@@ -165,4 +175,36 @@ test("a failed settlement reports an empty transaction, never a missing field", 
   assert.equal(d.success, false);
   assert.equal(d.transaction, "");
   assert.equal(d.network, NETWORK);
+});
+
+/* ---------------------------------------------- single-flight guard over an authorization */
+
+const withNonce = (from: string, nonce: string): PaymentPayload =>
+  ({
+    x402Version: 2,
+    accepted: requirements(),
+    payload: { signature: `0x${"a".repeat(130)}`, authorization: { from, to: "0x2", value: "10000", nonce } },
+    extensions: {},
+  }) as PaymentPayload;
+
+test("an authorization can only be reserved once at a time, and a used one is refused", () => {
+  const p = withNonce("0xabc", `0x${"1".repeat(64)}`);
+  const first = reservePaymentNonce(p);
+  assert.equal(first.ok, true, "the first caller gets the reservation");
+
+  const second = reservePaymentNonce(p);
+  assert.equal(second.ok, false, "a concurrent second caller is refused so it cannot run the paid work too");
+
+  if (first.ok) releasePaymentNonce(first.key);
+  const afterRelease = reservePaymentNonce(p);
+  assert.equal(afterRelease.ok, true, "a released reservation frees the auth for a genuine retry");
+
+  if (afterRelease.ok) confirmPaymentNonce(afterRelease.key);
+  const afterConfirm = reservePaymentNonce(p);
+  assert.equal(afterConfirm.ok, false, "a confirmed (settled) auth is spent and cannot be reused");
+});
+
+test("an authorization with no payer or nonce is refused rather than reserved", () => {
+  const p = { x402Version: 2, accepted: requirements(), payload: { signature: "0x", authorization: {} }, extensions: {} } as unknown as PaymentPayload;
+  assert.equal(reservePaymentNonce(p).ok, false);
 });

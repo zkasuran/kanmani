@@ -13,9 +13,8 @@ export const revalidate = 0;
  * The landing page is the product, not the report.
  *
  * This page used to open with the measurement and nothing else, which read as a forensic exposé of
- * other people's work. That breaks the tone rule this project set for itself in
- * `.hq/plan/00-THESIS-AND-SCOPE.md`: **a clearing house, never an exposé.** The measurement is the
- * proof the engine works. It is not the pitch.
+ * other people's work. That breaks the tone rule this project set for itself: **a clearing house,
+ * never an exposé.** The measurement is the proof the engine works. It is not the pitch.
  *
  * So the order here is the order of the official submission pitch: what Kanmani is, why the market
  * needs it, how the money moves, the stack it composes into, then the evidence underneath. The

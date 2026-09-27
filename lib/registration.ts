@@ -13,8 +13,8 @@
  *
  * ## The two calls, from the spec
  *
- * The ERC-8004 Identity Registry is an ERC-721. `.hq/erc-8004-spec.md` gives three registration
- * overloads and one update:
+ * The ERC-8004 Identity Registry is an ERC-721. The spec gives three registration overloads and one
+ * update:
  *
  *   register(string agentURI) returns (uint256 agentId)
  *   register(string agentURI, MetadataEntry[] metadata) returns (uint256 agentId)

@@ -15,14 +15,20 @@ import type { FetchOutcome } from "../net/guard.ts";
 import { intactCheck } from "./intact.ts";
 import { parseDocument, type ParseOutcome } from "./parse.ts";
 import { locate, type LocateOutcome, type ReaderFor } from "./locate.ts";
+import { settledCheck, type SettlementReaderFor } from "./settled.ts";
 
 /** How far down the ladder this claim got. */
 export type Rung = "declared" | "resolvable" | "intact" | "parsed" | "true";
 
 export type Outcome =
-  /** The described payment is on the chain the document names. */
+  /**
+   * The described payment happened. When a settlement reader is supplied and the claim names a
+   * recipient this means the value provably reached that recipient on the named chain, not merely
+   * that a transaction with the cited hash exists. Without a settlement reader, or for a claim that
+   * names no recipient, it means a successful transaction with that hash is on the named chain.
+   */
   | "true"
-  /** We read that chain successfully and it is not there. */
+  /** We read that chain successfully and the payment is not there, or the cited transaction reverted. */
   | "false"
   /** The document asserts no payment, so there is nothing to be right or wrong about. */
   | "noClaim"
@@ -52,6 +58,12 @@ export type VerdictInput = {
   /** Carries the author's declared media type, which decides whether prose is a gap or a document. */
   fetched: FetchOutcome & { mediaType?: string };
   readerFor: ReaderFor;
+  /**
+   * When present, a claim that names a recipient is checked for real: the receipt is read and the
+   * value has to reach that recipient before the outcome is `true`. Absent, the `true` rung can only
+   * establish that a successful transaction with the cited hash exists on the named chain.
+   */
+  settlementReaderFor?: SettlementReaderFor;
   now?: () => Date;
 };
 
@@ -114,8 +126,7 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
     };
   }
 
-  // true
-  const loc: LocateOutcome = await locate(p.claim.network, p.claim.txHash, input.readerFor);
+  // true / false / unknown: the payment either happened as described or it did not.
   const declared = {
     declaredNetwork: p.claim.network === undefined ? undefined : String(p.claim.network),
     declaredTx: p.claim.txHash === undefined ? undefined : String(p.claim.txHash),
@@ -124,6 +135,48 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
     computedHash: i.computed,
   };
 
+  // When a settlement reader is available and the claim names a recipient, run the real check: the
+  // receipt has to exist, not revert, and move value to the claimed recipient. That is the whole
+  // thesis, "a transaction with this hash exists" is not "this payment happened", so the web path and
+  // the sweep run it rather than only the CLI. locate stays the fallback for a claim with no
+  // recipient to match a payment against.
+  const recipient = typeof p.claim.recipient === "string" ? p.claim.recipient.trim() : "";
+  if (input.settlementReaderFor && /^0x[0-9a-fA-F]{40}$/.test(recipient)) {
+    const s = await settledCheck(
+      {
+        txHash: p.claim.txHash,
+        network: p.claim.network,
+        recipient,
+        asset: p.claim.token,
+        amount: p.claim.amount,
+      },
+      input.settlementReaderFor,
+    );
+    if (s.settled === "unknown") {
+      return { ...base, ...declared, rung: "parsed", outcome: "unknown", reason: s.reason };
+    }
+    if (s.settled === false) {
+      return {
+        ...base,
+        ...declared,
+        rung: "parsed",
+        outcome: "false",
+        checkedAtBlock: s.checkedAtBlock.toString(),
+        reason: s.reason,
+      };
+    }
+    return {
+      ...base,
+      ...declared,
+      rung: "true",
+      outcome: "true",
+      checkedAtBlock: s.checkedAtBlock.toString(),
+      foundOnChain: { chain: s.chain.displayName, chainId: s.chain.id, blockNumber: s.blockNumber.toString() },
+      reason: s.reason,
+    };
+  }
+
+  const loc: LocateOutcome = await locate(p.claim.network, p.claim.txHash, input.readerFor);
   if (loc.found === "unknown") {
     return { ...base, ...declared, rung: "parsed", outcome: "unknown", reason: loc.reason };
   }
@@ -137,6 +190,18 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
       reason: loc.reason,
     };
   }
+  // The transaction is on chain. A revert moved nothing, so it is a `false` rather than a `true`:
+  // reading a reverted receipt as a settled payment is exactly the overclaim this rung exists against.
+  if (loc.status === "reverted") {
+    return {
+      ...base,
+      ...declared,
+      rung: "parsed",
+      outcome: "false",
+      checkedAtBlock: loc.checkedAtBlock.toString(),
+      reason: `cited transaction reverted on ${loc.chain.displayName} at block ${loc.blockNumber}, so no payment was effected`,
+    };
+  }
   return {
     ...base,
     ...declared,
@@ -148,6 +213,6 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
       chainId: loc.chain.id,
       blockNumber: loc.blockNumber.toString(),
     },
-    reason: `cited transaction is on ${loc.chain.displayName} at block ${loc.blockNumber}`,
+    reason: `a successful transaction with this hash is on ${loc.chain.displayName} at block ${loc.blockNumber}`,
   };
 }

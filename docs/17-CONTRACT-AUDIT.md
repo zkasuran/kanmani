@@ -706,9 +706,8 @@ implied.
 
 ### Status
 
-**Closed 2026-09-24.** The gate is satisfied for this finding.
-`.hq/plan/09-SECURITY.md` says the security review is *"gating, not advisory"* and this is the
-finding that gate exists for. No test covered it:
+**Closed 2026-09-24.** The gate is satisfied for this finding. The security review is gating rather
+than advisory in this project, and this is the finding that gate exists for. No test covered it:
 
 ```bash
 grep -niE "notOwner|ownerOf|squat" contracts/test/Sclera.t.sol    # no matches
@@ -750,3 +749,207 @@ agent and a reverted report correctly does **not** record its nonce, asserted di
 forwarder's metadata and authorises on the attestor's own signature, which is correct on a chain where
 the forwarder validates nothing. The deploy script refuses the demo attestor by address, because that
 key is derived from a test vector committed to this repository.
+
+## The 2026-09-27 audit pass
+
+A second review ran across the whole build, not just the contracts: the Solidity, the API routes, the
+verifier engine, the server libraries, the indexer, the CRE workflow and the secrets posture. Each
+surface was read on its own and every finding that survived was reproduced before it was fixed. The
+findings below are ordered by severity. The ones marked applied ship with a test that fails against the
+old code. The ones marked accepted or deferred say plainly why a code change was not the right answer.
+
+## Finding 11: the SSRF guard was bypassed by an IPv4-mapped IPv6 address
+
+### The bug
+
+The verifier fetches URLs that strangers put on chain, so `verifier/src/net/guard.ts` screens every
+address against the private, loopback and cloud-metadata ranges. The IPv6 branch recognised the
+IPv4-mapped form only through a regex on the dotted spelling, `^::ffff:(\d+\.\d+\.\d+\.\d+)$`.
+
+The WHATWG URL parser rewrites `[::ffff:127.0.0.1]` to the compressed hex form `::ffff:7f00:1` before
+the guard ever runs. The regex matches the dotted spelling and never the hex one, so the address read
+as public and Node's dual-stack socket then connected it straight to `127.0.0.1`.
+
+### The exploit
+
+An agent registers an evidence document at `http://[::ffff:169.254.169.254]/latest/meta-data/` or at
+`http://[::ffff:10.0.0.5]/` for a host on our own network. Both passed the screen and were fetched. The
+same held on the payable-probe path and on every redirect hop. Reproduced live against a loopback
+server: the guarded fetch returned the server's body with status 200.
+
+### The fix
+
+Screen the parsed bytes, not a spelling. `isForbiddenAddress` now expands any IPv6 address to its eight
+groups and routes any embedded IPv4, the mapped `::ffff:a.b.c.d`, the deprecated compatible `::a.b.c.d`
+and the NAT64 `64:ff9b::/96` prefix, through the IPv4 rules. An address it cannot parse fails closed. A
+public mapped address such as `::ffff:8.8.8.8` still resolves, so the fix blocks the attack without
+breaking a legitimate fetch.
+
+### The proof
+
+`guard.test.ts` gained a `screenUrl` test over every mapped notation, which fails against the old regex,
+and an end-to-end `guardedFetch` against a real loopback server reached through `[::ffff:127.0.0.1]`,
+which asserts the body never comes back. The earlier test fed the dotted string straight to the
+function, so it matched the regex and never exercised what the URL parser actually produces. The suite
+is 18 green after the change.
+
+## Finding 12: the verifier called a claim true when only the transaction existed
+
+### The bug
+
+`judge()` topped its ladder out at `locate`, which asks whether a transaction with the cited hash is on
+the named chain. It then reported outcome `true`, whose own definition is that the described payment
+happened. Existence is not payment. A cited transaction can revert or succeed while paying a different
+address, so `judge()` read all three as `true`. The full check, which reads the receipt and matches
+the recipient, lived in `settledCheck` and was wired only into the CLI, never into the web path or the
+sweep that fills the stored verdicts.
+
+### The exploit
+
+An agent cites any real Monad transaction in its evidence document, a reverted one, an unrelated one or
+one paying somebody else, then earns a green `true`. Reproduced by feeding `judge()` a reverted receipt
+and a receipt paying a different address: both returned `outcome: "true"` before the fix.
+
+### The fix
+
+`judge()` now runs the real settlement check whenever a settlement reader is available and the claim
+names a recipient, which the execution.market shapes do. It reads the receipt, refuses a revert and
+requires the value to reach the claimed recipient before `true`. A claim with no recipient falls back to
+existence, where a revert is now a `false` rather than a `true`. The web path and the sweep both
+pass the reader, so the site and the CLI agree and the stored verdicts get the real check on the next
+sweep.
+
+### The proof
+
+`verdict.test.ts` gained six cases: a reverted transaction is `false`, a transaction paying a different
+address is `false`, a transaction reaching the recipient is `true`, a reverted one through the settled
+rung is `false` and a provider failure stays `unknown` rather than becoming an accusation. The
+"different address is false" case fails against the existence-only rung. The suite is 14 green.
+
+### The consequence to state plainly
+
+This changes what the stored verdicts mean, so the headline counts are recomputed on the next full
+sweep and the deployed site shows the previous numbers until it is re-swept and redeployed. That is a
+correctness improvement in the one direction this project exists to move: a `true` now means the
+payment reached the recipient, not that a transaction with that hash exists.
+
+## Finding 13: the paid endpoints returned the result without a settled payment
+
+### The bug
+
+`/api/verify` and `/api/service/[slug]` verified a payment, did the priced work, then settled and
+returned the answer whether or not settlement confirmed. There was no local record of a spent
+authorization either, so one signed authorization fired many times in parallel each ran the work while
+only one settle could ever land on chain.
+
+### The exploit
+
+A caller signs one authorization and fires N concurrent requests. Every one passes the facilitator
+verify, every one does the fetch and the RPC and only one settles, so N minus one get the paid work
+for nothing. Separately, a payment that verifies but never settles, a facilitator failure or an
+authorization the payer consumes elsewhere, still returned the answer, so the settle step was optional.
+
+### The fix
+
+An in-memory single-flight lock keyed on the authorization's payer and nonce is taken before any work,
+so one caller holds an authorization at a time and a used one is refused. Delivery is now gated on a
+confirmed settlement: a verified-but-unsettled payment returns a 402 with no result, the reservation is
+released and the authorization is left untouched so a genuine payer retries. The happy path where
+settlement succeeds is unchanged, so the working demo still returns its verdict.
+
+### The proof
+
+`x402.test.ts` gained a test that reserves an authorization, refuses a concurrent second attempt,
+frees it on release and refuses it once confirmed. The route change returns the verdict only after a
+true settle.
+
+## Finding 14: the indexer stored on-chain strings that the schema promised were http(s) only
+
+**Applied.** `indexer/src/handlers/Retina.ts`. `parseInlineRecord` pushed any string from a registration
+document into `Agent.endpoints`, so `javascript:`, `data:text/html`, relative paths and HTML fragments
+all passed, while `schema.graphql` documents the field as absolute http(s) only. The indexer's own
+writes are parameterised, so this is not injection at the indexer, but it makes the schema lie to a
+consumer that then renders the value as a safe link. The fix parses each candidate and keeps it only
+when it is an absolute http or https URL, so the field now means what the schema says. The change
+applies to new and re-indexed rows, so a resync carries it over the existing data.
+
+## Finding 15: several public inputs turned a bad request into a 500 or an unbounded write
+
+**Applied.** A cluster of input-validation gaps on the API surface, each closed at the request boundary:
+
+* A negative `limit` on `/api/claims` and `/feed.json` reached Postgres as `LIMIT -1` and threw a 500.
+  Both are now floored as well as capped.
+* `/api/receipt/action` accepted any number for `chainId` and `agentId` and any string for the rest, so
+  an out-of-range value hit the database as a 500 and a stranger could vary the `uriHash` to defeat the
+  dedup and store unbounded rows. It now validates every field's shape and length, caps the body and
+  limits receipts per identity.
+* `/api/vault` put no length on the ciphertext or the context and no cap on entries per address, so a
+  self-signed write could store an unbounded blob or an unbounded number of them. All three are capped
+  now. The signature proves control of an address, never that the address is scarce, so a cap is the
+  right barrier.
+* Deliberate 500s on `/api/verify` and `/api/service` returned the raw exception message. They now log
+  the real error server-side and return a fixed line.
+
+## Finding 16: a compliance validator returning a dirty bool reverted the gate instead of reading Unknown
+
+**Applied.** `CleanverseGate.sol`. `_readCvi` decoded the validator's answer with `abi.decode(_, (bool))`,
+which panics on a 32-byte word that is not exactly 0 or 1. `cviStatus` is documented to never revert and
+this broke that, turning the Unknown state into a panic. The word is now read directly, so a dirty value
+reads as Unknown rather than reverting. `test_settle_dirtyBoolIsUnknownNotPanic` proves it and fails
+against the old decode. The live behaviour failed closed either way, a reverted settlement is a refused
+settlement, so this is a correctness and observability fix rather than a fund risk.
+
+## Finding 17: the secrets posture before the public flip
+
+**Applied. It came back clean on the one that mattered.** No private key, mnemonic or live token is
+tracked and the house signing key is absent from the whole lane, so the repo is safe to publish from a
+secrets standpoint. Three smaller things were tightened: the commit and push hooks now refuse any `.env`
+at any depth, not just `.hq/`, `submit/` and `build/`, so a forced add of `.env.local` cannot walk past
+`.gitignore`; a stray committed `.pyc` was untracked and `__pycache__` gitignored; and five tracked
+files referenced the private `.hq/` planning directory, one as a live markdown link that would 404 on
+the public repo and leak the path, so all five were restated in plain text. A third party's email
+address and some internal framing were removed from a public doc. A Content-Security-Policy and the
+standard hardening headers were added, permissive on script and style sources because Next's hydration
+needs it, strict on object, base-uri, frame-ancestors and form-action.
+
+## Accepted risks and deferred fixes from this pass
+
+Stated rather than omitted, the same as the accepted risks above.
+
+**Sclera's attestor and beneficiary are the same principal.** Only the attestor key can sign a slash,
+so no third party can grief an agent for profit. When the attestor key and the `slashBeneficiary` are
+the same operator, though, the party that decides a slash is the party that receives it, so an unjust
+slash is profitable to whoever holds the key. That is the oracle-trust assumption the whole design
+rests on and the misleading comment that implied nobody could profit is corrected in the source. A
+deploy that wants to retire even that assumption should point `slashBeneficiary` at a burn address or a
+party distinct from the attestor. The contract is immutable, so this is a note for the next deploy.
+
+**The slashing oracle reads one HTTP source.** Every CRE node fetches the same origin, so the median
+across nodes tolerates a flaky node but not a compromised source: a manipulated body is seen identically
+by all nodes and the median is the manipulation. The rate is recomputed from the counts, which is right,
+but the counts have no second source or on-chain cross-check. This matters only once the write path is
+wired, which it is not: the workflow reads, decides and encodes a report and no code in the repo signs
+or submits it, so the "verdict carries its own authorization" property lives entirely in the deployed
+Sclera and is not exercised by a simulation. Both are disclosed in the CRE writeup.
+
+**Session scope is advisory and a receipt's signer is not bound to its identity.** The browser session
+gate checks the amount but not the recipient or the action and the generic account it exposes can sign
+anything a caller hands it, so the separation between paying and authorising an agent change is not
+enforced in code. Separately, an action receipt names an EVM `signer` and an ed25519 `identity` and the
+signature only proves the identity, so a receipt can name any address as its signer. Both are
+client-side changes that need the passkey flow to verify and both are partly disclosed already. The
+fix is a scope-enforcing account wrapper that runs the gate inside every signing method, a `payTo` in
+the scope and an account-key binding signature stored beside the receipt. Deferred to a change that can
+exercise the browser path rather than shipped unverified.
+
+**Indexer items that need a resync.** The cross-chain reference counters are permissionless and can be
+inflated by registering a throwaway agent on the other chain with the same URI, the dead `Verdict`
+entity resolves an always-empty relation on the indexer's GraphQL and `agentWallet` is stored lowercase
+while Envio checksums the other addresses. The app already compares addresses case-insensitively, so the
+last is cosmetic. Each needs codegen and a resync to change stored data, so they are recorded here and in
+the gaps doc rather than changed blind against a live index.
+
+**The mislabelled split cannot yet prove "nowhere".** The count of false verdicts found on no chain
+mixes "searched every reachable chain and found nothing" with "some chains could not be searched" and
+the type no longer calls that number fabricated. Splitting it honestly needs the backfill to record which
+chains it reached per verdict, which is a data-model change flagged in the gaps doc.

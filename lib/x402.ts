@@ -267,6 +267,63 @@ export async function settlePayment(
   };
 }
 
+/**
+ * A single-flight lock over payment authorizations, keyed by (payer, nonce).
+ *
+ * The on-chain EIP-3009 nonce stops a payment settling twice: the token rejects a spent nonce. It
+ * does NOT stop the same authorization being used to run the priced WORK many times in parallel
+ * before any settle lands, so N concurrent requests carrying one signature would each fetch and
+ * check for one eventual charge. This closes that: a nonce is reserved before the work and only one
+ * caller holds it at a time. A reservation that is never confirmed expires, so a crash does not
+ * strand a payer's authorization forever.
+ *
+ * In-memory on purpose: this app runs as one long-lived process, and the token's own nonce is the
+ * durable backstop across a restart. It is a concurrency guard, not the source of truth.
+ */
+const RESERVATION_TTL_MS = 120_000;
+const nonceState = new Map<string, { state: "inflight" | "consumed"; at: number }>();
+
+function nonceKey(payload: PaymentPayload): string | null {
+  const auth = payload.payload?.authorization as Record<string, string> | undefined;
+  const from = typeof auth?.from === "string" ? auth.from.toLowerCase() : "";
+  const nonce = typeof auth?.nonce === "string" ? auth.nonce.toLowerCase() : "";
+  if (!from || !nonce) return null;
+  return `${from}:${nonce}`;
+}
+
+/** Reserve the authorization for this request, or refuse when another request already holds it. */
+export function reservePaymentNonce(payload: PaymentPayload): { ok: true; key: string } | { ok: false; reason: string } {
+  const key = nonceKey(payload);
+  if (!key) return { ok: false, reason: "authorization is missing a payer or nonce" };
+  const now = Date.now();
+  const existing = nonceState.get(key);
+  if (existing) {
+    if (existing.state === "consumed") {
+      return { ok: false, reason: "this payment authorization has already been used" };
+    }
+    if (now - existing.at < RESERVATION_TTL_MS) {
+      return { ok: false, reason: "this payment authorization is already being processed" };
+    }
+  }
+  nonceState.set(key, { state: "inflight", at: now });
+  // Opportunistic sweep so the map cannot grow without bound on a long-lived process.
+  if (nonceState.size > 10_000) {
+    for (const [k, v] of nonceState) if (now - v.at > RESERVATION_TTL_MS * 4) nonceState.delete(k);
+  }
+  return { ok: true, key };
+}
+
+/** Release a reservation whose payment did not settle, so the payer can retry with the same auth. */
+export function releasePaymentNonce(key: string): void {
+  const v = nonceState.get(key);
+  if (v && v.state === "inflight") nonceState.delete(key);
+}
+
+/** Mark an authorization spent once its settlement confirmed. */
+export function confirmPaymentNonce(key: string): void {
+  nonceState.set(key, { state: "consumed", at: Date.now() });
+}
+
 /** Section 5.3. What a settled payment sends back, so a payer can find its own transaction. */
 export function paymentResponseHeader(s: {
   settled: boolean;

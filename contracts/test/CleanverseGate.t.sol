@@ -42,6 +42,17 @@ contract ShortAnswerValidator is IComplianceValidator {
     }
 }
 
+/// @dev A validator that returns a full 32-byte word that is neither 0 nor 1. `abi.decode(_,(bool))`
+///      panics on this, so the gate must read the word directly and report Unknown rather than revert.
+contract DirtyBoolValidator is IComplianceValidator {
+    function complianceVerify(address, address) external pure returns (bool) {
+        assembly {
+            mstore(0, 2)
+            return(0, 32)
+        }
+    }
+}
+
 /// @dev A CVA-shaped token that re-checks the recipient's clearance inside its own transfer. It exists
 ///      to show the second half of the coupling: even if a caller reached a raw transfer, the asset
 ///      itself refuses an uncleared recipient. This is the documented CVA property, not the gate's.
@@ -237,6 +248,23 @@ contract CleanverseGateTest is Test {
         vm.expectRevert(CleanverseGate.CviUnknown.selector);
         g2.settle(jobId);
         assertEq(g2.cviStatus(worker) == CleanverseGate.CviState.Unknown, true);
+    }
+
+    /// A validator that returns a dirty bool (a 32-byte word that is not 0 or 1) must read as Unknown,
+    /// never panic. `cviStatus` is documented to never revert, and abi.decode(_,(bool)) would break
+    /// that. This fails against the pre-fix decode.
+    function test_settle_dirtyBoolIsUnknownNotPanic() public {
+        CleanverseGate g2 = new CleanverseGate(escrow, new DirtyBoolValidator());
+        // The status view answers Unknown instead of reverting with a Panic.
+        assertEq(g2.cviStatus(worker) == CleanverseGate.CviState.Unknown, true);
+
+        vm.prank(buyer);
+        tok.approve(address(g2), type(uint256).max);
+        vm.prank(buyer);
+        bytes32 jobId = g2.open(worker, address(tok), AMOUNT, deadline, TERMS, SALT);
+        vm.prank(buyer);
+        vm.expectRevert(CleanverseGate.CviUnknown.selector);
+        g2.settle(jobId);
     }
 
     /// The subject of the check is the worker, never the caller. A verified buyer must not be able to

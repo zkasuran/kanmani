@@ -270,6 +270,60 @@ are the same sentence.
 
 ---
 
+## Found by a fan-out security audit
+
+On 2026-09-27 a review swept every surface at once: contracts, API routes, the verifier engine, the
+server libraries, the indexer, the CRE workflow and the secrets posture. Full writeups with the exploits
+and the proofs are in [17-CONTRACT-AUDIT.md](17-CONTRACT-AUDIT.md), findings 11 onward. The headline ones:
+
+### The SSRF guard was bypassed by an IPv4-mapped IPv6 address
+
+**Severity: CRITICAL. Source only, the deployed guard needed a redeploy.** `verifier/src/net/guard.ts`.
+
+The guard matched the mapped form `::ffff:127.0.0.1` with a regex on the dotted spelling, but `new URL`
+rewrites the host to the hex form `::ffff:7f00:1` first, so loopback, cloud metadata and internal hosts
+read as public and the socket dialled them. Reproduced live against a loopback server. Fixed by screening
+the parsed IPv6 bytes and routing any embedded IPv4 through the IPv4 rules.
+
+**Guard:** a `screenUrl` test over every mapped notation that fails against the old regex, plus an
+end-to-end `guardedFetch` against a real loopback server reached through `[::ffff:127.0.0.1]`.
+
+### The verifier called a claim true when only the transaction existed
+
+**Severity: HIGH.** `verifier/src/ladder/verdict.ts`.
+
+`judge()` reported `true` on a transaction merely existing, so a reverted transaction or one paying a
+different address read as a settled payment. The recipient check lived only in the CLI. Fixed by running
+the real settlement check on the web path and the sweep, so `true` now means the value reached the
+claimed recipient. This recomputes the stored counts on the next sweep.
+
+**Guard:** six `verdict.test.ts` cases, including a transaction paying a different address being `false`,
+which fails against the existence-only rung.
+
+### The paid endpoints returned the result without a settled payment
+
+**Severity: HIGH.** `app/api/verify`, `app/api/service/[slug]`.
+
+Work was delivered whether or not settlement confirmed. One authorization fired in parallel could run
+the work many times for one settle. Fixed with a single-flight lock on the authorization and by gating
+delivery on a confirmed settle. The happy path is unchanged.
+
+**Guard:** an `x402.test.ts` reservation test, reserve then refuse a concurrent second, free on release,
+refuse once confirmed.
+
+### Smaller fixes in the same pass
+
+* The indexer stored `javascript:` and `data:` strings in a field the schema promised was http(s) only.
+  Now filtered to absolute http and https URLs.
+* A negative `limit` on `/api/claims` and `/feed.json` threw a 500. Both are floored now.
+* `/api/receipt/action` and `/api/vault` took unbounded signed writes. Field shapes, sizes and per-identity
+  counts are capped.
+* Deliberate 500s echoed the raw exception message. They log it and return a fixed line now.
+* `CleanverseGate._readCvi` reverted on a validator returning a dirty bool, breaking the never-reverts
+  guarantee of `cviStatus`. It reads the word directly now and reports Unknown.
+* The commit and push hooks now refuse any `.env`, a stray `.pyc` was untracked, five tracked files that
+  named the private `.hq/` directory were restated and a CSP plus hardening headers were added.
+
 ## Still open
 
 Nothing known and unfixed in the escrow.

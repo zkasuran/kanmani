@@ -59,3 +59,7 @@ CONTENT-*.html
 # Intermediate backdrops from scripts/build-assets.py. The composited cards in public/ are
 # the artefact; these are the raw generations and are reproducible from the script.
 .asset-tmp/
+
+# Python bytecode from the scripts/ helpers. Regenerated on every run, never source.
+__pycache__/
+*.pyc

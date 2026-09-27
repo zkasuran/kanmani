@@ -217,7 +217,14 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
 
   /* ------------------------------------------------------------------ 3. decide */
 
-  if (sla.sampleSize === 0) {
+  // The median of an even number of nodes can land on a .5, so the aggregated counts are rounded
+  // back to integers before anything uses them. A verdict field is a uint32 on chain and BigInt()
+  // throws on a fractional value, so a half-count would fail at signing time rather than here.
+  const sampleSize = Math.round(sla.sampleSize);
+  const trueCount = Math.round(sla.trueCount);
+  const unknownCount = Math.round(sla.unknownCount);
+
+  if (sampleSize === 0) {
     const msg = `agent ${agentId} has no decided payment claims in ${fromBlock}..${toBlock}, so there is nothing to rate`;
     runtime.log(msg);
     return msg;
@@ -225,22 +232,22 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
 
   // Recomputed, never taken from the API. Integer basis points, matching what the contract does
   // with `(trueCount * 10000) / sampleSize`.
-  const rateBps = Math.floor((sla.trueCount * 10_000) / sla.sampleSize);
+  const rateBps = Math.floor((trueCount * 10_000) / sampleSize);
 
   runtime.log(
-    `measured ${sla.trueCount}/${sla.sampleSize} claims true = ${rateBps}bps ` +
-      `(${sla.unknownCount} undecided, excluded from both sides)`,
+    `measured ${trueCount}/${sampleSize} claims true = ${rateBps}bps ` +
+      `(${unknownCount} undecided, excluded from both sides)`,
   );
 
   if (mode === "observation") {
-    const msg = `OBSERVED agent=${agentId} rate=${rateBps}bps sample=${sla.sampleSize} (no bond, no verdict)`;
+    const msg = `OBSERVED agent=${agentId} rate=${rateBps}bps sample=${sampleSize} (no bond, no verdict)`;
     runtime.log(msg);
     return msg;
   }
 
-  if (sla.sampleSize < minSample) {
+  if (sampleSize < minSample) {
     const msg =
-      `sample ${sla.sampleSize} is below the bond's minimum ${minSample}, so no verdict. ` +
+      `sample ${sampleSize} is below the bond's minimum ${minSample}, so no verdict. ` +
       `One unresolved receipt out of one is a 0% rate and also noise.`;
     runtime.log(msg);
     return msg;
@@ -252,8 +259,8 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     agentId: BigInt(agentId),
     windowStart,
     windowEnd,
-    sampleSize: sla.sampleSize,
-    trueCount: sla.trueCount,
+    sampleSize,
+    trueCount,
     nonce,
   };
 
@@ -265,8 +272,8 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
   );
 
   return breached
-    ? `BREACH agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sla.sampleSize}`
-    : `HELD agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sla.sampleSize}`;
+    ? `BREACH agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sampleSize}`
+    : `HELD agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sampleSize}`;
 };
 
 export const initWorkflow = (config: Config) => {

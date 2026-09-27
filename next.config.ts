@@ -24,7 +24,40 @@ const config: NextConfig = {
   // which is the correct outcome, but this makes the intent explicit.
   serverExternalPackages: ["pg"],
   async headers() {
+    // Security headers on every response. The CSP is deliberately permissive on script and style
+    // sources ('unsafe-inline' plus self), because Next's hydration bootstrap and Tailwind's inline
+    // styles need it and a nonce pipeline is not wired here. The value it does add is real: object,
+    // base-uri, frame-ancestors and form-action are locked down, so an injected tag cannot load a
+    // plugin, rewrite the base href, frame the site for clickjacking or retarget a form. The XSS
+    // surface is already small (no reflected user input, the one dangerouslySetInnerHTML is a static
+    // string, embed.js renders through textContent in a closed shadow root), so this is defence in
+    // depth rather than the only guard.
+    const csp = [
+      "default-src 'self'",
+      "img-src 'self' data: https:",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "connect-src 'self' https:",
+      "font-src 'self' data:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "frame-ancestors 'self'",
+      "form-action 'self'",
+      "upgrade-insecure-requests",
+    ].join("; ");
+    const security = [
+      { key: "content-security-policy", value: csp },
+      { key: "x-content-type-options", value: "nosniff" },
+      { key: "referrer-policy", value: "strict-origin-when-cross-origin" },
+      { key: "x-frame-options", value: "SAMEORIGIN" },
+      { key: "permissions-policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
+    ];
     return [
+      {
+        // Security headers apply to everything the site serves.
+        source: "/:path*",
+        headers: security,
+      },
       {
         // The machine-readable surfaces exist to be consumed by somebody else's agent, so they
         // say so. Without this an agent fetching /feed.json from a browser context is blocked by

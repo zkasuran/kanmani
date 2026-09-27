@@ -30,10 +30,41 @@ test("blocks every private and reserved range we care about", () => {
     "fe80::1",
     "ff02::1",
     "::ffff:127.0.0.1", // loopback in v4-mapped notation
+    "::ffff:7f00:1", // the same loopback in the hex form new URL() actually produces
+    "::ffff:169.254.169.254", // cloud metadata, v4-mapped dotted
+    "::ffff:a9fe:a9fe", // cloud metadata, v4-mapped hex
+    "0:0:0:0:0:ffff:7f00:1", // loopback, mapped and uncompressed
+    "::7f00:1", // loopback in the deprecated v4-compatible form
+    "64:ff9b::7f00:1", // loopback behind the well-known NAT64 prefix
   ];
   for (const ip of mustBlock) {
     assert.ok(isForbiddenAddress(ip), `${ip} should be blocked`);
   }
+});
+
+test("allows a public IPv4 carried inside a v4-mapped IPv6 address", () => {
+  // The screen has to keep working for real mapped addresses, not reject the whole notation.
+  assert.equal(isForbiddenAddress("::ffff:8.8.8.8"), null);
+  assert.equal(isForbiddenAddress("::ffff:808:808"), null);
+});
+
+test("URL-parser normalisation cannot smuggle a mapped loopback past screenUrl", () => {
+  // The bug this pins: new URL() rewrites [::ffff:127.0.0.1] to ::ffff:7f00:1 before the guard sees
+  // it, so a regex on the dotted form never fired and loopback read as public. Screening the parsed
+  // bytes is what closes it. Feeding the dotted string straight to isForbiddenAddress, as an earlier
+  // test did, never exercised the notation the parser actually hands over.
+  const mustBlock = [
+    "http://[::ffff:127.0.0.1]/",
+    "http://[::ffff:169.254.169.254]/latest/meta-data/",
+    "http://[::ffff:10.0.0.5]:8081/v1/graphql",
+    "http://[::7f00:1]/",
+    "http://[64:ff9b::7f00:1]/",
+  ];
+  for (const u of mustBlock) {
+    assert.equal(screenUrl(u).ok, false, `${u} must be blocked after URL normalisation`);
+  }
+  // A public mapped address is still fetchable.
+  assert.equal(screenUrl("http://[::ffff:8.8.8.8]/").ok, true);
 });
 
 test("allows ordinary public addresses", () => {
@@ -105,6 +136,25 @@ test("guardedFetch refuses a host that resolves to loopback, even to reach a rea
     });
     assert.equal(r.ok, false, "the screen has to win even though a server is really there");
     if (r.ok === false) assert.doesNotMatch(r.reason, /SECRET/);
+  } finally {
+    s.close();
+  }
+});
+
+test("guardedFetch refuses a v4-mapped loopback literal even with a real server behind it", async () => {
+  // End to end proof of the fix: a server really answers on loopback, and the request is refused at
+  // the screen before any byte is read, so SECRET never comes back.
+  const s = await listen((_req, res) => {
+    res.writeHead(200);
+    res.end("SECRET");
+  });
+  try {
+    const r = await guardedFetch(`http://[::ffff:127.0.0.1]:${s.port}/`, { timeoutMs: 2500 });
+    assert.equal(r.ok, false, "the mapped loopback literal must be blocked");
+    if (r.ok === false) {
+      assert.match(r.reason, /IPv4-in-IPv6/);
+      assert.doesNotMatch(r.reason, /SECRET/);
+    }
   } finally {
     s.close();
   }

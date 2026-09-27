@@ -93,20 +93,79 @@ export function isForbiddenAddress(ip: string): string | null {
     return null;
   }
 
-  // IPv6. Normalised lowercase and the v4-mapped form is re-screened as v4 rather than waved
-  // through, because ::ffff:127.0.0.1 is loopback wearing a different notation.
-  const s = ip.toLowerCase();
-  if (s === "::" || s === "::0") return "unspecified ::";
-  if (s === "::1") return "loopback ::1";
-  const mapped = s.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped) {
-    const inner = isForbiddenAddress(mapped[1]!);
-    return inner ? `IPv4-mapped, ${inner}` : null;
+  // IPv6, screened on the bytes rather than on a notation. Node's dual-stack sockets connect an
+  // IPv4-mapped address straight to the IPv4 host it carries, so any embedded IPv4 has to go through
+  // the IPv4 rules. The trap the first cut fell into: the WHATWG URL parser rewrites
+  // `[::ffff:127.0.0.1]` to the hex form `::ffff:7f00:1` before this guard ever runs, so a regex
+  // written against the dotted notation never matches and loopback sails through as public. Parsing
+  // to eight groups sees the address the socket will actually dial.
+  const groups = parseIPv6ToGroups(ip);
+  if (!groups) return "malformed IPv6";
+  if (groups.every((g) => g === 0)) return "unspecified ::";
+  if (groups.slice(0, 7).every((g) => g === 0) && groups[7] === 1) return "loopback ::1";
+  const embedded = embeddedIPv4(groups);
+  if (embedded) {
+    const inner = isForbiddenAddress(embedded);
+    return inner ? `IPv4-in-IPv6, ${inner}` : null;
   }
-  const head = parseInt(s.split(":")[0] || "0", 16);
-  if ((head & 0xfe00) === 0xfc00) return "unique local fc00::/7";
-  if ((head & 0xffc0) === 0xfe80) return "link-local fe80::/10";
-  if ((head & 0xff00) === 0xff00) return "multicast ff00::/8";
+  const g0 = groups[0]!;
+  if ((g0 & 0xfe00) === 0xfc00) return "unique local fc00::/7";
+  if ((g0 & 0xffc0) === 0xfe80) return "link-local fe80::/10";
+  if ((g0 & 0xff00) === 0xff00) return "multicast ff00::/8";
+  return null;
+}
+
+/**
+ * Expand anything `net.isIP` calls IPv6 into its eight 16-bit groups.
+ *
+ * Screening runs on these bytes, never on a string, because `::ffff:127.0.0.1`, `::ffff:7f00:1` and
+ * `0:0:0:0:0:ffff:7f00:1` are one address and a URL parser is free to hand the guard any of them.
+ * Returns null for anything it cannot expand to exactly eight groups, and the caller reads null as
+ * forbidden, so an address this cannot parse fails closed.
+ */
+export function parseIPv6ToGroups(ip: string): number[] | null {
+  if (net.isIP(ip) !== 6) return null;
+  let str = ip;
+  let tailV4: number[] = [];
+  // A trailing dotted quad (the ::ffff:a.b.c.d form) becomes two 16-bit groups before expansion.
+  const lastColon = str.lastIndexOf(":");
+  const tail = str.slice(lastColon + 1);
+  if (tail.includes(".")) {
+    const p = tail.split(".").map(Number);
+    if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return null;
+    tailV4 = [((p[0]! << 8) | p[1]!) & 0xffff, ((p[2]! << 8) | p[3]!) & 0xffff];
+    str = str.slice(0, lastColon);
+  }
+  const parts = str.split("::");
+  if (parts.length > 2) return null;
+  const head = parts[0] ? parts[0].split(":").filter((x) => x !== "").map((h) => parseInt(h, 16)) : [];
+  const rest =
+    parts.length === 2 && parts[1] ? parts[1].split(":").filter((x) => x !== "").map((h) => parseInt(h, 16)) : [];
+  let groups: number[];
+  if (parts.length === 2) {
+    const zeros = 8 - (head.length + rest.length + tailV4.length);
+    if (zeros < 0) return null;
+    groups = [...head, ...Array(zeros).fill(0), ...rest, ...tailV4];
+  } else {
+    groups = [...head, ...tailV4];
+  }
+  if (groups.length !== 8 || groups.some((g) => !Number.isInteger(g) || g < 0 || g > 0xffff)) return null;
+  return groups;
+}
+
+/**
+ * The dotted IPv4 an IPv6 address carries, or null if it carries none.
+ *
+ * Covers the mapped form `::ffff:a.b.c.d` that Node actually routes to IPv4, the deprecated
+ * compatible form `::a.b.c.d`, and the well-known NAT64 prefix `64:ff9b::/96` that a translator maps
+ * to the embedded IPv4. `::` and `::1` carry no routable IPv4 and are handled by the caller.
+ */
+function embeddedIPv4(g: number[]): string | null {
+  const topFiveZero = g[0] === 0 && g[1] === 0 && g[2] === 0 && g[3] === 0 && g[4] === 0;
+  const asV4 = () => `${g[6]! >> 8}.${g[6]! & 0xff}.${g[7]! >> 8}.${g[7]! & 0xff}`;
+  if (topFiveZero && g[5] === 0xffff) return asV4();
+  if (topFiveZero && g[5] === 0 && !(g[6] === 0 && (g[7] === 0 || g[7] === 1))) return asV4();
+  if (g[0] === 0x64 && g[1] === 0xff9b && g[2] === 0 && g[3] === 0 && g[4] === 0 && g[5] === 0) return asV4();
   return null;
 }
 

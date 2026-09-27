@@ -309,12 +309,23 @@ contract CleanverseGate {
     ///      explicitly: the validator reverts or has no code (ok is false), it answers with fewer than
     ///      32 bytes (ok is false) or it returns a decodable bool. A typed call would collapse the
     ///      first two into a bare revert and lose the Unknown state the gate is built to expose.
+    ///
+    ///      The returned word is read directly rather than through `abi.decode(ret,(bool))`, because
+    ///      the ABI decoder panics on a bool that is not exactly 0 or 1. A validator that returns a
+    ///      dirty word would then turn a status read into a revert, which is the one thing the Unknown
+    ///      state exists to prevent, so a dirty value reads as Unknown (ok false) instead.
     function _readCvi(address worker) private view returns (bool ok, bool verified) {
         (bool success, bytes memory ret) = address(validator).staticcall(
             abi.encodeWithSelector(IComplianceValidator.complianceVerify.selector, address(this), worker)
         );
         if (!success || ret.length < 32) return (false, false);
-        return (true, abi.decode(ret, (bool)));
+        bytes32 word;
+        assembly {
+            word := mload(add(ret, 32))
+        }
+        if (word == bytes32(0)) return (true, false);
+        if (word == bytes32(uint256(1))) return (true, true);
+        return (false, false);
     }
 
     /// @dev The Aqueous salt for a gated job. Folding in the buyer and the worker means two buyers

@@ -209,8 +209,7 @@ sudo -u postgres psql -d envio-dev -c 'select "chainCount", count(*) from public
 ### The studio, both onboarding doors
 
 `/studio` composes an ERC-8004 registration document and generates the transaction that puts it on
-chain. Two doors, the shape [`../.hq/plan/06-JOBS-AND-ROUTE.md`](../.hq/plan/06-JOBS-AND-ROUTE.md)
-specified:
+chain. Two doors, the shape the onboarding plan specified:
 
 * **Register a new agent.** A progressive form where every field shows its consequence live: an
   endpoint is what separates a declared skill from a reachable one, a `data:` URI is what cannot

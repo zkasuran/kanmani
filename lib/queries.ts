@@ -420,11 +420,15 @@ function agentSource(f: AgentFilter, params: unknown[]): string {
   if (f.withEvidence) where.push(`coalesce(fb.evidence, 0) > 0`);
   if (f.search && f.search.trim()) {
     const raw = f.search.trim();
-    const s = `%${raw.toLowerCase()}%`;
+    // Escape the LIKE metacharacters so a search for "%" or "a_c" is a literal substring, not a
+    // wildcard. Without this, "?q=%" matches the whole registry and the count beside it reports that
+    // as a real match, which on a project whose pitch is correct numbers is a defect not a nicety.
+    const esc = raw.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`);
+    const s = `%${esc}%`;
     where.push(
-      `(lower(coalesce(a.name,'')) LIKE ${p(s)} OR lower(a.owner) LIKE ${p(s)}` +
-        ` OR lower(coalesce(a."agentWallet",'')) LIKE ${p(s)}` +
-        ` OR lower(coalesce(a."tokenUri",'')) LIKE ${p(s)}` +
+      `(lower(coalesce(a.name,'')) LIKE ${p(s)} ESCAPE '\\' OR lower(a.owner) LIKE ${p(s)} ESCAPE '\\'` +
+        ` OR lower(coalesce(a."agentWallet",'')) LIKE ${p(s)} ESCAPE '\\'` +
+        ` OR lower(coalesce(a."tokenUri",'')) LIKE ${p(s)} ESCAPE '\\'` +
         ` OR a."agentId"::text = ${p(raw)})`,
     );
   }
@@ -1255,7 +1259,17 @@ export async function agentsByChain(): Promise<Sourced<{ counts: Record<number, 
 export type MislabelledSplit = {
   /** Real transactions, wrong network named. Repairable. */
   elsewhere: number;
-  /** Hashes found on no chain we can read. The genuinely unexplained ones. */
+  /**
+   * Hashes not located on the declared chain or on any chain the cross-chain backfill reached.
+   *
+   * This is deliberately NOT called "fabricated" or "genuinely nowhere". A `found_chain` that is
+   * null means the search that ran did not place the transaction, which is not the same as an
+   * exhaustive search that came back empty: a chain with no configured endpoint is unsearched, not
+   * clear. Treating unsearched as fabricated would harm operators in the one direction this project
+   * must not. The exhaustive-vs-inconclusive split needs the backfill to record which chains it
+   * reached per verdict, which it does not yet, so this count is reported as "not found where we
+   * looked" rather than as an accusation. See docs/14-GAPS.md.
+   */
   nowhere: number;
   /** Per-chain breakdown, biggest first. 45 on one chain is a defaulting tool, not scattered error. */
   byChain: { chain: string; chainId: number | null; count: number }[];
