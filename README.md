@@ -18,7 +18,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-34d399?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-524%20passing-34d399?style=flat-square&labelColor=05070a" alt="524 tests passing">
+  <img src="https://img.shields.io/badge/tests-537%20passing-34d399?style=flat-square&labelColor=05070a" alt="537 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
 </p>
@@ -163,12 +163,12 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 
 ```bash
 cd indexer   && pnpm codegen && pnpm start     # the index
-cd verifier  && npm test                       # the verifier, 172 of 189
+cd verifier  && npm test                       # the verifier, 181 of 198
 cd contracts && forge test                     # the contracts, 119 of 127
-npm run dev                                    # the site, 233 of 236
+npm run dev                                    # the site, 237 of 240
 ```
 
-524 tests pass across the three suites. The differences are deliberate skips, mostly fork tests that
+537 tests pass across the three suites. The differences are deliberate skips, mostly fork tests that
 need an archive node.
 
 ## What is in this repository

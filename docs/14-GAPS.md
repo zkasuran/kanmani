@@ -255,7 +255,7 @@ wc -l lib/intents.ts lib/cleanverse.ts cre/kanmani-oracle/slashing/main.ts \
 | Chainlink CRE slashing workflow | **simulated 2026-09-25, recorded in [26-CRE-SIMULATION](26-CRE-SIMULATION.md).** Reads bond terms from Sclera on Monad mainnet and the claim-truth rate from our API, then refuses to rate an empty sample. Darby confirmed CLI simulation is the judged bar. The run also caught a zero-address placeholder in the config that had never been exercised |
 | Aurora Intents funding path | **written, not exercised on mainnet.** `/fund` renders it |
 | Cleanverse gated release | **contract and client written, not deployed** |
-| Qwen schema atlas | **shipped.** Versioned, rendered on `/method`, every mapping carries its induced date. The before-and-after coverage article does not exist |
+| Qwen schema atlas | **the atlas shipped and the induction loop ran for the first time on 2026-09-28.** Recorded in [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md). Until then the five mappings carried a typed `induced` date with no artefact behind it, which `/method` has been reworded to stop implying. Qwen3.8-Max read an unmapped BSC shape and correctly returned `noClaim`, catching that a field named `value` was a percentage rather than money, which would otherwise have manufactured 41 payment claims out of uptime reports |
 | Nansen underwriting, paid per call over x402 | **not started.** Falls with Choroid |
 
 **The honest summary is that the integration code is real and the live wiring is the gap.** Every row
@@ -433,7 +433,7 @@ can write a correct reference and the message states plainly that no misstatemen
 It also offers to be corrected if `network` means something we have misread.
 
 **Targets 2 and 3 are not yet approached** and the honest reason is channel rather than intent: ADEXTO
-and Mogmatic publish no contact beyond an endpoint, and Ultravioleta was reached through their own repo
+and Mogmatic publish no contact beyond an endpoint and Ultravioleta was reached through their own repo
 rather than by mail. The drafts for all three are written and need a person with a mailbox to send, not
 more work. Outreach was scheduled to start 2026-10-01. If no integration
 lands, the outreach record ships with what happened stated plainly, because a documented attempt beats

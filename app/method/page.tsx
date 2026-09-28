@@ -119,7 +119,7 @@ export default function Method() {
       <Reveal>
       <Panel
         title="the atlas"
-        subtitle="The mappings that read a document shape, induced from real documents on Monad and then published. A reader re-running the pipeline executes these deterministically, with no model anywhere in the loop and gets the same numbers."
+        subtitle="The mappings that read a document shape, written against real documents on Monad and then published. A reader re-running the pipeline executes these deterministically, with no model anywhere in the loop and gets the same numbers. The induction loop that proposes new mappings is a separate step with its own record: see docs/27-ATLAS-INDUCTION.md."
       >
         <div className="space-y-3">
           {ATLAS.map((m) => (
