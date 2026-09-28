@@ -923,7 +923,7 @@ details[open] > summary::before {
 
 
 /* ==================================================================
- * LUCID DEPTH — visual refinement only. Product meaning, copy, page order,
+ * LUCID DEPTH: visual refinement only. Product meaning, copy, page order,
  * navigation, measurements and verdict semantics remain untouched.
  * ================================================================== */
 :root {
@@ -1084,7 +1084,7 @@ h2 { letter-spacing: -0.025em; }
  *
  * Craft, never meaning. One vocabulary of durations and curves, so every moving part on the site
  * speaks the same language: things arrive fast and settle slow (expo-out), loops breathe on an
- * in-out, and nothing moves that is not compositor-only (transform, opacity, clip-path, filter
+ * in-out. Nothing moves that is not compositor-only (transform, opacity, clip-path, filter
  * on small layers). No verdict colour is animated, dimmed or tinted by anything below.
  *
  * Every infinite loop introduced here is named again in the reduced-motion block at the end and
@@ -1372,7 +1372,7 @@ h2 { letter-spacing: -0.025em; }
   to   { transform: none; opacity: 1; }
 }
 
-/* "It becomes a price." — a slow light passing over the brand line. */
+/* "It becomes a price." A slow light passing over the brand line. */
 .text-shimmer {
   background: linear-gradient(100deg, var(--color-brand) 0%, var(--color-brand) 35%, var(--color-brand-accent) 50%, var(--color-brand) 65%, var(--color-brand) 100%);
   background-size: 250% 100%;
@@ -1716,7 +1716,7 @@ details > summary::before { display: inline-block; transition: transform var(--d
 }
 
 /* Hover fills with brand, so the label takes ink: white on #836ef9 is ~3.8:1 and fails AA at this
-   size; ink on it clears 5:1, and in light mode ink is the near-white that sits on #6d28d9. */
+   size; ink on it clears 5:1. In light mode ink is the near-white that sits on #6d28d9. */
 .cta:hover { color: var(--color-ink); }
 
 /* A disabled button does not answer the pointer. */
@@ -1739,7 +1739,7 @@ details > summary::before { display: inline-block; transition: transform var(--d
 .cta:disabled::after { display: none; }
 
 /* The mobile sheet is portalled to <body> (nav.tsx) so the header's backdrop-filter cannot become
-   its containing block, and it restates `fixed` here because `.field { position: relative }` is
+   its containing block. It restates `fixed` here because `.field { position: relative }` is
    unlayered and would otherwise beat Tailwind's `fixed` utility. */
 .mobile-sheet {
   position: fixed;
@@ -1756,5 +1756,70 @@ details > summary::before { display: inline-block; transition: transform var(--d
     color: var(--color-brand) !important;
     -webkit-text-fill-color: currentColor;
     filter: none !important;
+  }
+}
+
+/* ==========================================================================================
+ * Odometer. The true digit is the DEFAULT row, so a counter is correct with no JS, no observer
+ * and reduced motion. Only [data-phase="armed"] moves a strip off its row. That state is set
+ * from JS for an off-screen counter a moment before it rolls home.
+ * ======================================================================================== */
+.odometer {
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+}
+.odometer__cell {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  /* Clip to one line of the glyph. The sizer below gives the cell its true width and height. */
+  height: 1em;
+  line-height: 1;
+  vertical-align: baseline;
+}
+.odometer__sizer {
+  visibility: hidden;
+  display: inline-block;
+  line-height: 1;
+}
+.odometer__strip {
+  position: absolute;
+  inset: 0 0 auto 0;
+  display: flex;
+  flex-direction: column;
+  line-height: 1;
+  text-align: center;
+  transform: translateY(calc(var(--d) * -1em));
+  will-change: transform;
+}
+.odometer__strip > span {
+  display: block;
+  height: 1em;
+}
+.odometer[data-phase="armed"] .odometer__strip {
+  transform: translateY(calc(var(--from) * -1em));
+  transition: none;
+}
+.odometer[data-phase="rolling"] .odometer__strip {
+  transition: transform var(--roll-ms, 1100ms) var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1));
+  transition-delay: calc(var(--i) * 55ms);
+}
+.odometer__sep {
+  display: inline-block;
+  line-height: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .odometer__strip,
+  .odometer[data-phase] .odometer__strip {
+    transition: none !important;
+    transform: translateY(calc(var(--d) * -1em)) !important;
+  }
+}
+/* A printed or saved page must show the true number whatever phase the counter was in. */
+@media print {
+  .odometer .odometer__strip {
+    transition: none !important;
+    transform: translateY(calc(var(--d) * -1em)) !important;
   }
 }

@@ -90,7 +90,7 @@ export function Reveal({
  *
  * Instead of a hook per card, this finds the nearest `.spot`-style surface under the pointer and
  * writes the pointer position into it as `--spot-x` / `--spot-y`. CSS draws a brand-tinted rim that
- * follows the cursor from those two variables. One passive listener, one rAF per frame at most, and
+ * follows the cursor from those two variables. One passive listener, one rAF per frame at most and
  * nothing at all on touch screens or under reduced motion, where a hover light means nothing.
  */
 const SPOT_SELECTOR = ".spot, .layer, .glow-lift, .rail__step, .flow__step, .finding";
@@ -173,7 +173,7 @@ export function PointerField() {
 
 /**
  * A headline that arrives word by word. Pure CSS once rendered: each word is an inline-block with
- * its index as `--w`, and `.split` staggers a masked rise from that. The words stay separated by
+ * its index as `--w` and `.split` staggers a masked rise from that. The words stay separated by
  * real spaces, so the heading reads and copies exactly as the plain string does.
  */
 export function SplitWords({ text, className = "" }: { text: string; className?: string }) {
@@ -195,9 +195,23 @@ export function SplitWords({ text, className = "" }: { text: string; className?:
 }
 
 /**
- * Counts up to `value` once, when it scrolls into view. The formatted final value is always the
- * initial server-rendered text, so a screen reader and a reduced-motion reader see the true number
- * immediately; the tween is decoration layered on afterwards.
+ * A number that is never wrong, even for one frame.
+ *
+ * The previous version counted up from zero. On mount it set the display to 0 and waited for an
+ * IntersectionObserver at 40% visibility. Anything that rendered the page without scrolling that exact
+ * element into view saw zero: screenshot tools, link previews, reader mode, print, a judge who scrolls
+ * fast. On 2026-09-28 the landing's lead finding read "0 of those payments are real" when the truth was
+ * 64, which is the opposite claim. For a project whose whole argument is that published numbers must
+ * survive being checked, that is the worst bug the motion layer can have.
+ *
+ * So the rule now: the true digits are ALWAYS in the DOM, in order, at rest. Motion only decides how
+ * each digit arrives. Each digit sits in a one-character window over a vertical strip 0 to 9 and the
+ * strip is translated to the correct row. On entry the strips start a few rows off and settle with a
+ * stagger, which reads as an odometer. If JavaScript never runs, if the observer never fires, if the
+ * reader prefers reduced motion, every strip is already at its true row.
+ *
+ * Screen readers get the formatted value once through aria-label and never see the strips, so a
+ * counter is announced as "8,093", not as forty digits.
  */
 export function CountUp({
   value,
@@ -208,47 +222,87 @@ export function CountUp({
   className?: string;
   durationMs?: number;
 }) {
-  const [display, setDisplay] = useState<number>(value);
+  const text = value.toLocaleString("en-US");
   const ref = useRef<HTMLSpanElement | null>(null);
-  const started = useRef(false);
+  // Resting state is "settled" and it STAYS settled until the instant the counter becomes visible.
+  //
+  // The first version armed off-screen counters on mount, offsetting each strip and waiting for the
+  // observer. That was invisible to a scrolling reader and fatal to a full-page capture: a screenshot
+  // tool, print or a link previewer reads the whole document without scrolling and saw the offset
+  // digits, so 8,093 rendered as 1,647. Measured, not guessed, by reading each strip's computed
+  // translate in a headless browser. So nothing is offset until the frame it enters view and the
+  // roll plays from there. An element that is never observed is never moved.
+  const [phase, setPhase] = useState<"settled" | "armed" | "rolling">("settled");
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
-    if (prefersReducedMotion() || typeof IntersectionObserver === "undefined") {
-      setDisplay(value);
-      return;
-    }
-    // Start from 0 only once we know we will animate.
-    setDisplay(0);
+    if (!el || prefersReducedMotion() || typeof IntersectionObserver === "undefined") return;
+    const r = el.getBoundingClientRect();
+    if (r.top < window.innerHeight && r.bottom > 0) return;
+    let raf = 0;
     const io = new IntersectionObserver(
       (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting && !started.current) {
-            started.current = true;
-            io.disconnect();
-            const start = performance.now();
-            const tick = (now: number) => {
-              const t = Math.min((now - start) / durationMs, 1);
-              // easeOutCubic
-              const eased = 1 - Math.pow(1 - t, 3);
-              setDisplay(Math.round(eased * value));
-              if (t < 1) requestAnimationFrame(tick);
-              else setDisplay(value);
-            };
-            requestAnimationFrame(tick);
-          }
-        }
+        if (!entries.some((e) => e.isIntersecting)) return;
+        io.disconnect();
+        // Offset and release in consecutive frames: the offset is painted for one frame at most,
+        // and only while the element is actually on screen, which is the roll the reader sees.
+        setPhase("armed");
+        raf = requestAnimationFrame(() => {
+          raf = requestAnimationFrame(() => setPhase("rolling"));
+        });
       },
-      { threshold: 0.4 },
+      { threshold: 0.35 },
     );
     io.observe(el);
-    return () => io.disconnect();
-  }, [value, durationMs]);
+    return () => {
+      io.disconnect();
+      cancelAnimationFrame(raf);
+    };
+  }, [value]);
+
+  let digitIndex = 0;
+  const digits = [...text].filter((c) => c >= "0" && c <= "9").length;
 
   return (
-    <span ref={ref} className={`tnum ${className}`}>
-      {display.toLocaleString("en-US")}
+    <span
+      ref={ref}
+      className={`odometer tnum ${className}`}
+      data-phase={phase}
+      aria-label={text}
+      role="text"
+      style={{ ["--roll-ms" as string]: `${durationMs}ms` }}
+    >
+      {[...text].map((ch, i) => {
+        if (ch < "0" || ch > "9") {
+          return (
+            <span key={i} className="odometer__sep" aria-hidden="true">
+              {ch}
+            </span>
+          );
+        }
+        const d = Number(ch);
+        const order = digitIndex++;
+        // Later digits travel further, so the number settles left to right like a real counter.
+        const travel = 3 + ((digits - order) % 4);
+        return (
+          <span key={i} className="odometer__cell" aria-hidden="true">
+            {/* A hidden copy sizes the cell to the real glyph, so layout never shifts while rolling. */}
+            <span className="odometer__sizer">{ch}</span>
+            <span
+              className="odometer__strip"
+              style={{
+                ["--d" as string]: d,
+                ["--from" as string]: (d + travel) % 10,
+                ["--i" as string]: order,
+              }}
+            >
+              {"0123456789".split("").map((n) => (
+                <span key={n}>{n}</span>
+              ))}
+            </span>
+          </span>
+        );
+      })}
     </span>
   );
 }
