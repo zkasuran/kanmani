@@ -128,21 +128,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/status" className="hover:text-muted">
                 status
               </Link>
-              <a href="/llms.txt" target="_blank" rel="noopener" className="hover:text-muted">
-                llms.txt
-              </a>
-              <a href="/agents.md" target="_blank" rel="noopener" className="hover:text-muted">
-                agents.md
-              </a>
-              <a href="/feed.json" target="_blank" rel="noopener" className="hover:text-muted">
-                feed.json
-              </a>
-              <a href="/schema.json" target="_blank" rel="noopener" className="hover:text-muted">
-                schema.json
-              </a>
-              <a href="/.well-known/agent-registration.json" target="_blank" rel="noopener" className="hover:text-muted">
-                our own record
-              </a>
+              {/* The machine-readable routes are listed in full on the landing and on /developers,
+                  so the footer links to pages rather than repeating five of those nine. */}
+              <Link href="/developers" className="hover:text-muted">
+                developers
+              </Link>
+              <Link href="/chains" className="hover:text-muted">
+                chains
+              </Link>
+              <Link href="/bond" className="hover:text-muted">
+                bonds
+              </Link>
             </div>
           </div>
         </footer>
