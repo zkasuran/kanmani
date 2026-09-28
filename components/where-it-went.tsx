@@ -99,7 +99,10 @@ function Flow({ dests, total, g, variant }: { dests: Dest[]; total: number; g: G
       role="img"
       aria-labelledby={`flow-title-${variant} flow-desc-${variant}`}
     >
-      <title id={`flow-title-${variant}`}>Where the {total} claims that name Monad actually settled</title>
+      {/* One text node. Mixed text and expressions inside an SVG <title> render as several nodes, which
+          React 19 treats as document metadata and fails to hydrate: error 418 on the landing page. And
+          the rebuilt tree dropped data-theme so the theme toggle broke on the most visited page. */}
+      <title id={`flow-title-${variant}`}>{`Where the ${total} claims that name Monad actually settled`}</title>
       <desc id={`flow-desc-${variant}`}>
         {`All ${total} cite a transaction on Monad that is not there. ${elsewhere} are real transactions on another chain: ` +
           dests.filter((d) => d.kind === "elsewhere").map((d) => `${d.label} ${d.count}`).join(", ") +

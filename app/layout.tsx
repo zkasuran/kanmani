@@ -12,7 +12,7 @@ import "./globals.css";
  *
  * The CSP in next.config.ts is `style-src 'self'` and `font-src 'self' data:`, so a
  * fonts.googleapis.com stylesheet is refused by the browser and every face silently falls back.
- * Served from our own origin they pass the policy, cost no third-party request, and ship with a
+ * Served from our own origin they pass the policy, cost no third-party request and ship with a
  * size-adjusted fallback so the swap does not shift layout.
  */
 const sans = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -54,7 +54,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`no-js ${sans.variable} ${mono.variable} ${display.variable}`}>
+    <html lang="en" className={`no-js ${sans.variable} ${mono.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
         {/*
           Pointed at from the head as well as served at the path, because an agent reading this
@@ -90,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Spotlight />
         <header className="site-header sticky top-0 z-20">
           <div className="header-shell shell flex items-center gap-x-6 gap-y-2">
-            {/* Reading progress, driven by the scroll timeline in CSS. No JS, and absent where unsupported. */}
+            {/* Reading progress, driven by the scroll timeline in CSS. No JS. Absent where unsupported. */}
             <span className="scroll-progress" aria-hidden="true" />
             <Link href="/" className="group flex items-center gap-2">
               {/* Brand colour on the mark, text colour on the word, so the pair reads as one lockup
