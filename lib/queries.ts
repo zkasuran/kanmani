@@ -1303,3 +1303,70 @@ export async function mislabelled(): Promise<Sourced<MislabelledSplit>> {
   }
   return src(MISLABELLED_SQL, { elsewhere, nowhere, byChain });
 }
+
+/* ------------------------------------------------------------ the hero's live example */
+
+/**
+ * One real agent, chosen by rule rather than by hand: the agent with the most payments that are real
+ * but name the wrong chain. That is the finding the whole landing turns on, so the hero shows it
+ * happening to one actual agent instead of an illustration. Selected by query so it cannot go stale
+ * the way a hardcoded example would and it never names intent: the card states what was observed.
+ */
+export type HeroSubject = {
+  agentId: number;
+  name: string | null;
+  decided: number;
+  onNamed: number;
+  elsewhere: number;
+  nowhere: number;
+  example: { declared: string | null; foundChain: string; foundBlock: string; checkedAtBlock: string | null } | null;
+};
+
+const HERO_SUBJECT_SQL = `
+WITH per AS (
+  SELECT a."agentId" AS agent_id, a.name,
+         count(*) FILTER (WHERE v.outcome IN ('true','false'))                     AS decided,
+         count(*) FILTER (WHERE v.outcome = 'true')                                AS on_named,
+         count(*) FILTER (WHERE v.outcome = 'false' AND v.found_chain IS NOT NULL) AS elsewhere,
+         count(*) FILTER (WHERE v.outcome = 'false' AND v.found_chain IS NULL)     AS nowhere
+  FROM fovea.verdict_latest v
+  JOIN "Feedback" f ON f.id = v.feedback_id
+  JOIN "Agent" a ON a.id = f.agent_id
+  WHERE a."chainId" = $1
+  GROUP BY 1, 2
+), pick AS (
+  SELECT * FROM per WHERE elsewhere > 0 ORDER BY elsewhere DESC, agent_id ASC LIMIT 1
+)
+SELECT pick.*, ex.declared_network, ex.found_chain, ex.found_block, ex.checked_at_block
+FROM pick
+LEFT JOIN LATERAL (
+  SELECT v.declared_network, v.found_chain, v.found_block, v.checked_at_block
+  FROM fovea.verdict_latest v
+  JOIN "Feedback" f ON f.id = v.feedback_id
+  JOIN "Agent" a ON a.id = f.agent_id
+  WHERE a."chainId" = $1 AND a."agentId" = pick.agent_id AND v.outcome = 'false' AND v.found_chain IS NOT NULL
+  ORDER BY f."blockNumber" DESC LIMIT 1
+) ex ON true`;
+
+export async function heroSubject(): Promise<Sourced<HeroSubject | null>> {
+  const r = await q1<Record<string, string | null>>(HERO_SUBJECT_SQL, [CHAIN_ID]);
+  if (!r) return src(HERO_SUBJECT_SQL, null);
+  const n = (k: string) => Number(r[k] ?? 0);
+  return src(HERO_SUBJECT_SQL, {
+    agentId: n("agent_id"),
+    name: r.name ?? null,
+    decided: n("decided"),
+    onNamed: n("on_named"),
+    elsewhere: n("elsewhere"),
+    nowhere: n("nowhere"),
+    example: r.found_chain
+      ? {
+          declared: r.declared_network ?? null,
+          foundChain: r.found_chain,
+          foundBlock: String(r.found_block),
+          checkedAtBlock: r.checked_at_block == null ? null : String(r.checked_at_block),
+        }
+      : null,
+  });
+}
+

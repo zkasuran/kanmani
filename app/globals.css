@@ -2110,9 +2110,75 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
 .hero__more a:hover, .hero__more a:focus-visible { color: var(--color-brand); text-decoration-color: currentColor; }
 
 /* An element that entered view without a real scroll (full-page capture, previews) appears settled:
-   no fade, no rise, and any draw-in it contains is skipped. */
+   no fade, no rise and any draw-in it contains is skipped. */
 [data-reveal-static] { transition: none !important; }
 [data-reveal-static] .stagger > *,
 [data-reveal-static] .dist,
 [data-reveal-static] .wflow__wipe,
 [data-reveal-static] .wflow__label { animation: none !important; transition: none !important; }
+
+/* ==========================================================================================
+ * Live verdict card in the hero. Replaces the decorative aperture with the product itself.
+ * ======================================================================================== */
+.vcard {
+  position: relative;
+  display: block;
+  padding: 1.25rem 1.3rem 1.1rem;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in oklab, var(--color-brand) 14%, transparent), transparent 60%),
+    color-mix(in oklab, var(--color-panel) 86%, transparent);
+  backdrop-filter: blur(14px) saturate(130%);
+  box-shadow: 0 30px 60px -34px color-mix(in oklab, var(--color-brand) 55%, transparent), var(--shadow-2, none);
+  color: inherit;
+  text-decoration: none;
+  transition: transform var(--dur-2, 280ms) var(--ease-out-expo, ease), border-color var(--dur-2, 280ms) ease;
+}
+.vcard:hover { transform: translateY(-3px); border-color: var(--brand-line, var(--color-brand)); }
+.vcard:focus-visible { outline: 2px solid var(--color-brand); outline-offset: 3px; }
+.vcard__top { display: flex; align-items: center; gap: 0.5rem; }
+.vcard__live {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--color-true);
+  box-shadow: 0 0 0 0 color-mix(in oklab, var(--color-true) 60%, transparent);
+  animation: live-pulse 2.4s ease-out infinite;
+}
+.vcard__kicker { font-family: var(--font-mono, ui-monospace); font-size: 10.5px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-faint); }
+.vcard__id { margin-top: 0.9rem; display: flex; align-items: baseline; gap: 0.5rem; }
+.vcard__num { font-family: var(--font-mono, ui-monospace); font-size: 13px; color: var(--color-text); }
+.vcard__name { font-size: 12.5px; color: var(--color-muted); }
+.vcard__headline { margin-top: 0.4rem; display: flex; align-items: baseline; gap: 0.6rem; line-height: 1.35; font-size: 14px; color: var(--color-muted); }
+.vcard__headline b { color: var(--color-text); font-weight: 600; }
+.vcard__big {
+  font-size: clamp(2.6rem, 2rem + 1.6vw, 3.4rem);
+  line-height: 0.9;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--color-brand);
+  font-variant-numeric: tabular-nums;
+}
+.vcard__bar { margin-top: 1.1rem; display: flex; gap: 3px; height: 10px; border-radius: 999px; overflow: hidden; }
+.vcard__seg { display: block; height: 100%; border-radius: 3px; transform-origin: left center; }
+.vcard__seg--true { background: var(--color-true); }
+.vcard__seg--brand { background: var(--color-brand); }
+.vcard__seg--false { background: var(--color-false); }
+.hero .vcard__seg { animation: vcard-grow 900ms var(--ease-out-expo, ease) backwards; animation-delay: calc(700ms + var(--i) * 90ms); }
+@keyframes vcard-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.vcard__legend { margin-top: 0.55rem; display: flex; flex-wrap: wrap; gap: 0.25rem 0.9rem; list-style: none; padding: 0; font-family: var(--font-mono, ui-monospace); font-size: 11px; color: var(--color-muted); }
+.vcard__legend li { display: inline-flex; align-items: center; gap: 0.35rem; }
+.vcard__dot { width: 7px; height: 7px; border-radius: 2px; display: inline-block; }
+.vcard__dot--true { background: var(--color-true); }
+.vcard__dot--brand { background: var(--color-brand); }
+.vcard__dot--false { background: var(--color-false); }
+.vcard__example { margin-top: 1rem; padding-top: 0.85rem; border-top: 1px solid var(--color-line); display: grid; gap: 0.45rem; }
+.vcard__row { display: flex; justify-content: space-between; gap: 1rem; font-size: 12px; color: var(--color-muted); }
+.vcard__row code { font-family: var(--font-mono, ui-monospace); font-size: 12px; color: var(--color-text); }
+.vcard__found { color: var(--color-brand) !important; }
+.vcard__cta { margin-top: 1rem; display: block; font-family: var(--font-mono, ui-monospace); font-size: 11.5px; color: var(--color-brand); }
+@media (prefers-reduced-motion: reduce) { .vcard__seg, .vcard__live { animation: none !important; } }
+@media print { .vcard__seg { animation: none !important; } }
+/* The card is content, not decoration: never faded or clipped like the old aperture on narrow screens. */
+@media (max-width: 63.99rem) {
+  .vcard.hero__visual { position: relative; right: auto; top: auto; width: 100%; opacity: 1; pointer-events: auto; margin-top: 0.5rem; }
+}

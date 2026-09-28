@@ -4,7 +4,8 @@ import { Derivation, DistBar, Pct, StatTile } from "@/components/ui.tsx";
 import { CountUp, PointerField, Reveal, SplitWords } from "@/components/motion.tsx";
 import { WhereItWent } from "@/components/where-it-went.tsx";
 import { Aperture } from "@/components/aperture.tsx";
-import { clusterShape, measurement, mislabelled, population } from "@/lib/queries.ts";
+import { clusterShape, heroSubject, measurement, mislabelled, population } from "@/lib/queries.ts";
+import { VerdictCard } from "@/components/verdict-card.tsx";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
 import { TESTS_PASSING } from "@/lib/counts.ts";
 
@@ -148,7 +149,7 @@ const FLOW = [
 ];
 
 export default async function Home() {
-  const [pop, m, shape, bonds, mis] = await Promise.all([
+  const [pop, m, shape, bonds, mis, hero] = await Promise.all([
     population(),
     measurement(),
     clusterShape(),
@@ -158,6 +159,7 @@ export default async function Home() {
     // Where a false claim's transaction actually is. The single most important correction this project
     // has made to its own headline.
     mislabelled(),
+    heroSubject(),
   ]);
   const activeBonds = [...bonds.values()].filter((b) => b.state === "active");
   const staked =
@@ -206,7 +208,7 @@ export default async function Home() {
             <Link href="/agents">browse {p.agentsIndexed === null ? "every" : p.agentsIndexed.toLocaleString()} agents</Link>
           </p>
           </div>
-          <Aperture className="hero__visual" />
+          {hero.rows ? <VerdictCard s={hero.rows} /> : <Aperture className="hero__visual" />}
           </div>
 
           {/* Live, checkable facts. Every one is a link to a chain or a page, not an assertion. */}
