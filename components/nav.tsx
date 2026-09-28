@@ -181,7 +181,18 @@ export function Nav() {
     const a = apex.current;
     const panel = panelEl.current;
     if (!a || !panel || !hoverRef.current) return false;
-    const r = panel.getBoundingClientRect();
+    // The settled box, not the animated one. `menu-pop` scales and lifts the panel for its first
+    // few hundred ms, so its live rect is narrower and higher than where it will sit. Judged on that,
+    // a path aimed at the panel's far edge fell outside it and handed the menu to a neighbour.
+    const host = (panel.offsetParent as HTMLElement | null)?.getBoundingClientRect();
+    const r = host
+      ? {
+          left: host.left + panel.offsetLeft,
+          right: host.left + panel.offsetLeft + panel.offsetWidth,
+          top: host.top + panel.offsetTop,
+          bottom: host.top + panel.offsetTop + panel.offsetHeight,
+        }
+      : panel.getBoundingClientRect();
     if (pt.x >= r.left && pt.x <= r.right && pt.y >= r.top && pt.y <= r.bottom) return "descending";
     const inSpan = pt.x >= r.left - 12 && pt.x <= r.right + 12;
     const inBand = pt.y >= a.y - 14 && pt.y <= r.top + 4;
@@ -321,7 +332,7 @@ export function Nav() {
           return (
             <div
               key={g.label}
-              className="relative"
+              className="nav-group relative"
               onMouseEnter={(e) => {
                 pointer.current = { x: e.clientX, y: e.clientY };
                 enter(g.label);

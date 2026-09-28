@@ -2149,3 +2149,17 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
   margin: -1px -0.3rem;
 }
 .sheet-account { border-bottom: 1px solid var(--color-line); padding-bottom: 1rem; }
+
+/* Hover zone for a nav group: the full height of the bar, not only the 30px label. Coming up from
+   the page a hand stops a little above the label and the bar is taller than the label, so a zone
+   of the label alone closed the menu in the bar's top strip. The pseudo-element belongs to the
+   group, so resting on it counts as resting on the label. Width is unchanged, so moving sideways
+   switches groups exactly as before. */
+.nav-group::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(-1 * var(--nav-reach-up, 14px));
+  bottom: 0;
+}
