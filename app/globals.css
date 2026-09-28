@@ -1384,6 +1384,11 @@ h2 { letter-spacing: -0.025em; }
 .aperture { aspect-ratio: 1; }
 .aperture__svg { width: 100%; height: 100%; overflow: visible; }
 .aperture__svg * { transform-box: view-box; transform-origin: 200px 200px; }
+/* Ticks and blocks are placed by a `rotate(θ 200 200)` attribute, which already carries its own
+   pivot. CSS transform-origin also applies to attribute transforms, so these must stay at 0 0 or
+   the pivot is applied twice and they scatter off the dial. */
+.aperture__svg .aperture__tick,
+.aperture__svg .aperture__block { transform-box: view-box; transform-origin: 0 0; }
 
 .aperture__layer { transition: translate 0.2s linear; }
 .aperture__layer--far  { translate: calc((var(--px) - 0.5) * -10px) calc((var(--py) - 0.5) * -10px); }
@@ -1405,8 +1410,6 @@ h2 { letter-spacing: -0.025em; }
   fill: var(--color-panel-2);
   stroke: var(--color-line-bright);
   stroke-width: 1;
-  transform-box: fill-box;
-  transform-origin: center;
   animation: block-tick 4s var(--ease-in-out) infinite;
   animation-delay: calc(var(--b, 0) * -0.333s);
 }
