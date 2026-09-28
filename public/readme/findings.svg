@@ -1,0 +1,96 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="660" viewBox="0 0 1280 660" role="img" aria-label="85 payment claims: 12 on the chain they name, 73 not. Of those 73, 64 are real transactions on a different chain and 9 exist on no chain at all.">
+<title>85 payment claims: 12 on the chain they name, 73 not. Of those 73, 64 are real transactions on a different chain and 9 exist on no chain at all.</title>
+<style>
+.sans{font-family:'Space Grotesk','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+.body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.in{animation:in .9s cubic-bezier(.16,1,.3,1) backwards;animation-delay:var(--d,0s)}
+@keyframes in{from{opacity:0;transform:translateY(10px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.bd{animation:rv 1.6s cubic-bezier(.16,1,.3,1) backwards}
+@keyframes rv{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+.nd{animation:gr .8s cubic-bezier(.16,1,.3,1) backwards}
+@keyframes gr{from{transform:scaleY(0)}}
+.nd{transform-box:fill-box;transform-origin:center}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .rm-hide{opacity:0!important}
+}
+</style>
+
+<defs>
+  <radialGradient id="g0" cx="0.05" cy="-0.2" r=".75"><stop offset="0" stop-color="#836ef9" stop-opacity="0.24"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></radialGradient><radialGradient id="g1" cx="1.0" cy="1.0" r=".75"><stop offset="0" stop-color="#f87171" stop-opacity="0.06"/><stop offset="1" stop-color="#f87171" stop-opacity="0"/></radialGradient>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+    <path d="M48 0H0V48" fill="none" stroke="#1d2836" stroke-width="1"/>
+  </pattern>
+  <radialGradient id="gridmask-g" cx=".5" cy="0" r=".9">
+    <stop offset=".2" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+  <mask id="gridmask"><rect width="1280" height="660" fill="url(#gridmask-g)"/></mask>
+  <linearGradient id="edge" x1="0" x2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <clipPath id="frame"><rect width="1280" height="660" rx="24"/></clipPath>
+</defs>
+<rect width="1280" height="660" rx="24" fill="#05070a"/>
+<g clip-path="url(#frame)">
+  <rect width="1280" height="660" rx="24" fill="url(#g0)"/><rect width="1280" height="660" rx="24" fill="url(#g1)"/>
+  <rect width="1280" height="660" fill="url(#grid)" mask="url(#gridmask)"/>
+</g>
+<rect x=".5" y=".5" width="1279" height="659" rx="23.5" fill="none" stroke="#2b3a4d" stroke-opacity=".8"/>
+<rect x="120" y="0" width="1040" height="1" fill="url(#edge)"/>
+
+<defs>
+  <linearGradient id="b-true" x1="0" x2="1"><stop offset="0" stop-color="#dce5f0" stop-opacity=".18"/><stop offset="1" stop-color="#34d399" stop-opacity=".55"/></linearGradient>
+  <linearGradient id="b-false" x1="0" x2="1"><stop offset="0" stop-color="#dce5f0" stop-opacity=".18"/><stop offset="1" stop-color="#f87171" stop-opacity=".5"/></linearGradient>
+  <linearGradient id="b-else" x1="0" x2="1"><stop offset="0" stop-color="#f87171" stop-opacity=".4"/><stop offset="1" stop-color="#22d3ee" stop-opacity=".45"/></linearGradient>
+  <linearGradient id="b-none" x1="0" x2="1"><stop offset="0" stop-color="#f87171" stop-opacity=".4"/><stop offset="1" stop-color="#f87171" stop-opacity=".8"/></linearGradient>
+</defs>
+<g class="in" style="--d:0s"><rect x="72" y="61" width="22" height="1.5" fill="#836ef9"/><text x="104" y="66" class="mono" font-size="12.5" letter-spacing="2.6" fill="#836ef9">THE MEASUREMENT</text></g>
+<text x="72" y="116" class="sans in" style="--d:.1s" font-size="34" font-weight="600" letter-spacing="-1" fill="#dce5f0">Every payment claim on Monad, checked against the chain it names.</text>
+<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="#7f8ea3">All 10,258 agents read. Every document here is hash-perfect, so every integrity check calls it verified. Integrity is not truth.</text>
+
+<g class="bd" style="animation-delay:.4s">
+  <path d="M312 200 C476.0 200 476.0 186 640 186 L640 229.2 C476.0 229.2 476.0 243.2 312 243.2 Z" fill="url(#b-true)"/>
+  <path d="M312 243.2 C476.0 243.2 476.0 257.2 640 257.2 L640 520.0 C476.0 520.0 476.0 506.0 312 506.0 Z" fill="url(#b-false)"/>
+</g>
+<g class="bd" style="animation-delay:1.1s">
+  <path d="M652 257.2 C826.0 257.2 826.0 245.2 1000 245.2 L1000 475.6 C826.0 475.6 826.0 487.6 652 487.6 Z" fill="url(#b-else)"/>
+  <path d="M652 487.6 C826.0 487.6 826.0 503.6 1000 503.6 L1000 536.0 C826.0 536.0 826.0 520.0 652 520.0 Z" fill="url(#b-none)"/>
+</g>
+
+<rect x="300" y="200" width="12" height="306.0" rx="3" fill="#dce5f0" class="nd" style="animation-delay:.2s"/>
+<rect x="640" y="186" width="12" height="43.2" rx="3" fill="#34d399" class="nd" style="animation-delay:.9s"/>
+<rect x="640" y="257.2" width="12" height="262.8" rx="3" fill="#f87171" class="nd" style="animation-delay:.9s"/>
+<rect x="1000" y="245.2" width="12" height="230.4" rx="3" fill="#22d3ee" class="nd" style="animation-delay:1.6s"/>
+<rect x="1000" y="503.6" width="12" height="32.4" rx="3" fill="#f87171" class="nd" style="animation-delay:1.6s"/>
+
+<g class="in" style="--d:.3s">
+  <text x="278" y="359.0" text-anchor="end" class="sans" font-size="76" font-weight="700" letter-spacing="-3" fill="#dce5f0">85</text>
+  <text x="276" y="389.0" text-anchor="end" class="body" font-size="14.5" fill="#7f8ea3">payment claims</text>
+  <text x="276" y="409.0" text-anchor="end" class="body" font-size="14.5" fill="#7f8ea3">that exist at all</text>
+  <text x="276" y="439.0" text-anchor="end" class="mono" font-size="11.5" letter-spacing="1.2" fill="#5d6d85">OF 10,258 AGENTS</text>
+</g>
+<g class="in" style="--d:1s">
+  <text x="670" y="222" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="#34d399">12</text>
+  <text x="728" y="208" class="mono" font-size="12" letter-spacing="1.5" fill="#34d399">TRUE</text>
+  <text x="728" y="226" class="body" font-size="13.5" fill="#7f8ea3">on the chain they name</text>
+  <text x="670" y="299.2" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="#f87171">73</text>
+  <text x="728" y="283.2" class="mono" font-size="12" letter-spacing="1.5" fill="#f87171">FALSE</text>
+  <text x="728" y="301.2" class="body" font-size="13.5" fill="#7f8ea3">not on the chain they name</text>
+</g>
+<g class="in" style="--d:1.7s">
+  <text x="1030" y="303.2" class="sans" font-size="54" font-weight="700" letter-spacing="-2" fill="#22d3ee">64</text>
+  <text x="1032" y="329.2" class="body" font-size="14" fill="#dce5f0">real transactions,</text>
+  <text x="1032" y="348.2" class="body" font-size="14" fill="#dce5f0">on a different chain</text>
+  <text x="1032" y="375.2" class="body" font-size="13" fill="#7f8ea3">one wrong field,</text>
+  <text x="1032" y="393.2" class="body" font-size="13" fill="#7f8ea3">fixable in one edit</text>
+  <text x="1030" y="533.6" class="sans" font-size="34" font-weight="700" letter-spacing="-1" fill="#f87171">9</text>
+  <text x="1062" y="519.6" class="body" font-size="14" fill="#dce5f0">found on</text>
+  <text x="1062" y="537.6" class="body" font-size="14" fill="#dce5f0">no chain at all</text>
+</g>
+<text x="72" y="626" class="body in" style="--d:2s" font-size="14" fill="#5d6d85">None of it is fraud and the project never says it is. A registry has no mechanism to keep a true statement true.</text>
+
+</svg>

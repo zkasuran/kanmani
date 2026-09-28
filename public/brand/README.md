@@ -17,6 +17,7 @@ the trust model visible without turning the identity into a generic shield or ch
 | `header.png` | 1500x500, X header |
 | `../og.png` | 1200x630, Open Graph and every social preview |
 | `../banner.png` | 1280x640, README banner |
+| `../readme/*.svg` | the animated README diagrams, drawn by `scripts/build-readme-art.py` |
 
 ## Two rules
 
