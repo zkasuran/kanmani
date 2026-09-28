@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-537%20passing-34d399?style=flat-square&labelColor=05070a" alt="537 tests passing">
+  <img src="https://img.shields.io/badge/tests-544%20passing-34d399?style=flat-square&labelColor=05070a" alt="544 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
   <a href="docs/AS-BUILT.md"><img src="https://img.shields.io/badge/docs-what%20shipped-8b98a9?style=flat-square&labelColor=05070a" alt="What shipped"></a>
@@ -200,7 +200,7 @@ cd contracts && forge test                     # the contracts, 119 of 127
 npm run dev                                    # the site, 237 of 240
 ```
 
-537 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
+544 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
 need an archive node.
 
 <details>
