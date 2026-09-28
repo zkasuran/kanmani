@@ -1,9 +1,28 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { Logo } from "@/components/logo.tsx";
+import { Spotlight } from "@/components/motion.tsx";
 import { Nav } from "@/components/nav.tsx";
 import { ThemeToggle } from "@/components/theme-toggle.tsx";
 import "./globals.css";
+
+/**
+ * Fonts are self-hosted by next/font at build time, not linked from Google at runtime.
+ *
+ * The CSP in next.config.ts is `style-src 'self'` and `font-src 'self' data:`, so a
+ * fonts.googleapis.com stylesheet is refused by the browser and every face silently falls back.
+ * Served from our own origin they pass the policy, cost no third-party request, and ship with a
+ * size-adjusted fallback so the swap does not shift layout.
+ */
+const sans = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -35,7 +54,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="no-js">
+    <html lang="en" className={`no-js ${sans.variable} ${mono.variable} ${display.variable}`}>
       <head>
         {/*
           Pointed at from the head as well as served at the path, because an agent reading this
@@ -65,16 +84,19 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
-        <header
-          className="sticky top-0 z-20 border-b border-[var(--color-line)] bg-[var(--color-ink)]/80 backdrop-blur-md"
-          style={{ ["--header-h" as string]: "3.25rem" }}
-        >
-          <div className="shell flex items-center gap-x-6 gap-y-2 py-3">
+        {/* Skip link: the first tab stop, invisible until focused. */}
+        <a href="#main" className="skip-link">skip to content</a>
+        {/* Pointer spotlight for cards. Client-only, pointer:fine only, off under reduced motion. */}
+        <Spotlight />
+        <header className="site-header sticky top-0 z-20">
+          <div className="header-shell shell flex items-center gap-x-6 gap-y-2">
+            {/* Reading progress, driven by the scroll timeline in CSS. No JS, and absent where unsupported. */}
+            <span className="scroll-progress" aria-hidden="true" />
             <Link href="/" className="group flex items-center gap-2">
               {/* Brand colour on the mark, text colour on the word, so the pair reads as one lockup
                   without the logo competing with the nav for attention. */}
-              <Logo size={20} className="shrink-0 text-[var(--color-brand)] transition-transform duration-200 group-hover:-translate-y-px" />
-              <span className="font-mono text-base font-semibold tracking-tight text-[var(--color-text)]">
+              <Logo size={22} animated className="brand-logo shrink-0 text-[var(--color-brand)]" />
+              <span className="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
                 kanmani
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10.5px] text-faint group-hover:border-[var(--brand-line)] group-hover:text-muted">
@@ -88,9 +110,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <main className="shell py-[var(--section-gap)]">{children}</main>
+        <main id="main" className="site-main shell py-[var(--section-gap)]">{children}</main>
 
-        <footer className="mt-[var(--section-gap)] border-t border-[var(--color-line)]">
+        <footer className="site-footer mt-[var(--section-gap)] border-t border-[var(--color-line)]">
           <div className="shell py-8 text-[12px] text-faint">
             <Logo size={26} className="mb-3 text-[var(--color-brand-dim)]" label="Kanmani" />
             <p className="max-w-3xl leading-relaxed">
