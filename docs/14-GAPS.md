@@ -547,19 +547,21 @@ they land:
    exists. New reads get the real check, but the counts already in `fovea.verdict` were computed the old
    way, so the site shows them until a full re-sweep runs and the app redeploys. Trigger: before the
    submission window, run the sweep and redeploy, then confirm the headline counts.
-2. **Three indexer items need codegen and a resync.** The cross-chain reference counters can be inflated
-   by a throwaway registration on the other chain with the same URI, the dead `Verdict` entity exposes an
-   always-empty relation and `agentWallet` is stored lowercase while the other addresses are checksummed.
-   The app compares addresses case-insensitively, so the last is cosmetic. All three change stored data,
-   so they wait for a resync rather than a blind edit against the live index.
+2. **Indexer source fixes need codegen and a resync to reach the live data.** `agentWallet` is now
+   checksummed and the dead `Verdict` entity is gone in the schema, but the running index holds the old
+   rows until it is re-indexed. Trigger: run codegen and a resync when the next deploy goes out.
 3. **The mislabelled split cannot yet prove "nowhere".** The count of false verdicts on no chain mixes an
    exhaustive search with one that could not reach every chain. The label no longer calls it fabricated.
    Splitting it honestly needs the backfill to record which chains it reached per verdict.
-4. **Two client-side authority gaps need the passkey flow to fix and verify.** The browser session scope
-   checks the amount but not the recipient or action. A published action receipt names a signer whose
-   identity the signature does not bind. Both are partly disclosed in the code already. The fix is a
-   scope-enforcing account wrapper, a payTo in the scope and an account-key binding signature on the
-   receipt, deferred to a change that can exercise the browser rather than shipped unverified.
+4. **Two indexer data properties are inherent or intricate rather than fixed.** The cross-chain reference
+   counters are Sybil-inflatable because the underlying registrations are permissionless, while
+   `memberCount` drifts after a document re-point. Both are counting changes that need a full reindex to
+   verify, so they are recorded rather than changed blind against the live index.
+
+The two client-side authority gaps flagged in the first pass are now closed. A payment session pins its
+recipient and refuses any other. An action receipt carries an account-key binding the publish route
+requires, so a receipt cannot name a signer its author does not control. See
+[`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md).
 
 ---
 

@@ -324,6 +324,22 @@ refuse once confirmed.
 * The commit and push hooks now refuse any `.env`, a stray `.pyc` was untracked, five tracked files that
   named the private `.hq/` directory were restated and a CSP plus hardening headers were added.
 
+### The second remediation wave
+
+A follow-up pass closed the medium and low items the first pass deferred:
+
+* The database pool got a `statement_timeout`, a `query_timeout` and an idle-in-transaction timeout, so
+  no single read can pin a connection forever, plus TLS for a non-loopback host. A `proxy.ts` adds a
+  generous per-IP rate limit that answers a flood with a 429.
+* The SSRF guard's DNS lookup is bounded by a timeout, so a hanging resolver cannot stall the worker.
+* A payment session pins its recipient, so it cannot be steered into paying a different address. The
+  studio run gates on the session before signing.
+* An action receipt is now bound: the account key signs it too and the publish route requires that
+  binding, so a receipt cannot name a signer its author does not control.
+* The indexer checksums `agentWallet` to match the other addresses and drops the dead `Verdict` entity.
+* Smaller: the webhook info endpoint stops reflecting the raw database error, `usdc()` formats with
+  BigInt, the self-registration read-back tolerates a revert and the Qwen client caps its response.
+
 ## Still open
 
 Nothing known and unfixed in the escrow.

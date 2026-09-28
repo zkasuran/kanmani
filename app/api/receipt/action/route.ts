@@ -1,6 +1,6 @@
 import { envelope, json, problem } from "@/lib/api.ts";
 import { q, q1 } from "@/lib/db.ts";
-import { actionReceiptBytes, verifyAction, type ActionReceipt } from "@/lib/authority.ts";
+import { actionReceiptBytes, verifyAction, verifyBinding, type ActionReceipt } from "@/lib/authority.ts";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kanmani.xyz";
 
@@ -37,7 +37,7 @@ export const dynamic = "force-dynamic";
  * GET  `?agentId=<id>` returns receipts for one agent, newest first.
  */
 
-type Body = { receipt?: unknown; signature?: unknown };
+type Body = { receipt?: unknown; signature?: unknown; binding?: unknown };
 
 /** Ceilings so an anonymous signed write cannot store unbounded rows or oversized fields. */
 const MAX_BODY_BYTES = 8_192;
@@ -109,6 +109,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // The account-key binding proves the EVM `signer` in the receipt is controlled by the same person
+  // as the attestation identity. Without it a receipt can name any address as its signer, since the
+  // ed25519 signature says nothing about that address. Required, so a stored receipt's signer is real.
+  if (typeof body.binding !== "string" || body.binding.length === 0 || body.binding.length > MAX_SIGNATURE_LEN) {
+    return problem(400, "Missing or oversized binding", "`binding` must be the account-key signature (0x r||s||v) over the canonical bytes.");
+  }
+  if (!verifyBinding(receipt, body.binding)) {
+    return problem(
+      400,
+      "Binding does not verify",
+      "The binding did not recover to the signer named in the receipt, so the signer address is not proven controlled by whoever holds this identity. Nothing was stored.",
+    );
+  }
+
   let at: Date;
   try {
     at = new Date(receipt.at);
@@ -131,8 +145,8 @@ export async function POST(req: Request) {
   // we remember to set.
   const row = await q1<{ id: string; received_at: string; fresh: boolean }>(
     `INSERT INTO fovea.agent_action
-       (action, chain_id, agent_id, uri_hash, signer, identity, signature, signed_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (action, chain_id, agent_id, uri_hash, signer, identity, signature, binding, signed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (identity, uri_hash, action) DO UPDATE SET identity = fovea.agent_action.identity
      RETURNING id::text, received_at, (xmax = 0) AS fresh`,
     [
@@ -143,6 +157,7 @@ export async function POST(req: Request) {
       receipt.signer.toLowerCase(),
       receipt.identity,
       body.signature,
+      body.binding,
       at.toISOString(),
     ],
   );
@@ -179,13 +194,14 @@ export async function GET(req: Request) {
     signer: string;
     identity: string;
     signature: string;
+    binding: string | null;
     signed_at: string;
     received_at: string;
   }>(
     raw === null
-      ? `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, signed_at, received_at
+      ? `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, binding, signed_at, received_at
            FROM fovea.agent_action ORDER BY signed_at DESC LIMIT 100`
-      : `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, signed_at, received_at
+      : `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, binding, signed_at, received_at
            FROM fovea.agent_action WHERE agent_id = $1 ORDER BY signed_at DESC LIMIT 100`,
     raw === null ? [] : [Number(raw)],
   );
@@ -203,6 +219,7 @@ export async function GET(req: Request) {
           signer: r.signer,
           identity: r.identity,
           signature: r.signature,
+          binding: r.binding,
           signedAt: r.signed_at,
           receivedAt: r.received_at,
         })),

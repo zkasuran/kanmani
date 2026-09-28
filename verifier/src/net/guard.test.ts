@@ -113,6 +113,14 @@ test("a DNS failure is a refusal with a reason, never a silent allow", async () 
   assert.match((r as { reason: string }).reason, /DNS lookup failed/);
 });
 
+test("a resolver that hangs is cut off by the DNS timeout, not left to stall the worker", async () => {
+  // A hostname pointed at a resolver that never answers. Without the bound this await never returns
+  // and the serial worker stops. The short timeout proves the race fires.
+  const r = await resolvePublic("slow.example", () => new Promise<string[]>(() => {}), 50);
+  assert.equal(r.ok, false);
+  if (!r.ok) assert.match((r as { reason: string }).reason, /DNS lookup failed: timed out/);
+});
+
 /* ------------------------------------------------------------------ live server tests */
 
 function listen(handler: http.RequestListener): Promise<{ port: number; close: () => void }> {

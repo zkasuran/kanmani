@@ -953,3 +953,44 @@ the gaps doc rather than changed blind against a live index.
 mixes "searched every reachable chain and found nothing" with "some chains could not be searched" and
 the type no longer calls that number fabricated. Splitting it honestly needs the backfill to record which
 chains it reached per verdict, which is a data-model change flagged in the gaps doc.
+
+## Second remediation wave
+
+A follow-up pass closed the medium and low items the first pass had deferred or left open. Each carries a
+test where the surface is testable.
+
+- **Server flood and pool starvation.** The database pool now sets a 10s `statement_timeout`, a 12s
+  `query_timeout` and a 15s idle-in-transaction timeout, so no single read can pin one of eight
+  connections forever. TLS is required when the host is not loopback. A `proxy.ts` adds a generous
+  per-IP rate limit (600 a minute) that answers a flood with a 429 and a Retry-After rather than a silent
+  drop, loose enough that a judge or the canary never trips it.
+- **DNS with no deadline.** `resolvePublic` in the SSRF guard now races the lookup against a 5s bound, so
+  a hostname pointed at a hanging resolver is a clean refusal rather than a stalled worker. Test added.
+- **Session scope was advisory.** A payment session now pins its recipient: `assertCanPay` refuses a
+  transfer to any address other than the one the scope names, the pay path passes the recipient and the
+  studio run calls the gate before the key signs rather than handing a raw signer to viem. Test added.
+- **A receipt's signer was not bound to its identity.** `signAction` now also signs the canonical bytes
+  with the account key, `verifyBinding` recovers that signer and requires it equals the receipt's
+  `signer`. The publish route requires and stores the binding. A receipt can no longer name an
+  address its author does not control. Test added. The schema carries a nullable `binding` column so
+  older rows still read.
+- **Indexer address split and a dead entity.** `agentWallet` is checksummed to the same EIP-55 form Envio
+  stores the other addresses in, so a row no longer holds one address in two spellings and the unused
+  `Verdict` entity with its always-empty derived relation is removed from the schema. Both take effect on
+  the next resync.
+- **Low-tier cleanups.** The webhook info endpoint returns a fixed line and logs the real database error
+  rather than reflecting it; `usdc()` formats with BigInt so a large bond does not lose precision to a
+  float; the self-registration read-back tolerates the registry's revert-on-unknown-hash; and the Qwen
+  client caps its response size.
+
+### What remains and why
+
+The deployed Aqueous and Sclera are immutable and verified against their on-chain bytecode, so their
+design findings (the metered ceiling on a silent buyer, no buyer dispute after delivery, a bond postable
+once per agent, the attestor and beneficiary being one principal) cannot be changed in source without a
+redeploy that spends real gas and orphans existing state. They stay documented as accepted for this
+deployment. A redeploy is the operator's call. The CRE workflow still does not sign or submit on
+chain, by design, because that needs a deployed forwarder and real funds. The indexer's cross-chain Sybil
+counters are inherent to permissionless data and the `memberCount` drift after a re-point plus the
+"nowhere" exhaustiveness split are counting changes that need a full reindex to verify, so they are
+recorded in the gaps doc rather than changed blind against the live index.

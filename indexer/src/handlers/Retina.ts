@@ -26,6 +26,7 @@
  * called from the `Registered` handler.
  */
 import { indexer, createEffect, S } from "envio";
+import { getAddress } from "viem";
 import { recordReferral } from "./Chiasm";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -440,7 +441,15 @@ indexer.onEvent(
       // abi.encodePacked(address) is 20 raw bytes, so the hex value is the address itself.
       const raw = event.params.metadataValue;
       if (typeof raw === "string" && raw.length >= 42) {
-        agentWallet = `0x${raw.slice(-40)}`;
+        // Checksum it to the same EIP-55 form Envio stores owner and clientAddress in. Stored
+        // lowercase, the one address sat in two representations inside a row, so any cross-field
+        // comparison silently missed. getAddress throws on a non-address, so a malformed value
+        // leaves the previous wallet untouched rather than writing garbage.
+        try {
+          agentWallet = getAddress(`0x${raw.slice(-40)}`);
+        } catch {
+          /* not a valid address, keep what we had */
+        }
       }
     }
 

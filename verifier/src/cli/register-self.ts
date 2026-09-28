@@ -166,13 +166,19 @@ export async function run(argv = process.argv.slice(2)): Promise<void> {
   const resReceipt = await publicClient.waitForTransactionReceipt({ hash: resTx });
   console.log(`            block ${resReceipt.blockNumber}, status ${resReceipt.status}`);
 
-  const status = await publicClient.readContract({
-    address: VALIDATION_REGISTRY,
-    abi: VALIDATION_ABI,
-    functionName: "getValidationStatus",
-    args: [requestHash],
-  });
-  console.log(`\nread back   validator ${status[0]} agent ${status[1]} response ${status[2]} tag ${status[4]}`);
+  // getValidationStatus reverts on a hash the registry does not know rather than returning a zero
+  // row, so the read-back is wrapped: a revert here is "no such request", not a crash of the tool.
+  try {
+    const status = await publicClient.readContract({
+      address: VALIDATION_REGISTRY,
+      abi: VALIDATION_ABI,
+      functionName: "getValidationStatus",
+      args: [requestHash],
+    });
+    console.log(`\nread back   validator ${status[0]} agent ${status[1]} response ${status[2]} tag ${status[4]}`);
+  } catch {
+    console.log(`\nread back   getValidationStatus reverted, so the registry has no request for this hash yet`);
+  }
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

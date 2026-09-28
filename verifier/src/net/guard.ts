@@ -40,6 +40,14 @@ import net from "node:net";
 export const MAX_BYTES = 65_536;
 export const TIMEOUT_MS = 8000;
 export const MAX_REDIRECTS = 3;
+/**
+ * How long a name is allowed to take to resolve.
+ *
+ * `dns.lookup` has no deadline of its own and it is awaited before the socket timeout is armed, so a
+ * hostname that an attacker points at a slow or hanging resolver would otherwise stall the serial
+ * worker and hold a libuv thread. Racing the lookup against this bound turns that into a clean refusal.
+ */
+export const DNS_TIMEOUT_MS = 5000;
 
 export type FetchOutcome =
   | { ok: true; bytes: Uint8Array; finalUrl: string; status: number }
@@ -216,6 +224,7 @@ const systemResolver: Resolver = (host) =>
 export async function resolvePublic(
   host: string,
   resolver: Resolver = systemResolver,
+  timeoutMs: number = DNS_TIMEOUT_MS,
 ): Promise<{ ok: true; addresses: string[] } | { ok: false; reason: string }> {
   if (net.isIP(host)) {
     const bad = isForbiddenAddress(host);
@@ -223,7 +232,9 @@ export async function resolvePublic(
   }
   let addrs: string[];
   try {
-    addrs = await resolver(host);
+    // Bounded so a slow resolver cannot hang the worker. dns.lookup takes no deadline, so the bound
+    // is a race against a timer that rejects.
+    addrs = await withTimeout(resolver(host), timeoutMs);
   } catch (e) {
     return { ok: false, reason: `DNS lookup failed: ${String((e as Error).message ?? e)}` };
   }
@@ -233,4 +244,21 @@ export async function resolvePublic(
     if (bad) return { ok: false, reason: `blocked, ${host} resolves to ${a}, ${bad}` };
   }
   return { ok: true, addresses: addrs };
+}
+
+/** Reject a promise that does not settle within `ms`, so an unbounded await becomes a clean failure. */
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timed out after ${ms}ms`)), ms);
+    p.then(
+      (v) => {
+        clearTimeout(timer);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(timer);
+        reject(e);
+      },
+    );
+  });
 }
