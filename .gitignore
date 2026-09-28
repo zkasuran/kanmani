@@ -63,3 +63,6 @@ CONTENT-*.html
 # Python bytecode from the scripts/ helpers. Regenerated on every run, never source.
 __pycache__/
 *.pyc
+
+# pitch film render intermediates (re-creatable with pitch/render.mjs)
+pitch/out/
