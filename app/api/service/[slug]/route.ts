@@ -2,9 +2,12 @@ import { json, problem, SITE } from "@/lib/api.ts";
 import { AGENTS, assay, type AgentSlug, MONAD_BLOCK_MS, sentinel } from "@/lib/agents.ts";
 import {
   challenge,
+  confirmPaymentNonce,
   paymentFrom,
   paymentResponseHeader,
+  releasePaymentNonce,
   requirements,
+  reservePaymentNonce,
   settlePayment,
   verifyPayment,
 } from "@/lib/x402.ts";
@@ -92,6 +95,11 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     return json(challenge(resource, verified.reason), { status: 402 });
   }
 
+  // Reserve the authorization before any priced work, so one signature cannot drive many parallel
+  // computations for a single eventual settle.
+  const reservation = reservePaymentNonce(payment.payload);
+  if (!reservation.ok) return json(challenge(resource, reservation.reason), { status: 402 });
+
   // Work before money. If this throws, the verified authorization is deliberately not settled.
   let answer: Awaited<ReturnType<typeof sentinel>> | Awaited<ReturnType<typeof assay>>;
   try {
@@ -100,13 +108,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
         ? await sentinel(agentId, Number.isFinite(Number(body.maxAgeBlocks)) ? Number(body.maxAgeBlocks) : 64)
         : await assay(agentId);
   } catch (e) {
-    return problem(500, "The agent did not complete", (e as Error).message, {
+    releasePaymentNonce(reservation.key);
+    console.error(`[/api/service/${s.slug}] agent failed:`, (e as Error).message);
+    return problem(500, "The agent did not complete", "The agent could not produce a result. Nothing was charged.", {
       charged: false,
+      retryable: true,
       note: "Your payment was verified and deliberately not settled, because we did not deliver.",
     });
   }
 
   const settled = await settlePayment(payment.payload);
+
+  // Delivery is gated on settlement. A verified-but-unsettled payment does not get the paid answer,
+  // or the settle step is optional. The authorization is untouched, so a genuine payer retries.
+  if (!settled.settled) {
+    releasePaymentNonce(reservation.key);
+    return problem(402, "Payment did not settle", settled.reason ?? "settlement did not confirm", {
+      charged: false,
+      retryable: true,
+      note: "The payment verified but settlement did not confirm, so nothing was delivered and nothing was charged. Your authorization is untouched.",
+    });
+  }
+
+  confirmPaymentNonce(reservation.key);
 
   return json(
     {
@@ -118,9 +142,7 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
         transaction: settled.transaction,
         reason: settled.reason,
         payer: settled.payer ?? (verified.payer || null),
-        note: settled.settled
-          ? "Paid over x402 on Monad, so this settlement is itself checkable by /api/verify."
-          : "The work was done and is returned below. Settlement did not confirm and the reason is recorded rather than hidden.",
+        note: "Paid over x402 on Monad, so this settlement is itself checkable by /api/verify.",
       },
       answer,
     },

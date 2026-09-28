@@ -1,6 +1,6 @@
 import { envelope, json, problem } from "@/lib/api.ts";
 import { q, q1 } from "@/lib/db.ts";
-import { actionReceiptBytes, verifyAction, type ActionReceipt } from "@/lib/authority.ts";
+import { actionReceiptBytes, verifyAction, verifyBinding, type ActionReceipt } from "@/lib/authority.ts";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://kanmani.xyz";
 
@@ -37,26 +37,49 @@ export const dynamic = "force-dynamic";
  * GET  `?agentId=<id>` returns receipts for one agent, newest first.
  */
 
-type Body = { receipt?: unknown; signature?: unknown };
+type Body = { receipt?: unknown; signature?: unknown; binding?: unknown };
+
+/** Ceilings so an anonymous signed write cannot store unbounded rows or oversized fields. */
+const MAX_BODY_BYTES = 8_192;
+const MAX_SIGNATURE_LEN = 200;
+const MAX_IDENTITY_LEN = 200;
+const MAX_ROWS_PER_IDENTITY = 500;
+const HASH = /^0x[0-9a-fA-F]{64}$/;
+const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 
 function isReceipt(x: unknown): x is ActionReceipt {
   if (!x || typeof x !== "object") return false;
   const r = x as Record<string, unknown>;
+  // Every field is bounded in shape and size, not just type. Without this a stranger can vary the
+  // uriHash to defeat the ON CONFLICT dedup and store an unbounded number of oversized rows, since
+  // the signature is their own and costs them nothing to make.
   return (
     (r.action === "register" || r.action === "setAgentURI") &&
     typeof r.chainId === "number" &&
-    (r.agentId === null || typeof r.agentId === "number") &&
+    Number.isInteger(r.chainId) &&
+    r.chainId > 0 &&
+    r.chainId <= 1_000_000_000_000 &&
+    (r.agentId === null ||
+      (typeof r.agentId === "number" && Number.isInteger(r.agentId) && r.agentId >= 0 && r.agentId <= Number.MAX_SAFE_INTEGER)) &&
     typeof r.uriHash === "string" &&
+    HASH.test(r.uriHash) &&
     typeof r.signer === "string" &&
+    ADDRESS.test(r.signer) &&
     typeof r.identity === "string" &&
-    typeof r.at === "string"
+    r.identity.length <= MAX_IDENTITY_LEN &&
+    typeof r.at === "string" &&
+    r.at.length <= 40
   );
 }
 
 export async function POST(req: Request) {
+  const raw = await req.text();
+  if (raw.length > MAX_BODY_BYTES) {
+    return problem(413, "Body too large", `The request body must be under ${MAX_BODY_BYTES} bytes.`);
+  }
   let body: Body;
   try {
-    body = (await req.json()) as Body;
+    body = JSON.parse(raw) as Body;
   } catch {
     return problem(400, "Not JSON", "The body must be a JSON object with `receipt` and `signature`.");
   }
@@ -65,11 +88,11 @@ export async function POST(req: Request) {
     return problem(
       400,
       "Malformed receipt",
-      "`receipt` must carry action, chainId, agentId, uriHash, signer, identity and at. `agentId` is null for a registration.",
+      "`receipt` must carry action, a positive integer chainId, a null or non-negative agentId, a 0x keccak uriHash, a 0x address signer, a did:key identity and an ISO timestamp. `agentId` is null for a registration.",
     );
   }
-  if (typeof body.signature !== "string" || body.signature.length === 0) {
-    return problem(400, "Missing signature", "`signature` must be the base64url ed25519 signature over the canonical bytes.");
+  if (typeof body.signature !== "string" || body.signature.length === 0 || body.signature.length > MAX_SIGNATURE_LEN) {
+    return problem(400, "Missing or oversized signature", "`signature` must be the base64url ed25519 signature over the canonical bytes.");
   }
 
   const receipt = body.receipt;
@@ -86,6 +109,20 @@ export async function POST(req: Request) {
     );
   }
 
+  // The account-key binding proves the EVM `signer` in the receipt is controlled by the same person
+  // as the attestation identity. Without it a receipt can name any address as its signer, since the
+  // ed25519 signature says nothing about that address. Required, so a stored receipt's signer is real.
+  if (typeof body.binding !== "string" || body.binding.length === 0 || body.binding.length > MAX_SIGNATURE_LEN) {
+    return problem(400, "Missing or oversized binding", "`binding` must be the account-key signature (0x r||s||v) over the canonical bytes.");
+  }
+  if (!verifyBinding(receipt, body.binding)) {
+    return problem(
+      400,
+      "Binding does not verify",
+      "The binding did not recover to the signer named in the receipt, so the signer address is not proven controlled by whoever holds this identity. Nothing was stored.",
+    );
+  }
+
   let at: Date;
   try {
     at = new Date(receipt.at);
@@ -94,12 +131,22 @@ export async function POST(req: Request) {
     return problem(400, "Bad timestamp", "`at` must be an ISO 8601 instant.");
   }
 
+  // A cap per identity, so a single passkey cannot fill the table by varying the uriHash. The
+  // identity is authenticated by the signature just checked, so this counts real rows for a real key.
+  const count = await q1<{ n: string }>(
+    `SELECT count(*)::text AS n FROM fovea.agent_action WHERE identity = $1`,
+    [receipt.identity],
+  );
+  if (count && Number(count.n) >= MAX_ROWS_PER_IDENTITY) {
+    return problem(429, "Too many receipts for this identity", `Each identity may publish up to ${MAX_ROWS_PER_IDENTITY} receipts.`);
+  }
+
   // A replay is the same row rather than a second one. The uniqueness is the database's, not a flag
   // we remember to set.
   const row = await q1<{ id: string; received_at: string; fresh: boolean }>(
     `INSERT INTO fovea.agent_action
-       (action, chain_id, agent_id, uri_hash, signer, identity, signature, signed_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (action, chain_id, agent_id, uri_hash, signer, identity, signature, binding, signed_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      ON CONFLICT (identity, uri_hash, action) DO UPDATE SET identity = fovea.agent_action.identity
      RETURNING id::text, received_at, (xmax = 0) AS fresh`,
     [
@@ -110,6 +157,7 @@ export async function POST(req: Request) {
       receipt.signer.toLowerCase(),
       receipt.identity,
       body.signature,
+      body.binding,
       at.toISOString(),
     ],
   );
@@ -146,13 +194,14 @@ export async function GET(req: Request) {
     signer: string;
     identity: string;
     signature: string;
+    binding: string | null;
     signed_at: string;
     received_at: string;
   }>(
     raw === null
-      ? `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, signed_at, received_at
+      ? `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, binding, signed_at, received_at
            FROM fovea.agent_action ORDER BY signed_at DESC LIMIT 100`
-      : `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, signed_at, received_at
+      : `SELECT action, chain_id, agent_id::text, uri_hash, signer, identity, signature, binding, signed_at, received_at
            FROM fovea.agent_action WHERE agent_id = $1 ORDER BY signed_at DESC LIMIT 100`,
     raw === null ? [] : [Number(raw)],
   );
@@ -170,6 +219,7 @@ export async function GET(req: Request) {
           signer: r.signer,
           identity: r.identity,
           signature: r.signature,
+          binding: r.binding,
           signedAt: r.signed_at,
           receivedAt: r.received_at,
         })),

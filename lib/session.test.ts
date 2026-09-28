@@ -154,3 +154,21 @@ test("a session needs a positive time to live", async () => {
     openSession({ privateKey: keys.account.privateKey, scope: scope(), ttlMs: 0 }),
   );
 });
+
+test("a payment session only pays the recipient its scope names", async () => {
+  const keys = await deriveKeys(PINNED_PRF);
+  const pinned = "0xDB6c6340342e71A63cD11Ebac2185204b7777777";
+  const session = openSession({
+    privateKey: keys.account.privateKey,
+    scope: { label: "pay us", maxAmountAtomic: 50_000n, resourceHost: "kanmani.xyz", payTo: pinned },
+    ttlMs: 60_000,
+    seams: { now: fakeClock().now },
+  });
+  // The right recipient is fine, in either casing.
+  session.assertCanPay(10_000n, pinned.toLowerCase());
+  // A different recipient is refused before the key signs, so a tampered authorization cannot redirect.
+  assert.throws(
+    () => session.assertCanPay(10_000n, "0x1111111111111111111111111111111111111111"),
+    (e: unknown) => isSessionError(e) && e.code === "WRONG_SIGNER",
+  );
+});

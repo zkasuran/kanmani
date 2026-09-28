@@ -82,7 +82,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
   const [keys, setKeys] = useState<IrisKeys | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [authority, setAuthority] = useState<Authority | null>(null);
-  const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string } | null>(null);
+  const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string; binding: string } | null>(null);
   const [published, setPublished] = useState<"no" | "yes" | "already">("no");
   const [sent, setSent] = useState<{ hash: string; agentId?: string } | null>(null);
   /** Fields the existing document carried that this form does not model. Written back unchanged. */
@@ -308,6 +308,10 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         scope: agentScope(door === "create" ? "register" : "setAgentURI", window.location.host),
         ttlMs: 120_000,
       });
+      // Run the session gate before the key signs, the same as the payment path does. It moves no
+      // token, so the amount is zero, but the check still enforces the expiry and the scope rather
+      // than handing a raw signer to viem with nothing in front of it.
+      session.assertCanPay(0n);
       const wallet = createWalletClient({ account: session.account, chain, transport: http() });
       const pub = createPublicClient({ chain, transport: http() });
 

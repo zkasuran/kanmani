@@ -8,8 +8,8 @@
 #   68 of 68 declared network: monad and 2 of those payments exist on Monad
 #
 # So: Record is deduplicated by content hash (storing 8,093 copies of one dead URL is waste and
-# hides the cluster) and Verdict is append-only so a fixed template reads as false -> true
-# rather than as a silent edit.
+# hides the cluster). Verdicts live in the fovea schema rather than here, append-only, so a fixed
+# template reads as false -> true rather than as a silent edit.
 
 # NOTE: no PER-CHAIN entity declares `chainId`. With `disable_default_cross_chain: true` envio adds
 # it to every per-chain entity automatically and declaring it yourself is a hard codegen error. Add
@@ -116,27 +116,6 @@ type Feedback {
   blockNumber: BigInt!
   timestamp: BigInt!
   txHash: String!
-  verdicts: [Verdict!]! @derivedFrom(field: "feedback")
-}
-
-# Append-only. A re-check writes a NEW row, never an update, so every claim carries its own
-# verification history. That is what makes a correction defensible when an operator fixes a
-# template: it shows as false -> true with both timestamps rather than as a rewrite.
-type Verdict {
-  id: ID! # feedbackId_checkedAtBlock
-  feedback: Feedback!
-  rung: String! # declared | resolvable | intact | true | payable | settled
-  outcome: String! # true | false | unresolvable | unknown
-  # Why, in words a stranger can check. Never a bare boolean.
-  reason: String!
-  # What the document claimed.
-  declaredNetwork: String
-  declaredTx: String
-  # What the chain actually said.
-  foundOnChain: String
-  hashMatches: Boolean
-  checkedAt: BigInt!
-  checkedAtBlock: BigInt!
 }
 
 # Written by Optic. Empty on Monad when sampled 2026-09-13, which is why Kanmani writing here is

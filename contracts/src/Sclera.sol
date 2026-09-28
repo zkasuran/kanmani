@@ -110,8 +110,16 @@ contract Sclera is IReceiver {
 
     /// @notice Where a forfeit bond goes. A slashed bond is not compensation, because a receipt
     ///         that does not resolve harms nobody this contract can identify on chain. It is a
-    ///         deposit the agent loses. Sending it to a party fixed at deploy time keeps anyone
-    ///         from profiting by triggering a slash, which is the griefing incentive to avoid.
+    ///         deposit the agent loses. Fixing the destination at deploy time stops a THIRD party
+    ///         from griefing an agent into a slash for their own gain: only the attestor can trigger
+    ///         a slash, and the proceeds go to a party chosen once and never to the caller.
+    ///
+    ///         It does NOT by itself remove the operator's incentive. If the attestor key and this
+    ///         beneficiary are the same principal, the party that decides a slash is the party that
+    ///         receives it, so an unjust slash is profitable to whoever holds the attestor key. That
+    ///         is the oracle-trust assumption the whole design rests on: the attestor is trusted to
+    ///         sign only measured verdicts. A deploy that wants to retire even that assumption should
+    ///         point this at a burn address or a party distinct from the attestor. See the audit.
     address public immutable slashBeneficiary;
 
     /// @notice The ERC-8004 Identity Registry this contract reads ownership from.

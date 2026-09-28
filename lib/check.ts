@@ -11,7 +11,7 @@
  */
 import { judge, type Verdict } from "../verifier/src/ladder/verdict.ts";
 import { resolveEvidence } from "../verifier/src/ladder/resolve.ts";
-import { readerFor } from "../verifier/src/rpc.ts";
+import { readerFor, settlementReaderFor } from "../verifier/src/rpc.ts";
 import { coverageTable } from "../verifier/src/chains.ts";
 import { keccak256 } from "viem";
 
@@ -60,6 +60,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     feedbackHash,
     fetched,
     readerFor: (c) => readerFor(c),
+    settlementReaderFor: (c) => settlementReaderFor(c),
   });
 
   return {

@@ -3,10 +3,13 @@ import { check } from "@/lib/check.ts";
 import { claim, claims } from "@/lib/queries.ts";
 import {
   challenge,
+  confirmPaymentNonce,
   paymentFrom,
   paymentResponseHeader,
   PRICE_ATOMIC,
+  releasePaymentNonce,
   requirements,
+  reservePaymentNonce,
   settlePayment,
   verifyPayment,
 } from "@/lib/x402.ts";
@@ -127,27 +130,52 @@ export async function POST(req: Request) {
     return json(challenge(RESOURCE, verified.reason), { status: 402 });
   }
 
+  // Reserve the authorization before doing any priced work. Without this, N requests carrying one
+  // signature each run the fetch and RPC in parallel and only one of them ever settles, so the
+  // other N minus one get the paid work for nothing. Only one caller holds the nonce at a time.
+  const reservation = reservePaymentNonce(payment.payload);
+  if (!reservation.ok) {
+    return json(challenge(RESOURCE, reservation.reason), { status: 402 });
+  }
+
   // Do the work BEFORE taking the money. If the check throws, nothing has been settled and the
   // payer still holds a valid authorization they can spend elsewhere.
   let result: Awaited<ReturnType<typeof check>>;
   try {
     result = await check({ uri, feedbackHash });
   } catch (e) {
-    return problem(500, "The check did not complete", (e as Error).message, {
+    releasePaymentNonce(reservation.key);
+    // The real error is logged, never returned: a stranger does not get our RPC or DB internals.
+    console.error("[/api/verify] check failed:", (e as Error).message);
+    return problem(500, "The check did not complete", "The document could not be checked. Nothing was charged.", {
       charged: false,
+      retryable: true,
       note: "Your payment was verified and deliberately not settled, because we did not deliver. The authorization is still yours to spend.",
     });
   }
 
   const settled = await settlePayment(payment.payload);
 
+  // Delivery is gated on a confirmed settlement. A payment that verified but did not settle (a
+  // facilitator failure, an authorization the payer consumed elsewhere, a balance that moved) must
+  // not hand back the paid result, or the settle step is optional and the price is a suggestion.
+  // The authorization is untouched, so a genuine payer simply retries.
+  if (!settled.settled) {
+    releasePaymentNonce(reservation.key);
+    return problem(402, "Payment did not settle", settled.reason ?? "settlement did not confirm", {
+      charged: false,
+      retryable: true,
+      note: "The payment verified but settlement did not confirm, so nothing was delivered and nothing was charged. Your authorization is untouched and you can retry.",
+    });
+  }
+
+  confirmPaymentNonce(reservation.key);
+
   return json(
     envelope(
       {
         paid: true,
         payment: {
-          // Recorded whether or not settlement succeeded, because a broadcast that we then failed
-          // to read is a real state and pretending otherwise is how a payment gets taken twice.
           settled: settled.settled,
           transaction: settled.transaction,
           reason: settled.reason,
@@ -156,9 +184,7 @@ export async function POST(req: Request) {
           asset: requirements().asset,
           network: requirements().network,
           headerUsed: payment.header,
-          note: settled.settled
-            ? "This settlement is itself an x402 payment on Monad, so it can be checked by this same endpoint."
-            : "The check was performed and returned below. Settlement did not confirm and the reason is recorded rather than hidden.",
+          note: "This settlement is itself an x402 payment on Monad, so it can be checked by this same endpoint.",
         },
         verdict: result.verdict,
         hashWasSupplied: result.hashWasSupplied,

@@ -37,6 +37,7 @@
  */
 
 import { ed25519 } from "@noble/curves/ed25519";
+import { secp256k1 } from "@noble/curves/secp256k1";
 import { keccak_256 } from "@noble/hashes/sha3";
 import type { IrisKeys } from "./iris.ts";
 import { toBase64url, toHex } from "./iris.ts";
@@ -164,7 +165,7 @@ export function signAction(
   input: { action: AgentAction; chainId: number; agentId: number | null; agentURI: string },
   keys: IrisKeys,
   now = new Date(),
-): { receipt: ActionReceipt; signature: string } {
+): { receipt: ActionReceipt; signature: string; binding: string } {
   const receipt: ActionReceipt = {
     action: input.action,
     chainId: input.chainId,
@@ -174,8 +175,51 @@ export function signAction(
     identity: keys.attestation.id,
     at: now.toISOString(),
   };
-  const sig = ed25519.sign(actionReceiptBytes(receipt), keys.attestation.privateKey);
-  return { receipt, signature: toBase64url(sig) };
+  const bytes = actionReceiptBytes(receipt);
+  const sig = ed25519.sign(bytes, keys.attestation.privateKey);
+  // Bind the two identities. The ed25519 signature proves the attestation identity made this receipt.
+  // The account key signs the same bytes so a verifier can also prove the EVM signer named in the
+  // receipt is controlled by the same person. Without this a receipt can name any address as its
+  // signer, since the attestation signature says nothing about that address.
+  const binding = bindingSignature(receipt, keys.account.privateKey);
+  return { receipt, signature: toBase64url(sig), binding };
+}
+
+/**
+ * The account key's signature over the canonical receipt bytes, as `0x` + r + s + v.
+ *
+ * secp256k1 rather than ed25519, because this half proves control of the EVM `signer` address. No
+ * `Buffer`, because this file is imported by the browser studio and a Node global would throw there.
+ */
+export function bindingSignature(receipt: ActionReceipt, accountPrivateKey: Uint8Array): string {
+  const digest = keccak_256(actionReceiptBytes(receipt));
+  const sig = secp256k1.sign(digest, accountPrivateKey);
+  const recovery = (sig.recovery ?? 0).toString(16).padStart(2, "0");
+  return `0x${sig.toCompactHex()}${recovery}`;
+}
+
+/**
+ * Verify the account-key binding: recover the EVM address that signed the receipt bytes and require
+ * it equals the receipt's `signer`. Combined with `verifyAction`, this proves one person controls
+ * both the attestation identity and the signer address, so a receipt cannot name someone else's
+ * address as its signer.
+ */
+export function verifyBinding(receipt: ActionReceipt, binding: string): boolean {
+  try {
+    const hex = binding.startsWith("0x") ? binding.slice(2) : binding;
+    if (hex.length !== 130) return false;
+    const recovery = parseInt(hex.slice(128, 130), 16);
+    if (recovery !== 0 && recovery !== 1) return false;
+    const digest = keccak_256(actionReceiptBytes(receipt));
+    const pub = secp256k1.Signature.fromCompact(hex.slice(0, 128))
+      .addRecoveryBit(recovery)
+      .recoverPublicKey(digest)
+      .toRawBytes(false);
+    const recovered = `0x${toHex(keccak_256(pub.slice(1)).slice(-20))}`;
+    return recovered.toLowerCase() === receipt.signer.toLowerCase();
+  } catch {
+    return false;
+  }
 }
 
 /**

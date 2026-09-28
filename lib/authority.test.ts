@@ -15,6 +15,7 @@ import {
   hashUri,
   signAction,
   verifyAction,
+  verifyBinding,
   type ActionReceipt,
 } from "./authority.ts";
 
@@ -157,3 +158,21 @@ test("an agent action is scoped to authority rather than to a spend", () => {
   assert.equal(s.resourceHost, "kanmani.xyz");
   assert.notEqual(agentScope("setAgentURI", "kanmani.xyz").label, s.label);
 });
+
+test("the account-key binding proves the signer, and a swapped signer address fails it", async () => {
+  const keys = await deriveKeys(PRF);
+  const signed = signAction(
+    { action: "register", chainId: 143, agentId: null, agentURI: "ipfs://doc" },
+    keys,
+  );
+  // Both halves check out for a genuine receipt: the identity signed it and the signer address is
+  // proven controlled by the same person.
+  assert.equal(verifyAction(signed.receipt, signed.signature), true);
+  assert.equal(verifyBinding(signed.receipt, signed.binding), true);
+  assert.equal(signed.receipt.signer, keys.account.address);
+
+  // The attack: name someone else's address as the signer. The binding no longer recovers to it,
+  // so a receipt cannot claim an address its author does not control.
+  const forged: ActionReceipt = { ...signed.receipt, signer: "0x1111111111111111111111111111111111111111" };
+  assert.equal(verifyBinding(forged, signed.binding), false);
+})

@@ -26,6 +26,7 @@
  * called from the `Registered` handler.
  */
 import { indexer, createEffect, S } from "envio";
+import { getAddress } from "viem";
 import { recordReferral } from "./Chiasm";
 
 const ZERO = "0x0000000000000000000000000000000000000000";
@@ -248,19 +249,40 @@ function parseInlineRecord(uri: string): { name?: string; endpoints: string[]; d
   for (const list of lists) {
     for (const item of list) {
       if (typeof item === "string") {
-        endpoints.push(item.slice(0, 500));
+        const ep = absoluteHttpUrl(item);
+        if (ep) endpoints.push(ep);
         continue;
       }
       if (typeof item !== "object" || item === null) continue;
       const o = item as Record<string, unknown>;
-      const ep = typeof o.endpoint === "string" ? o.endpoint : typeof o.url === "string" ? o.url : null;
-      if (ep) endpoints.push(ep.slice(0, 500));
+      const rawEp = typeof o.endpoint === "string" ? o.endpoint : typeof o.url === "string" ? o.url : null;
+      const ep = rawEp ? absoluteHttpUrl(rawEp) : null;
+      if (ep) endpoints.push(ep);
       if (o.x402 !== undefined && o.x402 !== false) declaresX402 = true;
     }
   }
   if (doc.x402 !== undefined && doc.x402 !== false) declaresX402 = true;
 
   return { name, endpoints: endpoints.slice(0, 32), declaresX402 };
+}
+
+/**
+ * Keep a string only when it is an absolute http(s) URL, capped in length.
+ *
+ * These come from a document a stranger put on chain, and `Agent.endpoints` is documented as
+ * "absolute http(s) only". Storing a `javascript:`, `data:text/html` or relative value verbatim
+ * would make the schema lie to a consumer that then renders it as a safe link, which is an
+ * open-redirect or XSS in whatever reads our data. The parse is what enforces the promise, so a
+ * consumer downstream does not have to re-check it. Returns the normalised URL or null.
+ */
+function absoluteHttpUrl(raw: string): string | null {
+  const s = raw.trim().slice(0, 500);
+  try {
+    const u = new URL(s);
+    return u.protocol === "http:" || u.protocol === "https:" ? s : null;
+  } catch {
+    return null;
+  }
 }
 
 
@@ -419,7 +441,15 @@ indexer.onEvent(
       // abi.encodePacked(address) is 20 raw bytes, so the hex value is the address itself.
       const raw = event.params.metadataValue;
       if (typeof raw === "string" && raw.length >= 42) {
-        agentWallet = `0x${raw.slice(-40)}`;
+        // Checksum it to the same EIP-55 form Envio stores owner and clientAddress in. Stored
+        // lowercase, the one address sat in two representations inside a row, so any cross-field
+        // comparison silently missed. getAddress throws on a non-address, so a malformed value
+        // leaves the previous wallet untouched rather than writing garbage.
+        try {
+          agentWallet = getAddress(`0x${raw.slice(-40)}`);
+        } catch {
+          /* not a valid address, keep what we had */
+        }
       }
     }
 

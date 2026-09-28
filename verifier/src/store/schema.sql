@@ -235,6 +235,10 @@ CREATE TABLE IF NOT EXISTS fovea.agent_action (
   signer      text        NOT NULL,
   identity    text        NOT NULL,
   signature   text        NOT NULL,
+  -- The account key's signature over the same canonical bytes, binding the EVM signer to the
+  -- attestation identity. Nullable so receipts stored before this column existed still read; new
+  -- writes require it, because without it the signer address is an unproven claim.
+  binding     text,
   -- When the signer says they signed it, from the receipt itself.
   signed_at   timestamptz NOT NULL,
   -- When we received it. Kept apart from signed_at, because a gap between them is information and

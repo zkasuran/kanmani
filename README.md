@@ -179,8 +179,17 @@ need an archive node.
 | `verifier/` | the judge: resolve a document, compare bytes to the on-chain commitment, read the cited transaction |
 | `contracts/` | Aqueous (escrow), Sclera (bonds), both deployed and verified |
 | `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
-| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
+| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [17-CONTRACT-AUDIT](docs/17-CONTRACT-AUDIT.md) and [18-BUGS-FIXED](docs/18-BUGS-FIXED.md) are the security review, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
 | `public/brand/` | the [media package](public/brand/README.md) |
+
+## Security
+
+This build holds and moves real funds and fetches URLs strangers put on chain, so it gets reviewed like
+it. [17-CONTRACT-AUDIT.md](docs/17-CONTRACT-AUDIT.md) is the running security review with every finding
+stated as an exploit and a proof. [18-BUGS-FIXED.md](docs/18-BUGS-FIXED.md) is the plain log of what
+broke and what now stops it. A full-surface pass on 2026-09-27 across the contracts, the API, the
+verifier, the indexer and the oracle is written up there as findings 11 onward, each fix carrying a test
+that fails against the old code. The items deferred rather than fixed are named with the reason.
 
 ## Licence
 

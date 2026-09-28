@@ -142,6 +142,21 @@ export async function bondsFor(agentIds: readonly number[]): Promise<Map<number,
 
 /** 6dp USDC for display. Kept here so a page never divides by a magic number inline. */
 export function usdc(atomic: string): string {
-  const n = Number(atomic) / 1e6;
-  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+  // BigInt maths, never Number(atomic)/1e6: a float loses precision above about nine billion USDC
+  // and would misprint a large bond. Display only, but a project about correct numbers should not
+  // round its own.
+  let v: bigint;
+  try {
+    v = BigInt(atomic);
+  } catch {
+    return "0.00";
+  }
+  const neg = v < 0n;
+  if (neg) v = -v;
+  const base = 1_000_000n;
+  const whole = (v / base).toLocaleString("en-US");
+  const raw = (v % base).toString().padStart(6, "0");
+  const trimmed = raw.replace(/0+$/, "");
+  const frac = trimmed.length < 2 ? raw.slice(0, 2) : trimmed;
+  return `${neg ? "-" : ""}${whole}.${frac}`;
 }
