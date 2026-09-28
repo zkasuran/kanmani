@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Derivation, DistBar, Mono, Num, OutcomeBadge, Panel, RungLadder, StatTile } from "@/components/ui.tsx";
-import { claims, claimsCount, mappingCoverage, type Outcome } from "@/lib/queries.ts";
+import { Derivation, Mono, Num, OutcomeBadge, Panel, RungLadder } from "@/components/ui.tsx";
+import { claims, claimsCount, mappingCoverage, mislabelled, type Outcome } from "@/lib/queries.ts";
+import { Population } from "@/components/population.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -31,10 +32,11 @@ export default async function Claims({ searchParams }: Props) {
   const page = Math.max(1, Number(sp.page ?? 1) || 1);
   const filter = { outcome, mapping, limit: PER_PAGE, offset: (page - 1) * PER_PAGE };
 
-  const [list, total, cov] = await Promise.all([
+  const [list, total, cov, mis] = await Promise.all([
     claims(filter),
     claimsCount({ outcome, mapping }),
     mappingCoverage(),
+    mislabelled(),
   ]);
 
   const mappings = [...new Set(cov.rows.map((c) => c.mapping))].filter((m) => !m.startsWith("("));
@@ -74,29 +76,17 @@ export default async function Claims({ searchParams }: Props) {
             argues against.
           </p>
 
-          {/* the whole checked population at a glance, before any filter narrows it */}
-          <div className="mt-7 auto-grid">
-            <StatTile label="not on the chain they name" value={falseN} tone="false" hint="We read the chain the document names and the cited transaction is not on it." />
-            <StatTile label="on the chain they name" value={trueN} tone="true" hint="The cited transaction is on the chain the document names." />
-            <StatTile label="could not check" value={unknownN} tone="unknown" hint="A fetch failed, the bytes moved or no mapping read the shape. Never an accusation." />
-            <StatTile label="assert no payment" value={noClaimN} hint="Read fine, claims nothing, so there is nothing to be right or wrong about." />
-          </div>
-
-          <div className="mt-6 max-w-3xl">
-            <DistBar
-              segments={[
-                { value: noClaimN, className: "bg-[var(--color-noclaim)]", label: "assert no payment" },
-                { value: falseN, className: "bg-[var(--color-false)]", label: "not on the named chain" },
-                { value: trueN, className: "bg-[var(--color-true)]", label: "on the named chain" },
-                { value: unknownN, className: "bg-[var(--color-unknown)]", label: "could not check" },
-              ]}
+          {/* The whole checked population as one figure: the corpus, then its payment claims
+              enlarged, with false split into mislabelled and nowhere as the landing now does. Four
+              tiles and a bar made the 85 payment claims a sliver beside 1,095 that claim nothing. */}
+          <div className="mt-8 max-w-4xl">
+            <Population
+              noClaim={noClaimN}
+              onNamed={trueN}
+              elsewhere={mis.rows.elsewhere}
+              nowhere={mis.rows.nowhere}
+              unknown={unknownN}
             />
-            <div className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11px] text-muted">
-              <Legend className="bg-[var(--color-noclaim)]" label={`${noClaimN.toLocaleString()} no claim`} />
-              <Legend className="bg-[var(--color-false)]" label={`${falseN.toLocaleString()} false`} />
-              <Legend className="bg-[var(--color-true)]" label={`${trueN.toLocaleString()} true`} />
-              <Legend className="bg-[var(--color-unknown)]" label={`${unknownN.toLocaleString()} unknown`} />
-            </div>
           </div>
         </div>
       </section>
@@ -225,11 +215,3 @@ export default async function Claims({ searchParams }: Props) {
   );
 }
 
-function Legend({ className, label }: { className: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`h-2 w-2 rounded-sm ${className}`} />
-      {label}
-    </span>
-  );
-}

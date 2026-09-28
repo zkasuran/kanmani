@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile, TxLink } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, agentActions, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
 import { bondFor, usdc } from "@/lib/bonds.ts";
+import { Population } from "@/components/population.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -110,38 +111,23 @@ export default async function AgentPage({ params }: Props) {
       </section>
 
       {/* ---------------------------------------------------------------- the numbers at a glance */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <StatTile
-          label="feedback on chain"
-          value={a.feedbackCount}
-          hint="Everything ever said about this agent in the registry."
-        />
-        <StatTile
-          label="checkable claims"
-          value={checked.length}
-          tone="brand"
-          hint="Feedback that points at a document, so it can be checked against a chain."
-        />
-        <StatTile
-          label="resolve on the named chain"
-          value={resolve}
-          tone="true"
-          hint="The cited transaction is on the chain the document names."
-        />
-        {/* Split, because one red "41 missing" beside a sentence saying 37 are real payments is the
-            page contradicting itself. Brand for the repairable one, false only for the one that is. */}
-        <StatTile
-          label="real payment, wrong chain named"
-          value={elsewhere}
-          tone="brand"
-          hint="The cited transaction is mined on a different chain from the one the document names. One field to fix."
-        />
-        <StatTile
-          label="on no chain we can read"
-          value={nowhere}
-          tone="false"
-          hint="Every chain we can read was read and the cited transaction is on none of them."
-        />
+      {/* One figure instead of five tiles. The tiles made a reader add up 1 + 37 + 4 to see 42; the
+          bar shows the split directly and the two totals that are not part of it sit beside it. */}
+      <section className="agent-fig">
+        <div className="agent-fig__totals">
+          <div><b>{a.feedbackCount}</b><span>feedback on chain</span></div>
+          <div><b className="text-[var(--color-brand)]">{checked.length}</b><span>checkable claims</span></div>
+        </div>
+        <div className="min-w-0 flex-1">
+          {resolve + elsewhere + nowhere > 0 ? (
+            <Population paymentOnly noClaim={0} onNamed={resolve} elsewhere={elsewhere} nowhere={nowhere} unknown={0} />
+          ) : (
+            <p className="text-[13.5px] leading-relaxed text-muted">
+              No payment has been claimed about this agent, so there is nothing to split. That is not a
+              failing grade.
+            </p>
+          )}
+        </div>
       </section>
 
       <div className="grid gap-5 lg:grid-cols-2">

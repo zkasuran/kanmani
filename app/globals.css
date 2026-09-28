@@ -2221,3 +2221,35 @@ a.term__row:focus-visible { outline: 2px solid var(--color-brand); outline-offse
 }
 .finding--strip { display: grid; gap: 1.25rem; align-items: center; }
 @media (min-width: 64rem) { .finding--strip { grid-template-columns: auto minmax(0, 1fr) auto; gap: 2rem; } }
+
+/* Population figure: the whole checked corpus, then its payment claims enlarged. */
+.pop { margin: 0; display: grid; gap: 0.35rem; }
+.pop__caption { font-family: var(--font-mono, ui-monospace); font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-faint); margin-bottom: 0.45rem; }
+.pop__bar { display: flex; gap: 3px; height: 14px; border-radius: 4px; overflow: hidden; }
+.pop__seg { display: block; min-width: 4px; border-radius: 2px; }
+.pop__seg--noclaim { background: var(--color-noclaim); }
+.pop__seg--true { background: var(--color-true); }
+.pop__seg--brand { background: var(--color-brand); }
+.pop__seg--false { background: var(--color-false); }
+.pop__seg--unknown { background: var(--color-unknown); }
+.pop__labels { list-style: none; margin: 0.6rem 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.3rem 1.4rem; font-size: 12.5px; color: var(--color-muted); }
+.pop__n { font-weight: 600; font-variant-numeric: tabular-nums; margin-right: 0.15rem; }
+.pop__n--true { color: var(--color-true); }
+.pop__n--brand { color: var(--color-brand); }
+.pop__n--false { color: var(--color-false); }
+.pop__n--noclaim, .pop__n--unknown { color: var(--color-text); }
+.pop__zoom { position: relative; height: 34px; margin: 0.4rem 0 0.2rem; }
+.pop__zoom::before {
+  content: ""; position: absolute; inset: 0;
+  background: linear-gradient(to bottom, color-mix(in oklab, var(--color-brand) 22%, transparent), transparent);
+  clip-path: polygon(88% 0, 96% 0, 100% 100%, 0 100%);
+  opacity: 0.7;
+}
+.pop__zoom span { position: absolute; left: 0; bottom: 4px; font-family: var(--font-mono, ui-monospace); font-size: 10.5px; color: var(--color-faint); }
+.pop__row + .pop__zoom + .pop__row .pop__bar { height: 18px; }
+.agent-fig { display: flex; flex-direction: column; gap: 1.5rem; padding: 1.25rem 1.3rem; border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: var(--color-panel); }
+@media (min-width: 48rem) { .agent-fig { flex-direction: row; align-items: center; gap: 2.5rem; } }
+.agent-fig__totals { display: flex; gap: 2rem; }
+@media (min-width: 48rem) { .agent-fig__totals { flex-direction: column; gap: 0.9rem; min-width: 9rem; } }
+.agent-fig__totals b { display: block; font-size: var(--step-3, 2.2rem); line-height: 1; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.agent-fig__totals span { font-size: 12px; color: var(--color-muted); }
