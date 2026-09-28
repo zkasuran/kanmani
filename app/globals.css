@@ -1133,10 +1133,14 @@ h2 { letter-spacing: -0.025em; }
   from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
   to   { opacity: 1; transform: none; filter: none; }
 }
-.route-enter { animation: route-enter var(--dur-3) var(--ease-out-expo) both; }
+/* `backwards`, not `both`: once finished the wrapper carries no transform or filter, so it never
+   becomes a containing block for a position:fixed descendant. */
+.route-enter { animation: route-enter var(--dur-3) var(--ease-out-expo) backwards; }
 
 /* ---- header: condenses and deepens as the page scrolls, progress hairline --------------- */
-.site-header { position: sticky; }
+/* The floating shell leaves transparent gutters; they must not swallow clicks on content under them. */
+.site-header { position: sticky; pointer-events: none; }
+.site-header > * { pointer-events: auto; }
 .header-shell {
   position: relative;
   transition: box-shadow var(--dur-2) ease, background var(--dur-2) ease;
@@ -1251,8 +1255,10 @@ h2 { letter-spacing: -0.025em; }
   15%  { opacity: 0.9; }
   100% { transform: scale(4.2); opacity: 0; }
 }
+/* Hover uses the independent `translate` property, which the entrance (on `transform`) never
+   touches. Removing the entrance on hover instead would replay it from opacity 0 on hover-out. */
 .logo-anim .logo__rail {
-  transition: transform var(--dur-3) var(--ease-spring);
+  transition: translate var(--dur-3) var(--ease-spring);
 }
 .logo-anim .logo__rail--l { animation: rail-in-l var(--dur-4) var(--ease-out-expo) 120ms both; }
 .logo-anim .logo__rail--r { animation: rail-in-r var(--dur-4) var(--ease-out-expo) 120ms both; }
@@ -1260,8 +1266,8 @@ h2 { letter-spacing: -0.025em; }
 .logo-anim .logo__ring { opacity: 0; animation: ring-out 1.4s var(--ease-out-quart) 760ms both; }
 /* Hover: the aperture focuses. Animation fill would override a transition on the same property,
    so the entrance releases the rails (`animation: none`) only once hovered, after it has played. */
-.group:hover .logo-anim .logo__rail--l { animation: none; transform: translateX(1.6px); }
-.group:hover .logo-anim .logo__rail--r { animation: none; transform: translateX(-1.6px); }
+.group:hover .logo-anim .logo__rail--l { translate: 1.6px 0; }
+.group:hover .logo-anim .logo__rail--r { translate: -1.6px 0; }
 .group:hover .logo-anim .logo__ring { animation: ring-out-hover 1.1s var(--ease-out-quart) both; }
 /* A distinct name so hovering restarts it; reusing `ring-out` would resume a finished animation. */
 @keyframes ring-out-hover {
@@ -1328,7 +1334,7 @@ h2 { letter-spacing: -0.025em; }
   from { opacity: 0; transform: translateY(14px); filter: blur(6px); }
   to   { opacity: 1; transform: none; filter: none; }
 }
-.hero__in { animation: hero-in var(--dur-4) var(--ease-out-expo) both; animation-delay: var(--d, 0ms); }
+.hero__in { animation: hero-in var(--dur-4) var(--ease-out-expo) backwards; animation-delay: var(--d, 0ms); }
 
 .eyebrow__dot {
   display: inline-block;
@@ -1357,7 +1363,7 @@ h2 { letter-spacing: -0.025em; }
 }
 .split__word {
   display: inline-block;
-  animation: word-in 1s var(--ease-out-expo) both;
+  animation: word-in 1s var(--ease-out-expo) backwards;
   animation-delay: calc(var(--w, 0) * 42ms + 120ms);
 }
 @keyframes word-in {
@@ -1696,4 +1702,59 @@ details > summary::before { display: inline-block; transition: transform var(--d
   [data-reveal="pending"] .kicker::before { transform: none; }
   .scroll-progress { display: none !important; }
   .header-shell { animation: none !important; }
+}
+
+/* ---- review fixes ------------------------------------------------------------------------ */
+
+/* The primary button's own shadow outranks the global focus ring on source order, so the ring is
+   restated here, after it. Keyboard focus on the main action of every page must be visible. */
+.cta:focus-visible,
+.cta-ghost:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-ink), 0 0 0 4px var(--color-brand);
+  /* Instant: a focus indicator that fades in over half a second is missing for half a second. */
+  transition-property: transform, border-color, background, color;
+}
+
+/* Hover fills with brand, so the label takes ink: white on #836ef9 is ~3.8:1 and fails AA at this
+   size; ink on it clears 5:1, and in light mode ink is the near-white that sits on #6d28d9. */
+.cta:hover { color: var(--color-ink); }
+
+/* A disabled button does not answer the pointer. */
+.cta:disabled,
+.cta-ghost:disabled {
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+.cta:disabled:hover {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-ink);
+}
+.cta-ghost:disabled:hover {
+  border-color: var(--color-line-bright);
+  background: color-mix(in oklab, var(--color-panel) 54%, transparent);
+  color: var(--color-muted);
+}
+.cta:disabled::after { display: none; }
+
+/* The mobile sheet is portalled to <body> (nav.tsx) so the header's backdrop-filter cannot become
+   its containing block, and it restates `fixed` here because `.field { position: relative }` is
+   unlayered and would otherwise beat Tailwind's `fixed` utility. */
+.mobile-sheet {
+  position: fixed;
+  background: color-mix(in oklab, var(--color-ink) 95%, transparent);
+  backdrop-filter: blur(20px) saturate(140%);
+}
+
+/* Gradient-clipped text is invisible wherever backgrounds are not painted (print, forced colours).
+   A measurement must never disappear, so it falls back to solid ink. */
+@media print, (forced-colors: active) {
+  .finding__figure,
+  .text-shimmer {
+    background: none !important;
+    color: var(--color-brand) !important;
+    -webkit-text-fill-color: currentColor;
+    filter: none !important;
+  }
 }

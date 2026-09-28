@@ -469,7 +469,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
 
       {/* ---------------------------------------------------------------- the finding that names the customer */}
       <Reveal as="section" className="band">
-        <div className="finding p-6 sm:p-9">
+        <div className="finding">
           <span className="kicker">who this is for</span>
           <div className="mt-6 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
             <div>

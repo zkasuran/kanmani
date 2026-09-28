@@ -22,6 +22,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 type Item = { href: string; label: string; hint: string };
 type Group = { label: string; href: string; items: Item[] };
@@ -276,10 +277,13 @@ export function Nav() {
         </span>
       </button>
 
-      {open ? (
+      {/* Portalled to <body>: inside the header, its backdrop-filter would become the containing block
+          of this `fixed` sheet and pin it inside the header shell. `open` is client-only state, so
+          `document` always exists when this renders. */}
+      {open ? createPortal(
         <div
           id="mobile-nav"
-          className="sheet-in field field-live fixed inset-x-0 top-[var(--header-h,4.5rem)] z-30 max-h-[80vh] overflow-y-auto border-b border-[var(--color-line)] bg-[var(--color-ink)]/95 backdrop-blur-md md:hidden"
+          className="mobile-sheet sheet-in field field-live fixed inset-x-0 top-[var(--header-h,4.5rem)] z-30 max-h-[80vh] overflow-y-auto border-b border-[var(--color-line)] md:hidden"
         >
           <nav className="mx-auto flex max-w-[1180px] flex-col gap-4 px-5 py-4">
             {GROUPS.map((g, gi) => (
@@ -306,7 +310,8 @@ export function Nav() {
               </div>
             ))}
           </nav>
-        </div>
+        </div>,
+        document.body,
       ) : null}
     </>
   );
