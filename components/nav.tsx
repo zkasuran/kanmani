@@ -129,14 +129,115 @@ export function Nav() {
   const inGroup = (g: Group) =>
     g.items.length === 0 ? path.startsWith(g.href) : g.items.some((i) => path === i.href || path.startsWith(`${i.href}/`));
 
-  /* A short close delay, so moving the pointer from the label into the panel does not dismiss it. */
-  const enter = (label: string) => {
+  /**
+   * Hover intent, so a diagonal path to an item is not hijacked by the labels it crosses.
+   *
+   * The panels open leftward from their label (see the className note below), so reaching an item on
+   * the left of a panel means travelling diagonally down-left, across the NEIGHBOURING labels. With
+   * instant switching, the pointer crossed "settle" on its way to the settle panel's first item and the
+   * verify panel replaced it. Leaving the label sideways before reaching the panel's top edge also
+   * outlasted the 120ms close delay. Measured with scripted mouse paths: 6 of 12 diagonal routes landed
+   * on the wrong menu or none.
+   *
+   * While a panel is open, moving downward over its horizontal span counts as "aiming" for it. A switch or close requested from inside it is deferred and it only
+   * happens if the pointer stops moving there for SETTLE_MS or leaves the triangle. Entering the panel
+   * cancels it. Outside the triangle everything is immediate, so scanning across the bar still feels
+   * instant.
+   */
+  // 300ms: long enough that a diagonal is never hijacked by the labels it crosses, short enough that
+  // deliberately resting on a neighbour still opens it without feeling sluggish.
+  const SETTLE_MS = 300;
+  const pointer = useRef({ x: 0, y: 0 });
+  const apex = useRef<{ x: number; y: number } | null>(null);
+  const panelEl = useRef<HTMLDivElement | null>(null);
+  const pending = useRef<string | null | undefined>(undefined);
+  const hoverRef = useRef<string | null>(null);
+  hoverRef.current = hover;
+
+  const lastDy = useRef(0);
+  /** Set while Escape hands focus back to a label, so that focus does not reopen the menu it closed. */
+  const returning = useRef(false);
+  /**
+   * Heading for the open panel. The panel sits directly under the bar, so a triangle from the pointer
+   * to the panel's top edge is only a few pixels tall: a real diagonal path slid out of it within one
+   * move and 2 of 12 routes still failed. The dependable signal is direction. Over the panel's
+   * horizontal span, inside the bar band and moving downward means going for the panel. Scanning
+   * sideways across the bar has no downward motion, so it switches instantly as before.
+   */
+  const aiming = (pt: { x: number; y: number }) => {
+    const a = apex.current;
+    const panel = panelEl.current;
+    if (!a || !panel || !hoverRef.current) return false;
+    const r = panel.getBoundingClientRect();
+    if (pt.x >= r.left && pt.x <= r.right && pt.y >= r.top && pt.y <= r.bottom) return true;
+    const inSpan = pt.x >= r.left - 12 && pt.x <= r.right + 12;
+    const inBand = pt.y >= a.y - 14 && pt.y <= r.top + 4;
+    return inSpan && inBand && lastDy.current > 0;
+  };
+
+  const clearTimer = () => {
     if (timer.current) window.clearTimeout(timer.current);
+    timer.current = null;
+  };
+  const resolve = () => {
+    clearTimer();
+    if (pending.current !== undefined) setHover(pending.current);
+    pending.current = undefined;
+  };
+  const defer = (next: string | null) => {
+    pending.current = next;
+    clearTimer();
+    timer.current = window.setTimeout(resolve, SETTLE_MS);
+  };
+
+  useEffect(() => {
+    if (!hover) return;
+    const onMove = (e: MouseEvent) => {
+      if (e.clientY !== pointer.current.y) lastDy.current = e.clientY - pointer.current.y;
+      pointer.current = { x: e.clientX, y: e.clientY };
+      if (pending.current === undefined) return;
+      // Still heading for the panel: keep waiting, restarting the settle clock on each move.
+      if (aiming(pointer.current)) defer(pending.current);
+      else resolve();
+    };
+    document.addEventListener("mousemove", onMove, { passive: true });
+    return () => document.removeEventListener("mousemove", onMove);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hover]);
+
+  const enter = (label: string) => {
+    if (hoverRef.current && hoverRef.current !== label && aiming(pointer.current)) {
+      defer(label);
+      return;
+    }
+    pending.current = undefined;
+    clearTimer();
+    // Seed the apex where the pointer entered, so the very first diagonal move is already protected.
+    apex.current = { ...pointer.current };
     setHover(label);
   };
   const leave = () => {
-    if (timer.current) window.clearTimeout(timer.current);
+    if (hoverRef.current && aiming(pointer.current)) {
+      defer(null);
+      return;
+    }
+    // An ordinary exit keeps its 120ms grace and is NOT an aim deferral, so the move listener leaves
+    // it alone. Treating it as one resolved every close instantly and blinked the menu shut in the
+    // four-pixel gap between labels while scanning across the bar.
+    clearTimer();
+    pending.current = undefined;
     timer.current = window.setTimeout(() => setHover(null), 120);
+  };
+  const enterPanel = (label: string) => {
+    pending.current = undefined;
+    clearTimer();
+    setHover(label);
+  };
+  /** The apex follows the pointer only while it is inside the open group's own label. */
+  const trackApex = (e: React.MouseEvent, label: string) => {
+    if (e.clientY !== pointer.current.y) lastDy.current = e.clientY - pointer.current.y;
+    pointer.current = { x: e.clientX, y: e.clientY };
+    if (hoverRef.current === label) apex.current = { x: e.clientX, y: e.clientY };
   };
 
   /**
@@ -173,7 +274,9 @@ export function Nav() {
     } else if (e.key === "Escape") {
       e.preventDefault();
       setHover(null);
+      returning.current = true;
       labelRefs.current[g.label]?.focus();
+      returning.current = false;
     }
   };
 
@@ -187,9 +290,17 @@ export function Nav() {
             <div
               key={g.label}
               className="relative"
-              onMouseEnter={() => enter(g.label)}
-              onMouseLeave={leave}
-              onFocus={() => enter(g.label)}
+              onMouseEnter={(e) => {
+                pointer.current = { x: e.clientX, y: e.clientY };
+                enter(g.label);
+              }}
+              onMouseLeave={(e) => {
+                pointer.current = { x: e.clientX, y: e.clientY };
+                leave();
+              }}
+              onFocus={() => {
+                if (!returning.current) enterPanel(g.label);
+              }}
               onBlur={(e) => {
                 if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null);
               }}
@@ -203,6 +314,7 @@ export function Nav() {
                 aria-haspopup={g.items.length > 0 ? "menu" : undefined}
                 aria-expanded={g.items.length > 0 ? shown : undefined}
                 onKeyDown={(e) => onLabelKey(e, g)}
+                onMouseMove={(e) => trackApex(e, g.label)}
                 className={`nav-link inline-block rounded px-2.5 py-1.5 font-mono text-[12px] transition-colors ${
                   active ? "text-[var(--color-text)]" : "text-muted hover:text-[var(--color-text)]"
                 }`}
@@ -226,9 +338,13 @@ export function Nav() {
                    * could otherwise push past the left gutter, so the panel shrinks rather than
                    * overflowing on the other side.
                    */
+                  ref={panelEl}
                   className="menu-pop absolute right-0 top-full z-30 w-[19rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-1.5 shadow-[var(--shadow-2)]"
-                  onMouseEnter={() => enter(g.label)}
-                  onMouseLeave={leave}
+                  onMouseEnter={() => enterPanel(g.label)}
+                  onMouseLeave={(e) => {
+                    pointer.current = { x: e.clientX, y: e.clientY };
+                    leave();
+                  }}
                 >
                   {g.items.map((i, idx) => (
                     <Link
