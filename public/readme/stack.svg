@@ -1,0 +1,122 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="700" viewBox="0 0 1280 700" role="img" aria-label="The stack: nine layers in the order money flows. Eight live on Monad mainnet, one built.">
+<title>The stack: nine layers in the order money flows. Eight live on Monad mainnet, one built.</title>
+<style>
+.sans{font-family:'Space Grotesk','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+.body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.in{animation:in .9s cubic-bezier(.16,1,.3,1) backwards;animation-delay:var(--d,0s)}
+@keyframes in{from{opacity:0;transform:translateY(10px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.hl{opacity:0;animation:hl 6.3s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes hl{0%{opacity:0}3%{opacity:1}14%{opacity:0}100%{opacity:0}}
+.dot{animation:dt 2.4s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes dt{0%,100%{opacity:1}50%{opacity:.3}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .rm-hide{opacity:0!important}
+}
+</style>
+
+<defs>
+  <radialGradient id="g0" cx="0.1" cy="-0.1" r=".75"><stop offset="0" stop-color="#836ef9" stop-opacity="0.26"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></radialGradient><radialGradient id="g1" cx="0.95" cy="0.4" r=".75"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.1"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+    <path d="M48 0H0V48" fill="none" stroke="#1d2836" stroke-width="1"/>
+  </pattern>
+  <radialGradient id="gridmask-g" cx=".5" cy="0" r=".9">
+    <stop offset=".2" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+  <mask id="gridmask"><rect width="1280" height="700" fill="url(#gridmask-g)"/></mask>
+  <linearGradient id="edge" x1="0" x2="1">
+    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </linearGradient>
+  <clipPath id="frame"><rect width="1280" height="700" rx="24"/></clipPath>
+</defs>
+<rect width="1280" height="700" rx="24" fill="#05070a"/>
+<g clip-path="url(#frame)">
+  <rect width="1280" height="700" rx="24" fill="url(#g0)"/><rect width="1280" height="700" rx="24" fill="url(#g1)"/>
+  <rect width="1280" height="700" fill="url(#grid)" mask="url(#gridmask)"/>
+</g>
+<rect x=".5" y=".5" width="1279" height="699" rx="23.5" fill="none" stroke="#2b3a4d" stroke-opacity=".8"/>
+<rect x="120" y="0" width="1040" height="1" fill="url(#edge)"/>
+
+<defs><linearGradient id="lit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#22d3ee"/><stop offset=".5" stop-color="#836ef9"/><stop offset="1" stop-color="#836ef9" stop-opacity=".2"/></linearGradient></defs>
+<g class="in" style="--d:0s"><rect x="72" y="61" width="22" height="1.5" fill="#836ef9"/><text x="104" y="66" class="mono" font-size="12.5" letter-spacing="2.6" fill="#836ef9">THE STACK</text></g>
+<text x="72" y="116" class="sans in" style="--d:.1s" font-size="34" font-weight="600" letter-spacing="-1" fill="#dce5f0">Nine layers, one primitive underneath: a proven track record.</text>
+<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="#7f8ea3">In the order money flows through them. <tspan fill="#836ef9">live</tspan> is running on Monad mainnet now. <tspan fill="#dce5f0">built</tspan> is written and tested, not yet deployed.</text>
+
+<g class="in" style="--d:0.25s">
+  <rect x="72" y="170" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="72" y="170" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:0.00s"/>
+  <text x="94" y="204" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">01</tspan>  RETINA</text>
+  <text x="94" y="240" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Index the evidence</text>
+  <text x="94" y="270" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="94" dy="0">The evidence pointer, indexed so there is</tspan><tspan x="94" dy="19">something to check at all.</tspan></text>
+  <rect x="360" y="188" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="374" cy="199" r="3" fill="#836ef9" class="dot"/><text x="408" y="203" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.31s">
+  <rect x="458" y="170" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="458" y="170" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:0.70s"/>
+  <text x="480" y="204" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">02</tspan>  FOVEA</text>
+  <text x="480" y="240" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Verify the claim</text>
+  <text x="480" y="270" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="480" dy="0">Five rungs, four outcomes. Read the named</tspan><tspan x="480" dy="19">chain, at a block.</tspan></text>
+  <rect x="746" y="188" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="760" cy="199" r="3" fill="#836ef9" class="dot"/><text x="794" y="203" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.37s">
+  <rect x="844" y="170" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="844" y="170" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:1.40s"/>
+  <text x="866" y="204" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">03</tspan>  AQUEOUS</text>
+  <text x="866" y="240" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Escrow the job</text>
+  <text x="866" y="270" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="866" dy="0">USDC locked first. The settlement itself</tspan><tspan x="866" dy="19">emits the receipt.</tspan></text>
+  <rect x="1132" y="188" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="1146" cy="199" r="3" fill="#836ef9" class="dot"/><text x="1180" y="203" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.43s">
+  <rect x="72" y="340" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="72" y="340" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:2.10s"/>
+  <text x="94" y="374" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">04</tspan>  IRIS · X402</text>
+  <text x="94" y="410" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Pay without a wallet</text>
+  <text x="94" y="440" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="94" dy="0">One passkey is the account. The buyer needs</tspan><tspan x="94" dy="19">no MON.</tspan></text>
+  <rect x="360" y="358" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="374" cy="369" r="3" fill="#836ef9" class="dot"/><text x="408" y="373" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.49s">
+  <rect x="458" y="340" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="458" y="340" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:2.80s"/>
+  <text x="480" y="374" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">05</tspan>  OPTIC</text>
+  <text x="480" y="410" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Answer on chain</text>
+  <text x="480" y="440" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="480" dy="0">The first row in Monad's ERC-8004 Validation</tspan><tspan x="480" dy="19">Registry.</tspan></text>
+  <rect x="746" y="358" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="760" cy="369" r="3" fill="#836ef9" class="dot"/><text x="794" y="373" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.55s">
+  <rect x="844" y="340" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="844" y="340" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:3.50s"/>
+  <text x="866" y="374" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">06</tspan>  SCLERA</text>
+  <text x="866" y="410" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Bond the promise</text>
+  <text x="866" y="440" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="866" dy="0">USDC staked against a claim-truth floor. A</tspan><tspan x="866" dy="19">signed verdict slashes.</tspan></text>
+  <rect x="1132" y="358" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="1146" cy="369" r="3" fill="#836ef9" class="dot"/><text x="1180" y="373" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.61s">
+  <rect x="72" y="510" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="72" y="510" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:4.20s"/>
+  <text x="94" y="544" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">07</tspan>  CHIASM</text>
+  <text x="94" y="580" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Read every chain at once</text>
+  <text x="94" y="610" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="94" dy="0">BSC beside Monad, merged on the document's</tspan><tspan x="94" dy="19">content hash.</tspan></text>
+  <rect x="360" y="528" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="374" cy="539" r="3" fill="#836ef9" class="dot"/><text x="408" y="543" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+<g class="in" style="--d:0.67s">
+  <rect x="458" y="510" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="458" y="510" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:4.90s"/>
+  <text x="480" y="544" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">08</tspan>  INTENTS</text>
+  <text x="480" y="580" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Fund from any chain</text>
+  <text x="480" y="610" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="480" dy="0">Written and tested. No cross-chain fund</tspan><tspan x="480" dy="19">executed yet.</tspan></text>
+  <rect x="738" y="528" width="66" height="22" rx="11" fill="#111720" stroke="#2b3a4d" stroke-opacity="1"/><text x="771.0" y="543" text-anchor="middle" class="mono" font-size="10.5" letter-spacing="1.2" fill="#7f8ea3">BUILT</text>
+</g>
+<g class="in" style="--d:0.73s">
+  <rect x="844" y="510" width="364" height="148" rx="14" fill="#0b0f16" fill-opacity=".92" stroke="#2b3a4d"/>
+  <rect x="844" y="510" width="364" height="148" rx="14" fill="none" stroke="url(#lit)" stroke-width="1.5" class="hl rm-hide" style="animation-delay:5.60s"/>
+  <text x="866" y="544" class="mono" font-size="11" letter-spacing="1.6" fill="#5d6d85"><tspan fill="#836ef9">09</tspan>  SELF-HEAL</text>
+  <text x="866" y="580" class="sans" font-size="21" font-weight="600" letter-spacing="-.4" fill="#dce5f0">Heal a fixed record</text>
+  <text x="866" y="610" class="body" font-size="13.5" fill="#7f8ea3"><tspan x="866" dy="0">A repaired document re-reads itself from the</tspan><tspan x="866" dy="19">event stream.</tspan></text>
+  <rect x="1132" y="528" width="58" height="22" rx="11" fill="#1b1638" stroke="#836ef9" stroke-opacity=".6"/><circle cx="1146" cy="539" r="3" fill="#836ef9" class="dot"/><text x="1180" y="543" text-anchor="end" class="mono" font-size="10.5" letter-spacing="1.2" fill="#836ef9">LIVE</text>
+</g>
+
+</svg>
