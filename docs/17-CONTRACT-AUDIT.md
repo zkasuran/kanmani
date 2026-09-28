@@ -989,8 +989,14 @@ The deployed Aqueous and Sclera are immutable and verified against their on-chai
 design findings (the metered ceiling on a silent buyer, no buyer dispute after delivery, a bond postable
 once per agent, the attestor and beneficiary being one principal) cannot be changed in source without a
 redeploy that spends real gas and orphans existing state. They stay documented as accepted for this
-deployment. A redeploy is the operator's call. The CRE workflow still does not sign or submit on
-chain, by design, because that needs a deployed forwarder and real funds. The indexer's cross-chain Sybil
-counters are inherent to permissionless data and the `memberCount` drift after a re-point plus the
-"nowhere" exhaustiveness split are counting changes that need a full reindex to verify, so they are
-recorded in the gaps doc rather than changed blind against the live index.
+deployment. A redeploy is the operator's call. The CRE workflow now carries the sign-and-submit path,
+gated behind a `broadcast` flag that the judged targets leave off, so the simulation reads and decides
+without ever touching it. The signing is cross-checked to match the app's proven signer, so it is
+correct by construction. The submit itself, the CRE report plus the forwarder write, is exercised only
+by a real `cre workflow simulate --broadcast`, which needs the operator's CRE auth and the attestor key
+as a secret, spends gas and can slash a live bond. That broadcast stays a hard stop rather than a design
+limit: the forwarder and Sclera are both deployed and the wallet holds gas, so none of those is the
+blocker. The indexer's cross-chain Sybil counters are inherent to permissionless data and the
+`memberCount` drift after a re-point plus the "nowhere" exhaustiveness split are counting changes that
+need a full reindex to verify, so they are recorded in the gaps doc rather than changed blind against the
+live index.

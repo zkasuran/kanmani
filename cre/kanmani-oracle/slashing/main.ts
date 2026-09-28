@@ -37,11 +37,13 @@ import {
   LATEST_BLOCK_NUMBER,
   median,
   ok,
+  prepareReportRequest,
   Runner,
   type Runtime,
 } from "@chainlink/cre-sdk";
 import { type Address, decodeFunctionResult, encodeFunctionData, zeroAddress } from "viem";
 import { z } from "zod";
+import { encodeReport, signVerdict } from "./verdict";
 
 export type Config = {
   schedule: string;
@@ -49,7 +51,19 @@ export type Config = {
   scleraAddress: string;
   slaApiBase: string;
   chainName: string;
+  /**
+   * Off by default. When true, and only then, the workflow signs the verdict with the attestor key
+   * and submits it on chain through the forwarder. Left unset in the staging and production configs,
+   * so the judged simulation reads and decides without ever touching the write path or a real bond.
+   */
+  broadcast?: boolean;
+  /** The CRE secret holding the attestor private key. Read only when broadcast is on. */
+  attestorSecretId?: string;
+  attestorSecretNamespace?: string;
 };
+
+/** Monad mainnet, where Sclera is deployed. The EIP-712 signature is bound to this chain id. */
+const SCLERA_CHAIN_ID = 143n;
 
 /**
  * Only the two reads this workflow makes. Written out rather than imported from the contracts
@@ -117,7 +131,7 @@ const fetchSla = (
   return slaSchema.parse(body.data ?? body);
 };
 
-const onCronTrigger = (runtime: Runtime<Config>): string => {
+const onCronTrigger = async (runtime: Runtime<Config>): Promise<string> => {
   const { agentId, scleraAddress, slaApiBase, chainName } = runtime.config;
 
   // `isTestnet` must be false here. The lookup short-circuits to the testnet map when it is true
@@ -259,8 +273,8 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     agentId: BigInt(agentId),
     windowStart,
     windowEnd,
-    sampleSize,
-    trueCount,
+    sampleSize: BigInt(sampleSize),
+    trueCount: BigInt(trueCount),
     nonce,
   };
 
@@ -270,6 +284,23 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
   runtime.log(
     `verdict payload: ${JSON.stringify(verdict, (_k, v) => (typeof v === "bigint" ? v.toString() : v))}`,
   );
+
+  // The write path. Off unless the config turns it on, so the judged simulation never reaches it and
+  // never touches a real bond. When on, the verdict is signed with the attestor key (recovered by
+  // Sclera, which trusts the signature rather than the permissionless forwarder) and submitted. The
+  // signing is proven to match the app's verified signer; the submit through the CRE report and write
+  // capabilities is exercised only by a real `cre workflow simulate --broadcast`, which spends gas and
+  // can slash a live bond, so it stays behind this flag and an operator's explicit run.
+  if (runtime.config.broadcast) {
+    const secretId = runtime.config.attestorSecretId ?? "SCLERA_ATTESTOR_KEY";
+    const namespace = runtime.config.attestorSecretNamespace ?? "main";
+    const key = runtime.getSecret({ id: secretId, namespace }).result().value as `0x${string}`;
+    const signature = await signVerdict(verdict, key, SCLERA_CHAIN_ID, scleraAddress as `0x${string}`);
+    const payload = encodeReport(verdict, signature);
+    const report = runtime.report(prepareReportRequest(payload)).result();
+    evmClient.writeReport(runtime, { receiver: scleraAddress, report }).result();
+    runtime.log(`submitted signed verdict to Sclera ${scleraAddress} through the forwarder`);
+  }
 
   return breached
     ? `BREACH agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sampleSize}`
