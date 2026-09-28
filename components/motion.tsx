@@ -66,52 +66,35 @@ export function Reveal({
       el.setAttribute("data-reveal", "in");
       return;
     }
-    // Arm from JS only. The server rendered this element visible; we hide it now, on the client,
-    // knowing the observer below will reveal it. If this effect never runs the element simply stays
-    // visible, so the page can never be trapped blank by the reveal layer.
-    el.setAttribute("data-reveal", "pending");
-    // If it is already in view on mount (above the fold), reveal on the next frame so the transition
-    // still plays from hidden to shown rather than snapping.
+    /**
+     * Content is NEVER hidden while waiting.
+     *
+     * The earlier design armed every below-fold section as "pending" (opacity 0) until its observer
+     * fired. A reader scrolling never noticed, but a stitched full-page screenshot, which scrolls the
+     * document without moving the viewport, saw every section below the hero as blank. Now an element
+     * stays fully visible until the moment it is actually entering because of a real scroll and only
+     * then drops to the start pose for ONE frame and animates in. Anything that never sees a real
+     * scroll-caused entry is simply shown, settled, from the start.
+     */
     const io = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            // Not a scroll-caused entry: appear settled instead of fading in, so a full-page capture
-            // never records a half-revealed section.
-            if (!mayAnimateEntry()) el.setAttribute("data-reveal-static", "");
+          if (!entry.isIntersecting) continue;
+          io.disconnect();
+          if (!mayAnimateEntry()) {
+            el.setAttribute("data-reveal-static", "");
             el.setAttribute("data-reveal", "in");
-            io.disconnect();
+            return;
           }
+          el.setAttribute("data-reveal", "pending");
+          requestAnimationFrame(() => requestAnimationFrame(() => el.setAttribute("data-reveal", "in")));
+          return;
         }
       },
       { rootMargin: "0px 0px -8% 0px", threshold: 0.08 },
     );
     io.observe(el);
-    // Safety net: whatever happens with the observer, never leave an element armed-but-hidden for
-    // more than a moment. If it has not been revealed shortly after mount, reveal it.
-    // The failsafe used to reveal EVERY section at 1.2s, including ones far below the fold, so their
-    // entry animations played off-screen before anyone scrolled to them and the "where the 73 went"
-    // draw-in was effectively never seen. Now it only rescues an element that is on screen and still
-    // hidden, which is the actual failure it guards against. A last-resort timer reveals anything
-    // still pending after 10s, settled rather than animated, so nothing can stay hidden.
-    const inView = () => {
-      const r = el.getBoundingClientRect();
-      return r.top < window.innerHeight && r.bottom > 0;
-    };
-    const failsafe = window.setTimeout(() => {
-      if (el.getAttribute("data-reveal") !== "in" && inView()) el.setAttribute("data-reveal", "in");
-    }, 1200);
-    const lastResort = window.setTimeout(() => {
-      if (el.getAttribute("data-reveal") !== "in") {
-        el.setAttribute("data-reveal-static", "");
-        el.setAttribute("data-reveal", "in");
-      }
-    }, 10000);
-    return () => {
-      io.disconnect();
-      window.clearTimeout(failsafe);
-      window.clearTimeout(lastResort);
-    };
+    return () => io.disconnect();
   }, []);
 
   return (

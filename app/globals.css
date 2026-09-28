@@ -2182,3 +2182,42 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
 @media (max-width: 63.99rem) {
   .vcard.hero__visual { position: relative; right: auto; top: auto; width: 100%; opacity: 1; pointer-events: auto; margin-top: 0.5rem; }
 }
+
+/* Evidence heading: the claim on the left, the four counts as a compact ledger on the right. */
+.evidence-head { display: grid; gap: 1.5rem; }
+@media (min-width: 64rem) { .evidence-head { grid-template-columns: minmax(0, 1fr) 15rem; align-items: end; } }
+.evidence-tally { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.9rem 1.25rem; margin: 0; }
+@media (min-width: 64rem) { .evidence-tally { grid-template-columns: 1fr; gap: 0.55rem; } }
+.evidence-tally > div { display: flex; flex-direction: column-reverse; gap: 0.15rem; border-left: 2px solid var(--color-line); padding-left: 0.75rem; }
+@media (min-width: 64rem) { .evidence-tally > div { flex-direction: row-reverse; justify-content: flex-end; align-items: baseline; gap: 0.75rem; } }
+.evidence-tally dt { font-size: 11.5px; color: var(--color-muted); }
+.evidence-tally dd { margin: 0; font-size: var(--step-2, 1.6rem); line-height: 1; font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; min-width: 2.2ch; }
+
+/* Machine surfaces as a terminal listing. */
+.term { border: 1px solid var(--color-line); border-radius: var(--radius-lg); background: color-mix(in oklab, var(--color-ink) 70%, var(--color-panel)); overflow: hidden; font-family: var(--font-mono, ui-monospace); }
+.term__bar { display: flex; align-items: center; gap: 6px; padding: 0.6rem 0.9rem; border-bottom: 1px solid var(--color-line); }
+.term__bar i { width: 9px; height: 9px; border-radius: 50%; background: var(--color-line-bright, var(--color-line)); }
+.term__bar span { margin-left: 0.5rem; font-size: 11px; color: var(--color-faint); }
+.term__row { display: grid; grid-template-columns: minmax(12rem, 16rem) minmax(0, 1fr); gap: 0.25rem 1.25rem; padding: 0.55rem 0.9rem; font-size: 12.5px; color: inherit; text-decoration: none; border-top: 1px solid color-mix(in oklab, var(--color-line) 55%, transparent); transition: background var(--dur-1, 160ms) ease; }
+.term__row:first-of-type { border-top: 0; }
+a.term__row:hover, a.term__row:focus-visible { background: color-mix(in oklab, var(--color-brand) 8%, transparent); }
+a.term__row:focus-visible { outline: 2px solid var(--color-brand); outline-offset: -2px; }
+.term__route { color: var(--color-text); }
+.term__route::before { content: "$ "; color: var(--color-brand); }
+.term__hint { color: var(--color-muted); font-family: var(--font-sans, inherit); font-size: 12.5px; }
+.term__row--post .term__route { color: var(--color-brand); }
+@media (max-width: 40rem) { .term__row { grid-template-columns: 1fr; } }
+/* Wide screens have room beside the sticky heading for the strata to run in two columns, which
+   halves the stack's height. The spine then belongs to each column. */
+@media (min-width: 90rem) {
+  .strata-band { grid-template-columns: minmax(0, 0.7fr) minmax(0, 2fr); }
+  .strata { columns: 2; column-gap: 2rem; }
+  .strata__row { break-inside: avoid; }
+  .strata::before, .strata::after { display: none; }
+  .strata__row::after {
+    content: ""; position: absolute; left: calc(var(--rail-x) - 0.5px); top: 1.6rem; bottom: -0.2rem; width: 1px;
+    background: var(--color-line-bright, var(--color-line)); z-index: 0;
+  }
+}
+.finding--strip { display: grid; gap: 1.25rem; align-items: center; }
+@media (min-width: 64rem) { .finding--strip { grid-template-columns: auto minmax(0, 1fr) auto; gap: 2rem; } }
