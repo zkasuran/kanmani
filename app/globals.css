@@ -2108,3 +2108,11 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
   transition: color var(--dur-1, 160ms) ease, text-decoration-color var(--dur-1, 160ms) ease;
 }
 .hero__more a:hover, .hero__more a:focus-visible { color: var(--color-brand); text-decoration-color: currentColor; }
+
+/* An element that entered view without a real scroll (full-page capture, previews) appears settled:
+   no fade, no rise, and any draw-in it contains is skipped. */
+[data-reveal-static] { transition: none !important; }
+[data-reveal-static] .stagger > *,
+[data-reveal-static] .dist,
+[data-reveal-static] .wflow__wipe,
+[data-reveal-static] .wflow__label { animation: none !important; transition: none !important; }

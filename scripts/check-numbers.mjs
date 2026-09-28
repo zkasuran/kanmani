@@ -14,6 +14,7 @@
  *   static    no scroll at all: screenshot tools, link previews, print, reader mode
  *   scroll    a reader scrolling the full page
  *   reduced   prefers-reduced-motion
+ *   capture   viewport grown to the full page, as full-page screenshots and previews do
  *
  *   node scripts/check-numbers.mjs [url]     default https://kanmani.xyz/
  *
@@ -32,7 +33,14 @@ async function read(mode) {
       reducedMotion: mode === "reduced" ? "reduce" : "no-preference",
     });
     await p.goto(url, { waitUntil: "networkidle", timeout: 60000 });
-    if (mode === "scroll") {
+    if (mode === "capture") {
+      // What a full-page screenshot or link preview does: grow the viewport to the whole document,
+      // no scrolling. This mode found 64 rendered as 18 after the first three passed.
+      await p.waitForTimeout(1500);
+      const H = await p.evaluate(() => document.body.scrollHeight);
+      await p.setViewportSize({ width: 1440, height: H });
+      await p.waitForTimeout(400);
+    } else if (mode === "scroll") {
       await p.evaluate(async () => {
         for (let y = 0; y < document.body.scrollHeight; y += 500) {
           scrollTo(0, y);
@@ -65,7 +73,7 @@ async function read(mode) {
 
 let bad = 0;
 let total = 0;
-for (const mode of ["static", "scroll", "reduced"]) {
+for (const mode of ["static", "scroll", "reduced", "capture"]) {
   const rows = await read(mode);
   if (rows.length === 0) {
     console.log(`  ${mode.padEnd(8)} no counters found, which is itself a failure: nothing was checked`);

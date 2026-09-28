@@ -20,6 +20,28 @@ function prefersReducedMotion(): boolean {
 }
 
 /**
+ * Should entry motion play for this element, right now?
+ *
+ * Only when the element entered view because the reader SCROLLED to it, with a normal viewport. A
+ * full-page capture (link previews, screenshot tools, a judge's full-page grab) instead grows the
+ * viewport to the whole document, which makes every observed element intersect at once without any
+ * scroll and the capture fires mid-animation: 64 rendered as 18 and 8,093 as 1,647 on 2026-09-28.
+ * So entry motion is refused when the viewport is taller than a real screen or no scroll has
+ * happened since load. In those cases the element simply appears settled, which is the true state.
+ */
+let scrolledSinceLoad = false;
+if (typeof window !== "undefined") {
+  window.addEventListener("scroll", () => { scrolledSinceLoad = true; }, { passive: true, once: true });
+}
+export function mayAnimateEntry(): boolean {
+  if (typeof window === "undefined") return false;
+  if (prefersReducedMotion()) return false;
+  // No real screen is this tall. A capture tool that sized the viewport to the page is.
+  if (window.innerHeight > 1600 || window.innerHeight > window.screen.height + 200) return false;
+  return scrolledSinceLoad;
+}
+
+/**
  * Reveals its children as they enter the viewport. Sets `data-reveal="in"` once, then stops
  * observing. `delay` staggers a row of siblings. `as` picks the element so this can wrap a section
  * without adding a wrapper div where one is not wanted.
@@ -54,6 +76,9 @@ export function Reveal({
       (entries) => {
         for (const entry of entries) {
           if (entry.isIntersecting) {
+            // Not a scroll-caused entry: appear settled instead of fading in, so a full-page capture
+            // never records a half-revealed section.
+            if (!mayAnimateEntry()) el.setAttribute("data-reveal-static", "");
             el.setAttribute("data-reveal", "in");
             io.disconnect();
           }
@@ -64,12 +89,28 @@ export function Reveal({
     io.observe(el);
     // Safety net: whatever happens with the observer, never leave an element armed-but-hidden for
     // more than a moment. If it has not been revealed shortly after mount, reveal it.
+    // The failsafe used to reveal EVERY section at 1.2s, including ones far below the fold, so their
+    // entry animations played off-screen before anyone scrolled to them and the "where the 73 went"
+    // draw-in was effectively never seen. Now it only rescues an element that is on screen and still
+    // hidden, which is the actual failure it guards against. A last-resort timer reveals anything
+    // still pending after 10s, settled rather than animated, so nothing can stay hidden.
+    const inView = () => {
+      const r = el.getBoundingClientRect();
+      return r.top < window.innerHeight && r.bottom > 0;
+    };
     const failsafe = window.setTimeout(() => {
-      if (el.getAttribute("data-reveal") !== "in") el.setAttribute("data-reveal", "in");
+      if (el.getAttribute("data-reveal") !== "in" && inView()) el.setAttribute("data-reveal", "in");
     }, 1200);
+    const lastResort = window.setTimeout(() => {
+      if (el.getAttribute("data-reveal") !== "in") {
+        el.setAttribute("data-reveal-static", "");
+        el.setAttribute("data-reveal", "in");
+      }
+    }, 10000);
     return () => {
       io.disconnect();
       window.clearTimeout(failsafe);
+      window.clearTimeout(lastResort);
     };
   }, []);
 
@@ -244,6 +285,8 @@ export function CountUp({
       (entries) => {
         if (!entries.some((e) => e.isIntersecting)) return;
         io.disconnect();
+        // Stay settled unless the reader scrolled here with a real viewport.
+        if (!mayAnimateEntry()) return;
         // Offset and release in consecutive frames: the offset is painted for one frame at most,
         // and only while the element is actually on screen, which is the roll the reader sees.
         setPhase("armed");
