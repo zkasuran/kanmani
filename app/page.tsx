@@ -54,6 +54,8 @@ const SURFACES: { href: string; label: string; hint: string }[] = [
   { href: "/embed.js", label: "GET /embed.js", hint: "the badge, no install and no framework" },
 ];
 
+const NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten", "Eleven", "Twelve"];
+
 /**
  * The stack, in the order money flows through it. Each layer consumes the one below and feeds the
  * one above, which is why ten directions are one project rather than a feature list.
@@ -133,6 +135,9 @@ const STACK: {
     href: "/status",
   },
 ];
+
+/** Derived, so the tally cannot disagree with the rows beneath it. */
+const liveCount = STACK.filter((l) => l.status === "live").length;
 
 /** The money path, said once, plainly. */
 const FLOW = [
@@ -291,39 +296,66 @@ export default async function Home() {
       <hr className="rule-soft" />
 
       {/* ---------------------------------------------------------------- the stack */}
-      <Reveal as="section" className="band">
-        <div className="max-w-2xl">
+      <Reveal as="section" className="band strata-band">
+        <div className="strata-head">
           <span className="kicker">the stack</span>
+          {/* Counted, not typed. This heading said "Eight layers" while the stack held nine, which is
+              the same drift the hardcoded population figures had. */}
           <h2 className="mt-4 fluid-3 font-semibold leading-tight tracking-tight">
-            Eight layers, one primitive underneath: a proven track record.
+            {NUMBER_WORDS[STACK.length] ?? STACK.length} layers, one primitive underneath: a proven
+            track record.
           </h2>
-          <p className="lead lead--wide mt-5 text-muted">
-            Each layer consumes the one below it and feeds the one above, which is why these compose
-            into a stack rather than scattering into features. Status is checked against the artifact:
-            <span className="chip chip--live mx-1.5 align-middle">live</span> is running on Monad
-            mainnet now, <span className="chip chip--built mx-1.5 align-middle">built</span> is written
-            and tested in the repository, not yet deployed.
+          <p className="lead mt-5 text-muted">
+            In the order money moves. Each layer consumes the one below and feeds the one above, so
+            they compose into a stack rather than scattering into features.
+          </p>
+          <p className="strata-tally mt-6">
+            <span className="strata-tally__n">{liveCount}</span>
+            <span>
+              of {STACK.length} live on Monad mainnet.{" "}
+              {STACK.length - liveCount > 0 ? (
+                <>
+                  {STACK.length - liveCount} built and tested, not yet run in production and drawn
+                  hollow so the difference is visible without reading a chip.
+                </>
+              ) : null}
+            </span>
           </p>
         </div>
-        <div className="stagger mt-8 auto-grid">
-          {STACK.map((l) => {
-            const card = (
+
+        <ol className="strata">
+          {STACK.map((l, i) => {
+            const inner = (
               <>
-                <span className={`chip ${l.status === "live" ? "chip--live" : "chip--built"}`}>{l.status}</span>
-                <div>
-                  <div className="layer__codename">{l.codename}</div>
-                  <div className="layer__name mt-0.5">{l.name}</div>
+                <span className={`strata__node strata__node--${l.status}`} aria-hidden="true" />
+                <span className="strata__idx" aria-hidden="true">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="strata__main">
+                  <div className="strata__title">
+                    <span className="strata__name">{l.name}</span>
+                    <span className="strata__codename">{l.codename}</span>
+                  </div>
+                  <p className="strata__body">{l.body}</p>
                 </div>
-                <p className="layer__body">{l.body}</p>
+                <span className={`chip ${l.status === "live" ? "chip--live" : "chip--built"} strata__chip`}>
+                  {l.status}
+                </span>
               </>
             );
-            return l.href ? (
-              <Link key={l.codename} href={l.href} className="layer">{card}</Link>
-            ) : (
-              <div key={l.codename} className="layer">{card}</div>
+            return (
+              <li key={l.codename} className={`strata__row strata__row--${l.status}`} style={{ ["--i" as string]: i }}>
+                {l.href ? (
+                  <Link href={l.href} className="strata__link">
+                    {inner}
+                  </Link>
+                ) : (
+                  <div className="strata__link">{inner}</div>
+                )}
+              </li>
             );
           })}
-        </div>
+        </ol>
       </Reveal>
 
       <hr className="rule-soft" />
