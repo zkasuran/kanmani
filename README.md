@@ -197,7 +197,7 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 cd indexer   && pnpm codegen && pnpm start     # the index
 cd verifier  && npm test                       # the verifier, 181 of 198
 cd contracts && forge test                     # the contracts, 119 of 127
-npm run dev                                    # the site, 237 of 240
+npm run dev                                    # the site, 244 of 247
 ```
 
 544 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
