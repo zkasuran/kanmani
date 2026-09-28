@@ -263,43 +263,47 @@ export function CountUp({
   let digitIndex = 0;
   const digits = [...text].filter((c) => c >= "0" && c <= "9").length;
 
+  /**
+   * The ONLY text node in here is the true number, digit by digit, in order.
+   *
+   * An earlier cut rendered each strip as ten real <span>0</span>..<span>9</span> children. A person saw
+   * the right digits, but textContent read "80123456789,0012345678990123..." for 8,093, which is what a
+   * search engine indexes, what copy and paste produces and what any agent reading the HTML gets. The
+   * strip is now CSS generated content on an aria-hidden element, so it is drawn and never read. The
+   * glyph underneath is the real digit, transparent so the strip shows through, still selectable and
+   * copyable and it is what gives each cell its exact width so layout cannot shift while rolling.
+   */
   return (
     <span
       ref={ref}
       className={`odometer tnum ${className}`}
       data-phase={phase}
-      aria-label={text}
-      role="text"
+      data-value={text}
       style={{ ["--roll-ms" as string]: `${durationMs}ms` }}
     >
       {[...text].map((ch, i) => {
         if (ch < "0" || ch > "9") {
           return (
-            <span key={i} className="odometer__sep" aria-hidden="true">
+            <span key={i} className="odometer__sep">
               {ch}
             </span>
           );
         }
         const d = Number(ch);
         const order = digitIndex++;
-        // Later digits travel further, so the number settles left to right like a real counter.
         const travel = 3 + ((digits - order) % 4);
         return (
-          <span key={i} className="odometer__cell" aria-hidden="true">
-            {/* A hidden copy sizes the cell to the real glyph, so layout never shifts while rolling. */}
-            <span className="odometer__sizer">{ch}</span>
+          <span key={i} className="odometer__cell">
+            <span className="odometer__glyph">{ch}</span>
             <span
               className="odometer__strip"
+              aria-hidden="true"
               style={{
                 ["--d" as string]: d,
                 ["--from" as string]: (d + travel) % 10,
                 ["--i" as string]: order,
               }}
-            >
-              {"0123456789".split("").map((n) => (
-                <span key={n}>{n}</span>
-              ))}
-            </span>
+            />
           </span>
         );
       })}

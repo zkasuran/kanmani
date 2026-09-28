@@ -1773,29 +1773,33 @@ details > summary::before { display: inline-block; transition: transform var(--d
   position: relative;
   display: inline-block;
   overflow: hidden;
-  /* Clip to one line of the glyph. The sizer below gives the cell its true width and height. */
   height: 1em;
   line-height: 1;
   vertical-align: baseline;
 }
-.odometer__sizer {
-  visibility: hidden;
+/* The real digit. Transparent so the strip shows through, but present, selectable and copyable. */
+.odometer__glyph {
   display: inline-block;
   line-height: 1;
+  color: transparent;
 }
+.odometer__glyph::selection { color: transparent; }
+/* Drawn, never read. "\A " is a newline; the space ends the escape so "1" is not read as hex. */
 .odometer__strip {
   position: absolute;
   inset: 0 0 auto 0;
-  display: flex;
-  flex-direction: column;
-  line-height: 1;
   text-align: center;
+  line-height: 1;
+  pointer-events: none;
+  user-select: none;
   transform: translateY(calc(var(--d) * -1em));
   will-change: transform;
 }
-.odometer__strip > span {
+.odometer__strip::before {
+  content: "0\A 1\A 2\A 3\A 4\A 5\A 6\A 7\A 8\A 9";
+  white-space: pre;
   display: block;
-  height: 1em;
+  line-height: 1;
 }
 .odometer[data-phase="armed"] .odometer__strip {
   transform: translateY(calc(var(--from) * -1em));
@@ -1823,3 +1827,74 @@ details > summary::before { display: inline-block; transition: transform var(--d
     transform: translateY(calc(var(--d) * -1em)) !important;
   }
 }
+
+/* ==========================================================================================
+ * Where the 73 went. Complete by default. The draw-in is attached only under
+ * [data-reveal="in"], which the client sets, so SSR, no-JS, print and full-page captures always
+ * show the finished diagram. Reduced motion never plays it at all.
+ * ======================================================================================== */
+.where {
+  margin: 0;
+  padding: clamp(1rem, 0.6rem + 1.4vw, 1.75rem);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background:
+    radial-gradient(120% 90% at 0% 50%, color-mix(in oklab, var(--color-brand) 9%, transparent), transparent 60%),
+    var(--color-panel);
+}
+.where__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  font-size: 12px;
+  color: var(--color-muted);
+  letter-spacing: 0.02em;
+  margin-bottom: 0.5rem;
+}
+.where__src-n {
+  margin-left: 0.5rem;
+  font-family: var(--font-mono, ui-monospace);
+  color: var(--color-text);
+}
+.wflow { display: block; width: 100%; height: auto; overflow: visible; }
+.wflow--tall { display: none; }
+@media (max-width: 40rem) {
+  .wflow--wide { display: none; }
+  .wflow--tall { display: block; }
+  .where__dst-label { display: none; }
+}
+.wflow__source { fill: var(--color-text); opacity: 0.85; }
+.wflow__stream--elsewhere { color: var(--color-brand); }
+.wflow__stream--nowhere { color: var(--color-false); }
+.wflow__dest--elsewhere { fill: var(--color-brand); }
+.wflow__dest--nowhere { fill: var(--color-false); }
+.wflow__name { fill: var(--color-text); font-family: var(--font-mono, ui-monospace); }
+.wflow__count { font-family: var(--font-mono, ui-monospace); font-variant-numeric: tabular-nums; fill: var(--color-text); }
+.wflow__count--nowhere { fill: var(--color-false); }
+.wflow__stream {
+  transition: opacity var(--dur-2, 280ms) ease;
+}
+/* Hover one destination: the rest step back, so a single stream can be followed end to end. */
+.wflow:has(.wflow__label:hover) .wflow__stream { opacity: 0.28; }
+.wflow__label { cursor: default; }
+
+@keyframes wflow-wipe { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@keyframes wflow-label-in { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+.wflow__wipe { transform-box: fill-box; transform-origin: left center; }
+[data-reveal="in"] .wflow__wipe {
+  animation: wflow-wipe 1400ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) 120ms backwards;
+}
+[data-reveal="in"] .wflow__label {
+  animation: wflow-label-in 520ms var(--ease-out-expo, cubic-bezier(0.16, 1, 0.3, 1)) backwards;
+  animation-delay: calc(700ms + var(--i) * 70ms);
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal] .wflow__wipe,
+  [data-reveal] .wflow__label { animation: none !important; }
+}
+@media print {
+  .wflow__wipe, .wflow__label { animation: none !important; }
+}
+.wflow__stop--elsewhere { stop-color: var(--color-brand); }
+.wflow__stop--nowhere { stop-color: var(--color-false); }

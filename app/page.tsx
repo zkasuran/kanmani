@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Derivation, DistBar, Pct, StatTile } from "@/components/ui.tsx";
 import { CountUp, PointerField, Reveal, SplitWords } from "@/components/motion.tsx";
+import { WhereItWent } from "@/components/where-it-went.tsx";
 import { Aperture } from "@/components/aperture.tsx";
 import { clusterShape, measurement, mislabelled, population } from "@/lib/queries.ts";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
@@ -422,20 +423,13 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
                 is for. Publishing them as one number was misleading and it was misleading in the
                 direction that blames the operator.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2">
-                {mis.rows.byChain.map((c) => (
-                  <span
-                    key={c.chain}
-                    className="rounded-full border border-[var(--color-line)] px-2.5 py-1 font-mono text-[11.5px] text-muted"
-                  >
-                    {c.chain} <span className="text-[var(--color-text)]">{c.count}</span>
-                  </span>
-                ))}
-                <span className="rounded-full border border-[var(--color-line)] px-2.5 py-1 font-mono text-[11.5px] text-muted">
-                  nowhere <span className="unknown-value">{mis.rows.nowhere}</span>
-                </span>
-              </div>
             </div>
+          </div>
+        ) : null}
+
+        {mis.rows.elsewhere > 0 ? (
+          <div className="mt-5">
+            <WhereItWent byChain={mis.rows.byChain} nowhere={mis.rows.nowhere} />
           </div>
         ) : null}
 

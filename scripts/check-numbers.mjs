@@ -9,7 +9,7 @@
  * each digit strip is ACTUALLY translated to in a real browser.
  *
  * So this reads the computed transform of every odometer strip and compares the digits a human would
- * see against the aria-label, which is the true value, in the three ways a page is consumed:
+ * see and the text a machine would read, against data-value, in the three ways a page is consumed:
  *
  *   static    no scroll at all: screenshot tools, link previews, print, reader mode
  *   scroll    a reader scrolling the full page
@@ -45,7 +45,9 @@ async function read(mode) {
     }
     return await p.evaluate(() =>
       [...document.querySelectorAll(".odometer")].map((o) => ({
-        truth: o.getAttribute("aria-label"),
+        truth: o.getAttribute("data-value"),
+        // What a search engine, copy and paste or an agent reading the HTML gets.
+        read: (o.textContent || "").trim(),
         seen: [...o.children]
           .map((c) => {
             if (c.classList.contains("odometer__sep")) return c.textContent;
@@ -73,9 +75,12 @@ for (const mode of ["static", "scroll", "reduced"]) {
   }
   for (const r of rows) {
     total++;
-    const ok = r.truth === r.seen;
+    // Two ways to be wrong, both caught: the digits a person sees and the text a machine reads. An
+    // earlier cut got the first right and read 8,093 as "80123456789,0012345678990..." in the second.
+    const ok = r.truth === r.seen && r.truth === r.read;
     if (!ok) bad++;
-    console.log(`  ${ok ? "OK   " : "WRONG"} ${mode.padEnd(8)} true ${String(r.truth).padEnd(8)} seen ${r.seen}`);
+    const why = r.truth !== r.seen ? ` seen ${r.seen}` : r.truth !== r.read ? ` read "${r.read.slice(0, 24)}"` : "";
+    console.log(`  ${ok ? "OK   " : "WRONG"} ${mode.padEnd(8)} true ${String(r.truth).padEnd(8)}${ok ? " seen and read correctly" : why}`);
   }
 }
 console.log(`\n  ${total - bad} of ${total} readings correct${bad ? `, ${bad} WRONG` : ""}`);
