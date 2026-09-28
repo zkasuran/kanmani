@@ -2097,3 +2097,14 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
   .strata::after { animation: none !important; transform: scaleY(1); opacity: 1; }
   .strata__node::after { display: none; }
 }
+
+/* The rest of the journey under the two hero actions: present, but not competing with them. */
+.hero__more { font-size: 13px; color: var(--color-faint); font-family: var(--font-mono, ui-monospace); }
+.hero__more a {
+  color: var(--color-muted);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, var(--color-muted) 40%, transparent);
+  text-underline-offset: 3px;
+  transition: color var(--dur-1, 160ms) ease, text-decoration-color var(--dur-1, 160ms) ease;
+}
+.hero__more a:hover, .hero__more a:focus-visible { color: var(--color-brand); text-decoration-color: currentColor; }

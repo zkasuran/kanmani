@@ -41,8 +41,8 @@ type Geometry = {
 };
 
 const WIDE: Geometry = {
-  width: 1000, height: 430, srcX: 40, srcW: 14, dstX: 700, dstW: 10,
-  top: 30, bottom: 400, gap: 14, labelSize: 15, countSize: 15,
+  width: 1000, height: 430, srcX: 40, srcW: 14, dstX: 660, dstW: 10,
+  top: 30, bottom: 400, gap: 14, labelSize: 19, countSize: 19,
 };
 const TALL: Geometry = {
   width: 420, height: 560, srcX: 10, srcW: 12, dstX: 250, dstW: 10,
@@ -94,7 +94,7 @@ function Flow({ dests, total, g, variant }: { dests: Dest[]; total: number; g: G
 
   return (
     <svg
-      className={`flow wflow--${variant}`}
+      className={`wflow wflow--${variant}`}
       viewBox={`0 0 ${g.width} ${g.height}`}
       role="img"
       aria-labelledby={`flow-title-${variant} flow-desc-${variant}`}

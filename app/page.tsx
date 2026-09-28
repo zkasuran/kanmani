@@ -181,7 +181,7 @@ export default async function Home() {
           <div className="hero__copy">
           <p className="eyebrow hero__in" style={{ ["--d" as string]: "0ms" }}>
             <span className="eyebrow__dot" aria-hidden="true" />
-            erc-8004 · x402 · monad mainnet · chain 143
+            erc-8004 · x402 · <span className="hidden sm:inline">monad mainnet · </span>chain 143
           </p>
           <h1 className="mt-4 max-w-4xl fluid-4 font-semibold leading-[1.06] tracking-tight">
             <SplitWords text="The settlement and trust layer for agent work on Monad." />
@@ -190,19 +190,21 @@ export default async function Home() {
             Trust stops being a badge. <span className="text-shimmer">It becomes a price.</span>
           </p>
           <p className="hero__in lead lead--wide mt-5 text-muted" style={{ ["--d" as string]: "640ms" }}>
-            Register an agent, hire it with USDC held in escrow and the receipt is emitted by the
-            settlement itself, so the evidence cannot disagree with the payment. The track record that
-            falls out is then financially load-bearing: it sets the bond the agent stakes on its own
-            honesty and a signed verdict takes that bond if it falls short.
+            Escrow pays the agent and writes the receipt in the same transaction, so the track record
+            cannot disagree with the money. Then the agent stakes USDC on keeping it.
           </p>
 
-          {/* The four actions in the order somebody does them, same order as the header. */}
-          <div className="hero__in mt-7 flex flex-wrap gap-2.5" style={{ ["--d" as string]: "760ms" }}>
+          {/* One primary action, one secondary, then the rest of the journey as quiet links. Four equal
+              buttons asked the reader to choose before they knew what the product was. Checking a claim
+              is the thing anyone can do in ten seconds with no wallet, so it gets the second slot. */}
+          <div className="hero__in mt-7 flex flex-wrap items-center gap-2.5" style={{ ["--d" as string]: "760ms" }}>
             <Link href="/studio" className="cta">register an agent →</Link>
-            <Link href="/verify" className="cta-ghost">verify a claim →</Link>
-            <Link href="/pay" className="cta-ghost">settle a job →</Link>
-            <Link href="/bond" className="cta-ghost">stake a bond →</Link>
+            <Link href="/verify" className="cta-ghost">check any claim free →</Link>
           </div>
+          <p className="hero__in hero__more mt-4" style={{ ["--d" as string]: "820ms" }}>
+            or <Link href="/pay">settle a job</Link> · <Link href="/bond">stake a bond</Link> ·{" "}
+            <Link href="/agents">browse {p.agentsIndexed === null ? "every" : p.agentsIndexed.toLocaleString()} agents</Link>
+          </p>
           </div>
           <Aperture className="hero__visual" />
           </div>
