@@ -86,6 +86,115 @@ export function Reveal({
 }
 
 /**
+ * One pointer listener for the whole document that lets any card answer the cursor.
+ *
+ * Instead of a hook per card, this finds the nearest `.spot`-style surface under the pointer and
+ * writes the pointer position into it as `--spot-x` / `--spot-y`. CSS draws a brand-tinted rim that
+ * follows the cursor from those two variables. One passive listener, one rAF per frame at most, and
+ * nothing at all on touch screens or under reduced motion, where a hover light means nothing.
+ */
+const SPOT_SELECTOR = ".spot, .layer, .glow-lift, .rail__step, .flow__step, .finding";
+
+export function Spotlight() {
+  useEffect(() => {
+    if (prefersReducedMotion()) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let frame = 0;
+    let last: PointerEvent | null = null;
+    const apply = () => {
+      frame = 0;
+      const e = last;
+      if (!e || !(e.target instanceof Element)) return;
+      const el = e.target.closest<HTMLElement>(SPOT_SELECTOR);
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--spot-x", `${e.clientX - r.left}px`);
+      el.style.setProperty("--spot-y", `${e.clientY - r.top}px`);
+    };
+    const onMove = (e: PointerEvent) => {
+      last = e;
+      if (!frame) frame = requestAnimationFrame(apply);
+    };
+    document.addEventListener("pointermove", onMove, { passive: true });
+    return () => {
+      document.removeEventListener("pointermove", onMove);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+  return null;
+}
+
+/**
+ * Makes its parent a pointer-reactive field. Writes `--px` / `--py` (0..1, eased toward the
+ * pointer) onto the parent element, which CSS uses for a slow parallax of the hero's aurora and
+ * aperture. Renders an empty, hidden span so it can sit inside a server-rendered section without
+ * turning that section into a client component. The easing runs only while the values are
+ * still settling, then the loop stops.
+ */
+export function PointerField() {
+  const ref = useRef<HTMLSpanElement | null>(null);
+  useEffect(() => {
+    const host = ref.current?.parentElement;
+    if (!host) return;
+    if (prefersReducedMotion()) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+    let tx = 0.5, ty = 0.5, x = 0.5, y = 0.5, frame = 0;
+    const step = () => {
+      x += (tx - x) * 0.08;
+      y += (ty - y) * 0.08;
+      host.style.setProperty("--px", x.toFixed(4));
+      host.style.setProperty("--py", y.toFixed(4));
+      frame = Math.abs(tx - x) + Math.abs(ty - y) > 0.001 ? requestAnimationFrame(step) : 0;
+    };
+    const kick = () => {
+      if (!frame) frame = requestAnimationFrame(step);
+    };
+    const onMove = (e: PointerEvent) => {
+      const r = host.getBoundingClientRect();
+      tx = Math.min(Math.max((e.clientX - r.left) / r.width, 0), 1);
+      ty = Math.min(Math.max((e.clientY - r.top) / r.height, 0), 1);
+      kick();
+    };
+    const onLeave = () => {
+      tx = 0.5;
+      ty = 0.5;
+      kick();
+    };
+    host.addEventListener("pointermove", onMove, { passive: true });
+    host.addEventListener("pointerleave", onLeave);
+    return () => {
+      host.removeEventListener("pointermove", onMove);
+      host.removeEventListener("pointerleave", onLeave);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, []);
+  return <span ref={ref} hidden aria-hidden="true" />;
+}
+
+/**
+ * A headline that arrives word by word. Pure CSS once rendered: each word is an inline-block with
+ * its index as `--w`, and `.split` staggers a masked rise from that. The words stay separated by
+ * real spaces, so the heading reads and copies exactly as the plain string does.
+ */
+export function SplitWords({ text, className = "" }: { text: string; className?: string }) {
+  const words = text.split(" ");
+  return (
+    <span className={`split ${className}`}>
+      {words.map((w, i) => (
+        <span key={`${w}-${i}`}>
+          <span className="split__mask">
+            <span className="split__word" style={{ ["--w" as string]: i }}>
+              {w}
+            </span>
+          </span>
+          {i < words.length - 1 ? " " : null}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/**
  * Counts up to `value` once, when it scrolls into view. The formatted final value is always the
  * initial server-rendered text, so a screen reader and a reduced-motion reader see the true number
  * immediately; the tween is decoration layered on afterwards.
