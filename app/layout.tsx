@@ -1,9 +1,28 @@
 import type { Metadata } from "next";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
 import { Logo } from "@/components/logo.tsx";
+import { Spotlight } from "@/components/motion.tsx";
 import { Nav } from "@/components/nav.tsx";
 import { ThemeToggle } from "@/components/theme-toggle.tsx";
 import "./globals.css";
+
+/**
+ * Fonts are self-hosted by next/font at build time, not linked from Google at runtime.
+ *
+ * The CSP in next.config.ts is `style-src 'self'` and `font-src 'self' data:`, so a
+ * fonts.googleapis.com stylesheet is refused by the browser and every face silently falls back.
+ * Served from our own origin they pass the policy, cost no third-party request, and ship with a
+ * size-adjusted fallback so the swap does not shift layout.
+ */
+const sans = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains", display: "swap" });
+const display = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-space-grotesk",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
@@ -35,19 +54,13 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className="no-js">
+    <html lang="en" className={`no-js ${sans.variable} ${mono.variable} ${display.variable}`}>
       <head>
         {/*
           Pointed at from the head as well as served at the path, because an agent reading this
           site is likelier to parse the head than to guess a filename. The whole machine-readable
           surface is discoverable from any page.
         */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap"
-          rel="stylesheet"
-        />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="Summary for a language model" />
         <link rel="alternate" type="application/json" href="/feed.json" title="The verified population" />
         <link rel="alternate" type="application/schema+json" href="/schema.json" title="Response schemas" />
@@ -71,15 +84,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
-        <header
-          className="site-header sticky top-0 z-20"
-          style={{ ["--header-h" as string]: "3.25rem" }}
-        >
+        {/* Skip link: the first tab stop, invisible until focused. */}
+        <a href="#main" className="skip-link">skip to content</a>
+        {/* Pointer spotlight for cards. Client-only, pointer:fine only, off under reduced motion. */}
+        <Spotlight />
+        <header className="site-header sticky top-0 z-20">
           <div className="header-shell shell flex items-center gap-x-6 gap-y-2">
+            {/* Reading progress, driven by the scroll timeline in CSS. No JS, and absent where unsupported. */}
+            <span className="scroll-progress" aria-hidden="true" />
             <Link href="/" className="group flex items-center gap-2">
               {/* Brand colour on the mark, text colour on the word, so the pair reads as one lockup
                   without the logo competing with the nav for attention. */}
-              <Logo size={20} className="brand-logo shrink-0 text-[var(--color-brand)] transition-transform duration-200 group-hover:-translate-y-px" />
+              <Logo size={22} animated className="brand-logo shrink-0 text-[var(--color-brand)]" />
               <span className="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
                 kanmani
               </span>
@@ -94,7 +110,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
 
-        <main className="site-main shell py-[var(--section-gap)]">{children}</main>
+        <main id="main" className="site-main shell py-[var(--section-gap)]">{children}</main>
 
         <footer className="site-footer mt-[var(--section-gap)] border-t border-[var(--color-line)]">
           <div className="shell py-8 text-[12px] text-faint">

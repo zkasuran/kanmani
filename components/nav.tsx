@@ -202,7 +202,7 @@ export function Nav() {
                 aria-haspopup={g.items.length > 0 ? "menu" : undefined}
                 aria-expanded={g.items.length > 0 ? shown : undefined}
                 onKeyDown={(e) => onLabelKey(e, g)}
-                className={`inline-block rounded px-2.5 py-1.5 font-mono text-[12px] transition-colors ${
+                className={`nav-link inline-block rounded px-2.5 py-1.5 font-mono text-[12px] transition-colors ${
                   active ? "text-[var(--color-text)]" : "text-muted hover:text-[var(--color-text)]"
                 }`}
               >
@@ -225,7 +225,7 @@ export function Nav() {
                    * could otherwise push past the left gutter, so the panel shrinks rather than
                    * overflowing on the other side.
                    */
-                  className="absolute right-0 top-full z-30 w-[19rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-1.5 shadow-[var(--shadow-2)]"
+                  className="menu-pop absolute right-0 top-full z-30 w-[19rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-1.5 shadow-[var(--shadow-2)]"
                   onMouseEnter={() => enter(g.label)}
                   onMouseLeave={leave}
                 >
@@ -239,7 +239,8 @@ export function Nav() {
                         itemRefs.current[g.label][idx] = el;
                       }}
                       onKeyDown={(e) => onItemKey(e, g, idx)}
-                      className={`block rounded px-2.5 py-2 transition-colors hover:bg-[var(--color-panel-2)] ${
+                      style={{ ["--i" as string]: idx }}
+                      className={`menu-item block rounded px-2.5 py-2 transition-colors hover:bg-[var(--color-panel-2)] ${
                         path === i.href ? "bg-[var(--color-panel-2)]" : ""
                       }`}
                     >
@@ -278,11 +279,11 @@ export function Nav() {
       {open ? (
         <div
           id="mobile-nav"
-          className="field field-live fixed inset-x-0 top-[var(--header-h,3.25rem)] z-30 max-h-[80vh] overflow-y-auto border-b border-[var(--color-line)] bg-[var(--color-ink)]/95 backdrop-blur-md md:hidden"
+          className="sheet-in field field-live fixed inset-x-0 top-[var(--header-h,4.5rem)] z-30 max-h-[80vh] overflow-y-auto border-b border-[var(--color-line)] bg-[var(--color-ink)]/95 backdrop-blur-md md:hidden"
         >
           <nav className="mx-auto flex max-w-[1180px] flex-col gap-4 px-5 py-4">
-            {GROUPS.map((g) => (
-              <div key={g.label}>
+            {GROUPS.map((g, gi) => (
+              <div key={g.label} className="sheet-group" style={{ ["--i" as string]: gi }}>
                 <Link href={g.href} className="kicker">
                   {g.label}
                 </Link>
