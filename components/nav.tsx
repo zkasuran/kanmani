@@ -147,6 +147,8 @@ export function Nav() {
   // 300ms: long enough that a diagonal is never hijacked by the labels it crosses, short enough that
   // deliberately resting on a neighbour still opens it without feeling sluggish.
   const SETTLE_MS = 300;
+  /** A level move across the bar may be a scan, so a neighbour it rests on opens after this short beat. */
+  const SCAN_MS = 120;
   const pointer = useRef({ x: 0, y: 0 });
   const apex = useRef<{ x: number; y: number } | null>(null);
   const panelEl = useRef<HTMLDivElement | null>(null);
@@ -154,7 +156,6 @@ export function Nav() {
   const hoverRef = useRef<string | null>(null);
   hoverRef.current = hover;
 
-  const lastDy = useRef(0);
   /** Set while Escape hands focus back to a label, so that focus does not reopen the menu it closed. */
   const returning = useRef(false);
   /**
@@ -164,15 +165,24 @@ export function Nav() {
    * horizontal span, inside the bar band and moving downward means going for the panel. Scanning
    * sideways across the bar has no downward motion, so it switches instantly as before.
    */
-  const aiming = (pt: { x: number; y: number }) => {
+  const aiming = (pt: { x: number; y: number }): false | "descending" | "level" => {
     const a = apex.current;
     const panel = panelEl.current;
     if (!a || !panel || !hoverRef.current) return false;
     const r = panel.getBoundingClientRect();
-    if (pt.x >= r.left && pt.x <= r.right && pt.y >= r.top && pt.y <= r.bottom) return true;
+    if (pt.x >= r.left && pt.x <= r.right && pt.y >= r.top && pt.y <= r.bottom) return "descending";
     const inSpan = pt.x >= r.left - 12 && pt.x <= r.right + 12;
     const inBand = pt.y >= a.y - 14 && pt.y <= r.top + 4;
-    return inSpan && inBand && lastDy.current > 0;
+    if (!inSpan || !inBand) return false;
+    // Judged on the whole path since the label, not the last step. A hand heading for an item on the
+    // far side of a leftward panel travels mostly sideways first, often wobbling up a pixel or two, and
+    // only drops near the end. Requiring the last step to be downward handed the menu to each
+    // neighbour it crossed: reports and developers, whose first items sit furthest left, lost 10 of 24
+    // scripted human paths that way. Level movement may still be a sideways scan, so it only waits a
+    // short beat before switching; clearly descending movement waits the full settle time.
+    const dy = pt.y - a.y;
+    if (dy < -3) return false;
+    return dy > 2 ? "descending" : "level";
   };
 
   const clearTimer = () => {
@@ -184,20 +194,20 @@ export function Nav() {
     if (pending.current !== undefined) setHover(pending.current);
     pending.current = undefined;
   };
-  const defer = (next: string | null) => {
+  const defer = (next: string | null, how: "descending" | "level") => {
     pending.current = next;
     clearTimer();
-    timer.current = window.setTimeout(resolve, SETTLE_MS);
+    timer.current = window.setTimeout(resolve, how === "descending" ? SETTLE_MS : SCAN_MS);
   };
 
   useEffect(() => {
     if (!hover) return;
     const onMove = (e: MouseEvent) => {
-      if (e.clientY !== pointer.current.y) lastDy.current = e.clientY - pointer.current.y;
       pointer.current = { x: e.clientX, y: e.clientY };
       if (pending.current === undefined) return;
       // Still heading for the panel: keep waiting, restarting the settle clock on each move.
-      if (aiming(pointer.current)) defer(pending.current);
+      const how = aiming(pointer.current);
+      if (how) defer(pending.current, how);
       else resolve();
     };
     document.addEventListener("mousemove", onMove, { passive: true });
@@ -206,8 +216,9 @@ export function Nav() {
   }, [hover]);
 
   const enter = (label: string) => {
-    if (hoverRef.current && hoverRef.current !== label && aiming(pointer.current)) {
-      defer(label);
+    const how = hoverRef.current && hoverRef.current !== label ? aiming(pointer.current) : false;
+    if (how) {
+      defer(label, how);
       return;
     }
     pending.current = undefined;
@@ -217,8 +228,9 @@ export function Nav() {
     setHover(label);
   };
   const leave = () => {
-    if (hoverRef.current && aiming(pointer.current)) {
-      defer(null);
+    const how = hoverRef.current ? aiming(pointer.current) : false;
+    if (how) {
+      defer(null, how);
       return;
     }
     // An ordinary exit keeps its 120ms grace and is NOT an aim deferral, so the move listener leaves
@@ -235,7 +247,6 @@ export function Nav() {
   };
   /** The apex follows the pointer only while it is inside the open group's own label. */
   const trackApex = (e: React.MouseEvent, label: string) => {
-    if (e.clientY !== pointer.current.y) lastDy.current = e.clientY - pointer.current.y;
     pointer.current = { x: e.clientX, y: e.clientY };
     if (hoverRef.current === label) apex.current = { x: e.clientX, y: e.clientY };
   };
