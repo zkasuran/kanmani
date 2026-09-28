@@ -1,0 +1,118 @@
+{
+ "recordedAt": "2026-09-28T04:24:19.953343Z",
+ "provider": "GMI Cloud, OpenAI-compatible",
+ "model": "Qwen/Qwen3.8-Max",
+ "wireModel": "qwen3.8-max",
+ "corpus": {
+  "chainId": 56,
+  "what": "BSC evidence documents reached from Feedback.feedbackUri, data: URIs only",
+  "sampled": 320,
+  "atlasRead": 0,
+  "note": "The atlas was induced entirely from Monad documents. BSC holds 25,643 evidence documents against Monad's 1,287 and none had ever been parsed."
+ },
+ "converged": true,
+ "iterations": 1,
+ "toolCalls": 1,
+ "mapping": {
+  "name": "gebo-uptime-report.v1",
+  "induced": "2026-09-28",
+  "note": "GEBO uptime probe report. value/valueDecimals are a percentage (10000 @ 2 decimals = 100.00% uptime), not a settlement amount. No tx hash, payer, recipient, token, or payment network exists in the document, so the shape asserts no payment: claim is null.",
+  "kind": "noClaim",
+  "proposal": {
+   "name": "gebo-uptime-report.v1",
+   "note": "GEBO uptime probe report. value/valueDecimals are a percentage (10000 @ 2 decimals = 100.00% uptime), not a settlement amount. No tx hash, payer, recipient, token, or payment network exists in the document, so the shape asserts no payment: claim is null.",
+   "matchKeys": [
+    "agentId",
+    "agentRegistry",
+    "clientAddress",
+    "endpoint",
+    "method.measuredBy",
+    "method.probes",
+    "method.windowDays",
+    "tag1",
+    "value",
+    "valueDecimals",
+    "reasoning"
+   ],
+   "claim": null,
+   "predicted": {
+    "network": null,
+    "txHash": null
+   }
+  },
+  "inducedBy": "Qwen/Qwen3.8-Max"
+ },
+ "transcript": [
+  {
+   "at": 0,
+   "kind": "propose",
+   "by": "Qwen/Qwen3.8-Max",
+   "proposal": {
+    "name": "gebo-uptime-report.v1",
+    "note": "GEBO uptime probe report. value/valueDecimals are a percentage (10000 @ 2 decimals = 100.00% uptime), not a settlement amount. No tx hash, payer, recipient, token, or payment network exists in the document, so the shape asserts no payment: claim is null.",
+    "matchKeys": [
+     "agentId",
+     "agentRegistry",
+     "clientAddress",
+     "endpoint",
+     "method.measuredBy",
+     "method.probes",
+     "method.windowDays",
+     "tag1",
+     "value",
+     "valueDecimals",
+     "reasoning"
+    ],
+    "claim": null,
+    "predicted": {
+     "network": null,
+     "txHash": null
+    }
+   }
+  },
+  {
+   "at": 0,
+   "kind": "tool",
+   "name": "try_mapping",
+   "outcome": {
+    "kind": "noClaim",
+    "mapping": "gebo-uptime-report.v1",
+    "note": "GEBO uptime probe report. value/valueDecimals are a percentage (10000 @ 2 decimals = 100.00% uptime), not a settlement amount. No tx hash, payer, recipient, token, or payment network exists in the document, so the shape asserts no payment: claim is null."
+   }
+  },
+  {
+   "at": 0,
+   "kind": "decision",
+   "verdict": "accept",
+   "reason": "parser extracted what the plan predicted (noClaim)"
+  }
+ ],
+ "verifiedByHand": {
+  "claim": "value/valueDecimals is a percentage, not a settlement amount",
+  "evidence": "Across the sampled shape every document carries value 10000 with valueDecimals 2 and tag1 'uptime', which reads as 100.00% uptime. A key scan for tx, hash, pay, token, amount, chain and settle returns nothing.",
+  "conclusion": "noClaim is correct. Reading value as an amount would have manufactured payment claims out of uptime reports, which is a false positive rather than a missed one."
+ },
+ "documentSample": {
+  "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+  "agentId": 46192,
+  "clientAddress": "eip155:56:0xC61a3adA490a6fB352A6ff81DD5a0A02b42A31d6",
+  "createdAt": "2026-08-24T23:59:12.799Z",
+  "value": "10000",
+  "valueDecimals": 2,
+  "tag1": "uptime",
+  "tag2": "6d",
+  "endpoint": "https://aliasai.io/drawio/.well-known/agent-card.json",
+  "reasoning": "Measured by GEBO from 88 scheduled probe(s) over 6 day(s): 100.00%. A probe counts as successful only when the endpoint completes an A2A agent-card parse or an MCP initialize handshake; an HTTP 200 alone is not counted.",
+  "method": {
+   "measuredBy": "GEBO (gebo-bsc.vercel.app)",
+   "probes": 88,
+   "windowDays": 6,
+   "vantage": "single region",
+   "knownDefects": [
+    "Single vantage point: an agent that geo-blocks or ASN-blocks the prober appears unreachable.",
+    "Cannot distinguish 'the agent is down' from 'unreachable from here'.",
+    "Latency includes network path and cold starts, so a slow figure is not necessarily a slow agent."
+   ]
+  }
+ }
+}

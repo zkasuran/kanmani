@@ -27,7 +27,19 @@ import type { ChatClient, ChatRequest, ChatResponse, ChatMessage } from "./model
 
 export const DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
 export const DEFAULT_MODEL = "qwen3-max";
-export const API_KEY_ENV = "DASHSCOPE_API_KEY";
+
+/**
+ * Keys are read in order and the first present one wins.
+ *
+ * DashScope is Alibaba's own endpoint and was never reachable here. GMI Cloud serves the same model
+ * over an OpenAI-compatible API: verified 2026-09-28, `/v1/models` lists `Qwen/Qwen3.8-Max` and a
+ * completion reports `model: qwen3.8-max`. Two names for one route to the same weights, so the client
+ * accepts either rather than pretending there is only one door.
+ *
+ * `QWEN_BASE_URL` and `QWEN_MODEL` still override, which is how GMI is selected without a code change.
+ */
+export const API_KEY_ENVS = ["DASHSCOPE_API_KEY", "GMI_API_KEY"] as const;
+export const API_KEY_ENV = API_KEY_ENVS[0];
 
 export type QwenConfig = {
   apiKey: string;
@@ -42,11 +54,12 @@ export type QwenConfig = {
  * absent, rather than sending an unauthenticated request that fails opaquely.
  */
 export function qwenFromEnv(env: NodeJS.ProcessEnv = process.env): QwenChatClient {
-  const apiKey = env[API_KEY_ENV];
+  const named = API_KEY_ENVS.find((k) => env[k]);
+  const apiKey = named ? env[named] : undefined;
   if (!apiKey) {
     throw new Error(
-      `${API_KEY_ENV} is not set. The atlas loop needs a Qwen (Alibaba Cloud Model Studio) key. ` +
-        `Set ${API_KEY_ENV}, optionally QWEN_BASE_URL and QWEN_MODEL.`,
+      `No Qwen key found. The atlas loop needs one of ${API_KEY_ENVS.join(" or ")}. ` +
+        `Set one, optionally QWEN_BASE_URL and QWEN_MODEL to pick a provider.`,
     );
   }
   return new QwenChatClient({
@@ -80,7 +93,23 @@ export class QwenChatClient implements ChatClient {
         model: req.model,
         messages: req.messages,
         tools: req.tools,
-        tool_choice: req.tool_choice,
+        /**
+         * A thinking model refuses a forced tool choice.
+         *
+         * Qwen3.8-Max rejects `tool_choice: "required"` or an object form with
+         * `InternalError.Algo.InvalidParameter: The tool_choice parameter does not support being set
+         * to required or object in thinking mode`. Found by running the induction loop against it for
+         * the first time.
+         *
+         * Downgrading to "auto" is the honest fix rather than turning thinking off, because the
+         * reasoning is what makes the model good at reading an unfamiliar document shape. The caller
+         * already handles a turn that returns no tool call, so "auto" costs a retry at worst and the
+         * loop still refuses to accept a mapping it has not verified through the parser.
+         */
+        tool_choice:
+          req.tool_choice === "required" || typeof req.tool_choice === "object"
+            ? "auto"
+            : req.tool_choice,
         temperature: req.temperature ?? 0,
         stream: false, // tools and streaming cannot be combined on this API
       }),

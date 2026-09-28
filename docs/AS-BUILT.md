@@ -20,8 +20,8 @@ cd contracts && forge test            # 127 tests, 119 pass, 8 fork tests skippe
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**524 tests pass across the three suites.** That is the number quoted on the site. Counted rather than
-carried forward: 233 of 236 in the site suite, 172 of 189 in the verifier, 119 of 127 in contracts. The
+**537 tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: 237 of 240 in the site suite, 181 of 198 in the verifier, 119 of 127 in contracts. The
 differences are deliberate skips, mostly fork tests that need an archive node.
 
 ---

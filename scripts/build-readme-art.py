@@ -236,7 +236,7 @@ APERTURE_CSS = f"""
 
 def hero() -> str:
     w, h = 1280, 580
-    chips = [("10,258", "agents measured"), ("1 job", "settled in real USDC"), ("524", "tests passing")]
+    chips = [("10,258", "agents measured"), ("1 job", "settled in real USDC"), ("537", "tests passing")]
     chip_svg = []
     cx = 72
     for i, (v, k) in enumerate(chips):
