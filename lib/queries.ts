@@ -634,7 +634,9 @@ function claimSource(f: ClaimFilter, params: unknown[]): string {
   if (f.rung) where.push(`v.rung = ${p(f.rung)}`);
   if (f.network) where.push(`v.declared_network = ${p(f.network)}`);
   if (f.mapping) where.push(`v.mapping = ${p(f.mapping)}`);
-  if (f.agentId) where.push(`f.agent_id = ${p(f.agentId)}`);
+  // Accepts either the internal key or the public on-chain agent id, so a link can carry the number
+  // a reader actually sees on the page rather than an indexer implementation detail.
+  if (f.agentId) { const x = p(f.agentId); where.push(`(f.agent_id = ${x} OR a."agentId"::text = ${x})`); }
 
   return `
 FROM "Feedback" f

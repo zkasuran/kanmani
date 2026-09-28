@@ -21,6 +21,9 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
+/** Unchecked rows shown before folding. Enough to show they exist, not enough to bury the verdicts. */
+const UNCHECKED_SHOWN = 5;
+
 export default async function AgentPage({ params }: Props) {
   const { id } = await params;
   const a = await agent(decodeURIComponent(id));
@@ -37,23 +40,32 @@ export default async function AgentPage({ params }: Props) {
   const checked = feedback.rows.filter((c) => c.outcome !== null);
   const resolve = checked.filter((c) => c.outcome === "true").length;
   const doNot = checked.filter((c) => c.outcome === "false").length;
+  // A false verdict splits in two once other chains are readable and the two deserve different
+  // words. This page kept saying "cite a transaction that is not on the chain" after the landing was
+  // corrected, which is the accusation, on the page an operator actually lands on.
+  const elsewhere = checked.filter((c) => c.outcome === "false" && c.foundChain).length;
+  const nowhere = doNot - elsewhere;
+  const unchecked = feedback.rows.filter((c) => c.outcome === null);
+  const decided = feedback.rows.filter((c) => c.outcome !== null);
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
-      <section>
-        <Link href="/agents" className="font-mono text-[11px] text-faint hover:text-muted">
+      <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-9 pt-9 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
+        <div className="grid-faint pointer-events-none absolute inset-0" />
+        <div className="relative">
+        <Link href="/agents" className="hero__in font-mono text-[11px] text-faint hover:text-muted">
           ← all agents
         </Link>
-        <div className="mt-3">
+        <div className="hero__in mt-3" style={{ ["--d" as string]: "40ms" }}>
           <span className="kicker">one agent, every claim about it and how it was decided</span>
         </div>
-        <h1 className="mt-3 flex flex-wrap items-baseline gap-3 fluid-3 font-semibold tracking-tight">
+        <h1 className="hero__in mt-3 flex flex-wrap items-baseline gap-3 fluid-3 font-semibold tracking-tight" style={{ ["--d" as string]: "90ms" }}>
           <span>#{a.agentId}</span>
           <span className="text-[var(--color-muted)]">{a.name ?? "unnamed"}</span>
         </h1>
 
         {/* The one-sentence answer, before any table. */}
-        <p className="mt-3 max-w-3xl text-[15px] leading-relaxed">
+        <p className="hero__in mt-3 max-w-3xl text-[15px] leading-relaxed" style={{ ["--d" as string]: "200ms" }}>
           {checked.length === 0 ? (
             <>
               Nothing has ever been claimed about this agent that we can check.{" "}
@@ -61,13 +73,26 @@ export default async function AgentPage({ params }: Props) {
                 ? `It carries ${a.feedbackCount} feedback${a.feedbackCount === 1 ? "" : "s"}, none of which points at a document.`
                 : "It carries no feedback at all."}
             </>
+          ) : doNot > 0 && elsewhere > 0 ? (
+            <>
+              {doNot} of {checked.length} claims about this agent name a chain the payment is not on.{" "}
+              <span className="text-[var(--color-brand)]">{elsewhere} of those are real payments</span> on a
+              different chain, which is one wrong field in a document.{" "}
+              {nowhere > 0 ? (
+                <>
+                  <span className="text-[var(--color-false)]">{nowhere}</span> cite a transaction that
+                  exists on no chain we can read.
+                </>
+              ) : (
+                <>None cite a transaction that exists nowhere.</>
+              )}
+            </>
           ) : doNot > 0 ? (
             <>
               <span className="text-[var(--color-false)]">
                 {doNot} of {checked.length}
               </span>{" "}
-              claims about this agent cite a transaction that is not on the chain the document
-              names.
+              claims about this agent cite a transaction that exists on no chain we can read.
             </>
           ) : resolve > 0 ? (
             <>
@@ -81,10 +106,11 @@ export default async function AgentPage({ params }: Props) {
             </>
           )}
         </p>
+        </div>
       </section>
 
       {/* ---------------------------------------------------------------- the numbers at a glance */}
-      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         <StatTile
           label="feedback on chain"
           value={a.feedbackCount}
@@ -102,11 +128,19 @@ export default async function AgentPage({ params }: Props) {
           tone="true"
           hint="The cited transaction is on the chain the document names."
         />
+        {/* Split, because one red "41 missing" beside a sentence saying 37 are real payments is the
+            page contradicting itself. Brand for the repairable one, false only for the one that is. */}
         <StatTile
-          label="cited transaction missing"
-          value={doNot}
+          label="real payment, wrong chain named"
+          value={elsewhere}
+          tone="brand"
+          hint="The cited transaction is mined on a different chain from the one the document names. One field to fix."
+        />
+        <StatTile
+          label="on no chain we can read"
+          value={nowhere}
           tone="false"
-          hint="We read the named chain successfully and the cited transaction is not on it."
+          hint="Every chain we can read was read and the cited transaction is on none of them."
         />
       </section>
 
@@ -306,7 +340,9 @@ export default async function AgentPage({ params }: Props) {
           </p>
         ) : (
           <div className="space-y-px">
-            {feedback.rows.map((c) => (
+            {/* Decided rows first. Newest-first put 36 "no verdict recorded" rows above the one that
+                matters on this very agent, which buried the finding under what we have not done. */}
+            {[...decided, ...unchecked.slice(0, UNCHECKED_SHOWN)].map((c) => (
               <Link
                 key={c.id}
                 href={`/claim/${encodeURIComponent(c.id)}`}
@@ -323,7 +359,12 @@ export default async function AgentPage({ params }: Props) {
                     <Addr value={c.clientAddress} />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">
-                    {c.reason ??
+                    {c.outcome === "false" && c.foundChain ? (
+                      <>
+                        real payment on <span className="text-[var(--color-brand)]">{c.foundChain}</span>, document
+                        says {c.declaredNetwork ?? "another chain"}
+                      </>
+                    ) : c.reason ??
                       (c.feedbackUri ? (
                         <span className="unknown-value">no verdict recorded</span>
                       ) : (
@@ -336,6 +377,15 @@ export default async function AgentPage({ params }: Props) {
                 </div>
               </Link>
             ))}
+            {unchecked.length > UNCHECKED_SHOWN ? (
+              <p className="px-2 pt-3 text-[12px] text-faint">
+                {unchecked.length - UNCHECKED_SHOWN} more unchecked, not shown. Unchecked is not clean:
+                it means no verdict has been recorded yet.{" "}
+                <a href={`/api/claims?agent=${a.agentId}&limit=1000`} target="_blank" rel="noopener" className="text-[var(--color-brand)] hover:underline">
+                  every claim for this agent, as JSON →
+                </a>
+              </p>
+            ) : null}
           </div>
         )}
         <Derivation sql={feedback.sql} />

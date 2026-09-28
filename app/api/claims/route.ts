@@ -19,11 +19,17 @@ export async function GET(req: Request) {
   const rung = u.searchParams.get("rung") ?? undefined;
   const mapping = u.searchParams.get("mapping") ?? undefined;
   const network = u.searchParams.get("network") ?? undefined;
+  const agent = u.searchParams.get("agent") ?? undefined;
   // Clamped low as well as high: a negative limit reaches Postgres as `LIMIT -1` and throws a 500
   // rather than a clean 400, so the floor of 1 keeps a bad query from becoming a server error.
   const limit = Math.min(Math.max(Number(u.searchParams.get("limit") ?? 100) || 100, 1), 1000);
   const offset = Math.max(Number(u.searchParams.get("offset") ?? 0) || 0, 0);
 
+  // Refused rather than ignored. An unknown filter that is silently dropped returns the whole corpus,
+  // which reads as "this agent has 1,287 claims" and is exactly the plausible wrong answer above.
+  if (agent && !/^\d{1,12}$/.test(agent)) {
+    return problem(400, "Bad agent", "agent must be the numeric on-chain agent id, for example 10182");
+  }
   if (outcome && !OUTCOMES.includes(outcome as Outcome)) {
     return problem(400, "Unknown outcome", `outcome must be one of ${OUTCOMES.join(", ")}`, { accepted: OUTCOMES });
   }
@@ -31,7 +37,7 @@ export async function GET(req: Request) {
     return problem(400, "Unknown rung", `rung must be one of ${RUNGS.join(", ")}`, { accepted: RUNGS });
   }
 
-  const f = { outcome: outcome as Outcome | undefined, rung: rung as Rung | undefined, mapping, network };
+  const f = { outcome: outcome as Outcome | undefined, rung: rung as Rung | undefined, mapping, network, agentId: agent };
   const [list, total] = await Promise.all([claims({ ...f, limit, offset }), claimsCount(f)]);
 
   return json(
