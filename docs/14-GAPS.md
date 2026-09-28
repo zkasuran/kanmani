@@ -388,7 +388,7 @@ short-landing behaviour.
 The three targets are named because the whole population was measured, which is the one advantage
 here: I can name every payable agent on Monad because I checked all 10,253 and there are three.
 
-1. **Execution Market / Ultravioleta DAO**, `ultravioletadao@gmail.com`, published in their own
+1. **Execution Market / Ultravioleta DAO**, reachable through the contact they publish in their own
    `/.well-known/x402`. Their claims are the majority of the 73 that do not resolve on the named chain. 64 of those 73 are real transactions on a different chain rather than missing payments. A per-document
    pass or fail costs them nothing and fixes their record.
 2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
@@ -433,10 +433,9 @@ can write a correct reference and the message states plainly that no misstatemen
 It also offers to be corrected if `network` means something we have misread.
 
 **Targets 2 and 3 are not yet approached** and the honest reason is channel rather than intent: ADEXTO
-and Mogmatic publish no contact beyond an endpoint and there are no mail credentials in this
-environment, so an email to `ultravioletadao@gmail.com` could not be sent either. Drafts for all three
-are ready in `.hq/outreach/DRAFTS-2026-09-23.md` and need a person with a mailbox, not more work. Outreach was scheduled to start 2026-10-01 and that is late for
-the criterion least fixable at the end. **There is no cut trigger on this one:** if no integration
+and Mogmatic publish no contact beyond an endpoint, and Ultravioleta was reached through their own repo
+rather than by mail. The drafts for all three are written and need a person with a mailbox to send, not
+more work. Outreach was scheduled to start 2026-10-01. If no integration
 lands, the outreach record ships with what happened stated plainly, because a documented attempt beats
 an invented number and an invented one would be caught.
 
@@ -532,6 +531,37 @@ real time to understand.
   payment sat elsewhere, which is why `locate` reads seven chains. That is not what happens. The
   multi-chain reader stays anyway, because a "not found" means nothing without the published list of
   places it was looked for.
+
+---
+
+## Security audit follow-ups (2026-09-27)
+
+A full-surface security pass fixed a batch of issues in place (the SSRF guard, the verifier's true rung,
+the paid-endpoint replay, a set of input-validation gaps, the compliance-gate decode and the secrets
+posture before the flip). The writeups are in [`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) findings 11
+onward. Four items were deferred rather than fixed, each for a stated reason. They are gaps until
+they land:
+
+1. **The verifier's stronger true rung needs a re-sweep to reach the stored numbers.** `judge()` now
+   checks that a cited payment reached the claimed recipient rather than only that the transaction
+   exists. New reads get the real check, but the counts already in `fovea.verdict` were computed the old
+   way, so the site shows them until a full re-sweep runs and the app redeploys. Trigger: before the
+   submission window, run the sweep and redeploy, then confirm the headline counts.
+2. **Indexer source fixes need codegen and a resync to reach the live data.** `agentWallet` is now
+   checksummed and the dead `Verdict` entity is gone in the schema, but the running index holds the old
+   rows until it is re-indexed. Trigger: run codegen and a resync when the next deploy goes out.
+3. **The mislabelled split cannot yet prove "nowhere".** The count of false verdicts on no chain mixes an
+   exhaustive search with one that could not reach every chain. The label no longer calls it fabricated.
+   Splitting it honestly needs the backfill to record which chains it reached per verdict.
+4. **Two indexer data properties are inherent or intricate rather than fixed.** The cross-chain reference
+   counters are Sybil-inflatable because the underlying registrations are permissionless, while
+   `memberCount` drifts after a document re-point. Both are counting changes that need a full reindex to
+   verify, so they are recorded rather than changed blind against the live index.
+
+The two client-side authority gaps flagged in the first pass are now closed. A payment session pins its
+recipient and refuses any other. An action receipt carries an account-key binding the publish route
+requires, so a receipt cannot name a signer its author does not control. See
+[`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md).
 
 ---
 

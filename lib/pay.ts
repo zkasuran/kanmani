@@ -23,7 +23,7 @@
  */
 
 import { type ScopedSession, SessionError, type SessionScope } from "./session.ts";
-import { NETWORK, type PaymentPayload, requirements, resourceInfo } from "./x402.ts";
+import { NETWORK, PAY_TO, type PaymentPayload, requirements, resourceInfo } from "./x402.ts";
 
 /** USDC on Monad is six decimals, read off the token, not assumed. */
 export const USDC_DECIMALS = 6;
@@ -141,7 +141,7 @@ export async function signAuthorization(
       `the authorization is from ${auth.from} but this session signs for ${session.address}`,
     );
   }
-  session.assertCanPay(BigInt(auth.value));
+  session.assertCanPay(BigInt(auth.value), auth.to);
 
   return session.account.signTypedData({
     domain: usdcDomain(),
@@ -217,6 +217,9 @@ export function verificationScope(maxAmountAtomic: bigint, resourceHost: string)
     label: `x402 verification payments up to ${formatUsdc(maxAmountAtomic)} USDC on ${resourceHost}`,
     maxAmountAtomic,
     resourceHost,
+    // Pin the recipient to the one this site is paid at. A session opened here can then only ever
+    // sign a transfer to us, never to an address a tampered page slipped into the authorization.
+    payTo: PAY_TO,
   };
 }
 

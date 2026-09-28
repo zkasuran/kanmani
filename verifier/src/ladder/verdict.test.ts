@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { keccak256 } from "viem";
 import { judge } from "./verdict.ts";
 import type { ChainReader } from "./locate.ts";
+import { TRANSFER_TOPIC, type SettlementReader } from "./settled.ts";
 
 const enc = (s: string) => new TextEncoder().encode(s);
 const HASH = `0x${"a".repeat(64)}`;
@@ -178,4 +179,131 @@ test("every verdict carries when it was checked", async () => {
     now,
   });
   assert.equal(v.checkedAt, "2026-09-19T12:00:00.000Z");
+});
+
+/* --------------------------- a reverted transaction is never a settled payment (fallback path) */
+
+test("a cited transaction that reverted is false, not true", async () => {
+  const bytes = claimDoc();
+  const v = await judge({
+    feedbackUri: "https://x/doc",
+    feedbackHash: keccak256(bytes),
+    fetched: okFetch(bytes),
+    readerFor: () =>
+      reader({
+        getTransactionReceipt: async () => ({
+          blockNumber: 900n,
+          status: "reverted" as const,
+          from: "0xa",
+          to: "0xb",
+        }),
+      }),
+    now,
+  });
+  assert.equal(v.outcome, "false", "a revert moved nothing, so it cannot be true");
+  assert.notEqual(v.outcome, "true");
+  assert.match(v.reason, /reverted/);
+});
+
+/* --------------------------- the true rung matches the recipient when a settlement reader is given */
+
+const RECIPIENT = `0x${"11".repeat(20)}`;
+const OTHER = `0x${"33".repeat(20)}`;
+const TOKEN = `0x${"ab".repeat(20)}`;
+const topicAddr = (a: string) => `0x${"0".repeat(24)}${a.slice(2)}`;
+const transferLog = (to: string, value: bigint) => ({
+  address: TOKEN,
+  topics: [TRANSFER_TOPIC, topicAddr(`0x${"22".repeat(20)}`), topicAddr(to)],
+  data: `0x${value.toString(16).padStart(64, "0")}`,
+});
+const claimWithRecipient = (to: string = RECIPIENT) =>
+  new TextEncoder().encode(
+    JSON.stringify({
+      network: "monad",
+      proof_of_payment: { network: "monad", payment_tx: HASH },
+      rating: { target_address: to },
+    }),
+  );
+const settleReader = (over: Partial<SettlementReader> = {}): SettlementReader => ({
+  getBlockNumber: async () => 1000n,
+  getReceipt: async () => ({
+    blockNumber: 900n,
+    status: "success" as const,
+    from: `0x${"22".repeat(20)}`,
+    to: TOKEN,
+    logs: [transferLog(RECIPIENT, 1000n)],
+  }),
+  getNativeTransfer: async () => null,
+  ...over,
+});
+
+test("true only when the value actually reached the claimed recipient", async () => {
+  const bytes = claimWithRecipient(RECIPIENT);
+  const v = await judge({
+    feedbackUri: "https://x/doc",
+    feedbackHash: keccak256(bytes),
+    fetched: okFetch(bytes),
+    readerFor: () => found(),
+    settlementReaderFor: () => settleReader(),
+    now,
+  });
+  assert.equal(v.outcome, "true");
+  assert.equal(v.rung, "true");
+  assert.equal(v.foundOnChain?.chainId, 143);
+});
+
+test("a real transaction paying a DIFFERENT address is false, not true", async () => {
+  // The exact overclaim the audit proved: a cited transaction that exists and succeeds but pays
+  // someone else must not read as true. This test fails against the existence-only rung.
+  const bytes = claimWithRecipient(RECIPIENT);
+  const v = await judge({
+    feedbackUri: "https://x/doc",
+    feedbackHash: keccak256(bytes),
+    fetched: okFetch(bytes),
+    readerFor: () => found(),
+    settlementReaderFor: () => settleReader({ getReceipt: async () => ({
+      blockNumber: 900n,
+      status: "success" as const,
+      from: `0x${"22".repeat(20)}`,
+      to: TOKEN,
+      logs: [transferLog(OTHER, 1000n)],
+    }) }),
+    now,
+  });
+  assert.equal(v.outcome, "false");
+  assert.match(v.reason, /none of them to/);
+});
+
+test("a reverted transaction with a recipient claim is false through the settled rung too", async () => {
+  const bytes = claimWithRecipient(RECIPIENT);
+  const v = await judge({
+    feedbackUri: "https://x/doc",
+    feedbackHash: keccak256(bytes),
+    fetched: okFetch(bytes),
+    readerFor: () => found(),
+    settlementReaderFor: () => settleReader({ getReceipt: async () => ({
+      blockNumber: 900n,
+      status: "reverted" as const,
+      from: `0x${"22".repeat(20)}`,
+      to: TOKEN,
+      logs: [],
+    }) }),
+    now,
+  });
+  assert.equal(v.outcome, "false");
+  assert.match(v.reason, /reverted/);
+});
+
+test("a provider failure in the settled rung is unknown, never a false accusation", async () => {
+  const bytes = claimWithRecipient(RECIPIENT);
+  const v = await judge({
+    feedbackUri: "https://x/doc",
+    feedbackHash: keccak256(bytes),
+    fetched: okFetch(bytes),
+    readerFor: () => found(),
+    settlementReaderFor: () => settleReader({ getReceipt: async () => { throw new Error("503 upstream"); } }),
+    now,
+  });
+  assert.equal(v.outcome, "unknown");
+  assert.notEqual(v.outcome, "false");
 });

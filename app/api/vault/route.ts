@@ -58,6 +58,12 @@ function signedBy(address: string, s: Sealed, signature: string): boolean {
 
 const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
 
+/** Ceilings so a self-signed write cannot store an unbounded blob or an unbounded number of them. */
+const MAX_BODY_BYTES = 65_536;
+const MAX_CT_LEN = 32_768;
+const MAX_CONTEXT_LEN = 128;
+const MAX_CONTEXTS_PER_ADDRESS = 100;
+
 export async function GET(req: Request) {
   const u = new URL(req.url);
   const address = u.searchParams.get("address");
@@ -96,9 +102,13 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
+  const raw = await req.text();
+  if (raw.length > MAX_BODY_BYTES) {
+    return problem(413, "Body too large", `The request body must be under ${MAX_BODY_BYTES} bytes.`);
+  }
   let body: { address?: string; sealed?: unknown; signature?: string };
   try {
-    body = (await req.json()) as typeof body;
+    body = JSON.parse(raw) as typeof body;
   } catch {
     return problem(400, "Body is not JSON", 'Send {"address", "sealed", "signature"}.');
   }
@@ -110,6 +120,9 @@ export async function PUT(req: Request) {
   const sealed = parseSealed(body.sealed);
   if (!sealed) {
     return problem(400, "Bad envelope", "sealed must be {v:1, context, nonce, ct} with string fields.");
+  }
+  if (sealed.context.length > MAX_CONTEXT_LEN || sealed.ct.length > MAX_CT_LEN) {
+    return problem(413, "Envelope too large", `context must be under ${MAX_CONTEXT_LEN} and ct under ${MAX_CT_LEN} characters.`);
   }
   if (!signature) {
     return problem(401, "Unsigned write", "A write must be signed by the account key for this address.", {
@@ -127,6 +140,18 @@ export async function PUT(req: Request) {
         check: "Sign the keccak256 digest of the newline-joined fields in the order the docs give, with the account key derived under kanmani.iris.v1.",
       },
     );
+  }
+
+  // A signature proves control of the address, not that the address is scarce: anyone can make a
+  // keypair and sign their own blobs. So an address is capped on how many distinct contexts it can
+  // hold, and a new context over the cap is refused while updates to existing ones still work.
+  const counts = await q1<{ has: string; n: string }>(
+    `SELECT count(*) FILTER (WHERE context = $2)::text AS has, count(*)::text AS n
+       FROM fovea.vault WHERE lower(address) = lower($1)`,
+    [address, sealed.context],
+  );
+  if (counts && Number(counts.has) === 0 && Number(counts.n) >= MAX_CONTEXTS_PER_ADDRESS) {
+    return problem(429, "Too many vault entries for this address", `Each address may hold up to ${MAX_CONTEXTS_PER_ADDRESS} contexts.`);
   }
 
   await q1(

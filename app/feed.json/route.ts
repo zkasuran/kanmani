@@ -13,7 +13,9 @@ export const dynamic = "force-dynamic";
  */
 export async function GET(req: Request) {
   const u = new URL(req.url);
-  const limit = Math.min(Number(u.searchParams.get("limit") ?? 2000) || 2000, 5000);
+  // Floored at 1 as well as capped at 5000: a negative limit becomes `LIMIT -1`, which Postgres
+  // rejects with a 500 instead of returning a clean response.
+  const limit = Math.min(Math.max(Number(u.searchParams.get("limit") ?? 2000) || 2000, 1), 5000);
 
   const [m, list, fresh] = await Promise.all([
     measurement(),

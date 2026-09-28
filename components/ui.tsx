@@ -214,12 +214,12 @@ export function PageHeader({
     <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-9 pt-10 sm:mx-0 sm:rounded-[var(--radius-lg)] sm:border sm:px-8">
       <div className="grid-faint pointer-events-none absolute inset-0" />
       <div className="relative">
-        {kicker ? <span className="kicker">{kicker}</span> : null}
-        <h1 className="mt-4 max-w-4xl fluid-3 font-semibold leading-[1.14] tracking-tight">{title}</h1>
+        {kicker ? <span className="kicker hero__in" style={{ ["--d" as string]: "0ms" }}>{kicker}</span> : null}
+        <h1 className="hero__in mt-4 max-w-4xl fluid-3 font-semibold leading-[1.1] tracking-tight" style={{ ["--d" as string]: "90ms" }}>{title}</h1>
         {lead ? (
-          <p className="lead lead--wide mt-4 text-muted">{lead}</p>
+          <p className="hero__in lead lead--wide mt-4 text-muted" style={{ ["--d" as string]: "200ms" }}>{lead}</p>
         ) : null}
-        {children ? <div className="mt-6">{children}</div> : null}
+        {children ? <div className="hero__in mt-6" style={{ ["--d" as string]: "300ms" }}>{children}</div> : null}
       </div>
     </section>
   );
@@ -254,7 +254,7 @@ export function StatTile({
             ? "text-[var(--color-unknown)]"
             : "text-[var(--color-text)]";
   return (
-    <div className="rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3.5" title={hint}>
+    <div className="spot rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3.5" title={hint}>
       <div className={`stat-value text-[length:var(--step-3)] ${toneClass}`}>
         <Num value={value} suffix={suffix} title={hint} />
       </div>

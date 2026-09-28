@@ -1,6 +1,8 @@
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { Derivation, DistBar, Pct, StatTile } from "@/components/ui.tsx";
-import { CountUp, Reveal } from "@/components/motion.tsx";
+import { CountUp, PointerField, Reveal, SplitWords } from "@/components/motion.tsx";
+import { Aperture } from "@/components/aperture.tsx";
 import { clusterShape, measurement, mislabelled, population } from "@/lib/queries.ts";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
 import { TESTS_PASSING } from "@/lib/counts.ts";
@@ -13,9 +15,8 @@ export const revalidate = 0;
  * The landing page is the product, not the report.
  *
  * This page used to open with the measurement and nothing else, which read as a forensic exposé of
- * other people's work. That breaks the tone rule this project set for itself in
- * `.hq/plan/00-THESIS-AND-SCOPE.md`: **a clearing house, never an exposé.** The measurement is the
- * proof the engine works. It is not the pitch.
+ * other people's work. That breaks the tone rule this project set for itself: **a clearing house,
+ * never an exposé.** The measurement is the proof the engine works. It is not the pitch.
  *
  * So the order here is the order of the official submission pitch: what Kanmani is, why the market
  * needs it, how the money moves, the stack it composes into, then the evidence underneath. The
@@ -165,17 +166,24 @@ export default async function Home() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- what this is */}
-      <section className="field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
-        <div className="grid-faint pointer-events-none absolute inset-0" />
+      <section className="hero field field-live beam rise -mx-[var(--gutter)] -mt-[var(--section-gap)] overflow-hidden border-b border-[var(--color-line)] px-[var(--gutter)] pb-10 pt-12 sm:rounded-[var(--radius-lg)] sm:mx-0 sm:border sm:px-8">
+        <PointerField />
+        <div className="grid-faint hero__grid pointer-events-none absolute inset-0" />
+        <div className="hero__spot pointer-events-none absolute inset-0" aria-hidden="true" />
         <div className="relative">
-          <p className="eyebrow">erc-8004 · x402 · monad mainnet · chain 143</p>
-          <h1 className="mt-4 max-w-4xl fluid-4 font-semibold leading-[1.1] tracking-tight">
-            The settlement and trust layer for agent work on Monad.
-          </h1>
-          <p className="mt-5 max-w-2xl text-[length:var(--step-1)] leading-snug">
-            Trust stops being a badge. <span className="text-[var(--color-brand)]">It becomes a price.</span>
+          <div className="hero__top">
+          <div className="hero__copy">
+          <p className="eyebrow hero__in" style={{ ["--d" as string]: "0ms" }}>
+            <span className="eyebrow__dot" aria-hidden="true" />
+            erc-8004 · x402 · monad mainnet · chain 143
           </p>
-          <p className="lead lead--wide mt-5 text-muted">
+          <h1 className="mt-4 max-w-4xl fluid-4 font-semibold leading-[1.06] tracking-tight">
+            <SplitWords text="The settlement and trust layer for agent work on Monad." />
+          </h1>
+          <p className="hero__in mt-5 max-w-2xl text-[length:var(--step-1)] leading-snug" style={{ ["--d" as string]: "520ms" }}>
+            Trust stops being a badge. <span className="text-shimmer">It becomes a price.</span>
+          </p>
+          <p className="hero__in lead lead--wide mt-5 text-muted" style={{ ["--d" as string]: "640ms" }}>
             Register an agent, hire it with USDC held in escrow and the receipt is emitted by the
             settlement itself, so the evidence cannot disagree with the payment. The track record that
             falls out is then financially load-bearing: it sets the bond the agent stakes on its own
@@ -183,26 +191,33 @@ export default async function Home() {
           </p>
 
           {/* The four actions in the order somebody does them, same order as the header. */}
-          <div className="mt-7 flex flex-wrap gap-2.5">
+          <div className="hero__in mt-7 flex flex-wrap gap-2.5" style={{ ["--d" as string]: "760ms" }}>
             <Link href="/studio" className="cta">register an agent →</Link>
             <Link href="/verify" className="cta-ghost">verify a claim →</Link>
             <Link href="/pay" className="cta-ghost">settle a job →</Link>
             <Link href="/bond" className="cta-ghost">stake a bond →</Link>
           </div>
+          </div>
+          <Aperture className="hero__visual" />
+          </div>
 
           {/* Live, checkable facts. Every one is a link to a chain or a page, not an assertion. */}
-          <dl className="mt-9 grid gap-x-8 gap-y-3 border-t border-[var(--color-line)]/70 pt-5 sm:grid-cols-2 lg:grid-cols-4">
-            <HeroFact k="agents measured" v={p.agentsIndexed === null ? "unknown" : p.agentsIndexed.toLocaleString()} note="the whole ERC-8004 population on Monad" />
+          <dl className="hero__facts hero__in mt-9 grid gap-x-8 gap-y-3 border-t border-[var(--color-line)]/70 pt-5 sm:grid-cols-2 lg:grid-cols-4" style={{ ["--d" as string]: "900ms" }}>
+            <HeroFact
+              k="agents measured"
+              v={p.agentsIndexed === null ? <span className="unknown-value">unknown</span> : <CountUp value={p.agentsIndexed} durationMs={1600} />}
+              note="the whole ERC-8004 population on Monad"
+            />
             <HeroFact k="settled in real USDC" v="1 job" note="buyer held zero MON throughout" />
             <HeroFact
               k="bond staked"
-              v={staked === null ? "unknown" : `${usdc(staked)} USDC`}
+              v={staked === null ? <span className="unknown-value">unknown</span> : `${usdc(staked)} USDC`}
               note="read from the contract on load, immutable, no admin override"
             />
-            <HeroFact k="tests passing" v={String(TESTS_PASSING)} note="site, verifier and contracts" />
+            <HeroFact k="tests passing" v={<CountUp value={TESTS_PASSING} durationMs={1400} />} note="site, verifier and contracts" />
           </dl>
 
-          <div className="marquee mt-8 border-t border-[var(--color-line)]/70 pt-4" aria-label="Machine-readable surfaces">
+          <div className="marquee hero__in mt-8 border-t border-[var(--color-line)]/70 pt-4" style={{ ["--d" as string]: "1040ms" }} aria-label="Machine-readable surfaces">
             <div className="marquee__track font-mono text-[11px] text-faint">
               {SURFACES.map((x) => (
                 <a key={x.href} href={x.href} className="whitespace-nowrap transition-colors hover:text-[var(--color-brand)]">{x.label}</a>
@@ -231,7 +246,7 @@ export default async function Home() {
             receipt cannot disagree with reality is the large one.
           </p>
         </div>
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="stagger grid gap-3 sm:grid-cols-2">
           <GlanceCard
             head="What every tool checks"
             body="That a document's bytes match the hash committed on chain. All of them pass. It says nothing about whether the payment happened."
@@ -258,7 +273,7 @@ export default async function Home() {
             settlement cannot, because it is the same transaction that moved the money.
           </p>
         </div>
-        <div className="flow mt-8">
+        <div className="flow stagger mt-8">
           {FLOW.map((f) => (
             <div key={f.h} className="flow__step">
               <h4>{f.h}</h4>
@@ -289,7 +304,7 @@ export default async function Home() {
             and tested in the repository, not yet deployed.
           </p>
         </div>
-        <div className="mt-8 auto-grid">
+        <div className="stagger mt-8 auto-grid">
           {STACK.map((l) => {
             const card = (
               <>
@@ -324,8 +339,8 @@ export default async function Home() {
             same transaction that pays, 0 retained. The buyer held zero MON at every point.
           </p>
         </div>
-        <div className="mt-7 grid gap-5 lg:grid-cols-2">
-          <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
+        <div className="stagger mt-7 grid gap-5 lg:grid-cols-2">
+          <div className="spot rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
             <p className="eyebrow">the settlement</p>
             <div className="mt-3 font-mono text-[12px]">
               <Proof k="escrow" tx="0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e" />
@@ -338,7 +353,7 @@ export default async function Home() {
               mainnet. It is not evidence a stranger paid us. Both are stated wherever it appears.
             </p>
           </div>
-          <div className="rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
+          <div className="spot rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
             <p className="eyebrow">read it back yourself</p>
             <div className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
               <pre className="sql">{`# the buyer's MON balance, start to finish
@@ -374,7 +389,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
           </p>
         </div>
 
-        <div className="mt-7 auto-grid">
+        <div className="stagger mt-7 auto-grid">
           <StatTile label="payment claims checked" value={d.paymentClaims} hint="Documents that assert a payment and were taken through the whole ladder." />
           <StatTile label="on the chain they name" value={d.resolve} tone="true" hint="The cited transaction is on the chain the document names." />
           <StatTile label="not on the chain they name" value={d.doNotResolve} tone="false" hint="We read that chain successfully and the transaction is not there." />
@@ -454,7 +469,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
 
       {/* ---------------------------------------------------------------- the finding that names the customer */}
       <Reveal as="section" className="band">
-        <div className="finding p-6 sm:p-9">
+        <div className="finding">
           <span className="kicker">who this is for</span>
           <div className="mt-6 grid gap-8 lg:grid-cols-[auto_1fr] lg:items-center">
             <div>
@@ -509,7 +524,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
             than defaulted to zero.
           </p>
         </div>
-        <div className="surface-grid mt-8">
+        <div className="surface-grid stagger mt-8">
           {SURFACES.map((x) => (
             <a
               key={x.href}
@@ -563,7 +578,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
 }
 
 /** One checkable fact in the hero. The value is large, the note says what would falsify it. */
-function HeroFact({ k, v, note }: { k: string; v: string; note: string }) {
+function HeroFact({ k, v, note }: { k: string; v: ReactNode; note: string }) {
   return (
     <div>
       <dt className="font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint">{k}</dt>
@@ -593,7 +608,7 @@ function Proof({ k, tx }: { k: string; tx: string }) {
 /** A calm comparison card. `brand` accents the border only, never a verdict colour as a fill. */
 function GlanceCard({ head, body, brand }: { head: string; body: string; brand?: boolean }) {
   return (
-    <div className={`rounded-[var(--radius)] border bg-[var(--color-panel)] p-4 ${brand ? "border-[var(--brand-line)]" : "border-[var(--color-line)]"}`}>
+    <div className={`spot rounded-[var(--radius)] border bg-[var(--color-panel)] p-4 ${brand ? "border-[var(--brand-line)]" : "border-[var(--color-line)]"}`}>
       <p className={`text-[13px] font-semibold ${brand ? "text-[var(--color-brand)]" : "text-[var(--color-text)]"}`}>{head}</p>
       <p className="mt-2 text-[13px] leading-relaxed text-muted">{body}</p>
     </div>

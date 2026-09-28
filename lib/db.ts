@@ -51,16 +51,38 @@ export function connectionString(env: NodeJS.ProcessEnv = process.env): string {
 
 export function pool(): pg.Pool {
   if (!globalThis.__corneaPool) {
+    const cs = connectionString();
+    // Enforce TLS for a remote database. A loopback connection on the box needs none and forcing it
+    // would break the deployment, so it is switched on only when the host is not local.
+    const host = hostOf(cs);
+    const isLocal = host === "127.0.0.1" || host === "localhost" || host === "::1";
     globalThis.__corneaPool = new pg.Pool({
-      connectionString: connectionString(),
+      connectionString: cs,
       max: 8,
       // A page that cannot get a connection in five seconds should say so rather than hang
       // until the browser gives up with nothing on screen.
       connectionTimeoutMillis: 5_000,
       idleTimeoutMillis: 30_000,
+      // No single query may hold a connection forever. Without this a heavy or pathological read on
+      // an eight-connection pool can starve the whole site, since every page reads through here. The
+      // server-side statement_timeout bounds the query on the database and query_timeout bounds the
+      // wait on the client, so a runaway is cancelled rather than pinning a slot until it finishes.
+      statement_timeout: 10_000,
+      query_timeout: 12_000,
+      idle_in_transaction_session_timeout: 15_000,
+      ...(isLocal ? {} : { ssl: { rejectUnauthorized: true } }),
     });
   }
   return globalThis.__corneaPool;
+}
+
+/** The host out of a postgres connection string, for deciding whether TLS is needed. */
+function hostOf(cs: string): string {
+  try {
+    return new URL(cs).hostname || "127.0.0.1";
+  } catch {
+    return "127.0.0.1";
+  }
 }
 
 export async function q<T extends pg.QueryResultRow>(

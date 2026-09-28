@@ -1036,7 +1036,10 @@ export async function describeWebhook(deps: Deps = liveDeps()): Promise<Response
     await deps.ensureSchema();
     recent = await deps.recentDeliveries(20);
   } catch (e) {
-    ledgerError = (e as Error).message ?? String(e);
+    // Logged in full server-side, reported as a fixed line: this endpoint is public and unauthenticated,
+    // so the raw database error would hand a stranger our internals.
+    console.error("[describeWebhook] ledger read failed:", (e as Error).message ?? String(e));
+    ledgerError = "the delivery ledger could not be read";
   }
 
   return json(

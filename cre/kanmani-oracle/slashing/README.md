@@ -7,9 +7,9 @@ Steps to run the example
 ## 1. Update .env file
 
 You need to add a private key to env file. This is specifically required if you want to simulate chain writes. For that to work the key should be valid and funded.
-If your workflow does not do any chain write then you can just put any dummy key as a private key. e.g.
+If your workflow does not do any chain write, generate a throwaway key with `cast wallet new` and use that. Do NOT use a well-known key such as `0x…01`: it exists only to make simulation load, it is publicly known, and leaving it in place once a real write path is wired would sign and broadcast from an address anyone can spend from.
 ```
-CRE_ETH_PRIVATE_KEY=0000000000000000000000000000000000000000000000000000000000000001
+CRE_ETH_PRIVATE_KEY=<a throwaway key from `cast wallet new`, never a well-known one>
 ```
 
 ## 2. Install dependencies

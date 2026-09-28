@@ -37,11 +37,13 @@ import {
   LATEST_BLOCK_NUMBER,
   median,
   ok,
+  prepareReportRequest,
   Runner,
   type Runtime,
 } from "@chainlink/cre-sdk";
 import { type Address, decodeFunctionResult, encodeFunctionData, zeroAddress } from "viem";
 import { z } from "zod";
+import { encodeReport, signVerdict } from "./verdict";
 
 export type Config = {
   schedule: string;
@@ -49,7 +51,19 @@ export type Config = {
   scleraAddress: string;
   slaApiBase: string;
   chainName: string;
+  /**
+   * Off by default. When true, and only then, the workflow signs the verdict with the attestor key
+   * and submits it on chain through the forwarder. Left unset in the staging and production configs,
+   * so the judged simulation reads and decides without ever touching the write path or a real bond.
+   */
+  broadcast?: boolean;
+  /** The CRE secret holding the attestor private key. Read only when broadcast is on. */
+  attestorSecretId?: string;
+  attestorSecretNamespace?: string;
 };
+
+/** Monad mainnet, where Sclera is deployed. The EIP-712 signature is bound to this chain id. */
+const SCLERA_CHAIN_ID = 143n;
 
 /**
  * Only the two reads this workflow makes. Written out rather than imported from the contracts
@@ -117,7 +131,7 @@ const fetchSla = (
   return slaSchema.parse(body.data ?? body);
 };
 
-const onCronTrigger = (runtime: Runtime<Config>): string => {
+const onCronTrigger = async (runtime: Runtime<Config>): Promise<string> => {
   const { agentId, scleraAddress, slaApiBase, chainName } = runtime.config;
 
   // `isTestnet` must be false here. The lookup short-circuits to the testnet map when it is true
@@ -217,7 +231,14 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
 
   /* ------------------------------------------------------------------ 3. decide */
 
-  if (sla.sampleSize === 0) {
+  // The median of an even number of nodes can land on a .5, so the aggregated counts are rounded
+  // back to integers before anything uses them. A verdict field is a uint32 on chain and BigInt()
+  // throws on a fractional value, so a half-count would fail at signing time rather than here.
+  const sampleSize = Math.round(sla.sampleSize);
+  const trueCount = Math.round(sla.trueCount);
+  const unknownCount = Math.round(sla.unknownCount);
+
+  if (sampleSize === 0) {
     const msg = `agent ${agentId} has no decided payment claims in ${fromBlock}..${toBlock}, so there is nothing to rate`;
     runtime.log(msg);
     return msg;
@@ -225,22 +246,22 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
 
   // Recomputed, never taken from the API. Integer basis points, matching what the contract does
   // with `(trueCount * 10000) / sampleSize`.
-  const rateBps = Math.floor((sla.trueCount * 10_000) / sla.sampleSize);
+  const rateBps = Math.floor((trueCount * 10_000) / sampleSize);
 
   runtime.log(
-    `measured ${sla.trueCount}/${sla.sampleSize} claims true = ${rateBps}bps ` +
-      `(${sla.unknownCount} undecided, excluded from both sides)`,
+    `measured ${trueCount}/${sampleSize} claims true = ${rateBps}bps ` +
+      `(${unknownCount} undecided, excluded from both sides)`,
   );
 
   if (mode === "observation") {
-    const msg = `OBSERVED agent=${agentId} rate=${rateBps}bps sample=${sla.sampleSize} (no bond, no verdict)`;
+    const msg = `OBSERVED agent=${agentId} rate=${rateBps}bps sample=${sampleSize} (no bond, no verdict)`;
     runtime.log(msg);
     return msg;
   }
 
-  if (sla.sampleSize < minSample) {
+  if (sampleSize < minSample) {
     const msg =
-      `sample ${sla.sampleSize} is below the bond's minimum ${minSample}, so no verdict. ` +
+      `sample ${sampleSize} is below the bond's minimum ${minSample}, so no verdict. ` +
       `One unresolved receipt out of one is a 0% rate and also noise.`;
     runtime.log(msg);
     return msg;
@@ -252,8 +273,8 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     agentId: BigInt(agentId),
     windowStart,
     windowEnd,
-    sampleSize: sla.sampleSize,
-    trueCount: sla.trueCount,
+    sampleSize: BigInt(sampleSize),
+    trueCount: BigInt(trueCount),
     nonce,
   };
 
@@ -264,9 +285,26 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     `verdict payload: ${JSON.stringify(verdict, (_k, v) => (typeof v === "bigint" ? v.toString() : v))}`,
   );
 
+  // The write path. Off unless the config turns it on, so the judged simulation never reaches it and
+  // never touches a real bond. When on, the verdict is signed with the attestor key (recovered by
+  // Sclera, which trusts the signature rather than the permissionless forwarder) and submitted. The
+  // signing is proven to match the app's verified signer; the submit through the CRE report and write
+  // capabilities is exercised only by a real `cre workflow simulate --broadcast`, which spends gas and
+  // can slash a live bond, so it stays behind this flag and an operator's explicit run.
+  if (runtime.config.broadcast) {
+    const secretId = runtime.config.attestorSecretId ?? "SCLERA_ATTESTOR_KEY";
+    const namespace = runtime.config.attestorSecretNamespace ?? "main";
+    const key = runtime.getSecret({ id: secretId, namespace }).result().value as `0x${string}`;
+    const signature = await signVerdict(verdict, key, SCLERA_CHAIN_ID, scleraAddress as `0x${string}`);
+    const payload = encodeReport(verdict, signature);
+    const report = runtime.report(prepareReportRequest(payload)).result();
+    evmClient.writeReport(runtime, { receiver: scleraAddress, report }).result();
+    runtime.log(`submitted signed verdict to Sclera ${scleraAddress} through the forwarder`);
+  }
+
   return breached
-    ? `BREACH agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sla.sampleSize}`
-    : `HELD agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sla.sampleSize}`;
+    ? `BREACH agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sampleSize}`
+    : `HELD agent=${agentId} rate=${rateBps}bps floor=${floorBps}bps sample=${sampleSize}`;
 };
 
 export const initWorkflow = (config: Config) => {

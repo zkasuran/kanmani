@@ -89,7 +89,14 @@ export class QwenChatClient implements ChatClient {
       const body = await res.text().catch(() => "");
       throw new Error(`Qwen chat failed: HTTP ${res.status} ${body.slice(0, 300)}`);
     }
-    const json = (await res.json()) as {
+    // Read as text with a cap rather than res.json() straight, so a runaway or malformed response
+    // cannot buffer without bound. 4 MB is far above any real chat completion.
+    const MAX_BYTES = 4_000_000;
+    const declared = Number(res.headers.get("content-length") ?? "0");
+    if (declared > MAX_BYTES) throw new Error(`Qwen chat response too large: ${declared} bytes`);
+    const text = await res.text();
+    if (text.length > MAX_BYTES) throw new Error(`Qwen chat response too large: ${text.length} bytes`);
+    const json = JSON.parse(text) as {
       choices?: { message?: ChatMessage }[];
     };
     const message = json.choices?.[0]?.message;

@@ -42,6 +42,12 @@ export type SessionScope = {
   maxAmountAtomic: bigint;
   /** The host this session pays. Shown so a user knows which site the session is for. */
   resourceHost: string;
+  /**
+   * The only address this session may pay, when it is a payment session. Set it and a payment to any
+   * other recipient is refused before the key signs, so a session opened to pay one party cannot be
+   * steered into signing a transfer to another. Left undefined for a session that moves no token.
+   */
+  payTo?: string;
 };
 
 export type SessionErrorCode = "SESSION_EXPIRED" | "SESSION_ENDED" | "SCOPE_EXCEEDED" | "WRONG_SIGNER";
@@ -98,9 +104,10 @@ export type ScopedSession = {
   /**
    * The one gate every signing path runs first. Throws SESSION_ENDED or SESSION_EXPIRED when the
    * session is no longer usable (ending it first so the key is gone). Throws SCOPE_EXCEEDED when the
-   * amount is larger than the session was opened for.
+   * amount is larger than the session was opened for. When the scope pins a `payTo` and a recipient
+   * is passed, throws WRONG_SIGNER on a recipient the scope does not name.
    */
-  assertCanPay(amountAtomic: bigint): void;
+  assertCanPay(amountAtomic: bigint, payTo?: string): void;
   /** Zero the key now. Idempotent, so calling it twice is fine. */
   end(): void;
 };
@@ -140,7 +147,7 @@ export function openSession(opts: {
 
   const expired = (): boolean => now() >= expiresAt;
 
-  const assertCanPay = (amountAtomic: bigint): void => {
+  const assertCanPay = (amountAtomic: bigint, payTo?: string): void => {
     if (done) {
       throw new SessionError("SESSION_ENDED", "this session has ended, open a new one");
     }
@@ -156,6 +163,14 @@ export function openSession(opts: {
       throw new SessionError(
         "SCOPE_EXCEEDED",
         `this session may sign for at most ${opts.scope.maxAmountAtomic} atomic units, ${amountAtomic} was asked for`,
+      );
+    }
+    // A payment session pins its recipient. Signing a transfer to any other address is refused, so a
+    // session opened to pay one party cannot be steered into paying an attacker.
+    if (opts.scope.payTo && payTo && payTo.toLowerCase() !== opts.scope.payTo.toLowerCase()) {
+      throw new SessionError(
+        "WRONG_SIGNER",
+        `this session may only pay ${opts.scope.payTo}, a payment to ${payTo} was asked for`,
       );
     }
   };

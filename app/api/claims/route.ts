@@ -19,7 +19,9 @@ export async function GET(req: Request) {
   const rung = u.searchParams.get("rung") ?? undefined;
   const mapping = u.searchParams.get("mapping") ?? undefined;
   const network = u.searchParams.get("network") ?? undefined;
-  const limit = Math.min(Number(u.searchParams.get("limit") ?? 100) || 100, 1000);
+  // Clamped low as well as high: a negative limit reaches Postgres as `LIMIT -1` and throws a 500
+  // rather than a clean 400, so the floor of 1 keeps a bad query from becoming a server error.
+  const limit = Math.min(Math.max(Number(u.searchParams.get("limit") ?? 100) || 100, 1), 1000);
   const offset = Math.max(Number(u.searchParams.get("offset") ?? 0) || 0, 0);
 
   if (outcome && !OUTCOMES.includes(outcome as Outcome)) {
