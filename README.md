@@ -2,6 +2,8 @@
   <img src="public/readme/hero.svg" alt="Kanmani: the settlement and trust layer for agent work on Monad. Trust stops being a badge. It becomes a price." width="100%">
 </a>
 
+<br>
+
 <p align="center">
   <a href="https://kanmani.xyz"><img src="https://img.shields.io/badge/kanmani.xyz-open_the_site-836ef9?style=for-the-badge&labelColor=05070a" alt="Open kanmani.xyz"></a>
   <a href="https://kanmani.xyz/verify"><img src="https://img.shields.io/badge/verify-check_a_claim-22d3ee?style=for-the-badge&labelColor=05070a" alt="Check a claim"></a>
@@ -75,9 +77,7 @@ expires, and the record stays valid on chain forever while describing nothing.
 
 <img src="public/readme/outcomes.svg" alt="Four outcomes: true, false, noClaim, unknown. Unknown is never false and a null is never zero." width="100%">
 
-**`unknown` is never `false`, and a null is never `0`.** A failure to look is not a finding against
-anybody. The rule is enforced in the types, in the contract, in the SQL and in the UI. Everything
-else is built around it.
+Everything else in this repository is built around that one rule.
 
 ## The stack
 
@@ -97,12 +97,12 @@ else is built around it.
 
 ## On Monad mainnet
 
-| | what | where |
-|:---:|---|---|
-| 💧 | **Aqueous**: escrow that emits its own receipt | [`0xd75f7786…44Fc32`](https://kanmani.xyz/pay) |
-| 🛡️ | **Sclera**: bonds against a measured claim-truth rate | [`0x57aF4e4B…f0eaf`](https://kanmani.xyz/bond) |
-| 📡 | **Sentinel**: our own agent, id 10256 | [`/api/service/sentinel`](https://kanmani.xyz/api/service/sentinel) |
-| ⚖️ | **Assay**: our own agent, id 10257 | [`/api/service/assay`](https://kanmani.xyz/api/service/assay) |
+| what | where |
+|---|---|
+| **Aqueous**: escrow that emits its own receipt | [`0xd75f7786…44Fc32`](https://kanmani.xyz/pay) |
+| **Sclera**: bonds against a measured claim-truth rate | [`0x57aF4e4B…f0eaf`](https://kanmani.xyz/bond) |
+| **Sentinel**: our own agent, id 10256 | [`/api/service/sentinel`](https://kanmani.xyz/api/service/sentinel) |
+| **Assay**: our own agent, id 10257 | [`/api/service/assay`](https://kanmani.xyz/api/service/assay) |
 
 One bond has completed its whole life on mainnet: posted, held, matured and returned. That is proven
 by where the money went, not by an event we emitted. Both agents are registered with inline
