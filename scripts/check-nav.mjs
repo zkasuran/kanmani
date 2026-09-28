@@ -10,12 +10,13 @@
  *   node scripts/check-nav.mjs [url] [width]      defaults https://kanmani.xyz/ 1440
  */
 import { chromium } from "playwright";
+
+const exe = process.env.CHROME ?? "/usr/bin/google-chrome";
 const b = await chromium.launch({ executablePath: exe, args: ["--no-sandbox"] });
 const p = await b.newPage({ viewport: { width: +(process.argv[3] ?? 1440), height: 900 } });
 await p.goto((process.argv[2] ?? "https://kanmani.xyz/"), { waitUntil: "networkidle" });
 const labels = await p.$$eval("nav a[aria-haspopup]", els => els.map(e => { const r = e.getBoundingClientRect(); return { text: e.textContent.trim(), x: r.x + r.width / 2, y: r.y + r.height / 2 }; }));
 let broken = 0;
-const exe = process.env.CHROME ?? "/usr/bin/google-chrome";
 for (const l of labels) {
   for (const target of ["first-left", "last"]) {
     await p.mouse.move(700, 600); await p.waitForTimeout(300);
