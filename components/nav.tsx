@@ -175,7 +175,7 @@ export function Nav() {
     const inBand = pt.y >= a.y - 14 && pt.y <= r.top + 4;
     if (!inSpan || !inBand) return false;
     // Judged on the whole path since the label, not the last step. A hand heading for an item on the
-    // far side of a leftward panel travels mostly sideways first, often wobbling up a pixel or two, and
+    // far side of a leftward panel travels mostly sideways first, often wobbling up a pixel or two
     // only drops near the end. Requiring the last step to be downward handed the menu to each
     // neighbour it crossed: reports and developers, whose first items sit furthest left, lost 10 of 24
     // scripted human paths that way. Level movement may still be a sideways scan, so it only waits a
