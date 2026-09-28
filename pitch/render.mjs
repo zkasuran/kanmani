@@ -2,11 +2,14 @@
 /*
  * Renders the film headlessly, frame-exact, in parallel.
  *
- *   node pitch/render.mjs sheet 1 4.5 9 ...   contact sheet of those moments -> out/sheet.png
+ *   node pitch/render.mjs sheet 1 4.5 9 ...   contact sheet of those moments -> out/<film>/sheet.jpg
  *   node pitch/render.mjs stills 4.5 30 ...   full-size PNGs                  -> out/still-<t>.png
  *   node pitch/render.mjs cues                the sound cue list              -> out/cues.json
  *   node pitch/render.mjs video [workers]     every frame, H.264              -> out/video.mp4
  *   node pitch/render.mjs mux                 video + soundtrack.wav          -> out/kanmani-pitch.mp4
+ *
+ * FILM=graffiti|eye|plumbing|run-it picks the film (default graffiti): pitch/<film>/index.html renders
+ * into pitch/out/<film>/.
  *
  * Every frame is a pure function of its timestamp, so workers render disjoint ranges and the
  * chunks are concatenated without re-encoding.
@@ -21,9 +24,10 @@ const require = createRequire(import.meta.url);
 const pw = process.env.PLAYWRIGHT_MODULE || `${execSync('npm root -g').toString().trim()}/@playwright/mcp/node_modules/playwright`;
 const { chromium } = require(pw);
 const DIR = path.dirname(new URL(import.meta.url).pathname);
-const OUT = process.env.OUT || path.join(DIR, 'out');
+const FILM = process.env.FILM || 'graffiti';
+const OUT = process.env.OUT || path.join(DIR, 'out', FILM);
 const FF = process.env.FFMPEG || execSync(`python3 -c "import imageio_ffmpeg;print(imageio_ffmpeg.get_ffmpeg_exe())"`).toString().trim();
-const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2' };
+const TYPES = { '.html': 'text/html', '.js': 'text/javascript', '.woff2': 'font/woff2', '.png': 'image/png' };
 
 await mkdir(OUT, { recursive: true });
 const server = createServer(async (req, res) => {
@@ -34,7 +38,7 @@ const server = createServer(async (req, res) => {
   } catch { res.writeHead(404); res.end(); }
 });
 await new Promise((r) => server.listen(0, '127.0.0.1', r));
-const URL_ = `http://127.0.0.1:${server.address().port}/index.html`;
+const URL_ = `http://127.0.0.1:${server.address().port}/${FILM}/index.html`;
 
 async function openFilm() {
   const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-gpu'] });
@@ -48,7 +52,8 @@ async function openFilm() {
 const run = (args) => new Promise((ok, bad) => { const p = spawn(FF, args, { stdio: ['ignore', 'ignore', 'inherit'] }); p.on('exit', (c) => (c === 0 ? ok() : bad(new Error('ffmpeg ' + c)))); });
 
 const [mode, ...rest] = process.argv.slice(2);
-const FPS = 30, FRAMES = 120 * FPS;
+const FPS = 30;
+let FRAMES = 120 * FPS;
 
 if (mode === 'cues') {
   const { browser, page } = await openFilm();
@@ -77,6 +82,7 @@ if (mode === 'cues') {
   const name = process.env.SHEET || 'sheet';
   await writeFile(path.join(OUT, `${name}.jpg`), Buffer.from(url.split(',')[1], 'base64')); console.log('sheet', name); await browser.close();
 } else if (mode === 'video') {
+  { const { browser, page } = await openFilm(); FRAMES = Math.round((await page.evaluate(() => window.film.DURATION)) * FPS); await browser.close(); }
   const workers = Number(rest[0] || 6), per = Math.ceil(FRAMES / workers), t0 = Date.now();
   const chunk = async (k) => {
     const from = k * per, to = Math.min(FRAMES, from + per); if (from >= to) return null;

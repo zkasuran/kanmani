@@ -2,7 +2,7 @@
 """
 The score and the foley, synthesised from nothing: no samples, nothing to license.
 
-    python3 pitch/soundtrack.py pitch/out/cues.json pitch/out/soundtrack.wav
+    python3 pitch/graffiti/soundtrack.py pitch/out/graffiti/cues.json pitch/out/graffiti/soundtrack.wav
 
 A 90 BPM boom-bap beat in A minor (Am9 - Fmaj9 - Dm9 - E7#9), arranged on the film's own bar map,
 plus every spray, rattle, stamp, slap, roller and whip the film asked for in cues.json, panned to

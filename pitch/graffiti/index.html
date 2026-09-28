@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kanmani: Hold It Safe</title>
+<style>
+  @font-face { font-family: "Rubik Wet Paint"; src: url(../fonts/RubikWetPaint.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Rubik Spray Paint"; src: url(../fonts/RubikSprayPaint.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Sedgwick Ave Display"; src: url(../fonts/SedgwickAveDisplay.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Permanent Marker"; src: url(../fonts/PermanentMarker.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Rock Salt"; src: url(../fonts/RockSalt.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Big Shoulders Stencil"; src: url(../fonts/BigShouldersStencil.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Space Grotesk"; src: url(../fonts/SpaceGrotesk.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "JetBrains Mono"; src: url(../fonts/JetBrainsMono.woff2) format("woff2"); font-weight: 100 900; }
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 100vw; height: auto; }
+</style>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="engine.js"></script>
+<script src="scenes.js"></script>
+<script src="film.js"></script>
+<script>
+  // Open this file in a browser (served over http) to scrub the film: ?t=seconds, or play it live.
+  const q = new URLSearchParams(location.search);
+  film.ready.then(() => {
+    if (q.has("t")) return film.renderFrame(Number(q.get("t")));
+    if (!q.has("play")) return;
+    const t0 = performance.now();
+    const tick = () => { const t = (performance.now() - t0) / 1000; if (t < film.DURATION) { film.renderFrame(t); requestAnimationFrame(tick); } };
+    tick();
+  });
+</script>

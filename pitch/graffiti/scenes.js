@@ -3,12 +3,12 @@
  * The storyboard. One long night wall; the camera walks it. 45 bars at 90 BPM = 120 seconds.
  *
  *  bars  0-3   cold open        a flashlight finds a wall; the lights buzz on; KANMANI goes up
- *  bars  3-7   the registry     10,258 agents, and every integrity tool stamps VERIFIED
+ *  bars  3-7   the registry     10,262 agents, and every integrity tool stamps VERIFIED
  *  bars  7-13  the check        85 claims: 12 true, 73 false; 64 real on another chain, 9 nowhere
  *  bars 13-17  the dead doc     8,093 agents, 7,962 wallets, one document that stopped answering
  *  bars 17-20  not fraud        the buff rolls over it: NOT FRAUD. PLUMBING.  (breakdown)
  *  bars 20-26  the fix          the payment writes the receipt: escrow, deliver, settle, price it
- *  bars 26-32  the stack        nine HELLO-my-name-is slaps, eight live, one built
+ *  bars 26-32  the stack        nine HELLO-my-name-is slaps, all nine live
  *  bars 32-38  proof            the mainnet receipt; a block every 266 ms vs 12 s finality
  *  bars 38-41  the rule         UNKNOWN is never FALSE, and a null is never 0  (halftime)
  *  bars 41-45  the close        trust stops being a badge. it becomes a price. kanmani.xyz
@@ -65,7 +65,7 @@ function buildStory() {
   /* ------------------------------------------------ 2. the registry */
   whip(scene(s2, 3, 4, ({ at, add, cam, t0, t1 }) => {
     cam(t0 + 0.22, 1300, 470, 1.12, 'whip'); cam(at(3.5), 1300, 500, 1.02); cam(at(9), 1300, 560, 0.98); cam(t1 - 0.22, 1300, 600, 0.95);
-    add(new Stencil({ text: '10,258', size: 330, x: 1300, y: 400, t0: at(0.25) }));
+    add(new Stencil({ text: '10,262', size: 330, x: 1300, y: 400, t0: at(0.25) }));
     add(mark({ text: "AGENTS ON MONAD'S ERC-8004 REGISTRY", size: 62, x: 1300, y: 615, fill: [PAL.cyan], t0: at(2), dur: 1.3 }));
     for (const [text, x, y, rot, b] of [['VERIFIED', 560, 250, -0.12, 4], ['HASH MATCHES', 2040, 235, 0.09, 5], ['INTEGRITY OK', 560, 790, 0.07, 6], ['VERIFIED', 2040, 800, -0.08, 7], ['BYTES MATCH', 1300, 135, -0.03, 7.5]])
       add(new Stamp({ text, x, y, rot, tI: at(b) }));
@@ -159,7 +159,7 @@ function buildStory() {
     const L = [
       ['RETINA', 'indexes the evidence', 'live'], ['FOVEA', 'verifies the claim', 'live'], ['AQUEOUS', 'escrows the job', 'live'],
       ['IRIS · x402', 'pays without a wallet', 'live'], ['OPTIC', 'answers on chain', 'live'], ['SCLERA', 'bonds the promise', 'live'],
-      ['CHIASM', 'reads every chain', 'live'], ['INTENTS', 'funds from any chain', 'built'], ['SELF-HEAL', 'heals a fixed record', 'live'],
+      ['CHIASM', 'reads every chain', 'live'], ['INTENTS', 'funds from any chain', 'live'], ['SELF-HEAL', 'heals a fixed record', 'live'],
     ];
     let prev = [1000, 560, 1.12];
     L.forEach(([name, sub, status], k) => {
@@ -169,8 +169,8 @@ function buildStory() {
       cam(tI - 0.45, ...prev); cam(tI - 0.03, ...target); prev = target;
     });
     cam(at(19.4) + 0.5, ...prev); cam(at(20.1), 1450, 610, 0.75); cam(t1 - 0.22, 1450, 610, 0.77);
-    add(new Stencil({ text: '8 LIVE', size: 120, x: 2400, y: 520, color: PAL.violet, t0: at(20.4) }));
-    add(new Stencil({ text: '1 BUILT', size: 120, x: 2400, y: 700, color: PAL.slate, t0: at(21.3) }));
+    add(new Stencil({ text: '9 OF 9', size: 130, x: 2400, y: 520, color: PAL.violet, t0: at(20.4) }));
+    add(new Stencil({ text: 'LIVE', size: 130, x: 2400, y: 700, color: PAL.violet, t0: at(21.3) }));
     add(mark({ text: 'status checked against the artifact', size: 34, x: 2400, y: 835, fill: [PAL.white], t0: at(22), dur: 1.0, maxW: 600 }));
   }));
 

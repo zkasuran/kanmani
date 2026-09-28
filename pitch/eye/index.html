@@ -1,0 +1,25 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Kanmani: The Eye</title>
+<style>
+  @font-face { font-family: "Space Grotesk"; src: url(../fonts/SpaceGroteskVar.woff2) format("woff2"); font-weight: 300 700; }
+  @font-face { font-family: "Instrument Serif"; src: url(../fonts/InstrumentSerif.woff2) format("woff2"); font-style: normal; }
+  @font-face { font-family: "Instrument Serif"; src: url(../fonts/InstrumentSerifItalic.woff2) format("woff2"); font-style: italic; }
+  @font-face { font-family: "JetBrains Mono"; src: url(../fonts/JetBrainsMonoFull.woff2) format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "Noto Sans Tamil"; src: url(../fonts/NotoSansTamil.woff2) format("woff2"); font-weight: 100 900; }
+  html, body { margin: 0; background: #000; }
+  canvas { display: block; width: 100vw; height: auto; }
+</style>
+<canvas id="c" width="1920" height="1080"></canvas>
+<script src="../lib/core.js"></script>
+<script src="film.js"></script>
+<script>
+  const q = new URLSearchParams(location.search);
+  film.ready.then(() => {
+    if (q.has("t")) return film.renderFrame(Number(q.get("t")));
+    if (!q.has("play")) return;
+    const t0 = performance.now();
+    const tick = () => { const t = (performance.now() - t0) / 1000; if (t < film.DURATION) { film.renderFrame(t); requestAnimationFrame(tick); } };
+    tick();
+  });
+</script>
