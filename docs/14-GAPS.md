@@ -116,18 +116,26 @@ that is not wired.
 
 ---
 
-## 3. Eight of the nine layers are live. One is not
+## 3. All nine layers are live
 
 **Corrected twice.** On 2026-09-23 this said Layer 2 and Layer 3 did not exist and Sclera was not
 started. On 2026-09-25 the heading still said three layers were absent, by which point Sclera was
 deployed with three bonds and Chiasm had been live for two days. Both readings were true when written
 and neither survived, which is the failure mode this whole document exists to catch.
 
-**Current, checkable with `./scripts/prove.sh`:** Retina, Fovea, Aqueous, Iris, Optic, Sclera, Chiasm
-and Self-heal are live. Intents is not: a real cross-chain attempt moved 0.12 USDT from BSC and landed
-119,255 USDC at the intermediary on Monad, then stalled unsigned, so the escrow never funded. Aurora
-has been asked how to submit the authorisation (question c23f6578). The layer stays built until the
-escrow funds itself, because that is what it promises.
+**Current, checkable with `./scripts/prove.sh`:** all nine are live. Intents was the last. On
+2026-09-25 a real attempt moved 0.12 USDT from BSC and landed 119,255 USDC at the intermediary on
+Monad, then sat at `OPERATION_PENDING` for three days because the authorisation was never signed.
+Aurora has since published the submit-signing guide: the payload is `payload_json` signed verbatim with
+EIP-191 `personal_sign`, `v` normalised to 0 or 1, base58 with a `secp256k1:` prefix, posted to
+`POST /executions/{wallet}/submit`. The earlier attempts failed on every one of those points: wrong
+endpoint, raw hex and a 27/28 `v`.
+
+Signed on 2026-09-28, verified locally to recover to our wallet before sending and the execution went
+to `SUCCESS` inside fifteen seconds. Destination transaction
+`0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558`, block 108,690,488: the
+intermediary moved 115,558 USDC units into Aqueous and 2,505 to Aurora as its fee. The escrow went from
+0 to 115,558. The layer only went live once the escrow funded, because that is what it promises.
 
 The corrected picture:
 
@@ -253,7 +261,7 @@ wc -l lib/intents.ts lib/cleanverse.ts cre/kanmani-oracle/slashing/main.ts \
 |---|---|
 | Alchemy self-healing re-verification | **written and tested, not fed by a live stream.** HMAC-SHA256 over the raw body in constant time, refusing every delivery when no key is configured rather than failing open; delivery id is a primary key so retries are idempotent. No delivery has yet come from a webhook created in Alchemy's own dashboard |
 | Chainlink CRE slashing workflow | **simulated 2026-09-25, recorded in [26-CRE-SIMULATION](26-CRE-SIMULATION.md).** Reads bond terms from Sclera on Monad mainnet and the claim-truth rate from our API, then refuses to rate an empty sample. Darby confirmed CLI simulation is the judged bar. The run also caught a zero-address placeholder in the config that had never been exercised |
-| Aurora Intents funding path | **written, not exercised on mainnet.** `/fund` renders it |
+| Aurora Intents funding path | **live 2026-09-28.** 0.12 USDT on BSC funded a Monad escrow job through the intermediary account, destination tx `0x738af85c…a440b558`, 115,558 USDC units into Aqueous. `/fund` renders it with the transaction |
 | Cleanverse gated release | **contract and client written, not deployed** |
 | Qwen schema atlas | **the atlas shipped and the induction loop ran for the first time on 2026-09-28.** Recorded in [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md). Until then the five mappings carried a typed `induced` date with no artefact behind it, which `/method` has been reworded to stop implying. Qwen3.8-Max read an unmapped BSC shape and correctly returned `noClaim`, catching that a field named `value` was a percentage rather than money, which would otherwise have manufactured 41 payment claims out of uptime reports |
 | Nansen underwriting, paid per call over x402 | **not started.** Falls with Choroid |

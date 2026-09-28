@@ -213,13 +213,51 @@ function FundBody({
         </div>
       </Panel>
 
+      <Panel
+        title="it has been done once, on mainnet"
+        subtitle="Real money from another chain into a funded Monad escrow, with nothing done on Monad by the payer. Each step is a transaction you can open."
+      >
+        <div className="space-y-px">
+          <Row label="source, BSC">
+            <Mono>0.12 USDT sent to the Aurora deposit address</Mono>{" "}
+            <a className="text-[var(--color-brand)] hover:underline" target="_blank" rel="noopener"
+               href="https://bscscan.com/tx/0xcebbdd3a9dbcd586bfa2c0a6ec848eb0eb8ec9b9715c99327112a14e85463469">
+              0xcebbdd3a…85463469
+            </a>
+          </Row>
+          <Row label="bridged to Monad">
+            <Mono>119,255 USDC units</Mono> <span className="text-muted">landed at the intermediary account 0x004F15d9…1b29B2</span>
+          </Row>
+          <Row label="destination, Monad">
+            <Mono>approve then createJob, run by the intermediary</Mono>{" "}
+            <a className="text-[var(--color-brand)] hover:underline" target="_blank" rel="noopener"
+               href="https://monadexplorer.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558">
+              0x738af85c…a440b558
+            </a>
+          </Row>
+          <Row label="into the escrow">
+            <Mono>115,558 USDC units into Aqueous</Mono>{" "}
+            <span className="text-muted">exactly the amount the job asks for, which the shortfall guard fixed before sending</span>
+          </Row>
+          <Row label="fee">
+            <Mono>2,505 units to Aurora</Mono> <span className="text-muted">carved out by the service, never added by us</span>
+          </Row>
+        </div>
+        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+          It sat unsigned for three days first. The bridge had landed the money and the escrow was
+          still empty, so this page kept calling the path built rather than live until the escrow
+          actually held it. The payer and the agent here are both ours, so it proves the rail and
+          nothing about demand.
+        </p>
+      </Panel>
+
       <Panel title="honest note">
         <p className="text-[13px] leading-relaxed text-muted">
           This page builds the exact two-step batch and shows the shortfall guard. The live quote, the
           worst-case delivery number and the signing payload come from Aurora&apos;s create endpoint,
           which needs an Intents Connect API key wired server side, so those numbers are not fetched on
-          this public page. The final funded deposit spends real money across a real bridge and is run
-          from the operator&apos;s wallet, not from here. See{" "}
+          this public page. A funded deposit spends real money across a real bridge and is run from
+          the operator&apos;s wallet, not from here. See{" "}
           <Link href="/method" className="text-[var(--color-brand)] hover:underline">
             the method
           </Link>{" "}

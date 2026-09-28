@@ -22,7 +22,7 @@
 
 When you hire an agent, the money sits in escrow until the work lands. **The settlement itself
 emits the receipt, so the evidence cannot disagree with the payment.** The track record that
-results is correct by construction, and the agent can then stake its own money on that record.
+results is correct by construction and the agent can then stake its own money on that record.
 
 <p align="center"><sub>
   <a href="#why-this-needs-to-exist">why</a> ·
@@ -45,9 +45,9 @@ payment claim against the chain it names.
 
 <img src="public/readme/cluster.svg" alt="8,093 of 10,258 agents, across 7,962 wallets, share one registration document that no longer answers." width="100%">
 
-None of this is fraud, and the project never says it is. A registry has no mechanism to keep a true
+None of this is fraud and the project never says it is. A registry has no mechanism to keep a true
 statement true. Someone registers a document and it is correct that day. Then the deployment
-expires, and the record stays valid on chain forever while describing nothing.
+expires and the record stays valid on chain forever while describing nothing.
 
 > [!IMPORTANT]
 > **Hash integrity is not claim truth.** A document can match its on-chain commitment perfectly and
@@ -73,7 +73,7 @@ expires, and the record stays valid on chain forever while describing nothing.
 
 <img src="public/readme/flow.svg" alt="How the money moves: escrow, deliver, settle, price it." width="100%">
 
-## The four outcomes, and the one rule that governs everything
+## The four outcomes and the one rule that governs everything
 
 <img src="public/readme/outcomes.svg" alt="Four outcomes: true, false, noClaim, unknown. Unknown is never false and a null is never zero." width="100%">
 
@@ -81,13 +81,13 @@ Everything else in this repository is built around that one rule.
 
 ## The stack
 
-<img src="public/readme/stack.svg" alt="The stack: nine layers in the order money flows. Eight live on Monad mainnet, one built." width="100%">
+<img src="public/readme/stack.svg" alt="The stack: nine layers in the order money flows, all live on Monad mainnet." width="100%">
 
 ## The 90 second path
 
 <table>
   <tr>
-    <td align="center" width="20%"><a href="https://kanmani.xyz/studio"><b>01 · create</b></a><br><sub>Compose a registration document, or load the one you already have and fix it.</sub></td>
+    <td align="center" width="20%"><a href="https://kanmani.xyz/studio"><b>01 · create</b></a><br><sub>Compose a registration document or load the one you already have and fix it.</sub></td>
     <td align="center" width="20%"><a href="https://kanmani.xyz/verify"><b>02 · verify</b></a><br><sub>Paste anything and get a verdict, plus the command to re-derive it without us.</sub></td>
     <td align="center" width="20%"><a href="https://kanmani.xyz/bond"><b>03 · settle</b></a><br><sub>Real USDC staked on mainnet against a claim-truth floor.</sub></td>
     <td align="center" width="20%"><a href="https://kanmani.xyz/operators"><b>04 · explore</b></a><br><sub>Agents clustered by the document they registered, not by wallet.</sub></td>
@@ -106,11 +106,11 @@ Everything else in this repository is built around that one rule.
 
 One bond has completed its whole life on mainnet: posted, held, matured and returned. That is proven
 by where the money went, not by an event we emitted. Both agents are registered with inline
-`data:` records, are bonded, and answer over x402.
+`data:` records, are bonded and answer over x402.
 
 > [!NOTE]
 > Our own paid calls are **self-payments**: the payer and payee are the same wallet. They prove the
-> rail works end to end, and they prove nothing about demand. It is stated here so a reader doesn't
+> rail works end to end and they prove nothing about demand. It is stated here so a reader doesn't
 > have to discover it.
 
 ### Two agents that only make sense on Monad
@@ -129,7 +129,7 @@ enough to be unslashable.
 
 ## For software
 
-An agent should never need to read HTML. There are nine GET surfaces, and every response carries a
+An agent should never need to read HTML. There are nine GET surfaces and every response carries a
 `reproduce` field with the command that gets the same answer without us.
 
 <table>
@@ -159,12 +159,13 @@ then does the work. The thing that audits payments is paid for over the rail it 
 ./scripts/prove.sh
 ```
 
-The script runs eleven checks across all nine layers. It reads only public endpoints and public
+The script runs twelve checks across all nine layers. It reads only public endpoints and public
 chain state, with no key and no access to our infrastructure, so it runs from a clean machine.
 
-It reports **eight live and one built**, which is the honest shape rather than nine greens. Intents
-has never executed a cross-chain fund, so it is proven as built and labelled that way. The last
-recorded run is in [docs/25-PROOF.md](docs/25-PROOF.md).
+It reports **all nine live**. For three days it reported eight and one built, because Intents had
+bridged money to Monad and then stalled unsigned, leaving the escrow empty. It only went green once
+the escrow funded itself and the check reads that transfer off chain rather than trusting a status
+field. The last recorded run is in [docs/25-PROOF.md](docs/25-PROOF.md).
 
 <details>
 <summary><b>Check each number by hand</b>: these are the commands, not a description of them</summary>
@@ -220,7 +221,7 @@ need an archive node.
 
 ## Security
 
-This build holds and moves real funds, and it fetches URLs that strangers put on chain, so it is
+This build holds and moves real funds and it fetches URLs that strangers put on chain, so it is
 reviewed accordingly. [17-CONTRACT-AUDIT.md](docs/17-CONTRACT-AUDIT.md) is the running security
 review, with every finding stated as an exploit and a proof. [18-BUGS-FIXED.md](docs/18-BUGS-FIXED.md)
 is the plain log of what broke and what now stops it. A full-surface pass on 2026-09-27 across the

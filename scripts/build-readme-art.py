@@ -4,7 +4,7 @@ The README's moving pictures, written as plain SVG.
 
 GitHub renders an SVG in an <img> with its inline <style> and CSS animations intact, but runs no
 script and loads no external font. So every file here is self-contained: system font stacks, no
-<script>, no remote reference, and every animation declared in CSS or SMIL. Each file also carries a
+<script>, no remote reference and every animation declared in CSS or SMIL. Each file also carries a
 `prefers-reduced-motion` block that stops the loops and shows the finished frame.
 
 Every animation *starts* from a keyframe and falls back to the element's own attributes, so a viewer
@@ -455,7 +455,7 @@ def cluster() -> str:
 <text x="72" y="152" class="sans in" style="--d:.1s" font-size="76" font-weight="700" letter-spacing="-3" fill="{BRAND}">{members:,}</text>
 <text x="72" y="190" class="body in" style="--d:.2s" font-size="18" fill="{TEXT}">agents across {owners:,} wallets share one registration</text>
 <text x="72" y="214" class="body in" style="--d:.2s" font-size="18" fill="{TEXT}">document that no longer answers.</text>
-<text x="72" y="256" class="body in" style="--d:.3s" font-size="14.5" fill="{MUTED}">An expired preview deployment. Nobody's misconduct, and the registry</text>
+<text x="72" y="256" class="body in" style="--d:.3s" font-size="14.5" fill="{MUTED}">An expired preview deployment. Nobody's misconduct and the registry</text>
 <text x="72" y="278" class="body in" style="--d:.3s" font-size="14.5" fill="{MUTED}">reports no difference between those and the live ones. That filter is the product.</text>
 {''.join(cells)}
 <g class="in" style="--d:1s">
@@ -477,7 +477,7 @@ STACK = [
     ("Optic", "Answer on chain", "The first row in Monad's ERC-8004 Validation Registry.", "live"),
     ("Sclera", "Bond the promise", "USDC staked against a claim-truth floor. A signed verdict slashes.", "live"),
     ("Chiasm", "Read every chain at once", "BSC beside Monad, merged on the document's content hash.", "live"),
-    ("Intents", "Fund from any chain", "Written and tested. No cross-chain fund executed yet.", "built"),
+    ("Intents", "Fund from any chain", "USDT on BSC funded a Monad escrow. One signature, no bridge step.", "live"),
     ("Self-heal", "Heal a fixed record", "A repaired document re-reads itself from the event stream.", "live"),
 ]
 
@@ -520,10 +520,10 @@ def stack() -> str:
 <defs><linearGradient id="lit" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{ACCENT}"/><stop offset=".5" stop-color="{BRAND}"/><stop offset="1" stop-color="{BRAND}" stop-opacity=".2"/></linearGradient></defs>
 {kicker(72, 66, "the stack")}
 <text x="72" y="116" class="sans in" style="--d:.1s" font-size="34" font-weight="600" letter-spacing="-1" fill="{TEXT}">Nine layers, one primitive underneath: a proven track record.</text>
-<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="{MUTED}">In the order money flows through them. <tspan fill="{BRAND}">live</tspan> is running on Monad mainnet now. <tspan fill="{TEXT}">built</tspan> is written and tested, not yet deployed.</text>
+<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="{MUTED}">In the order money flows through them. All nine are <tspan fill="{BRAND}">live</tspan> on Monad mainnet, each checked by scripts/prove.sh.</text>
 {''.join(cards)}
 """
-    return svg(w, h, "The stack: nine layers in the order money flows. Eight live on Monad mainnet, one built.", css, body)
+    return svg(w, h, "The stack: nine layers in the order money flows, all live on Monad mainnet.", css, body)
 
 
 # ============================================================================== outcomes
@@ -531,7 +531,7 @@ OUTCOMES = [
     ("true", TRUE, TRUE_BG, "The cited transaction is on the chain the document names."),
     ("false", FALSE, FALSE_BG, "We read that chain successfully and the transaction is not there."),
     ("noClaim", NOCLAIM, NOCLAIM_BG, "The document parsed and asserts no payment. Nothing to resolve."),
-    ("unknown", UNKNOWN, UNKNOWN_BG, "We could not look, or could not read what we fetched. Never an accusation."),
+    ("unknown", UNKNOWN, UNKNOWN_BG, "We could not look or could not read what we fetched. Never an accusation."),
 ]
 
 
@@ -552,7 +552,7 @@ def outcomes() -> str:
 </g>""")
     body = backdrop(w, h, ((0.5, -0.4, BRAND, 0.18),)) + f"""
 {kicker(72, 66, "four outcomes, one rule")}
-<text x="72" y="100" class="sans in" style="--d:.1s" font-size="26" font-weight="600" letter-spacing="-.6" fill="{TEXT}"><tspan class="mono" fill="{UNKNOWN}">unknown</tspan> is never <tspan class="mono" fill="{FALSE}">false</tspan>, and a null is never <tspan class="mono">0</tspan>.</text>
+<text x="72" y="100" class="sans in" style="--d:.1s" font-size="26" font-weight="600" letter-spacing="-.6" fill="{TEXT}"><tspan class="mono" fill="{UNKNOWN}">unknown</tspan> is never <tspan class="mono" fill="{FALSE}">false</tspan> and a null is never <tspan class="mono">0</tspan>.</text>
 {''.join(cards)}
 <text x="72" y="294" class="body in" style="--d:.6s" font-size="14" fill="{FAINT}">Enforced in the types, in the contract, in the SQL and in the UI. A failure to look is not a finding against anybody.</text>
 """

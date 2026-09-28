@@ -11,7 +11,7 @@
 # Needs curl. `cast` (foundry) is used where a check has to read the chain directly and is skipped with
 # a visible SKIP line if absent rather than silently passing.
 #
-# IMPORTANT: eight layers are live and one is not. This script does not try to prove nine working
+# All nine layers are live, each proven against public chain state or a public endpoint. This script does not try to prove nine working
 # things, because two of them are not working things yet. Intents is proven to be
 # BUILT, which means the code and tests exist and nothing has run in production. A script that reported
 # nine greens would be the exact kind of claim this project exists to catch.
@@ -143,14 +143,34 @@ else
   bad "the chains page did not report a second chain"
 fi
 
-# ---------------------------------------------------------------- 8. Intents, BUILT
-echo "8. Intents  ·  fund from any chain  ·  expected BUILT, NOT live"
-if [ -f lib/intents.ts ] && [ -f lib/intents.test.ts ]; then
-  ok "the module and its tests exist"
-  note "no cross-chain fund has been executed. This is proven BUILT, not live, on purpose"
-  note "run: npm test -- lib/intents.test.ts"
+# ---------------------------------------------------------------- 8. Intents, LIVE
+echo "8. Intents  ·  fund from any chain  ·  expected LIVE"
+# 0.12 USDT deposited on BSC, bridged by Aurora Intents Connect, then the intermediary account on
+# Monad ran approve + createJob. The check reads that destination transaction off Monad and requires
+# a USDC transfer from the intermediary INTO Aqueous, so it cannot pass on a bridge that only moved
+# money into a holding address, which is exactly where this layer sat for three days.
+INTENTS_TX=0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558
+INTERMEDIARY=0x004f15d9b733676b344c25fab983c73d1a1b29b2
+if have_cast; then
+  MOVED=$(cast receipt $INTENTS_TX --rpc-url "$RPC" --json 2>/dev/null | python3 -c "
+import json,sys
+r=json.load(sys.stdin)
+if r.get('status')!='0x1': print(0); raise SystemExit
+n=0
+for l in r['logs']:
+    t=l['topics']
+    if l['address'].lower()=='0x754704bc059f8c67012fed69bc8a327a5aafb603' and t[0].startswith('0xddf252ad') \
+       and t[1][-40:]=='$INTERMEDIARY'[2:] and t[2][-40:]=='${AQUEOUS,,}'[2:]:
+        n+=int(l['data'],16)
+print(n)" 2>/dev/null)
+  if [ "${MOVED:-0}" -gt 0 ] 2>/dev/null; then
+    ok "a cross-chain fund landed in the escrow: $MOVED USDC units from the intermediary into Aqueous"
+    note "source 0.12 USDT on BSC, destination tx $INTENTS_TX"
+  else
+    bad "no USDC transfer from the intermediary into Aqueous in $INTENTS_TX"
+  fi
 else
-  sk "run from the repository root to check the module"
+  sk "needs cast to read the destination transaction"
 fi
 
 # ---------------------------------------------------------------- 9. Self-heal, LIVE
@@ -182,6 +202,6 @@ fi
 echo
 echo "-------------------------------------------------------------"
 printf 'PASS %d   FAIL %d   SKIP %d\n' "$pass" "$fail" "$skip"
-echo "Eight layers live, one built. If a FAIL appears above, the claim on the site is wrong and we"
+echo "All nine layers live. If a FAIL appears above, the claim on the site is wrong and we"
 echo "would rather you found it with this script than by trusting the page."
 [ "$fail" -eq 0 ]

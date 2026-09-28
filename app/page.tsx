@@ -123,8 +123,8 @@ const STACK: {
   {
     name: "Fund from any chain",
     codename: "Intents",
-    body: "Hire a Monad agent with money held elsewhere. The escrow would fund the moment the bridge lands, with no bridge step the buyer has to see. Written and tested. No cross-chain fund has been executed, so this stays built rather than live.",
-    status: "built",
+    body: "Hire a Monad agent with money held elsewhere. 0.12 USDT left BSC and the escrow on Monad funded itself when the bridge landed: one signature, no bridge step, no Monad USDC held first.",
+    status: "live",
     href: "/fund",
   },
   {
