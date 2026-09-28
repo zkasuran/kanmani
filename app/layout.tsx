@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Logo } from "@/components/logo.tsx";
 import { Spotlight } from "@/components/motion.tsx";
 import { Nav } from "@/components/nav.tsx";
+import { SessionProvider } from "@/components/session.tsx";
 import { ThemeToggle } from "@/components/theme-toggle.tsx";
 import "./globals.css";
 
@@ -84,6 +85,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-screen antialiased">
+        {/* Who is logged in, for the life of the tab. Public facts only; see lib/login.ts. */}
+        <SessionProvider>
         {/* Skip link: the first tab stop, invisible until focused. */}
         <a href="#main" className="skip-link">skip to content</a>
         {/* Pointer spotlight for cards. Client-only, pointer:fine only, off under reduced motion. */}
@@ -142,6 +145,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
         </footer>
+        </SessionProvider>
       </body>
     </html>
   );

@@ -2110,9 +2110,42 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
 .hero__more a:hover, .hero__more a:focus-visible { color: var(--color-brand); text-decoration-color: currentColor; }
 
 /* An element that entered view without a real scroll (full-page capture, previews) appears settled:
-   no fade, no rise, and any draw-in it contains is skipped. */
+   no fade and no rise. Any draw-in it contains is skipped. */
 [data-reveal-static] { transition: none !important; }
 [data-reveal-static] .stagger > *,
 [data-reveal-static] .dist,
 [data-reveal-static] .wflow__wipe,
 [data-reveal-static] .wflow__label { animation: none !important; transition: none !important; }
+
+/* Sign-in methods and account view. Panel tokens only, so both themes follow without overrides. */
+.signin-method {
+  display: block;
+  width: 100%;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-panel);
+  padding: 0.85rem 1rem;
+  transition: border-color var(--dur-1) ease, background-color var(--dur-1) ease;
+}
+.signin-method:hover:not(:disabled),
+.signin-method:focus-visible {
+  border-color: var(--brand-line);
+  background: var(--color-panel-2);
+}
+.signin-method:disabled { opacity: 0.6; cursor: progress; }
+.signin-method--compact { padding: 0.6rem 0.75rem; }
+.signin-method--card { padding: 1.25rem 1.35rem; }
+.signin-error {
+  border-left: 2px solid var(--color-false);
+  padding-left: 0.6rem;
+  color: var(--color-text);
+}
+.account-label { display: inline-flex; align-items: center; gap: 0.4rem; }
+.account-label--pending { visibility: hidden; }
+.account-label--in {
+  border: 1px solid var(--color-line-bright);
+  border-radius: 999px;
+  padding: 0 0.55rem;
+  margin: -1px -0.3rem;
+}
+.sheet-account { border-bottom: 1px solid var(--color-line); padding-bottom: 1rem; }

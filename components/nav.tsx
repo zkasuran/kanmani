@@ -23,9 +23,19 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { AccountLabel, AccountMenu } from "@/components/account.tsx";
 
 type Item = { href: string; label: string; hint: string };
-type Group = { label: string; href: string; items: Item[] };
+type Group = { label: string; href: string; items: Item[]; /** Renders its own panel instead of items. */ account?: true };
+
+/**
+ * The last entry, after the journey: log in until logged in, then the account itself.
+ *
+ * Its label turns into the short address, so the one place a reader looks for "am I logged in" is
+ * the place that answers it. It shares the groups' hover logic, so moving to it from `developers`
+ * behaves like moving between any two groups.
+ */
+const LOGIN: Group = { label: "login", href: "/login", items: [], account: true };
 
 /**
  * The groups, in the order somebody actually moves through the product.
@@ -44,10 +54,10 @@ type Group = { label: string; href: string; items: Item[] };
 const GROUPS: Group[] = [
   {
     label: "create",
-    href: "/studio",
+    href: "/create",
     items: [
-      { href: "/studio", label: "studio", hint: "register an agent or repoint one you own" },
-      { href: "/account", label: "account", hint: "one passkey, four keys, nothing stored" },
+      { href: "/create/agent", label: "agent account", hint: "register and run agents, bond their record" },
+      { href: "/create/user", label: "user account", hint: "verify claims, pay for jobs, fund from any chain" },
     ],
   },
   {
@@ -127,7 +137,9 @@ export function Nav() {
   }, [open]);
 
   const inGroup = (g: Group) =>
-    g.items.length === 0 ? path.startsWith(g.href) : g.items.some((i) => path === i.href || path.startsWith(`${i.href}/`));
+    g.items.length === 0
+      ? path.startsWith(g.href)
+      : path === g.href || g.items.some((i) => path === i.href || path.startsWith(`${i.href}/`));
 
   /**
    * Hover intent, so a diagonal path to an item is not hijacked by the labels it crosses.
@@ -257,6 +269,14 @@ export function Nav() {
    * Down opens and enters, Up enters at the end, Escape closes and hands focus back to the label.
    */
   const onLabelKey = (e: React.KeyboardEvent, g: Group) => {
+    if (g.account && e.key === "ArrowDown") {
+      // The account panel holds buttons and links rather than a fixed item list, so focus whatever
+      // is first in it once it has rendered.
+      e.preventDefault();
+      enter(g.label);
+      window.setTimeout(() => panelEl.current?.querySelector<HTMLElement>("button, a")?.focus(), 0);
+      return;
+    }
     if (g.items.length === 0) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
@@ -294,9 +314,10 @@ export function Nav() {
   return (
     <>
       <nav className="ml-auto hidden items-center gap-x-1 md:flex">
-        {GROUPS.map((g) => {
+        {[...GROUPS, LOGIN].map((g) => {
           const active = inGroup(g);
-          const shown = hover === g.label && g.items.length > 0;
+          const hasPanel = g.items.length > 0 || g.account === true;
+          const shown = hover === g.label && hasPanel;
           return (
             <div
               key={g.label}
@@ -313,7 +334,13 @@ export function Nav() {
                 if (!returning.current) enterPanel(g.label);
               }}
               onBlur={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setHover(null);
+                const to = e.relatedTarget as Node | null;
+                if (e.currentTarget.contains(to)) return;
+                // Focus going nowhere while the pointer is still over the group is not leaving it: the
+                // login panel swaps its sign-in buttons for the account view once a sign-in succeeds
+                // and the focused button unmounting must not close the panel it just filled.
+                if (to === null && e.currentTarget.matches(":hover")) return;
+                setHover(null);
               }}
             >
               <Link
@@ -322,17 +349,40 @@ export function Nav() {
                   labelRefs.current[g.label] = el;
                 }}
                 aria-current={active ? "page" : undefined}
-                aria-haspopup={g.items.length > 0 ? "menu" : undefined}
-                aria-expanded={g.items.length > 0 ? shown : undefined}
+                aria-haspopup={hasPanel ? "menu" : undefined}
+                aria-expanded={hasPanel ? shown : undefined}
                 onKeyDown={(e) => onLabelKey(e, g)}
                 onMouseMove={(e) => trackApex(e, g.label)}
                 className={`nav-link inline-block rounded px-2.5 py-1.5 font-mono text-[12px] transition-colors ${
                   active ? "text-[var(--color-text)]" : "text-muted hover:text-[var(--color-text)]"
                 }`}
               >
-                {g.label}
+                {g.account ? <AccountLabel /> : g.label}
               </Link>
-              {shown ? (
+              {shown && g.account ? (
+                <div
+                  role="menu"
+                  aria-label={g.label}
+                  ref={panelEl}
+                  className="menu-pop account-pop absolute right-0 top-full z-30 w-[21rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-3 shadow-[var(--shadow-2)]"
+                  onMouseEnter={() => enterPanel(g.label)}
+                  onMouseLeave={(e) => {
+                    pointer.current = { x: e.clientX, y: e.clientY };
+                    leave();
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      setHover(null);
+                      returning.current = true;
+                      labelRefs.current[g.label]?.focus();
+                      returning.current = false;
+                    }
+                  }}
+                >
+                  <AccountMenu onNavigate={() => setHover(null)} />
+                </div>
+              ) : shown ? (
                 <div
                   role="menu"
                   aria-label={g.label}
@@ -413,6 +463,13 @@ export function Nav() {
           className="mobile-sheet sheet-in field field-live fixed inset-x-0 top-[var(--header-h,4.5rem)] z-30 max-h-[80vh] overflow-y-auto border-b border-[var(--color-line)] md:hidden"
         >
           <nav className="mx-auto flex max-w-[1180px] flex-col gap-4 px-5 py-4">
+            {/* The account first on a phone: it is the one thing a reader opens the sheet to check. */}
+            <div className="sheet-group sheet-account" style={{ ["--i" as string]: 0 }}>
+              <span className="kicker">login</span>
+              <div className="mt-2">
+                <AccountMenu onNavigate={() => setOpen(false)} />
+              </div>
+            </div>
             {GROUPS.map((g, gi) => (
               <div key={g.label} className="sheet-group" style={{ ["--i" as string]: gi }}>
                 <Link href={g.href} className="kicker">

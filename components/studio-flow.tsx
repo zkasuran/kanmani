@@ -25,6 +25,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Mono } from "@/components/ui.tsx";
+import { useSession } from "@/components/session.tsx";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import { type IrisKeys } from "@/lib/iris.ts";
 import {
@@ -79,7 +80,12 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
   const [hostedAt, setHostedAt] = useState("");
   const [chainId, setChainId] = useState<number>(CHAIN_OPTIONS[0]?.id ?? 143);
   const [agentId, setAgentId] = useState("");
+  const session = useSession();
   const [keys, setKeys] = useState<IrisKeys | null>(null);
+  // Already logged in with a passkey on this page load: use those keys rather than asking again.
+  useEffect(() => {
+    if (!keys && session.keys) setKeys(session.keys);
+  }, [keys, session.keys]);
   const [busy, setBusy] = useState<string | null>(null);
   const [authority, setAuthority] = useState<Authority | null>(null);
   const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string; binding: string } | null>(null);
@@ -136,6 +142,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         return;
       }
       setKeys(outcome.keys);
+      session.adopt(outcome, "agent");
       setNote({
         kind: "info",
         text: "Signed in. The key lives in this tab only and reconstructs from the same passkey on any device.",
@@ -145,7 +152,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     } finally {
       setBusy(null);
     }
-  }, []);
+  }, [session]);
 
   /**
    * Door A: load the operator's own record and diagnose it, rather than showing an empty form.

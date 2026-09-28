@@ -5,7 +5,7 @@ import { PageHeader, Panel } from "@/components/ui.tsx";
 export const metadata = {
   title: "Account",
   description:
-    "One passkey ceremony, four independent keys, nothing stored. Clear local storage or open a second device and everything rebuilds.",
+    "One passkey ceremony, four independent keys, no key stored. Clear storage or open a second device and everything rebuilds.",
 };
 
 /**
@@ -38,8 +38,9 @@ export default function AccountPage() {
             One passkey ceremony gives four independent keys: the account you sign in with, the
             identity that signs verification receipts off chain, the on-chain attestation key a
             contract recovers as the verdict signer and the key that encrypts anything private.
-            Nothing is stored on this device and nothing secret reaches the server, so clearing local
-            storage loses nothing and a second device reproduces the same keys exactly.
+            No key is stored on this device and nothing secret reaches the server. While you are logged
+            in this tab keeps only your public address, until you log out or close it. Clearing storage
+            loses nothing and a second device reproduces the same keys exactly.
           </>
         }
       />

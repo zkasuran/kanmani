@@ -17,6 +17,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Panel } from "@/components/ui.tsx";
+import { useSession } from "@/components/session.tsx";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import { signReceipt, signVaultWrite, toHex, verifyReceipt, type IrisKeys, type Receipt } from "@/lib/iris.ts";
 import { CONTEXT, open, parseSealed, seal, writeMessage, type Sealed } from "@/lib/vault.ts";
@@ -27,6 +28,7 @@ async function contentFingerprint(key: Uint8Array): Promise<string> {
 }
 
 export function AccountPanel() {
+  const session = useSession();
   const [outcome, setOutcome] = useState<CeremonyOutcome | null>(null);
   const [busy, setBusy] = useState<"create" | "signin" | null>(null);
   const [elapsed, setElapsed] = useState<number | null>(null);
@@ -70,6 +72,8 @@ export function AccountPanel() {
     // unmeasured claim about it is worth nothing to a judge.
     setElapsed(Math.round(performance.now() - started));
     setOutcome(r);
+    // The bar and this page show the same account. Adopting keeps the keys in memory, never storage.
+    session.adopt(r);
     setBusy(null);
     readStorage();
     setFingerprint(r.ok ? await contentFingerprint(r.keys.content) : null);
@@ -338,7 +342,7 @@ export function AccountPanel() {
       {/* ------------------------------------------------ the gate, made pressable */}
       <Panel
         title="what this site has stored about you"
-        subtitle="Live readout of this origin, not a claim. Clear it and nothing here changes, because nothing about your identity was ever in it."
+        subtitle="Live readout of this origin, not a claim. While you are logged in, sessionStorage holds one entry: your public address and how you signed in, cleared when the tab closes. No key is ever in it, so clearing it loses nothing: the keys come back from the passkey."
       >
         <dl className="grid grid-cols-3 gap-3">
           <Count label="localStorage" n={storage?.local ?? null} />

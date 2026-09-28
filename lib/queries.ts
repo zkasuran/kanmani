@@ -387,6 +387,11 @@ export type AgentFilter = {
   /** Only agents carrying at least one feedback with an evidence pointer. */
   withEvidence?: boolean;
   search?: string;
+  /**
+   * Exact owner, compared case-insensitively. Not `search`, which is a substring match over five
+   * columns and would list an agent whose name happens to contain part of an address as "yours".
+   */
+  owner?: string;
   limit?: number;
   offset?: number;
 };
@@ -418,6 +423,7 @@ function agentSource(f: AgentFilter, params: unknown[]): string {
   if (f.records === "dead") where.push(`r.resolves IS FALSE`);
   if (f.declaresX402 === true) where.push(`a."declaresX402" IS TRUE`);
   if (f.withEvidence) where.push(`coalesce(fb.evidence, 0) > 0`);
+  if (f.owner) where.push(`lower(a.owner) = lower(${p(f.owner)})`);
   if (f.search && f.search.trim()) {
     const raw = f.search.trim();
     // Escape the LIKE metacharacters so a search for "%" or "a_c" is a literal substring, not a
