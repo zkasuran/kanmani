@@ -875,6 +875,24 @@ SELECT
   (SELECT min(checked_at) FROM fovea.verdict)                           AS oldest,
   (SELECT max(checked_at) FROM fovea.verdict)                           AS newest`;
 
+/**
+ * The block the indexer has actually processed up to, from Envio's own progress table.
+ *
+ * Not `IndexState.atBlock`. That row is written by a sweep every 10,000 blocks (about 44 minutes), so
+ * between sweeps it reads as up to 44 minutes stale while the index itself is a few blocks behind
+ * head. Sentinel measured its freshness bound against that row and refused nearly every 64-block
+ * request as stale when the index was current. Null when the table cannot be read.
+ */
+export const INDEX_PROGRESS_SQL = `SELECT progress_block FROM public.envio_chains WHERE id = $1`;
+export async function indexProgress(): Promise<number | null> {
+  try {
+    const r = await q1<{ progress_block: string | number | null }>(INDEX_PROGRESS_SQL, [CHAIN_ID]);
+    return r?.progress_block == null ? null : Number(r.progress_block);
+  } catch {
+    return null;
+  }
+}
+
 export async function freshness(): Promise<Sourced<Freshness>> {
   const r = await q1<Record<string, unknown>>(FRESHNESS_SQL, [CHAIN_ID]);
   return src(FRESHNESS_SQL, {

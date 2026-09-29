@@ -31,7 +31,25 @@
  * that quietly ran a softer check to look better would be the exact fault we publish about others.
  */
 
-import { claimTruthWindow, freshness } from "@/lib/queries.ts";
+import { createPublicClient, http } from "viem";
+import { viemChain } from "@/lib/chains.ts";
+import { claimTruthWindow, indexProgress } from "@/lib/queries.ts";
+
+/**
+ * Where the index is and where the chain is, both read now.
+ *
+ * The age is the gap between the two, in blocks. Either side unreadable leaves the age null, which
+ * Sentinel treats as outside any bound: not knowing how stale an answer is must not pass as fresh.
+ */
+async function indexVsChain(): Promise<{ indexed: number | null; head: number | null }> {
+  const chain = viemChain(143);
+  const client = chain ? createPublicClient({ chain, transport: http(process.env.RPC_MONAD || undefined) }) : null;
+  const [indexed, head] = await Promise.all([
+    indexProgress(),
+    client ? client.getBlockNumber().then(Number).catch(() => null) : Promise.resolve(null),
+  ]);
+  return { indexed, head };
+}
 
 /** Monad mainnet, measured rather than assumed. Used to convert blocks into human time in answers. */
 export const MONAD_BLOCK_MS = 266;
@@ -110,28 +128,24 @@ export type AssayAnswer = {
  * for fresh and got stale has been given the opposite of what they paid for.
  */
 export async function sentinel(agentId: number, maxAgeBlocks: number): Promise<SentinelAnswer> {
-  const f = (await freshness()).rows;
-  const head = f.latestIndexedBlock === null ? null : Number(f.latestIndexedBlock);
+  const { indexed, head: chainHead } = await indexVsChain();
+  const head = indexed;
   const t = head === null ? null : (await claimTruthWindow(String(agentId), 0n, BigInt(head))).rows;
 
   /**
-   * The bound is on OUR VIEW of the chain, not on the agent's last feedback.
+   * The bound is on OUR VIEW of the chain: how many blocks the index is behind the chain right now.
    *
-   * The first version measured `head - latestFeedbackBlock`, which answered a different question: how
-   * long since anyone anywhere left feedback. Feedback is rare, so that returned 4,053,760 blocks on
-   * the first real paid call and attached a twelve-day age to a fresh answer. It was a true
-   * subtraction of two real numbers that meant nothing a caller would want, which is the worst kind
-   * of wrong number because it looks computed.
+   * Two earlier versions measured the wrong thing. The first used the agent's last feedback block and
+   * reported a twelve-day age on a fresh answer. The second used the time of the IndexState row,
+   * which a sweep writes only every 10,000 blocks, so it read up to 44 minutes stale while the index
+   * was a few blocks behind head and it refused almost every 64-block request. Both were real
+   * subtractions of real numbers that did not answer the buyer's question.
    *
-   * What a buyer actually needs to know is whether the index they are being answered from reflects
-   * current chain state. So the age is the index lag, taken from the indexer's own last write and
-   * converted to blocks at the measured block time.
+   * Now: chain head from the RPC minus the block Envio reports it has processed. Negative gaps (the
+   * RPC a block behind the indexer's source) count as zero.
    */
-  // Unix SECONDS, not milliseconds. Treating it as ms put the index in 1970 and reported an age of
-  // 56 years on a live answer, which the first paid call surfaced. Units get asserted here now.
-  const updatedAt = f.indexStateUpdatedAt === null ? null : f.indexStateUpdatedAt * 1000;
-  const ageSeconds = updatedAt === null ? null : Math.max(Math.round((Date.now() - updatedAt) / 1000), 0);
-  const ageBlocks = ageSeconds === null ? null : Math.round((ageSeconds * 1000) / MONAD_BLOCK_MS);
+  const ageBlocks = indexed === null || chainHead === null ? null : Math.max(chainHead - indexed, 0);
+  const ageSeconds = ageBlocks === null ? null : Math.round((ageBlocks * MONAD_BLOCK_MS) / 1000);
   const withinBound = ageBlocks !== null && ageBlocks <= maxAgeBlocks;
 
   // `unknown` is never collapsed into `false`. An empty sample means nothing has been decided about
@@ -161,8 +175,8 @@ export async function sentinel(agentId: number, maxAgeBlocks: number): Promise<S
 }
 
 export async function assay(agentId: number): Promise<AssayAnswer> {
-  const f = (await freshness()).rows;
-  const head = f.latestIndexedBlock === null ? null : Number(f.latestIndexedBlock);
+  // Quoted at the block the index has actually processed, not at the last 10,000-block sweep.
+  const head = await indexProgress();
   const t = head === null ? null : (await claimTruthWindow(String(agentId), 0n, BigInt(head))).rows;
   const sampleSize = t?.sampleSize ?? 0;
   const rate = t?.rateBps === null || t === null ? null : t.rateBps / 10000;
