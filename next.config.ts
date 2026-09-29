@@ -14,7 +14,7 @@ const config: NextConfig = {
   // `staleTimes.dynamic: 0` is the load-bearing half. It stops the client router serving a cached
   // render when a judge clicks between pages, which would show a number from thirty seconds ago
   // with nothing on screen saying so. `static` sits at its floor of 30 because the only static
-  // route here is the 404, and Next refuses anything lower.
+  // route here is the 404 and Next refuses anything lower.
   //
   // Muster's index froze for five days while its page reported a number that was true when it
   // was written. Rendering per request is half the fix; /status showing its own freshness is the
@@ -24,29 +24,10 @@ const config: NextConfig = {
   // which is the correct outcome, but this makes the intent explicit.
   serverExternalPackages: ["pg"],
   async headers() {
-    // Security headers on every response. The CSP is deliberately permissive on script and style
-    // sources ('unsafe-inline' plus self), because Next's hydration bootstrap and Tailwind's inline
-    // styles need it and a nonce pipeline is not wired here. The value it does add is real: object,
-    // base-uri, frame-ancestors and form-action are locked down, so an injected tag cannot load a
-    // plugin, rewrite the base href, frame the site for clickjacking or retarget a form. The XSS
-    // surface is already small (no reflected user input, the one dangerouslySetInnerHTML is a static
-    // string, embed.js renders through textContent in a closed shadow root), so this is defence in
-    // depth rather than the only guard.
-    const csp = [
-      "default-src 'self'",
-      "img-src 'self' data: https:",
-      "script-src 'self' 'unsafe-inline'",
-      "style-src 'self' 'unsafe-inline'",
-      "connect-src 'self' https:",
-      "font-src 'self' data:",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "frame-ancestors 'self'",
-      "form-action 'self'",
-      "upgrade-insecure-requests",
-    ].join("; ");
+    // Security headers on every response. The Content-Security-Policy is NOT here: it carries a fresh
+    // nonce per request, so proxy.ts builds it. A static one here would be sent beside it and both
+    // would be enforced.
     const security = [
-      { key: "content-security-policy", value: csp },
       { key: "x-content-type-options", value: "nosniff" },
       { key: "referrer-policy", value: "strict-origin-when-cross-origin" },
       { key: "x-frame-options", value: "SAMEORIGIN" },

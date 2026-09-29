@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
 import Link from "next/link";
+import { headers } from "next/headers";
 import { Logo } from "@/components/logo.tsx";
 import { Spotlight } from "@/components/motion.tsx";
 import { Nav } from "@/components/nav.tsx";
@@ -53,7 +54,10 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  // Set by proxy.ts per request. Reading it makes every page render per request, which they already
+  // did: every route here reads the live index.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
   return (
     <html lang="en" className={`no-js ${sans.variable} ${mono.variable} ${display.variable}`} suppressHydrationWarning>
       <head>
@@ -77,6 +81,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Both are wrapped so a storage exception in private browsing cannot stop the second one.
         */}
         <script
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html:
               "try{var t=localStorage.getItem('kanmani.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}" +

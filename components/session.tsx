@@ -38,6 +38,45 @@ function injected(): Eip1193 | null {
   return ((window as unknown as { ethereum?: Eip1193 }).ethereum ?? null) as Eip1193 | null;
 }
 
+/** The injected EIP-1193 wallet, for pages that send from a wallet session. */
+export function walletProvider(): Eip1193 | null {
+  return injected();
+}
+
+/**
+ * Put the wallet on the chain a transaction is for, adding the chain if the wallet lacks it.
+ *
+ * Sending on whatever chain the wallet happens to be on is how a registration meant for Monad lands
+ * on another network, so the send refuses to start until the wallet reports the right chain id.
+ */
+export async function ensureWalletChain(
+  w: Eip1193,
+  chain: { id: number; name: string; nativeCurrency: { name: string; symbol: string; decimals: number }; rpcUrls: { default: { http: readonly string[] } }; blockExplorers?: { default: { url: string } } },
+): Promise<void> {
+  const hex = `0x${chain.id.toString(16)}`;
+  const current = (await w.request({ method: "eth_chainId" })) as string;
+  if (parseInt(current, 16) === chain.id) return;
+  try {
+    await w.request({ method: "wallet_switchEthereumChain", params: [{ chainId: hex }] });
+  } catch (e) {
+    if ((e as { code?: number }).code !== 4902) throw e;
+    await w.request({
+      method: "wallet_addEthereumChain",
+      params: [
+        {
+          chainId: hex,
+          chainName: chain.name,
+          nativeCurrency: chain.nativeCurrency,
+          rpcUrls: [...chain.rpcUrls.default.http],
+          ...(chain.blockExplorers ? { blockExplorerUrls: [chain.blockExplorers.default.url] } : {}),
+        },
+      ],
+    });
+  }
+  const after = (await w.request({ method: "eth_chainId" })) as string;
+  if (parseInt(after, 16) !== chain.id) throw new Error(`The wallet stayed on chain ${parseInt(after, 16)}, not ${chain.id}.`);
+}
+
 /** Whether a browser wallet is present. Asked, never assumed, like `webAuthnAvailable`. */
 export function walletAvailable(): boolean {
   return injected() !== null;

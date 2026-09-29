@@ -8,14 +8,49 @@ import { NextResponse, type NextRequest } from "next/server";
  * eight-connection pool open with cheap repeated requests. This is the outer bound that stops that.
  *
  * It is deliberately loose. A judge browsing, the half-hourly anonymous canary and an agent polling
- * the machine surfaces all sit far under the ceiling. Only a flood trips it, and it trips with a 429
+ * the machine surfaces all sit far under the ceiling. Only a flood trips it. It trips with a 429
  * and a Retry-After rather than a silent drop, so a well-behaved client backs off and a browser shows
- * a real status. In-memory on purpose: the app is one long-lived process, and the token's own limits
+ * a real status. In-memory on purpose: the app is one long-lived process. The token's own limits
  * plus the database statement_timeout are the durable backstops. A limiter is not a security boundary
  * on its own, it is a courtesy that keeps one caller from starving the rest.
  *
  * This is Next's "proxy" convention (formerly "middleware"), so it runs before every matched route.
  */
+/**
+ * The Content-Security-Policy, built per request with a fresh nonce.
+ *
+ * `script-src` allows only scripts carrying this response's nonce plus whatever those scripts load
+ * (`'strict-dynamic'`). It used to be `'self' 'unsafe-inline'`, which let any injected inline script
+ * run. That mattered more once passkey keys lived in page memory: an inline injection could have read
+ * them. Next stamps the nonce on its own bootstrap scripts when it finds it in the CSP of the request,
+ * and the layout stamps it on the one inline script we write (the theme, before first paint).
+ *
+ * `style-src` keeps `'unsafe-inline'`. Tailwind and React write inline style attributes. A style
+ * cannot run code, so the residual risk there is layout defacement rather than key theft.
+ */
+export function contentSecurityPolicy(nonce: string, dev = false): string {
+  return [
+    "default-src 'self'",
+    "img-src 'self' data: https:",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
+    "style-src 'self' 'unsafe-inline'",
+    "connect-src 'self' https:",
+    "font-src 'self' data:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "frame-ancestors 'self'",
+    "form-action 'self'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
+
+/** 16 random bytes, base64. Fresh per request: a nonce that repeats is a password printed on the page. */
+function newNonce(): string {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b));
+}
+
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 600;
 
@@ -29,9 +64,11 @@ function clientIp(req: NextRequest): string {
 }
 
 export function proxy(req: NextRequest): NextResponse {
-  // A CORS preflight carries no work and must not be counted, or a browser client burns its budget
+  // A CORS preflight carries no work and must not be counted. Otherwise a browser client burns its budget
   // on the OPTIONS that precedes every cross-origin POST.
   if (req.method === "OPTIONS") return NextResponse.next();
+  const nonce = newNonce();
+  const csp = contentSecurityPolicy(nonce, process.env.NODE_ENV === "development");
 
   const now = Date.now();
   const ip = clientIp(req);
@@ -54,7 +91,14 @@ export function proxy(req: NextRequest): NextResponse {
       { status: 429, headers: { "content-type": "application/json", "retry-after": String(retryAfter) } },
     );
   }
-  return NextResponse.next();
+  // The nonce travels to the render on the REQUEST (Next reads the CSP there to stamp its scripts and
+  // the layout reads x-nonce) and to the browser on the RESPONSE, where it is enforced.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-nonce", nonce);
+  requestHeaders.set("content-security-policy", csp);
+  const res = NextResponse.next({ request: { headers: requestHeaders } });
+  res.headers.set("content-security-policy", csp);
+  return res;
 }
 
 // Everything except Next's own static assets, which are cheap and served without touching the pool.

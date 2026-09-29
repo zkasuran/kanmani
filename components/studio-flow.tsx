@@ -25,7 +25,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Mono } from "@/components/ui.tsx";
-import { useSession } from "@/components/session.tsx";
+import { ensureWalletChain, useSession, walletProvider } from "@/components/session.tsx";
+import { formatNative, gasCheck, type GasCheck } from "@/lib/gas.ts";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import { type IrisKeys } from "@/lib/iris.ts";
 import {
@@ -46,7 +47,7 @@ import {
   type UriKind,
 } from "@/lib/registration.ts";
 import { registrable, viemChain } from "@/lib/chains.ts";
-import { createWalletClient, createPublicClient, http } from "viem";
+import { createWalletClient, createPublicClient, custom, encodeFunctionData, http } from "viem";
 import { openSession } from "@/lib/session.ts";
 import {
   agentScope,
@@ -86,6 +87,21 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
   useEffect(() => {
     if (!keys && session.keys) setKeys(session.keys);
   }, [keys, session.keys]);
+
+  /**
+   * Who sends. A passkey account signs here with its derived key. A wallet session signs in the
+   * wallet itself, which is why a wallet login can register with one click and no copied calldata.
+   * The passkey wins when both exist, because it was chosen on this page.
+   */
+  const sender = useMemo<{ kind: "passkey" | "wallet"; address: `0x${string}` } | null>(() => {
+    if (keys) return { kind: "passkey", address: keys.account.address };
+    if (session.session?.method === "wallet") return { kind: "wallet", address: session.session.address };
+    return null;
+  }, [keys, session.session]);
+
+  /** Can the sender afford this transaction? Read before the send, never learned from a failure. */
+  const [gas, setGas] = useState<GasCheck | null>(null);
+  const [gasTick, setGasTick] = useState(0);
   const [busy, setBusy] = useState<string | null>(null);
   const [authority, setAuthority] = useState<Authority | null>(null);
   const [receipt, setReceipt] = useState<{ receipt: ActionReceipt; signature: string; binding: string } | null>(null);
@@ -105,7 +121,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     setSent(null);
     setCarried({});
     setAdopted(null);
-  }, [agentId, keys, door]);
+  }, [agentId, keys, door, sender?.address]);
 
   const json = useMemo(() => recordJsonPreserving(draft, carried), [draft, carried]);
   // When a document was adopted, the URI must be built over the preserved record rather than only the
@@ -126,6 +142,52 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
       return "";
     }
   }, [door, uri, agentId]);
+
+  useEffect(() => {
+    setGas(null);
+    if (!sender || !calldata) return;
+    const chain = viemChain(chainId);
+    const registry = identityRegistryFor(chainId);
+    if (!chain || !registry) return;
+    let live = true;
+    const pub = createPublicClient({ chain, transport: http() });
+    (async () => {
+      const [have, units, price] = await Promise.all([
+        pub.getBalance({ address: sender.address }).catch(() => null),
+        pub.estimateGas({ account: sender.address, to: registry, data: calldata as `0x${string}` }).catch(() => null),
+        pub.getGasPrice().catch(() => null),
+      ]);
+      if (live) setGas(gasCheck(have, units, price, units === null ? "the registry would not estimate this call" : "could not read the chain"));
+    })();
+    // Re-read every 8 seconds while it is short, so funding the address shows up without a reload.
+    const t = window.setTimeout(() => live && setGasTick((n) => n + 1), 8000);
+    return () => {
+      live = false;
+      window.clearTimeout(t);
+    };
+  }, [sender, calldata, chainId, gasTick]);
+
+  /** Top up a passkey account from the browser wallet: one transfer of exactly the shortfall. */
+  const topUp = useCallback(async () => {
+    const w = walletProvider();
+    const chain = viemChain(chainId);
+    if (!w || !chain || !keys || gas?.state !== "short") return;
+    setBusy("topup");
+    setNote(null);
+    try {
+      await ensureWalletChain(w, chain);
+      const [from] = (await w.request({ method: "eth_requestAccounts" })) as `0x${string}`[];
+      const wallet = createWalletClient({ account: from, chain, transport: custom(w) });
+      const hash = await wallet.sendTransaction({ to: keys.account.address, value: gas.shortWei, account: from, chain });
+      await createPublicClient({ chain, transport: http() }).waitForTransactionReceipt({ hash });
+      setNote({ kind: "info", text: `Sent ${formatNative(gas.shortWei)} ${chain.nativeCurrency.symbol} to your passkey account.` });
+      setGasTick((n) => n + 1);
+    } catch (e) {
+      setNote({ kind: "error", text: declined(e) ? "Declined in the wallet. Nothing was sent." : ((e as Error).message ?? "The top-up failed.").slice(0, 300) });
+    } finally {
+      setBusy(null);
+    }
+  }, [chainId, keys, gas]);
 
   /** One passkey prompt, then the account key exists in memory only. Nothing is stored. */
   const connect = useCallback(async (mode: "new" | "existing") => {
@@ -219,17 +281,17 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     }
   }, [agentId]);
 
-  /** Ask the registry, via our own API, whether this passkey account actually holds the agent. */
+  /** Ask the registry, via our own API, whether the sending account actually holds the agent. */
   const verifyOwnership = useCallback(async () => {
-    if (!keys || !/^\d+$/.test(agentId)) return;
+    if (!sender || !/^\d+$/.test(agentId)) return;
     setBusy("authority");
     setNote(null);
     try {
-      setAuthority(await checkAuthority(Number(agentId), keys.account.address));
+      setAuthority(await checkAuthority(Number(agentId), sender.address));
     } finally {
       setBusy(null);
     }
-  }, [keys, agentId]);
+  }, [sender, agentId]);
 
   /**
    * Sign a statement of intent before the transaction is sent.
@@ -357,6 +419,55 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
       setBusy(null);
     }
   }, [keys, calldata, uri, chainId, door, agentId]);
+
+  /**
+   * Send from the logged-in browser wallet. The wallet shows the call and signs it; we never see a
+   * key. The wallet is moved to the target chain first. The sending account must still be the
+   * one that logged in, so a wallet switched mid-page cannot register under an unexpected owner.
+   */
+  const sendFromWallet = useCallback(async () => {
+    const w = walletProvider();
+    const chain = viemChain(chainId);
+    const registry = identityRegistryFor(chainId);
+    if (!w || !sender || sender.kind !== "wallet" || !chain || !registry || !uri) {
+      setNote({ kind: "error", text: "No browser wallet is available on this page." });
+      return;
+    }
+    setBusy("send");
+    setNote(null);
+    try {
+      await ensureWalletChain(w, chain);
+      const [from] = ((await w.request({ method: "eth_requestAccounts" })) as string[]).map((a) => a.toLowerCase());
+      if (from !== sender.address.toLowerCase()) {
+        setNote({ kind: "error", text: `The wallet is now on ${from}, not the account you logged in with. Switch back or log in again.` });
+        return;
+      }
+      const wallet = createWalletClient({ account: sender.address, chain, transport: custom(w) });
+      const data =
+        door === "create"
+          ? encodeFunctionData({ abi: IDENTITY_ABI, functionName: "register", args: [uri] })
+          : encodeFunctionData({ abi: IDENTITY_ABI, functionName: "setAgentURI", args: [BigInt(agentId), uri] });
+      // The exact bytes previewed above, so what the wallet shows is what this page showed.
+      if (data !== calldata) throw new Error("The transaction differs from the preview. Nothing was sent.");
+      const hash = await wallet.sendTransaction({ to: registry, data, account: sender.address, chain });
+      setSent({ hash });
+      const rec = await createPublicClient({ chain, transport: http() }).waitForTransactionReceipt({ hash });
+      if (rec.status !== "success") {
+        setNote({ kind: "error", text: "The transaction was mined and reverted. Nothing changed on chain." });
+        return;
+      }
+      const mint = rec.logs.find((l) => l.address.toLowerCase() === registry.toLowerCase() && l.topics.length === 4);
+      setSent({ hash, agentId: mint?.topics[3] ? String(BigInt(mint.topics[3])) : undefined });
+    } catch (e) {
+      const m = (e as Error).message ?? "The send failed.";
+      setNote({
+        kind: "error",
+        text: declined(e) ? "Declined in the wallet. Nothing was sent." : /insufficient funds/i.test(m) ? `That wallet has no ${chain.nativeCurrency.symbol} for gas.` : m.slice(0, 400),
+      });
+    } finally {
+      setBusy(null);
+    }
+  }, [sender, chainId, uri, door, agentId, calldata]);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {
@@ -597,11 +708,16 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2.5">
-          {keys ? (
+          {sender ? (
             <>
-              <span className="chip chip--live">signed in</span>
-              <code className="font-mono text-[12px] text-[var(--color-text)]">{keys.account.address}</code>
-              <span className="font-mono text-[11px] text-faint">{keys.attestation.id.slice(0, 28)}…</span>
+              <span className="chip chip--live">{sender.kind === "wallet" ? "wallet" : "passkey"}</span>
+              <code className="font-mono text-[12px] text-[var(--color-text)]" data-testid="studio-sender">{sender.address}</code>
+              {keys ? <span className="font-mono text-[11px] text-faint">{keys.attestation.id.slice(0, 28)}…</span> : null}
+              {sender.kind === "wallet" ? (
+                <button type="button" disabled={busy === "connect"} onClick={() => connect("existing")} className="font-mono text-[11px] text-muted hover:text-[var(--color-text)]">
+                  use a passkey instead
+                </button>
+              ) : null}
             </>
           ) : (
             <>
@@ -611,12 +727,15 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
               <button type="button" disabled={busy === "connect"} onClick={() => connect("new")} className="cta-ghost">
                 create a new passkey
               </button>
+              <Link href="/login" className="font-mono text-[12px] text-muted hover:text-[var(--color-text)]">
+                or log in with a wallet →
+              </Link>
             </>
           )}
         </div>
 
         {/* ---- ownership, only meaningful when repointing something that exists ---- */}
-        {keys && door === "manage" ? (
+        {sender && door === "manage" ? (
           <div className="mt-4 border-t border-[var(--color-line)] pt-4">
             <div className="flex flex-wrap items-center gap-2.5">
               <button
@@ -713,18 +832,38 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
           </div>
         ) : null}
 
-        {/* ---- send it, from the passkey account ---- */}
-        {keys && calldata && probs.length === 0 ? (
+        {/* ---- send it, from the passkey account or the logged-in wallet ---- */}
+        {sender && calldata && probs.length === 0 ? (
           <div className="mt-4 border-t border-[var(--color-line)] pt-4">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <button type="button" onClick={send} disabled={busy === "send" || Boolean(sent?.agentId)} className="cta">
+            <GasPanel
+              gas={gas}
+              sender={sender}
+              symbol={viemChain(chainId)?.nativeCurrency.symbol ?? "MON"}
+              chainId={chainId}
+              canTopUp={sender.kind === "passkey" && walletProvider() !== null}
+              busy={busy === "topup"}
+              onTopUp={topUp}
+              onCopy={() => copy(sender.address, "Address")}
+            />
+            <div className="mt-3 flex flex-wrap items-center gap-2.5">
+              <button
+                type="button"
+                onClick={sender.kind === "wallet" ? sendFromWallet : send}
+                disabled={busy === "send" || Boolean(sent?.agentId) || gas?.state === "short"}
+                className="cta"
+                data-testid="studio-send"
+              >
                 {busy === "send"
                   ? "signing and sending…"
                   : sent?.agentId
                     ? "sent"
                     : door === "create"
-                      ? "register it from this account →"
-                      : "repoint it from this account →"}
+                      ? sender.kind === "wallet"
+                        ? "register it from your wallet →"
+                        : "register it from this account →"
+                      : sender.kind === "wallet"
+                        ? "repoint it from your wallet →"
+                        : "repoint it from this account →"}
               </button>
               {door === "manage" && authority?.kind !== "owner" ? (
                 <span className="font-mono text-[11px] text-muted">
@@ -755,19 +894,21 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
             ) : null}
 
             <p className="mt-2 max-w-3xl text-[11.5px] leading-relaxed text-muted">
-              Signed by a session scoped to this one action and nothing else: it may not move a token,
-              and the key is zeroed the moment the send finishes. We never hold it.
+              {sender.kind === "wallet"
+                ? "Your wallet shows the call and signs it. This page checks the bytes match the preview above before handing them over and never sees a key."
+                : "Signed by a session scoped to this one action and nothing else. It may not move a token and the key is zeroed the moment the send finishes. We never hold it."}
             </p>
           </div>
         ) : null}
 
-        {keys ? (
+        {sender ? (
           <p className="mt-4 max-w-3xl text-[12.5px] leading-relaxed text-muted">
             This address owns whatever it registers and it needs MON for gas: a registration is the
             one action here that is not relayed, because the registry records{" "}
-            <Mono>msg.sender</Mono> as the owner and a relayer would end up owning your agent. The key
-            comes from the passkey rather than from anything stored here, so the same passkey on
-            another device reaches the same agent.{" "}
+            <Mono>msg.sender</Mono> as the owner and a relayer would end up owning your agent.{" "}
+            {sender.kind === "passkey"
+              ? "The key comes from the passkey rather than from anything stored here, so the same passkey on another device reaches the same agent. "
+              : "It is your wallet's own address, so the agent is held wherever that wallet is. "}
             <Link href="/account" className="text-[var(--color-brand)] hover:underline">
               What the four keys are →
             </Link>
@@ -798,6 +939,97 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
           How each rung is decided →
         </Link>
       </p>
+    </div>
+  );
+}
+
+/** viem wraps a wallet's 4001 inside its own error types, so look through the cause chain. */
+function declined(e: unknown): boolean {
+  for (let x = e as { code?: number; name?: string; cause?: unknown } | undefined, i = 0; x && i < 6; x = x.cause as typeof x, i++) {
+    if (x.code === 4001 || x.name === "UserRejectedRequestError") return true;
+  }
+  return false;
+}
+
+/**
+ * The sender, its balance and what the send needs, shown before the send button is live.
+ *
+ * Three ways to cover a shortfall, in the order a newcomer is likeliest to have them: top up from a
+ * browser wallet in one click (passkey accounts only), copy the address to send from an exchange or
+ * another wallet or open it on the explorer to watch it arrive. The check re-reads every few
+ * seconds, so funding shows up without a reload.
+ */
+function GasPanel({
+  gas,
+  sender,
+  symbol,
+  chainId,
+  canTopUp,
+  busy,
+  onTopUp,
+  onCopy,
+}: {
+  gas: GasCheck | null;
+  sender: { kind: "passkey" | "wallet"; address: string };
+  symbol: string;
+  chainId: number;
+  canTopUp: boolean;
+  busy: boolean;
+  onTopUp: () => void;
+  onCopy: () => void;
+}) {
+  const explorer = chainId === 143 ? `https://monadexplorer.com/address/${sender.address}` : chainId === 56 ? `https://bscscan.com/address/${sender.address}` : null;
+  return (
+    <div className="gas-panel" data-testid="gas-panel" data-state={gas?.state ?? "reading"}>
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <span className={LABEL}>gas for this send</span>
+        <span className="font-mono text-[12px]">
+          {gas === null ? (
+            <span className="text-faint">reading…</span>
+          ) : gas.state === "unknown" ? (
+            <span className="unknown-value">unknown</span>
+          ) : (
+            <>
+              <span className={gas.state === "enough" ? "text-[var(--color-true)]" : "text-[var(--color-false)]"}>
+                {formatNative(gas.haveWei)} {symbol}
+              </span>
+              <span className="text-faint"> held · about {formatNative(gas.needWei)} needed</span>
+            </>
+          )}
+        </span>
+      </div>
+      {gas?.state === "unknown" ? (
+        <p className="mt-1.5 text-[11.5px] leading-snug text-muted">
+          Could not check ({gas.reason}). You can still send; the chain decides.
+        </p>
+      ) : null}
+      {gas?.state === "short" ? (
+        <div className="mt-2">
+          <p className="text-[12px] leading-relaxed text-[var(--color-text)]">
+            This {sender.kind === "passkey" ? "passkey account" : "wallet"} needs about {formatNative(gas.shortWei)} more {symbol}{" "}
+            before it can send.{" "}
+            <span className="text-muted">
+              {sender.kind === "passkey" ? "A new passkey account starts empty. " : ""}Nobody else can pay this gas for you: whoever sends the registration becomes the owner.
+            </span>
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            {canTopUp ? (
+              <button type="button" onClick={onTopUp} disabled={busy} className="cta-ghost" data-testid="gas-topup">
+                {busy ? "waiting for the wallet…" : `send ${formatNative(gas.shortWei)} ${symbol} from my wallet`}
+              </button>
+            ) : null}
+            <button type="button" onClick={onCopy} className="cta-ghost">
+              copy address to fund it
+            </button>
+            {explorer ? (
+              <a href={explorer} target="_blank" rel="noopener noreferrer" className="font-mono text-[11.5px] text-muted hover:text-[var(--color-text)]">
+                watch it on the explorer ↗
+              </a>
+            ) : null}
+          </div>
+          <p className="mt-1.5 text-[11px] text-faint">Checks again every few seconds. The send button turns on once it arrives.</p>
+        </div>
+      ) : null}
     </div>
   );
 }

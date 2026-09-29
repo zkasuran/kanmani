@@ -2163,3 +2163,16 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
   top: calc(-1 * var(--nav-reach-up, 40px));
   bottom: 0;
 }
+
+/* Studio gas check: a quiet box that only turns loud when the sender cannot afford the send. */
+.gas-panel {
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius);
+  background: var(--color-panel-2);
+  padding: 0.7rem 0.85rem;
+}
+.gas-panel[data-state="short"] { border-color: color-mix(in oklab, var(--color-false) 45%, var(--color-line)); }
+
+/* A disabled action must look disabled. The studio's send stays off until the sender can pay gas,
+   and a dark button that does nothing when clicked reads as broken. */
+.cta:disabled, .cta-ghost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
