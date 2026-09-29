@@ -194,6 +194,11 @@
       "what": "claim-truth bond, deployed 2026-09-24, source verified",
       "attestor": "0x358c591aD7D60aC36bC223472B41518A7FA7b44A",
       "slashBeneficiary": "0xDB6c6340342e71A63cD11Ebac2185204b7777777"
+    },
+    "agentPasskey": {
+      "chainId": 143,
+      "address": "0x1E30531CD3ea6DE2958DB363418a5382C419dC24",
+      "what": "binds an agent to a device passkey; WebAuthn verified by the P256 precompile at 0x0100, deployed 2026-09-29, source verified"
     }
   },
   "$publicRpc": [

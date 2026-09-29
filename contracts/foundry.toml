@@ -15,3 +15,10 @@ optimizer_runs = 20000
 [rpc_endpoints]
 monad = "${MONAD_RPC}"
 monad_testnet = "https://testnet-rpc.monad.xyz"
+
+# The P256 precompile (EIP-7951, 0x0100) exists in revm only from the osaka spec. Monad has it on
+# chain 143 regardless of fork naming. Tests that exercise it run under this profile:
+#   FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol
+# Deployment still compiles under default (shanghai), so no newer opcode reaches Monad.
+[profile.p256]
+evm_version = "osaka"

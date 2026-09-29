@@ -5,6 +5,7 @@ import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, agentActions, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
 import { bondFor, usdc } from "@/lib/bonds.ts";
+import { AgentPasskeyPanel } from "@/components/agent-passkey.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -192,6 +193,14 @@ export default async function AgentPage({ params }: Props) {
             </p>
           </Panel>
         ) : null}
+
+        <Panel
+          id="passkey"
+          title="a device passkey for this agent"
+          subtitle="Verified on chain by Monad's native P256 precompile. The owner binds it; anyone holding it can prove it on chain for free."
+        >
+          <AgentPasskeyPanel agentId={Number(a.agentId)} />
+        </Panel>
 
         <Panel title="the registration">
           <dl>

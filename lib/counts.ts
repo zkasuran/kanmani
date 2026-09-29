@@ -10,11 +10,14 @@
  */
 export const SUITES = {
   /** `npm test` in the repo root. */
-  site: { pass: 284, total: 287 },
+  site: { pass: 288, total: 291 },
   /** `npm test` in `verifier/`. */
   verifier: { pass: 181, total: 198 },
-  /** `forge test` in `contracts/`. */
-  contracts: { pass: 119, total: 127 },
+  /**
+   * `forge test --fork-url https://rpc.monad.xyz` in `contracts/` (126 pass, 2 ffi skips, AgentPasskey
+   * skips itself) plus `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` (16).
+   */
+  contracts: { pass: 142, total: 144 },
 } as const;
 
 export const TESTS_PASSING = SUITES.site.pass + SUITES.verifier.pass + SUITES.contracts.pass;

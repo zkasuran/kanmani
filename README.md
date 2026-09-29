@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-584%20passing-34d399?style=flat-square&labelColor=05070a" alt="584 tests passing">
+  <img src="https://img.shields.io/badge/tests-611%20passing-34d399?style=flat-square&labelColor=05070a" alt="611 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
   <a href="docs/AS-BUILT.md"><img src="https://img.shields.io/badge/docs-what%20shipped-8b98a9?style=flat-square&labelColor=05070a" alt="What shipped"></a>
@@ -101,6 +101,7 @@ Everything else in this repository is built around that one rule.
 |---|---|
 | **Aqueous**: escrow that emits its own receipt | [`0xd75f7786…44Fc32`](https://kanmani.xyz/pay) |
 | **Sclera**: bonds against a measured claim-truth rate | [`0x57aF4e4B…f0eaf`](https://kanmani.xyz/bond) |
+| **AgentPasskey**: a device passkey for an agent, verified by Monad's P256 precompile | [`0x1E30531C…19dC24`](https://kanmani.xyz/agent/10256#passkey) |
 | **Sentinel**: our own agent, id 10256 | [`/api/service/sentinel`](https://kanmani.xyz/api/service/sentinel) |
 | **Assay**: our own agent, id 10257 | [`/api/service/assay`](https://kanmani.xyz/api/service/assay) |
 
@@ -201,11 +202,11 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 ```bash
 cd indexer   && pnpm codegen && pnpm start     # the index
 cd verifier  && npm test                       # the verifier, 181 of 198
-cd contracts && forge test                     # the contracts, 119 of 127
-npm run dev                                    # the site, 284 of 287
+cd contracts && forge test --fork-url https://rpc.monad.xyz && FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol   # the contracts, 142 of 144
+npm run dev                                    # the site, 288 of 291
 ```
 
-584 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
+611 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
 need an archive node.
 
 <details>

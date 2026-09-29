@@ -201,9 +201,25 @@ else
   bad "the webhook route did not answer, got $WH"
 fi
 
+# ---------------------------------------------------------------- 10. P256, LIVE
+echo "10. AgentPasskey  ·  Monad's P256 precompile  ·  expected LIVE"
+AP=0x1E30531CD3ea6DE2958DB363418a5382C419dC24
+# The RIP-7212 reference vector, straight to the precompile at 0x0100.
+PV=$(curl -fsS -X POST "$RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x0000000000000000000000000000000000000100","data":"0x4cee90eb86eaa050036147a12d49004b6b9c72bd725d39d4785011fe190f0b4da73bd4903f0ce3b639bbbf6e8e80d16931ff4bcf5993d58468e8fb19086e8cac36dbcd03009df8c59286b162af3bd7fcc0450c9aa81be5d10d312af6c66b1d604aebd3099c618202fcfe16ae7770b0c49ab5eadf74b754204a3bb6060e44eff37618b065f9832de4ca6ca971a7a1adc826d0f7c00181a5fb2ddf79ae00b4e10e"},"latest"]}' | grep -oE '0x0{63}1')
+[ -n "$PV" ] && ok "the P256 precompile at 0x0100 verifies the RIP-7212 reference signature on Monad mainnet" || bad "the P256 precompile did not verify the reference vector"
+CODE=$(curl -fsS -X POST "$RPC" -H 'content-type: application/json' --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getCode\",\"params\":[\"$AP\",\"latest\"]}" | grep -oE '"result":"0x[0-9a-f]+' | cut -d'"' -f4)
+# nonces(10256): one bind and one unbind happened through the site, so it is at least 2.
+N=$(curl -fsS -X POST "$RPC" -H 'content-type: application/json' --data "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_call\",\"params\":[{\"to\":\"$AP\",\"data\":\"0x141a468c0000000000000000000000000000000000000000000000000000000000002810\"},\"latest\"]}" | grep -oE '0x[0-9a-f]{64}' | head -1)
+if [ "${#CODE}" -gt 1000 ] && [ -n "$N" ] && [ $((N)) -ge 2 ]; then
+  ok "AgentPasskey is deployed and agent 10256 has been bound and unbound through it (nonce $((N)))"
+  note "bind tx 0x399bdce466786717078e7ea95afd0e59d30e61c0901d24e6db38d28c0d9745f5, verified by the precompile inside bind()"
+else
+  bad "AgentPasskey not found or never used at $AP"
+fi
+
 echo
 echo "-------------------------------------------------------------"
 printf 'PASS %d   FAIL %d   SKIP %d\n' "$pass" "$fail" "$skip"
-echo "All nine layers live. If a FAIL appears above, the claim on the site is wrong and we"
+echo "All ten layers live. If a FAIL appears above, the claim on the site is wrong and we"
 echo "would rather you found it with this script than by trusting the page."
 [ "$fail" -eq 0 ]

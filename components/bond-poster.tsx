@@ -11,13 +11,11 @@
  * A passkey signs through a session scoped to exactly this spend and this contract, which expires in
  * two minutes. A wallet signs in the wallet after being moved to Monad. We never hold a key.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { createPublicClient, createWalletClient, custom, erc20Abi, http } from "viem";
-import { ensureWalletChain, useSession, walletProvider } from "@/components/session.tsx";
-import { viemChain } from "@/lib/chains.ts";
+import { erc20Abi } from "viem";
+import { declined, useSend } from "@/components/use-send.ts";
 import { formatNative, gasCheck, type GasCheck } from "@/lib/gas.ts";
-import { openSession } from "@/lib/session.ts";
 import { IDENTITY_REGISTRY } from "@/lib/registration.ts";
 import { displayAddress } from "@/lib/login.ts";
 import {
@@ -67,16 +65,9 @@ function usdcText(atomic: bigint): string {
 }
 
 export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
-  const s = useSession();
-  // Stable across renders. A new chain object each render made the chain-read effect rerun on every
-  // render, which with its reset became a loop that never showed a reading.
-  const chain = useMemo(() => viemChain(143)!, []);
-  const pub = useMemo(() => createPublicClient({ chain, transport: http() }), [chain]);
-
-  const sender = useMemo<{ kind: "passkey" | "wallet"; address: `0x${string}` } | null>(() => {
-    if (!s.session) return null;
-    return { kind: s.session.method, address: s.session.address };
-  }, [s.session]);
+  // Chain, client and sender come from useSend, stable across renders, so the chain-read effect below
+  // runs every 8s rather than on every render.
+  const { sender, send, pub, session: s } = useSend();
 
   const [agents, setAgents] = useState<{ agentId: number; name: string | null }[] | null>(null);
   const [draft, setDraft] = useState<BondDraft>({ agentId: initialAgent ?? "", amountUsdc: "0.01", minTruthRatePct: "", windowBlocks: String(WINDOW_PRESETS[1].blocks), minSampleSize: "5" });
@@ -183,48 +174,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
   const needApprove = plan.ok && facts?.allowance !== null && facts?.allowance !== undefined && facts.allowance < plan.plan.amountAtomic;
   const usdcShort = plan.ok && facts?.usdc !== null && facts?.usdc !== undefined && facts.usdc < plan.plan.amountAtomic;
 
-  /** Send one transaction from whichever account is logged in. Wait for it to be mined. */
-  const sendTx = useCallback(
-    async (to: `0x${string}`, data: `0x${string}`, spend: bigint): Promise<`0x${string}`> => {
-      if (!sender) throw new Error("Log in first.");
-      if (sender.kind === "wallet") {
-        const w = walletProvider();
-        if (!w) throw new Error("No browser wallet on this page.");
-        await ensureWalletChain(w, chain);
-        const [from] = ((await w.request({ method: "eth_requestAccounts" })) as string[]).map((a) => a.toLowerCase());
-        if (from !== sender.address.toLowerCase()) throw new Error(`The wallet is on ${from}, not the account you logged in with.`);
-        const hash = await createWalletClient({ account: sender.address, chain, transport: custom(w) }).sendTransaction({ to, data, account: sender.address, chain });
-        const rc = await pub.waitForTransactionReceipt({ hash });
-        if (rc.status !== "success") throw new Error("The transaction was mined and reverted. Nothing changed.");
-        return hash;
-      }
-      const keys = s.keys ?? (await s.unlock());
-      if (!keys) throw new Error("The passkey was not unlocked.");
-      // Scoped to exactly this spend on exactly this contract, for two minutes, then zeroed.
-      const session = openSession({
-        privateKey: keys.account.privateKey,
-        scope: { label: "Bond one agent on Sclera.", maxAmountAtomic: spend, payTo: SCLERA_ADDRESS, resourceHost: window.location.host },
-        ttlMs: 120_000,
-      });
-      try {
-        session.assertCanPay(spend, SCLERA_ADDRESS);
-        const hash = await createWalletClient({ account: session.account, chain, transport: http() }).sendTransaction({ to, data, account: session.account, chain });
-        const rc = await pub.waitForTransactionReceipt({ hash });
-        if (rc.status !== "success") throw new Error("The transaction was mined and reverted. Nothing changed.");
-        return hash;
-      } finally {
-        session.end();
-      }
-    },
-    [sender, s, chain, pub],
-  );
-
-  const declined = (e: unknown) => {
-    for (let x = e as { code?: number; name?: string; cause?: unknown } | undefined, i = 0; x && i < 6; x = x.cause as typeof x, i++) {
-      if (x.code === 4001 || x.name === "UserRejectedRequestError") return true;
-    }
-    return false;
-  };
+  const sendTx = (to: `0x${string}`, data: `0x${string}`, spend: bigint) => send({ to, data, spendAtomic: spend, label: "Bond one agent on Sclera." });
 
   const post = async () => {
     if (!plan.ok) return;
