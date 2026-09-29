@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Check the build kit as a stranger's tool sees it: every published file answers, points at the
-# public site and not at a developer's machine, and the two free checks return what the guide says.
+# public site and not at a developer's machine. The two free checks must return what the guide says.
 # Usage: scripts/check-build-kit.sh [https://kanmani.xyz]
 set -uo pipefail
 SITE="${1:-https://kanmani.xyz}"
