@@ -5,7 +5,7 @@ import test from "node:test";
 import { SUITES, TESTS_PASSING, TESTS_SKIPPED } from "./counts.ts";
 
 test("the published total is the sum of the suites, not a typed figure", () => {
-  assert.equal(TESTS_PASSING, 288 + 181 + 142);
+  assert.equal(TESTS_PASSING, 297 + 181 + 142);
   assert.equal(TESTS_SKIPPED, 3 + 17 + 2);
 });
 

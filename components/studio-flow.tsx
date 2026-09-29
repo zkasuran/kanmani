@@ -370,6 +370,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     }
     setBusy("send");
     setNote(null);
+    noteBuild({ draft, kind, hostedAt, agentId: door === "manage" ? agentId : undefined });
     let session: ReturnType<typeof openSession> | null = null;
     try {
       session = openSession({
@@ -435,6 +436,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     }
     setBusy("send");
     setNote(null);
+    noteBuild({ draft, kind, hostedAt, agentId: door === "manage" ? agentId : undefined });
     try {
       await ensureWalletChain(w, chain);
       const [from] = ((await w.request({ method: "eth_requestAccounts" })) as string[]).map((a) => a.toLowerCase());
@@ -941,6 +943,12 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
       </p>
     </div>
   );
+}
+
+
+/** Tell the server which URI is about to be registered, so it can be counted as built here. Fire and forget. */
+function noteBuild(body: unknown) {
+  void fetch("/api/registration/check", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
 }
 
 /** viem wraps a wallet's 4001 inside its own error types, so look through the cause chain. */

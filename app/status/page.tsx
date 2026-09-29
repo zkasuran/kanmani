@@ -2,6 +2,8 @@ import Link from "next/link";
 import { Derivation, Mono, Num, OutcomeBadge, PageHeader, Panel, StatTile } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
 import { changedClaims, freshness, population, registryHealth } from "@/lib/queries.ts";
+import { usage } from "@/lib/usage.ts";
+import { UsagePanel } from "@/components/usage-panel.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -36,6 +38,7 @@ const WORKERS = [
 ];
 
 export default async function Status() {
+  const usageNow = await usage(7);
   const [f, pop, health, changed] = await Promise.all([
     freshness(),
     population(),
@@ -158,6 +161,10 @@ export default async function Status() {
       </Reveal>
 
       {/* ---------------------------------------------------------------- corrections */}
+      <Reveal>
+        <UsagePanel u={usageNow} />
+      </Reveal>
+
       <Reveal>
       <Panel
         id="corrections"

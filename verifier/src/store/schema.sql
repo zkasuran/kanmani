@@ -142,7 +142,7 @@ ORDER BY uri_hash, checked_at DESC, id DESC;
 -- 402 falls through to `gone`.
 --
 -- Collapsing a rate limit or a timeout into "dead" would publish OUR failure as an operator's, which
--- is the same mistake the verdict ladder exists to refuse. `unknown` means we could not tell, and
+-- is the same mistake the verdict ladder exists to refuse. `unknown` means we could not tell and
 -- 429 and 5xx belong there rather than beside a 404.
 --
 -- It is a view rather than a column so a re-read reclassifies old probes too. The probe records
@@ -492,3 +492,69 @@ CREATE OR REPLACE VIEW fovea.wallet_label_latest AS
 SELECT DISTINCT ON (address, chain) *
 FROM fovea.wallet_label
 ORDER BY address, chain, checked_at DESC, id DESC;
+
+-- ---------------------------------------------------------------- usage, without tracking people
+--
+-- Counts, never people. No IP address, user agent string or cookie is stored anywhere below.
+-- "clients" is the number of distinct sha256(daily salt || ip || user agent) seen that day. The salt is
+-- random per day and deleted once the day is closed, so a hash cannot be linked across days or
+-- reversed afterwards, even by us. Written by scripts/usage-aggregate.mjs from the web server's own
+-- access log, which is kept 7 days and rotated.
+
+CREATE TABLE IF NOT EXISTS fovea.usage_daily (
+  day      date    NOT NULL,
+  surface  text    NOT NULL,   -- page, api:agent, mcp, build:registration, embed, ...
+  class    text    NOT NULL,   -- browser | crawler | software
+  calls    integer NOT NULL,
+  clients  integer NOT NULL,
+  PRIMARY KEY (day, surface, class)
+);
+
+CREATE TABLE IF NOT EXISTS fovea.usage_salt (
+  day  date PRIMARY KEY,
+  salt bytea NOT NULL
+);
+
+-- Who integrates, by name only: a site that embeds us, an MCP client's self-declared name, a tool's
+-- user-agent product token. Names of software and sites, never of people.
+CREATE TABLE IF NOT EXISTS fovea.usage_integrator (
+  day   date    NOT NULL,
+  kind  text    NOT NULL,        -- embed-host | mcp-client | tool
+  name  text    NOT NULL,
+  calls integer NOT NULL,
+  PRIMARY KEY (day, kind, name)
+);
+
+-- Counted in the app as they happen (MCP tool calls), because a request body is not in the access log.
+CREATE TABLE IF NOT EXISTS fovea.usage_event (
+  day   date    NOT NULL,
+  name  text    NOT NULL,        -- mcp:tool:check_registration, ...
+  calls integer NOT NULL,
+  PRIMARY KEY (day, name)
+);
+
+-- Every event on our own contracts, with whether the actor is ours. Public chain data.
+CREATE TABLE IF NOT EXISTS fovea.onchain_use (
+  tx         text    NOT NULL,
+  log_index  integer NOT NULL,
+  block      bigint  NOT NULL,
+  contract   text    NOT NULL,   -- aqueous | sclera | agentPasskey
+  event      text    NOT NULL,
+  actor      text    NOT NULL,
+  agent_id   text,
+  ours       boolean NOT NULL,
+  PRIMARY KEY (tx, log_index)
+);
+
+CREATE TABLE IF NOT EXISTS fovea.usage_cursor (
+  name  text PRIMARY KEY,
+  block bigint NOT NULL
+);
+
+-- sha256 of every agentURI /api/registration/check returned as ready. A registration on chain whose
+-- URI hashes to one of these was built with the check, which we learn without asking anyone.
+CREATE TABLE IF NOT EXISTS fovea.build_uri (
+  uri_sha256 text PRIMARY KEY,
+  first_day  date    NOT NULL,
+  checks     integer NOT NULL
+);

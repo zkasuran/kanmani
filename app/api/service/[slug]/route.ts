@@ -1,6 +1,7 @@
 import { json, problem, SITE } from "@/lib/api.ts";
 import { AGENTS, assay, type AgentSlug, MONAD_BLOCK_MS, sentinel } from "@/lib/agents.ts";
 import { chargeFor } from "@/lib/metering.ts";
+import { inputFromParts, type A2APart } from "@/lib/a2a.ts";
 import { settlementRequirements, type UptoPayload, type UptoRequirements } from "@/lib/upto.ts";
 import {
   challenge,
@@ -93,23 +94,32 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   const { slug } = await ctx.params;
   const s = spec(slug);
   if (!s) return problem(404, "No such agent", `Known agents: ${Object.keys(AGENTS).join(", ")}.`);
-  const resource = `${SITE}/api/service/${s.slug}`;
-  const o = await offers(s.priceAtomic);
-  const ask = (reason: string) => json(challenge(resource, reason, o.accepts), { status: 402 });
-
-  let body: { agentId?: number | string; maxAgeBlocks?: number };
+  let body: Record<string, unknown>;
   try {
-    body = (await req.json()) as typeof body;
+    body = (await req.json()) as Record<string, unknown>;
   } catch {
     return problem(400, "Body is not JSON", `Send ${s.input}`);
   }
+  // A2A JSON-RPC (message/send) lands here too: brokers and readiness probes speak it. The
+  // registration record declares this endpoint as a2a. Same work, same payment rules underneath.
+  if (body && body.jsonrpc === "2.0") return a2a(s, body, req.headers);
+  return serve(s, body as { agentId?: number | string; maxAgeBlocks?: number }, req.headers);
+}
+
+type Spec = (typeof AGENTS)[AgentSlug];
+
+/** The priced call itself. Shared by plain JSON and A2A, so the payment rules exist once. */
+async function serve(s: Spec, body: { agentId?: number | string; maxAgeBlocks?: number }, headers: Headers): Promise<Response> {
+  const resource = `${SITE}/api/service/${s.slug}`;
+  const o = await offers(s.priceAtomic);
+  const ask = (reason: string) => json(challenge(resource, reason, o.accepts), { status: 402 });
 
   const agentId = Number(body.agentId);
   if (!Number.isInteger(agentId) || agentId <= 0) {
     return problem(400, "agentId must be a positive integer", `Send ${s.input}`);
   }
 
-  const payment = paymentFrom(req.headers, o.upto ? ["upto", "exact"] : ["exact"]);
+  const payment = paymentFrom(headers, o.upto ? ["upto", "exact"] : ["exact"]);
   if (!payment.ok) return ask(payment.reason);
   const isUpto = payment.payload.accepted.scheme === "upto";
   // The requirements WE set, never the ones the client echoes. Verify-time amount is the ceiling.
@@ -226,4 +236,71 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
     },
     { headers: settled.transaction ? { "x-payment-response": paymentResponseHeader(settled) } : {} },
   );
+}
+
+/* ------------------------------------------------------------------ A2A */
+
+const X402_EXT = "https://github.com/google-a2a/a2a-x402/v0.1";
+
+async function a2a(s: Spec, body: Record<string, unknown>, headers: Headers): Promise<Response> {
+  const id = (body.id as string | number | null | undefined) ?? null;
+  const reply = (result: unknown) => json({ jsonrpc: "2.0", id, result }, { headers: { "x-a2a-extensions": X402_EXT } });
+  const fail = (code: number, message: string) => json({ jsonrpc: "2.0", id, error: { code, message } });
+  const method = String(body.method ?? "");
+
+  if (method === "tasks/get" || method === "tasks/cancel" || method === "tasks/resubscribe") {
+    // Stateless: every task completes or asks for input within its own request, so none is kept.
+    return fail(-32001, "Task not found: this agent keeps no tasks between requests. Send message/send again.");
+  }
+  if (method !== "message/send" && method !== "tasks/send") {
+    return fail(-32601, `Method not found: ${method || "(none)"}. This agent answers message/send.`);
+  }
+
+  const params = (body.params ?? {}) as { message?: { parts?: A2APart[]; taskId?: string; contextId?: string; metadata?: Record<string, unknown> } };
+  const msg = params.message ?? {};
+  const taskId = msg.taskId || crypto.randomUUID();
+  const contextId = msg.contextId || crypto.randomUUID();
+  const input = inputFromParts(msg.parts);
+  const o = await offers(s.priceAtomic);
+  const task = (state: string, text: string, metadata: Record<string, unknown>, artifacts?: unknown[]) =>
+    reply({
+      kind: "task",
+      id: taskId,
+      contextId,
+      status: { state, timestamp: new Date().toISOString(), message: { kind: "message", role: "agent", messageId: crypto.randomUUID(), taskId, contextId, parts: [{ kind: "text", text }], metadata } },
+      ...(artifacts ? { artifacts } : {}),
+    });
+  const required = { "x402.payment.status": "payment-required", "x402.payment.required": { x402Version: 2, accepts: o.accepts } };
+
+  if (!input.agentId || !Number.isInteger(input.agentId) || input.agentId <= 0) {
+    return task("input-required", `${s.name}: ${s.sells} Send ${s.input} as a data part, then pay with x402.`, required);
+  }
+
+  const payload = msg.metadata?.["x402.payment.payload"];
+  if (!payload) {
+    return task("input-required", `Payment is required for ${s.name} on agent ${input.agentId}. Sign one of the accepted x402 options and resend with x402.payment.payload and this taskId.`, required);
+  }
+
+  // Hand the signed payload to the same path a PAYMENT-SIGNATURE header takes.
+  const h = new Headers({ "payment-signature": Buffer.from(JSON.stringify(payload)).toString("base64") });
+  const r = await serve(s, input, h);
+  const out = (await r.json().catch(() => ({}))) as { payment?: { transaction?: string | null; payer?: string | null; settled?: boolean }; answer?: unknown; detail?: string; error?: string };
+  if (r.status === 200) {
+    const receipt = { success: true, transaction: out.payment?.transaction ?? "", network: "eip155:143", payer: out.payment?.payer ?? undefined };
+    return task(
+      "completed",
+      `${s.name} answered for agent ${input.agentId}.`,
+      { "x402.payment.status": "payment-completed", "x402.payment.receipts": [receipt] },
+      [{ artifactId: crypto.randomUUID(), name: s.slug, parts: [{ kind: "data", data: { answer: out.answer, payment: out.payment } }] }],
+    );
+  }
+  if (r.status === 402) {
+    return task("input-required", `Payment was not accepted: ${out.detail ?? out.error ?? "see x402.payment.error"}. Nothing was charged.`, {
+      ...required,
+      "x402.payment.status": "payment-failed",
+      "x402.payment.error": out.detail ?? out.error ?? "payment not accepted",
+      "x402.payment.receipts": [{ success: false, errorReason: out.detail ?? "payment not accepted", network: "eip155:143", transaction: "" }],
+    });
+  }
+  return task("failed", `The agent did not complete (HTTP ${r.status}). Nothing was charged.`, { "x402.payment.status": "payment-failed", "x402.payment.error": out.detail ?? `HTTP ${r.status}` });
 }

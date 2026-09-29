@@ -4,6 +4,8 @@ import { z } from "zod";
 import { SITE } from "@/lib/api.ts";
 import { evidenceCheck, isFailure, registrationCheck } from "@/lib/build-server.ts";
 import { skillMd } from "@/lib/build-guide.ts";
+import { countEvent, countMcpClient } from "@/lib/usage-live.ts";
+import { mcpClientName } from "@/lib/usage-classify.ts";
 import { GET as agentRoute } from "@/app/api/agent/[id]/route.ts";
 import { GET as accountRoute } from "@/app/api/account/[address]/route.ts";
 import { GET as claimsRoute } from "@/app/api/claims/route.ts";
@@ -135,6 +137,22 @@ async function handle(req: Request): Promise<Response> {
 }
 
 export async function POST(req: Request) {
+  // Count what the call was, from a copy of the body: the announced client on initialize, the tool on
+  // tools/call. Never the arguments, never the caller.
+  try {
+    const b = (await req.clone().json()) as unknown;
+    for (const m of Array.isArray(b) ? b : [b]) {
+      const msg = m as { method?: string; params?: { name?: string; clientInfo?: { name?: unknown } } };
+      if (msg?.method === "initialize") {
+        const n = mcpClientName(msg.params?.clientInfo?.name);
+        if (n) countMcpClient(n);
+      } else if (msg?.method === "tools/call" && typeof msg.params?.name === "string") {
+        countEvent(`mcp:tool:${msg.params.name}`);
+      }
+    }
+  } catch {
+    /* not JSON: the transport answers it */
+  }
   return handle(req);
 }
 

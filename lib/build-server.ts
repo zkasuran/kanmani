@@ -8,6 +8,7 @@ import { viemChain } from "./chains.ts";
 import { check } from "./check.ts";
 import { explain, findTransaction } from "./findtx.ts";
 import { formatNative, gasCheck } from "./gas.ts";
+import { countBuiltUri } from "./usage-live.ts";
 
 export type Failure = { error: string; status: number; errors?: string[] };
 
@@ -15,6 +16,9 @@ export async function registrationCheck(body: unknown): Promise<(RegistrationRep
   const p = parseRegistrationInput(body);
   if (!p.ok) return { error: p.errors.join("; "), errors: p.errors, status: 400 };
   const report = checkRegistration(p.value);
+  // The URI's hash only (not the draft, not the caller), so a registration that later lands on chain
+  // with exactly this URI is counted as built with Kanmani. Shared by HTTP, MCP and the studio.
+  if (report.ready && report.agentURI) countBuiltUri(report.agentURI);
   let gas: Record<string, unknown> | null = null;
   if (p.value.sender && report.transaction) {
     const chain = viemChain(p.value.chainId);
