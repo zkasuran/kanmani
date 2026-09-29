@@ -96,7 +96,11 @@ export function signedMaximum(p: UptoPayload | null | undefined): bigint | null 
   return typeof a === "string" && ATOMIC.test(a) ? BigInt(a) : null;
 }
 
-export type Meter = { unit: string; used: number | string; pricePerUnitAtomic: string };
+/**
+ * What a charge was computed from, published beside it so the buyer can recompute it.
+ * charge = min(maximum, baseAtomic + used * pricePerUnitAtomic).
+ */
+export type Meter = { unit: string; used: number | string; pricePerUnitAtomic: string; baseAtomic?: string };
 
 /**
  * The /settle requirements for an actual charge. When there must be no settlement, the reason.
@@ -126,11 +130,12 @@ export function settlementRequirements(
   return { ok: true, requirements: { ...asked, amount: actual.toString() } };
 }
 
-/** Units used times price per unit, capped at the maximum. Integer maths only. */
+/** Base plus units used times price per unit, capped at the maximum. Integer maths only. */
 export function meteredCharge(meter: Meter, maximum: bigint): bigint {
   const used = BigInt(typeof meter.used === "number" ? Math.ceil(meter.used) : meter.used);
   const price = BigInt(meter.pricePerUnitAtomic);
-  if (used < 0n || price < 0n) throw new Error("usage and price must be non-negative");
-  const c = used * price;
+  const base = BigInt(meter.baseAtomic ?? "0");
+  if (used < 0n || price < 0n || base < 0n) throw new Error("usage, price and base must be non-negative");
+  const c = base + used * price;
   return c > maximum ? maximum : c;
 }

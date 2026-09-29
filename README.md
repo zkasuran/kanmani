@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-552%20passing-34d399?style=flat-square&labelColor=05070a" alt="552 tests passing">
+  <img src="https://img.shields.io/badge/tests-560%20passing-34d399?style=flat-square&labelColor=05070a" alt="560 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
   <a href="docs/AS-BUILT.md"><img src="https://img.shields.io/badge/docs-what%20shipped-8b98a9?style=flat-square&labelColor=05070a" alt="What shipped"></a>
@@ -108,6 +108,11 @@ One bond has completed its whole life on mainnet: posted, held, matured and retu
 by where the money went, not by an event we emitted. Both agents are registered with inline
 `data:` records, are bonded and answer over x402.
 
+Both agents charge by usage with x402 `upto`. The buyer signs a Permit2 maximum of 0.01 USDC. The
+charge is `min(0.01, 0.002 + 0.001 per decided claim read)` and a Sentinel refusal on freshness
+costs nothing. Every answer returns the ceiling, the charge and the meter, so the charge can be
+recomputed. `exact` is still accepted at the full price for clients without Permit2.
+
 > [!NOTE]
 > Our own paid calls are **self-payments**: the payer and payee are the same wallet. They prove the
 > rail works end to end and they prove nothing about demand. It is stated here so a reader doesn't
@@ -197,10 +202,10 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 cd indexer   && pnpm codegen && pnpm start     # the index
 cd verifier  && npm test                       # the verifier, 181 of 198
 cd contracts && forge test                     # the contracts, 119 of 127
-npm run dev                                    # the site, 252 of 255
+npm run dev                                    # the site, 260 of 263
 ```
 
-552 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
+560 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
 need an archive node.
 
 <details>

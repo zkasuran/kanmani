@@ -187,7 +187,7 @@ const withNonce = (from: string, nonce: string): PaymentPayload =>
     extensions: {},
   }) as PaymentPayload;
 
-test("an authorization can only be reserved once at a time, and a used one is refused", () => {
+test("an authorization can only be reserved once at a time and a used one is refused", () => {
   const p = withNonce("0xabc", `0x${"1".repeat(64)}`);
   const first = reservePaymentNonce(p);
   assert.equal(first.ok, true, "the first caller gets the reservation");
@@ -207,4 +207,42 @@ test("an authorization can only be reserved once at a time, and a used one is re
 test("an authorization with no payer or nonce is refused rather than reserved", () => {
   const p = { x402Version: 2, accepted: requirements(), payload: { signature: "0x", authorization: {} }, extensions: {} } as unknown as PaymentPayload;
   assert.equal(reservePaymentNonce(p).ok, false);
+});
+
+/* ------------------------------------------------------------------ upto */
+
+const uptoHeader = (over: Record<string, unknown> = {}, amount = "10000") => {
+  const accepted = { scheme: "upto", network: NETWORK, amount, asset: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603", payTo: "0xDB6c6340342e71A63cD11Ebac2185204b7777777", maxTimeoutSeconds: 300, extra: { name: "USDC", version: "2", facilitatorAddress: "0x7f6a2850669202519f0fe8aa912451238820db86" } };
+  const payload = { signature: "0xabc", permit2Authorization: { permitted: { token: accepted.asset, amount }, from: "0x857b06519E91e3A54538791bDbb0E22373e36b66", spender: "0x4020A4f3b7b90ccA423B9fabCc0CE57C6C240002", nonce: "0x01", deadline: "9999999999", witness: { to: accepted.payTo, facilitator: accepted.extra.facilitatorAddress, validAfter: "0" } }, ...over };
+  return new Headers({ "payment-signature": Buffer.from(JSON.stringify({ x402Version: 2, accepted, payload })).toString("base64") });
+};
+
+test("upto is refused where a route has not opted in, so /api/verify stays exact-only", () => {
+  const r = paymentFrom(uptoHeader());
+  assert.equal(r.ok, false);
+  assert.match((r as { reason: string }).reason, /scheme upto is not served here, use exact/);
+});
+
+test("upto is accepted where a route opts in and carries the signed maximum", () => {
+  const r = paymentFrom(uptoHeader(), ["upto", "exact"]);
+  assert.equal(r.ok, true);
+  if (r.ok) assert.equal(r.payload.accepted.scheme, "upto");
+});
+
+test("an upto payload without a whole signed maximum is refused before any facilitator call", () => {
+  for (const amount of ["", "1.5", "-3"]) assert.equal(paymentFrom(uptoHeader({}, amount), ["upto"]).ok, false, amount);
+  assert.equal(paymentFrom(uptoHeader({ permit2Authorization: undefined }), ["upto"]).ok, false);
+});
+
+test("a Permit2 nonce is reserved once, like an EIP-3009 nonce", () => {
+  const r = paymentFrom(uptoHeader({ permit2Authorization: { permitted: { token: "0x754704Bc059F8C67012fEd69BC8A327a5aafb603", amount: "10000" }, from: "0x857b06519E91e3A54538791bDbb0E22373e36b66", spender: "0x4020A4f3b7b90ccA423B9fabCc0CE57C6C240002", nonce: "0xfeed", deadline: "9999999999", witness: { to: "0xDB6c6340342e71A63cD11Ebac2185204b7777777", facilitator: "0x7f6a2850669202519f0fe8aa912451238820db86", validAfter: "0" } } }), ["upto"]);
+  assert.ok(r.ok);
+  if (!r.ok) return;
+  const a = reservePaymentNonce(r.payload);
+  assert.ok(a.ok);
+  if (a.ok) {
+    assert.match(a.key, /^permit2:/);
+    confirmPaymentNonce(a.key);
+  }
+  assert.equal(reservePaymentNonce(r.payload).ok, false);
 });

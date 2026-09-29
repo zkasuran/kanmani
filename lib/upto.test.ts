@@ -82,4 +82,6 @@ test("metered charge is usage times price, rounded up per unit and capped at the
   assert.equal(meteredCharge({ unit: "block", used: 36.2, pricePerUnitAtomic: "1000" }, 100_000n), 37_000n);
   assert.equal(meteredCharge({ unit: "block", used: 500, pricePerUnitAtomic: "1000" }, 100_000n), 100_000n);
   assert.throws(() => meteredCharge({ unit: "block", used: -1, pricePerUnitAtomic: "1" }, 10n));
+  assert.equal(meteredCharge({ unit: "claim", used: 3, pricePerUnitAtomic: "1000", baseAtomic: "2000" }, 10_000n), 5_000n);
+  assert.equal(meteredCharge({ unit: "claim", used: 0, pricePerUnitAtomic: "1000", baseAtomic: "0" }, 10_000n), 0n);
 });

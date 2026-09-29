@@ -142,7 +142,7 @@ test("the payment header round-trips through the server's own paymentFrom", asyn
     assert.equal(parsed.header, "X-PAYMENT");
     assert.equal(parsed.payload.accepted.scheme, "exact");
     assert.equal(parsed.payload.accepted.network, NETWORK);
-    assert.equal((parsed.payload.payload.authorization as Record<string, string>).from, session.address);
+    assert.equal((parsed.payload.payload as { authorization: Record<string, string> }).authorization.from, session.address);
   }
 
   // The header the server sees carries a signature that recovers to `from`, so it is signed.

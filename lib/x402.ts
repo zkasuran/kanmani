@@ -37,6 +37,7 @@
  * some servers reject it with `invalid_x402_version`. Both are read here, because refusing a
  * client for using last year's header name helps nobody.
  */
+import { facilitatorAddressFrom, signedMaximum, uptoRequirements, type UptoPayload, type UptoRequirements } from "./upto.ts";
 
 /** 0.01 USDC. Six decimals, read off the token rather than assumed. */
 export const PRICE_ATOMIC = "10000";
@@ -109,10 +110,45 @@ export function resourceInfo(url: string): ResourceInfo {
 export type PaymentPayload = {
   x402Version: 2;
   resource?: ResourceInfo;
-  accepted: PaymentRequirements;
-  payload: { signature: string; authorization: Record<string, string> };
+  accepted: PaymentRequirements | UptoRequirements;
+  /** `exact` carries an EIP-3009 `authorization`. `upto` carries a Permit2 `permit2Authorization`. */
+  payload: { signature: string; authorization: Record<string, string> } | UptoPayload;
   extensions?: Record<string, unknown>;
 };
+
+export type Scheme = "exact" | "upto";
+
+/**
+ * The facilitator's own upto address on mainnet, read from its /supported and cached.
+ *
+ * Null when it cannot be read or is not advertised. The caller then offers `exact` only, because an
+ * upto challenge with a guessed facilitator would ask the buyer to sign an authorisation that nobody
+ * can settle.
+ */
+let uptoFacilitator: { at: number; address: `0x${string}` | null } | null = null;
+export async function uptoFacilitatorAddress(): Promise<`0x${string}` | null> {
+  if (uptoFacilitator && Date.now() - uptoFacilitator.at < 10 * 60_000) return uptoFacilitator.address;
+  try {
+    const r = await fetch(`${FACILITATOR}/supported`, { signal: AbortSignal.timeout(8_000) });
+    const address = r.ok ? facilitatorAddressFrom(await r.json(), NETWORK) : null;
+    uptoFacilitator = { at: Date.now(), address };
+    return address;
+  } catch {
+    // Not cached, so the next request tries again rather than serving exact-only for ten minutes.
+    return null;
+  }
+}
+
+/** Mainnet upto requirements for a ceiling. Same asset and payee as `exact`, so only the scheme differs. */
+export function uptoServiceRequirements(maximumAtomic: string, facilitatorAddress: `0x${string}`): UptoRequirements {
+  return uptoRequirements({
+    network: NETWORK,
+    asset: USDC_MONAD,
+    payTo: PAY_TO as `0x${string}`,
+    maximum: BigInt(maximumAtomic),
+    facilitatorAddress,
+  });
+}
 
 /**
  * Pull the payment out of whichever header the client used.
@@ -123,6 +159,8 @@ export type PaymentPayload = {
  */
 export function paymentFrom(
   headers: Headers,
+  /** Which schemes this endpoint serves. Exact only unless a route opts in to upto. */
+  schemes: readonly Scheme[] = ["exact"],
 ): { ok: true; payload: PaymentPayload; header: string } | { ok: false; reason: string } {
   const v2 = headers.get("payment-signature");
   const v1 = headers.get("x-payment");
@@ -169,15 +207,21 @@ export function paymentFrom(
   if (!accepted || typeof accepted !== "object") {
     return { ok: false, reason: "payment payload has no `accepted` object" };
   }
-  if (accepted.scheme !== "exact") {
-    return { ok: false, reason: `scheme ${String(accepted.scheme)} is not served here, use exact` };
+  if (!schemes.includes(accepted.scheme as Scheme)) {
+    return { ok: false, reason: `scheme ${String(accepted.scheme)} is not served here, use ${schemes.join(" or ")}` };
   }
   if (accepted.network !== NETWORK) {
     return { ok: false, reason: `network ${String(accepted.network)} is not served here, use ${NETWORK}` };
   }
 
-  const inner = p.payload as { signature?: unknown; authorization?: unknown } | undefined;
-  if (!inner || typeof inner.signature !== "string" || typeof inner.authorization !== "object") {
+  const inner = p.payload as { signature?: unknown; authorization?: unknown; permit2Authorization?: unknown } | undefined;
+  if (accepted.scheme === "upto") {
+    // The ceiling the buyer signed must be a whole atomic amount. Otherwise nothing downstream can compare
+    // a charge against it.
+    if (!inner || typeof inner.signature !== "string" || signedMaximum(inner as UptoPayload) === null) {
+      return { ok: false, reason: "upto payload needs a `signature` and a `permit2Authorization` with a whole `permitted.amount`" };
+    }
+  } else if (!inner || typeof inner.signature !== "string" || typeof inner.authorization !== "object") {
     return { ok: false, reason: "payload needs a `signature` and an `authorization`" };
   }
 
@@ -206,6 +250,7 @@ type FacilitatorSettle = {
 async function callFacilitator<T>(
   path: string,
   payload: PaymentPayload,
+  reqs: PaymentRequirements | UptoRequirements = requirements(),
 ): Promise<{ ok: true; body: T } | { ok: false; reason: string }> {
   try {
     const r = await fetch(`${FACILITATOR}${path}`, {
@@ -217,7 +262,7 @@ async function callFacilitator<T>(
       body: JSON.stringify({
         x402Version: 2,
         paymentPayload: payload,
-        paymentRequirements: requirements(),
+        paymentRequirements: reqs,
       }),
       signal: AbortSignal.timeout(20_000),
     });
@@ -238,8 +283,10 @@ async function callFacilitator<T>(
 
 export async function verifyPayment(
   payload: PaymentPayload,
+  /** For upto: the requirements at the CEILING. Verify-time `amount` is the signed maximum. */
+  reqs?: PaymentRequirements | UptoRequirements,
 ): Promise<{ valid: true; payer: string } | { valid: false; reason: string; ours: boolean }> {
-  const r = await callFacilitator<FacilitatorVerify>("/verify", payload);
+  const r = await callFacilitator<FacilitatorVerify>("/verify", payload, reqs);
   // `ours` separates "we could not check your payment" from "your payment is not valid". The
   // first is a 503 and the second is a 402 and a client has to be able to tell them apart.
   if (!r.ok) return { valid: false, reason: r.reason, ours: true };
@@ -255,8 +302,10 @@ export async function verifyPayment(
 
 export async function settlePayment(
   payload: PaymentPayload,
-): Promise<{ settled: boolean; transaction: string | null; payer: string | null; reason: string | null }> {
-  const r = await callFacilitator<FacilitatorSettle>("/settle", payload);
+  /** For upto: the requirements at the ACTUAL charge, from `settlementRequirements`. */
+  reqs?: PaymentRequirements | UptoRequirements,
+): Promise<{ settled: boolean; transaction: string | null; payer: string | null; reason: string | null; amount?: string }> {
+  const r = await callFacilitator<FacilitatorSettle & { amount?: string }>("/settle", payload, reqs);
   if (!r.ok) return { settled: false, transaction: null, payer: null, reason: r.reason };
   const tx = r.body.transaction && r.body.transaction !== "" ? r.body.transaction : null;
   return {
@@ -264,6 +313,7 @@ export async function settlePayment(
     transaction: tx,
     payer: r.body.payer ?? null,
     reason: r.body.success ? null : (r.body.errorReason ?? "settlement did not succeed"),
+    ...(typeof r.body.amount === "string" ? { amount: r.body.amount } : {}),
   };
 }
 
@@ -277,21 +327,29 @@ export async function settlePayment(
  * caller holds it at a time. A reservation that is never confirmed expires, so a crash does not
  * strand a payer's authorization forever.
  *
- * In-memory on purpose: this app runs as one long-lived process, and the token's own nonce is the
+ * In-memory on purpose: this app runs as one long-lived process while the token's own nonce is the
  * durable backstop across a restart. It is a concurrency guard, not the source of truth.
  */
 const RESERVATION_TTL_MS = 120_000;
 const nonceState = new Map<string, { state: "inflight" | "consumed"; at: number }>();
 
 function nonceKey(payload: PaymentPayload): string | null {
-  const auth = payload.payload?.authorization as Record<string, string> | undefined;
+  // upto: the Permit2 nonce, which is what the chain burns on settlement. Prefixed so an EIP-3009
+  // nonce and a Permit2 nonce with the same bytes can never collide.
+  const p2 = (payload.payload as UptoPayload | undefined)?.permit2Authorization;
+  if (p2) {
+    const from = typeof p2.from === "string" ? p2.from.toLowerCase() : "";
+    const nonce = typeof p2.nonce === "string" ? p2.nonce.toLowerCase() : "";
+    return from && nonce ? `permit2:${from}:${nonce}` : null;
+  }
+  const auth = (payload.payload as { authorization?: Record<string, string> } | undefined)?.authorization;
   const from = typeof auth?.from === "string" ? auth.from.toLowerCase() : "";
   const nonce = typeof auth?.nonce === "string" ? auth.nonce.toLowerCase() : "";
   if (!from || !nonce) return null;
   return `${from}:${nonce}`;
 }
 
-/** Reserve the authorization for this request, or refuse when another request already holds it. */
+/** Reserve the authorization for this request. Refuse when another request already holds it. */
 export function reservePaymentNonce(payload: PaymentPayload): { ok: true; key: string } | { ok: false; reason: string } {
   const key = nonceKey(payload);
   if (!key) return { ok: false, reason: "authorization is missing a payer or nonce" };
@@ -341,12 +399,12 @@ export function paymentResponseHeader(s: {
 }
 
 /** Section 5.1. The 402 body, in the shape a v2 client expects. */
-export function challenge(url: string, error: string) {
+export function challenge(url: string, error: string, accepts: (PaymentRequirements | UptoRequirements)[] = [requirements()]) {
   return {
     x402Version: 2,
     error,
     resource: resourceInfo(url),
-    accepts: [requirements()],
+    accepts,
     extensions: {},
     // Not part of the spec and included anyway, because a human will open this endpoint in a
     // browser long before any agent posts to it and a bare machine challenge tells them nothing.
