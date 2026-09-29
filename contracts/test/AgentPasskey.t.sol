@@ -60,7 +60,7 @@ contract AgentPasskeyTest is Test {
 
     function _assert(uint256 key, bytes32 challenge, uint8 flags, string memory type_)
         internal
-        view
+        pure
         returns (AgentPasskey.Assertion memory a)
     {
         bytes memory ad = abi.encodePacked(RPID_HASH, flags, uint32(7));
