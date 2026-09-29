@@ -240,7 +240,11 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
                 </Link>
                 <span className="flex shrink-0 gap-2 font-mono text-[11px] text-faint">
                   <span>{a.rung}</span>
-                  {a.bond ? <span className="text-[var(--color-true)]">bond {a.bond}</span> : null}
+                  {a.bond ? (
+                    <Link href={`/bond?agent=${a.agentId}#post`} onClick={onNavigate} className="text-[var(--color-true)] hover:underline">bond {a.bond}</Link>
+                  ) : (
+                    <Link href={`/bond?agent=${a.agentId}#post`} onClick={onNavigate} className="text-[var(--color-brand)] hover:underline">bond it</Link>
+                  )}
                 </span>
               </li>
             ))}
@@ -258,7 +262,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
           <Link href="/login" onClick={onNavigate} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">manage</Link>
         )}
         <Link href="/studio" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">{kind === "agent" ? "register or repoint" : "register an agent"}</Link>
-        <Link href="/bond" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">bond</Link>
+        <Link href="/bond#post" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">bond</Link>
         {method === "passkey" ? (
           <Link href="/account" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">keys</Link>
         ) : null}

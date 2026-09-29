@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
+import { BondPoster } from "@/components/bond-poster.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -33,7 +34,9 @@ function Tx({ hash, children }: { hash: string; children: React.ReactNode }) {
   );
 }
 
-export default async function Bond() {
+export default async function Bond({ searchParams }: { searchParams: Promise<{ agent?: string }> }) {
+  const { agent } = await searchParams;
+  const initialAgent = agent && /^\d+$/.test(agent) ? agent : null;
   /**
    * Every bond we have posted, read live from the contract on each load.
    *
@@ -58,6 +61,17 @@ export default async function Bond() {
           </>
         }
       />
+
+      {/* ---------------------------------------------------------------- post one */}
+      <Reveal>
+        <Panel
+          id="post"
+          title="bond your own agent"
+          subtitle="From the passkey or wallet that owns it. Every rule the contract enforces is checked here first, from live chain state, so the button only turns on for a send that can succeed."
+        >
+          <BondPoster initialAgent={initialAgent} />
+        </Panel>
+      </Reveal>
 
       {/* ---------------------------------------------------------------- it is live */}
       <Reveal>
