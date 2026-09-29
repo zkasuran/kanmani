@@ -1,0 +1,522 @@
+{
+  "at": "2026-09-29T16:20:22.579Z",
+  "site": "https://kanmani.xyz",
+  "rows": [
+    {
+      "slug": "kanmani",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 2017 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani\", 4 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "well-known lists 13 registrations"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "Doctor on /mcp: speaks mcp"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "Linter on /api/verify: clean"
+        }
+      },
+      "agentId": 10252,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "sentinel",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 2181 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Sentinel\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Sentinel\", erc8004 #10256"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10256,
+      "taifoon": "hireable",
+      "ok": true
+    },
+    {
+      "slug": "assay",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 2093 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Assay\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Assay\", erc8004 #10257"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10257,
+      "taifoon": "hireable",
+      "ok": true
+    },
+    {
+      "slug": "locator",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1913 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Locator\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Locator\", erc8004 #10263"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10263,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "notary",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1773 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Notary\", 2 endpoint(s), x402 false (expected false)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Notary\", erc8004 #10264"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "free, no challenge to lint"
+        },
+        "works": {
+          "ok": true,
+          "saw": "example answered HTTP 200"
+        }
+      },
+      "agentId": 10264,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "registrar",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1809 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Registrar\", 2 endpoint(s), x402 false (expected false)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Registrar\", erc8004 #10265"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "free, no challenge to lint"
+        },
+        "works": {
+          "ok": true,
+          "saw": "example answered HTTP 200"
+        }
+      },
+      "agentId": 10265,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "ledger",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1889 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Ledger\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Ledger\", erc8004 #10266"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10266,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "twin",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1893 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Twin\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Twin\", erc8004 #10267"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10267,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "pulse",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1873 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Pulse\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Pulse\", erc8004 #10268"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10268,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "doctor",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1805 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Doctor\", 2 endpoint(s), x402 false (expected false)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Doctor\", erc8004 #10269"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "free, no challenge to lint"
+        },
+        "works": {
+          "ok": true,
+          "saw": "example answered HTTP 200"
+        }
+      },
+      "agentId": 10269,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "linter",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1817 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Linter\", 2 endpoint(s), x402 false (expected false)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Linter\", erc8004 #10270"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "free, no challenge to lint"
+        },
+        "works": {
+          "ok": true,
+          "saw": "example answered HTTP 200"
+        }
+      },
+      "agentId": 10270,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "bondsman",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 1853 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Bondsman\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Bondsman\", erc8004 #10271"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10271,
+      "taifoon": "not_hireable",
+      "ok": true
+    },
+    {
+      "slug": "scribe",
+      "checks": {
+        "document": {
+          "ok": true,
+          "saw": "on chain = intended, byte for byte"
+        },
+        "spec": {
+          "ok": true,
+          "saw": "registration-v1, 2009 bytes, all consequences met"
+        },
+        "unique": {
+          "ok": true,
+          "saw": "no other agent shares its document"
+        },
+        "indexed": {
+          "ok": true,
+          "saw": "name \"Kanmani Scribe\", 2 endpoint(s), x402 true (expected true)"
+        },
+        "card": {
+          "ok": true,
+          "saw": "A2A card \"Kanmani Scribe\", erc8004 #10272"
+        },
+        "doctor": {
+          "ok": true,
+          "saw": "speaks a2a"
+        },
+        "linter": {
+          "ok": true,
+          "saw": "v2 challenge, 2 option(s), settleable"
+        },
+        "works": {
+          "ok": true,
+          "saw": "unpaid call answered HTTP 402 with 2 payment option(s)"
+        }
+      },
+      "agentId": 10272,
+      "taifoon": "not_hireable",
+      "ok": true
+    }
+  ]
+}

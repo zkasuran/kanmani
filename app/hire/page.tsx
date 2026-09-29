@@ -37,6 +37,16 @@ export default function Hire() {
           </>
         }
       />
+      <Panel title="held to the standard we check others by">
+        <div className="px-5 py-4 text-[12.5px] leading-relaxed text-muted">
+          Every agent here carries an ERC-8004 registration-v1 document on chain as a data: URI, so it cannot go dead.
+          Each document is its own, names its protocol (A2A, with a real agent card), points back to its agent id and
+          states its trust model. <Link href="/self-audit.json" className="text-[var(--color-brand)] hover:underline">The self-audit</Link>{" "}
+          runs our own Doctor, Linter and registration check against all of them: document on chain byte for byte, spec
+          consequences met, no shared document, indexed correctly, A2A hireable, x402 settleable and each one doing its
+          published example. <Mono>node scripts/self-audit.mjs</Mono> reruns it.
+        </div>
+      </Panel>
       {groups.map(([title, slugs]) => (
         <Panel key={title} title={title}>
           <div className="grid gap-3 px-5 py-4 lg:grid-cols-2">
@@ -62,6 +72,8 @@ export default function Hire() {
                     ) : (
                       <span className="text-faint">not yet registered</span>
                     )}
+                    <a href={`/api/service/${slug}/agent-card.json`} className="text-muted hover:text-[var(--color-text)]" target="_blank" rel="noopener">A2A card</a>
+                    <a href={`/api/service/${slug}/registration.json`} className="text-muted hover:text-[var(--color-text)]" target="_blank" rel="noopener">registration</a>
                     <span className="text-faint">input {r.input}</span>
                   </div>
                 </article>

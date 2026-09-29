@@ -177,18 +177,18 @@ fi
 
 # ---------------------------------------------------------------- 9. Self-heal, LIVE
 echo "9. Self-heal  ·  heal a fixed record  ·  expected LIVE"
-# Agent 10256's document was repaired on chain with setAgentURI, which emits URIUpdated. If the index
-# captured it, the Sclera address is in the indexed record. That string exists ONLY in the repaired
-# version, so this cannot pass on the original document.
-HEALED=$(curl -fsS "$SITE/api/agent/10256" | python3 -c "
-import base64, json, sys
+# Agent 10256's document has been repointed on chain with setAgentURI more than once, each emitting
+# URIUpdated. If the index captures them, its stored URI equals what the registry returns right now.
+# Compared whole, so it cannot pass on any earlier version of the document.
+ONCHAIN=$(curl -fsS -X POST "$RPC" -H 'content-type: application/json' --data '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"0x8004A169FB4a3325136EB29fA0ceB6D2e539a432","data":"0xc87b56dd0000000000000000000000000000000000000000000000000000000000002810"},"latest"]}' | python3 -c "
+import json,sys
+r=bytes.fromhex(json.load(sys.stdin)['result'][2:]); n=int.from_bytes(r[32:64],'big'); print(r[64:64+n].decode())" 2>/dev/null)
+HEALED=$(curl -fsS "$SITE/api/agent/10256" | ONCHAIN="$ONCHAIN" python3 -c "
+import json, os, sys
 u = json.load(sys.stdin)['data'].get('registration', {}).get('uri', '')
-pre = 'data:application/json;base64,'
-if not u.startswith(pre):
-    print('notinline'); raise SystemExit
-print('yes' if '57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf' in base64.b64decode(u[len(pre):]).decode('utf8', 'replace') else 'no')" 2>/dev/null)
+print('yes' if u and u == os.environ['ONCHAIN'] else 'no')" 2>/dev/null)
 if [ "${HEALED:-}" = "yes" ]; then
-  ok "a repaired document is reflected in the index, so URIUpdated is being captured"
+  ok "the index holds 10256's current on-chain document, so URIUpdated is being captured"
   note "before this was wired, setAgentURI moved metadataUpdateCount and left the stored URI stale forever"
 else
   bad "the repaired document is not in the index (got '${HEALED:-empty}')"
@@ -217,9 +217,17 @@ else
   bad "AgentPasskey not found or never used at $AP"
 fi
 
+# ---------------------------------------------------------------- 11. Our own agents, LIVE
+echo "11. Our agents  ·  held to the checks we apply to others  ·  expected LIVE"
+WK=$(curl -fsS "$SITE/.well-known/agent-registration.json" | grep -oE '"agentId": [0-9]+' | wc -l)
+[ "$WK" -ge 13 ] && ok "the well-known file lists $WK ERC-8004 registrations we operate (spec domain verification)" || bad "the well-known file lists $WK registrations, expected 13"
+M=0; for s in kanmani sentinel assay locator notary registrar ledger twin pulse doctor linter bondsman scribe; do
+  curl -fsS "$SITE/api/service/$s/registration.json" | grep -q '"onChainMatches": true' && M=$((M+1)); done
+[ "$M" = "13" ] && ok "all 13 agents carry their registration-v1 document on chain, byte for byte" || bad "only $M of 13 agents carry their intended document on chain"
+
 echo
 echo "-------------------------------------------------------------"
 printf 'PASS %d   FAIL %d   SKIP %d\n' "$pass" "$fail" "$skip"
-echo "All ten layers live. If a FAIL appears above, the claim on the site is wrong and we"
+echo "All eleven layers live. If a FAIL appears above, the claim on the site is wrong and we"
 echo "would rather you found it with this script than by trusting the page."
 [ "$fail" -eq 0 ]
