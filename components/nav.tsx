@@ -165,6 +165,8 @@ export function Nav() {
   const apex = useRef<{ x: number; y: number } | null>(null);
   const panelEl = useRef<HTMLDivElement | null>(null);
   const pending = useRef<string | null | undefined>(undefined);
+  /** Set while the pointer is above the page after leaving an open group through the top edge. */
+  const parked = useRef(false);
   const hoverRef = useRef<string | null>(null);
   hoverRef.current = hover;
 
@@ -227,6 +229,17 @@ export function Nav() {
     if (!hover) return;
     const onMove = (e: MouseEvent) => {
       pointer.current = { x: e.clientX, y: e.clientY };
+      if (parked.current) {
+        // Back from above the page. Over a group or a panel, the enter handlers decide. Anywhere else
+        // it is an ordinary exit with the usual grace.
+        parked.current = false;
+        const t = e.target as Element | null;
+        if (!t?.closest?.(".nav-group")) {
+          clearTimer();
+          timer.current = window.setTimeout(() => setHover(null), 120);
+        }
+        return;
+      }
       if (pending.current === undefined) return;
       // Still heading for the panel: keep waiting, restarting the settle clock on each move.
       const how = aiming(pointer.current);
@@ -239,6 +252,7 @@ export function Nav() {
   }, [hover]);
 
   const enter = (label: string) => {
+    parked.current = false;
     const how = hoverRef.current && hoverRef.current !== label ? aiming(pointer.current) : false;
     if (how) {
       defer(label, how);
@@ -251,6 +265,16 @@ export function Nav() {
     setHover(label);
   };
   const leave = () => {
+    // Left through the top of the page, into the browser's own tab strip. A hand coming up from the
+    // page overshoots the bar and goes there constantly, so this is not leaving the menu: it stays
+    // open until the pointer comes back and lands somewhere else. Measured before this: an upward
+    // approach that overshot closed the menu on every one of the seven groups.
+    if (hoverRef.current && pointer.current.y <= 2) {
+      clearTimer();
+      pending.current = undefined;
+      parked.current = true;
+      return;
+    }
     const how = hoverRef.current ? aiming(pointer.current) : false;
     if (how) {
       defer(null, how);
