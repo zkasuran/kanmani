@@ -26,7 +26,7 @@ test("paths map to surfaces and assets and scanner probes count as nothing", () 
 
 test("tool names come from the product token; generic HTTP libraries are not named", () => {
   assert.equal(toolName("taifoon-harvester/1.0 (+agent card crawler)"), "taifoon-harvester");
-  for (const u of ["curl/8.5", "node", "python-requests/2.31", "Go-http-client/1.1", CHROME, ""]) assert.equal(toolName(u), null, u);
+  for (const u of ["curl/8.5", "node", "python/3.12 aiohttp", "python-requests/2.31", "Go-http-client/1.1", CHROME, ""]) assert.equal(toolName(u), null, u);
 });
 
 test("an embedding site is named; we, search engines and social sites are not", () => {

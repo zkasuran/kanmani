@@ -70,7 +70,7 @@ export function toolName(userAgent: string): string | null {
   const m = (userAgent || "").trim().match(/^([A-Za-z][A-Za-z0-9._-]{1,40})\//);
   if (!m) return null;
   const n = m[1]!.toLowerCase();
-  if (/^(mozilla|curl|wget|node|undici|axios|python-urllib|python-requests|python-httpx|aiohttp|go-http-client|okhttp|java|libwww-perl|ruby|deno|bun|postmanruntime|insomnia|httpie|guzzlehttp|dart|reqwest)$/.test(n)) return null;
+  if (/^(mozilla|curl|wget|node|undici|axios|python|python-urllib|python-requests|python-httpx|aiohttp|go-http-client|okhttp|java|libwww-perl|ruby|deno|bun|postmanruntime|insomnia|httpie|guzzlehttp|dart|reqwest)$/.test(n)) return null;
   return n;
 }
 
