@@ -134,6 +134,8 @@ if (!process.argv.includes("--no-chain")) {
         const r = await fetch(RPC, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }) });
         const j = await r.json();
         if (j.error) throw new Error(j.error.message);
+        // A rate-limited public RPC answers 200 with neither result nor error.
+        if (!("result" in j)) throw new Error(`no result (HTTP ${r.status})`);
         return j.result;
       } catch (e) {
         if (t === 4) throw e;
@@ -142,7 +144,7 @@ if (!process.argv.includes("--no-chain")) {
     }
   };
   const head = parseInt(await rpc("eth_blockNumber", []), 16);
-  const WINDOW = 100, PARALLEL = 10, MAX_WINDOWS = Number(arg("--max-windows", "3000"));
+  const WINDOW = 100, PARALLEL = 4, MAX_WINDOWS = Number(arg("--max-windows", "3000"));
   for (const [name, c] of Object.entries(CONTRACTS)) {
     const cur = await db.query("SELECT block FROM fovea.usage_cursor WHERE name = $1", [name]);
     let from = cur.rows[0] ? Number(cur.rows[0].block) + 1 : c.from;
@@ -151,9 +153,21 @@ if (!process.argv.includes("--no-chain")) {
       const batch = [];
       for (let i = 0; i < PARALLEL && from + i * WINDOW <= head; i++) {
         const f = from + i * WINDOW, t = Math.min(f + WINDOW - 1, head);
-        batch.push(rpc("eth_getLogs", [{ address: c.address, fromBlock: toHex(f), toBlock: toHex(t) }]).then((logs) => ({ t, logs })));
+        batch.push(
+          rpc("eth_getLogs", [{ address: c.address, fromBlock: toHex(f), toBlock: toHex(t) }]).then((logs) => {
+            // A null answer is a failed read, not "no events": the cursor must not move past it.
+            if (!Array.isArray(logs)) throw new Error(`getLogs ${f}-${t} returned ${JSON.stringify(logs)}`);
+            return { t, logs };
+          }),
+        );
       }
-      const got = await Promise.all(batch);
+      let got;
+      try {
+        got = await Promise.all(batch);
+      } catch (e) {
+        console.log(`chain: ${name} stopped at ${from} for this run: ${e.message.slice(0, 120)}`);
+        break;
+      }
       for (const { logs } of got) {
         for (const l of logs) {
           const ev = EVENTS[l.topics[0]];
@@ -171,6 +185,8 @@ if (!process.argv.includes("--no-chain")) {
       await db.query("INSERT INTO fovea.usage_cursor (name, block) VALUES ($1,$2) ON CONFLICT (name) DO UPDATE SET block = EXCLUDED.block", [name, last]);
       windows += got.length;
       from = last + 1;
+      // Stay under the public RPC's rate limit: a steady crawl beats a burst that gets refused.
+      await new Promise((r) => setTimeout(r, 120));
     }
     console.log(`chain: ${name} scanned ${windows} windows to ${from - 1} (head ${head}), ${found} events`);
   }
