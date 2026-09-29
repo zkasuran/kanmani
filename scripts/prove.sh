@@ -136,8 +136,12 @@ fi
 # ---------------------------------------------------------------- 7. Chiasm, LIVE
 echo "7. Chiasm  ·  read every chain at once  ·  expected LIVE"
 CH=$(curl -fsS "$SITE/chains" -o /tmp/_ch -w '%{http_code}')
-if [ "$CH" = "200" ] && grep -qE '35[0-9],[0-9]{3}' /tmp/_ch; then
-  ok "BSC indexed beside Monad: $(grep -oE '35[0-9],[0-9]{3}' /tmp/_ch | head -1) agents on chain 56"
+# Read the count from the sentence that states BNB Smart Chain's population, at any size. The first
+# version matched 35x,xxx and turned into a FAIL the moment BSC passed 360,000 agents, although the
+# layer had not changed. A count of 0 still fails, because /chains renders a missing count as 0.
+BSC=$(grep -oE "Smart Chain(&#x27;|')s own(<!-- -->)?[0-9]{1,3}(,[0-9]{3})*" /tmp/_ch 2>/dev/null | head -1 | grep -oE '[0-9]{1,3}(,[0-9]{3})*$' || true)
+if [ "$CH" = "200" ] && [ -n "${BSC:-}" ] && [ "${BSC//,/}" -gt 0 ] 2>/dev/null; then
+  ok "BSC indexed beside Monad: $BSC agents on chain 56"
   note "merged on the content hash of the registration document"
 else
   bad "the chains page did not report a second chain"
