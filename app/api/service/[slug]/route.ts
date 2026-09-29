@@ -1,7 +1,9 @@
 import { json, problem, SITE } from "@/lib/api.ts";
 import { AGENTS, assay, type AgentSlug, MONAD_BLOCK_MS, sentinel } from "@/lib/agents.ts";
 import { chargeFor } from "@/lib/metering.ts";
-import { inputFromParts, type A2APart } from "@/lib/a2a.ts";
+import { EXTRAS, extraBySlug, extraCharge, isInputError } from "@/lib/agent-extras.ts";
+import type { Meter } from "@/lib/upto.ts";
+import { inputFromParts, objectFromParts, type A2APart } from "@/lib/a2a.ts";
 import { settlementRequirements, type UptoPayload, type UptoRequirements } from "@/lib/upto.ts";
 import {
   challenge,
@@ -47,9 +49,63 @@ export const dynamic = "force-dynamic";
  * consent to a price without seeing what it buys.
  */
 
-function spec(slug: string) {
-  return (AGENTS as Record<string, (typeof AGENTS)[AgentSlug]>)[slug];
+/**
+ * Every agent this route serves, core (Sentinel, Assay) and extra, as one shape so the payment path
+ * exists once. `work` runs the agent and returns its answer with the meter the charge comes from.
+ */
+type Target = {
+  slug: string;
+  name: string;
+  sells: string;
+  why: string;
+  input: string;
+  example: Record<string, unknown>;
+  priceAtomic: string;
+  work: (input: Record<string, unknown>, ceiling: bigint) => Promise<{ answer: unknown; meter: Meter; charge: bigint }>;
+};
+
+function spec(slug: string): Target | undefined {
+  const core = (AGENTS as Record<string, (typeof AGENTS)[AgentSlug]>)[slug];
+  if (core) {
+    return {
+      slug: core.slug,
+      name: core.name,
+      sells: core.sells,
+      why: core.needsMonad,
+      input: core.input,
+      example: JSON.parse(core.input),
+      priceAtomic: core.priceAtomic,
+      async work(input, ceiling) {
+        const agentId = Number(input.agentId);
+        if (!Number.isInteger(agentId) || agentId <= 0) throw Object.assign(new Error(`agentId must be a positive integer. Send ${core.input}`), { input: true });
+        const answer =
+          core.slug === "sentinel"
+            ? await sentinel(agentId, Number.isFinite(Number(input.maxAgeBlocks)) ? Number(input.maxAgeBlocks) : 64)
+            : await assay(agentId);
+        const m = chargeFor(core.slug, answer, ceiling);
+        return { answer, meter: m.meter, charge: m.chargeAtomic };
+      },
+    };
+  }
+  const e = extraBySlug(slug);
+  if (!e) return undefined;
+  return {
+    slug: e.slug,
+    name: e.name,
+    sells: e.sells,
+    why: e.why,
+    input: e.input,
+    example: e.example,
+    priceAtomic: e.priceAtomic,
+    async work(input, ceiling) {
+      const r = await e.run(input, ceiling);
+      return { answer: r.answer, meter: r.meter, charge: extraCharge(e, r.meter) };
+    },
+  };
 }
+
+const KNOWN = () => [...Object.keys(AGENTS), ...EXTRAS.map((e) => e.slug)].join(", ");
+const isInput = (e: unknown) => isInputError(e) || (e as { input?: boolean })?.input === true;
 
 /** What this agent accepts right now. Upto only when the facilitator's address could be read. */
 async function offers(priceAtomic: string): Promise<{ upto: UptoRequirements | null; exact: PaymentRequirements; accepts: (UptoRequirements | PaymentRequirements)[] }> {
@@ -62,25 +118,31 @@ async function offers(priceAtomic: string): Promise<{ upto: UptoRequirements | n
 export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
   const s = spec(slug);
-  if (!s) return problem(404, "No such agent", `Known agents: ${Object.keys(AGENTS).join(", ")}.`);
+  if (!s) return problem(404, "No such agent", `Known agents: ${KNOWN()}.`);
   const resource = `${SITE}/api/service/${s.slug}`;
+  if (s.priceAtomic === "0") {
+    return json({ agent: s.name, sells: s.sells, why: s.why, input: s.input, example: s.example, price: { free: true }, call: `POST ${resource} with the input as JSON. A2A message/send works too.` });
+  }
   const o = await offers(s.priceAtomic);
+  // The body IS the x402 v2 challenge (x402Version, error, resource, accepts at the top level), so a
+  // standard client reads it without knowing us. The description rides beside it. It used to nest the
+  // challenge under howToPay, which our own Linter agent caught: a spec client found no accepts.
   return json(
     {
+      ...challenge(resource, "PAYMENT-SIGNATURE header required. This body is the price and the reason.", o.accepts),
       agent: s.name,
       sells: s.sells,
-      needsMonad: s.needsMonad,
+      why: s.why,
       blockMs: MONAD_BLOCK_MS,
       input: s.input,
-      output: s.output,
+      example: s.example,
       price: {
         ceilingAtomic: s.priceAtomic,
         asset: requirements().asset,
         network: requirements().network,
         schemes: o.accepts.map((a) => a.scheme),
-        meter: "upto charges min(ceiling, 2000 + 1000 per decided claim read). Sentinel refused on freshness charges 0. exact always charges the ceiling.",
+        meter: "upto charges min(ceiling, base + units used); every answer returns the meter it was charged from. exact always charges the ceiling.",
       },
-      howToPay: challenge(resource, "POST with a PAYMENT-SIGNATURE header. This body is the price and the reason.", o.accepts),
     },
     { status: 402 },
   );
@@ -93,7 +155,7 @@ export async function OPTIONS() {
 export async function POST(req: Request, ctx: { params: Promise<{ slug: string }> }) {
   const { slug } = await ctx.params;
   const s = spec(slug);
-  if (!s) return problem(404, "No such agent", `Known agents: ${Object.keys(AGENTS).join(", ")}.`);
+  if (!s) return problem(404, "No such agent", `Known agents: ${KNOWN()}.`);
   let body: Record<string, unknown>;
   try {
     body = (await req.json()) as Record<string, unknown>;
@@ -103,22 +165,29 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   // A2A JSON-RPC (message/send) lands here too: brokers and readiness probes speak it. The
   // registration record declares this endpoint as a2a. Same work, same payment rules underneath.
   if (body && body.jsonrpc === "2.0") return a2a(s, body, req.headers);
-  return serve(s, body as { agentId?: number | string; maxAgeBlocks?: number }, req.headers);
+  return serve(s, body, req.headers);
 }
 
-type Spec = (typeof AGENTS)[AgentSlug];
+type Spec = Target;
 
 /** The priced call itself. Shared by plain JSON and A2A, so the payment rules exist once. */
-async function serve(s: Spec, body: { agentId?: number | string; maxAgeBlocks?: number }, headers: Headers): Promise<Response> {
+async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): Promise<Response> {
   const resource = `${SITE}/api/service/${s.slug}`;
-  const o = await offers(s.priceAtomic);
-  const ask = (reason: string) => json(challenge(resource, reason, o.accepts), { status: 402 });
 
-  const agentId = Number(body.agentId);
-  if (!Number.isInteger(agentId) || agentId <= 0) {
-    return problem(400, "agentId must be a positive integer", `Send ${s.input}`);
+  // Free agents: no payment step at all, only the work.
+  if (s.priceAtomic === "0") {
+    try {
+      const r = await s.work(body, 0n);
+      return json({ agent: s.name, chainId: 143, payment: null, meter: r.meter, answer: r.answer });
+    } catch (e) {
+      if (isInput(e)) return problem(400, "Input not accepted", (e as Error).message, { expected: s.input, example: s.example });
+      console.error(`[/api/service/${s.slug}] failed:`, (e as Error).message);
+      return problem(500, "The agent did not complete", (e as Error).message.slice(0, 200), { retryable: true });
+    }
   }
 
+  const o = await offers(s.priceAtomic);
+  const ask = (reason: string) => json(challenge(resource, reason, o.accepts), { status: 402 });
   const payment = paymentFrom(headers, o.upto ? ["upto", "exact"] : ["exact"]);
   if (!payment.ok) return ask(payment.reason);
   const isUpto = payment.payload.accepted.scheme === "upto";
@@ -144,14 +213,16 @@ async function serve(s: Spec, body: { agentId?: number | string; maxAgeBlocks?: 
   if (!reservation.ok) return ask(reservation.reason);
 
   // Work before money. If this throws, the verified authorization is deliberately not settled.
-  let answer: Awaited<ReturnType<typeof sentinel>> | Awaited<ReturnType<typeof assay>>;
+  const ceiling = BigInt(s.priceAtomic);
+  let answer: unknown;
+  let metered: { meter: Meter; chargeAtomic: bigint };
   try {
-    answer =
-      s.slug === "sentinel"
-        ? await sentinel(agentId, Number.isFinite(Number(body.maxAgeBlocks)) ? Number(body.maxAgeBlocks) : 64)
-        : await assay(agentId);
+    const r = await s.work(body, ceiling);
+    answer = r.answer;
+    metered = { meter: r.meter, chargeAtomic: r.charge };
   } catch (e) {
     releasePaymentNonce(reservation.key);
+    if (isInput(e)) return problem(400, "Input not accepted", (e as Error).message, { expected: s.input, example: s.example, charged: false });
     console.error(`[/api/service/${s.slug}] agent failed:`, (e as Error).message);
     return problem(500, "The agent did not complete", "The agent could not produce a result. Nothing was charged.", {
       charged: false,
@@ -159,10 +230,6 @@ async function serve(s: Spec, body: { agentId?: number | string; maxAgeBlocks?: 
       note: "Your payment was verified and deliberately not settled, because we did not deliver.",
     });
   }
-
-  // What the work cost. For exact the scheme fixes it at the ceiling.
-  const ceiling = BigInt(s.priceAtomic);
-  const metered = chargeFor(s.slug, answer, ceiling);
   const chargeAtomic = isUpto ? metered.chargeAtomic : ceiling;
 
   let settleReqs: UptoRequirements | PaymentRequirements = asked;
@@ -260,8 +327,9 @@ async function a2a(s: Spec, body: Record<string, unknown>, headers: Headers): Pr
   const msg = params.message ?? {};
   const taskId = msg.taskId || crypto.randomUUID();
   const contextId = msg.contextId || crypto.randomUUID();
-  const input = inputFromParts(msg.parts);
-  const o = await offers(s.priceAtomic);
+  const core = s.slug === "sentinel" || s.slug === "assay";
+  const input: Record<string, unknown> = core ? { ...objectFromParts(msg.parts), ...inputFromParts(msg.parts) } : objectFromParts(msg.parts);
+  const o = s.priceAtomic === "0" ? { accepts: [] } : await offers(s.priceAtomic);
   const task = (state: string, text: string, metadata: Record<string, unknown>, artifacts?: unknown[]) =>
     reply({
       kind: "task",
@@ -270,15 +338,25 @@ async function a2a(s: Spec, body: Record<string, unknown>, headers: Headers): Pr
       status: { state, timestamp: new Date().toISOString(), message: { kind: "message", role: "agent", messageId: crypto.randomUUID(), taskId, contextId, parts: [{ kind: "text", text }], metadata } },
       ...(artifacts ? { artifacts } : {}),
     });
-  const required = { "x402.payment.status": "payment-required", "x402.payment.required": { x402Version: 2, accepts: o.accepts } };
+  const free = s.priceAtomic === "0";
+  const required = free ? {} : { "x402.payment.status": "payment-required", "x402.payment.required": { x402Version: 2, accepts: o.accepts } };
+  const hasInput = Object.keys(input).some((k) => input[k] !== undefined && input[k] !== null);
 
-  if (!input.agentId || !Number.isInteger(input.agentId) || input.agentId <= 0) {
-    return task("input-required", `${s.name}: ${s.sells} Send ${s.input} as a data part, then pay with x402.`, required);
+  if (!hasInput) {
+    return task("input-required", `${s.name}: ${s.sells} Send ${s.input} as a data part${free ? "" : ", then pay with x402"}.`, { ...required, example: s.example });
+  }
+
+  if (free) {
+    const r = await serve(s, input, new Headers());
+    const out = (await r.json().catch(() => ({}))) as { answer?: unknown; meter?: unknown; detail?: string };
+    return r.status === 200
+      ? task("completed", `${s.name} answered.`, {}, [{ artifactId: crypto.randomUUID(), name: s.slug, parts: [{ kind: "data", data: { answer: out.answer, meter: out.meter } }] }])
+      : task(r.status === 400 ? "input-required" : "failed", `${s.name}: ${out.detail ?? `HTTP ${r.status}`}`, { example: s.example });
   }
 
   const payload = msg.metadata?.["x402.payment.payload"];
   if (!payload) {
-    return task("input-required", `Payment is required for ${s.name} on agent ${input.agentId}. Sign one of the accepted x402 options and resend with x402.payment.payload and this taskId.`, required);
+    return task("input-required", `Payment is required for ${s.name}. Sign one of the accepted x402 options and resend with x402.payment.payload and this taskId.`, required);
   }
 
   // Hand the signed payload to the same path a PAYMENT-SIGNATURE header takes.
@@ -289,7 +367,7 @@ async function a2a(s: Spec, body: Record<string, unknown>, headers: Headers): Pr
     const receipt = { success: true, transaction: out.payment?.transaction ?? "", network: "eip155:143", payer: out.payment?.payer ?? undefined };
     return task(
       "completed",
-      `${s.name} answered for agent ${input.agentId}.`,
+      `${s.name} answered.`,
       { "x402.payment.status": "payment-completed", "x402.payment.receipts": [receipt] },
       [{ artifactId: crypto.randomUUID(), name: s.slug, parts: [{ kind: "data", data: { answer: out.answer, payment: out.payment } }] }],
     );

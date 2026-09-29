@@ -116,5 +116,5 @@ const res = await fetch(resource, {
 });
 const out = await res.json();
 console.log(`  HTTP   ${res.status}`);
-console.log(JSON.stringify(out, null, 2).slice(0, 1400));
+console.log(process.env.FULL ? JSON.stringify(out) : JSON.stringify(out, null, 2).slice(0, 1400));
 process.exit(res.ok ? 0 : 1);

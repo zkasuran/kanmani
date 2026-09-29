@@ -1,0 +1,14 @@
+{
+  "sentinel": 10256,
+  "assay": 10257,
+  "locator": 10263,
+  "notary": 10264,
+  "registrar": 10265,
+  "ledger": 10266,
+  "twin": 10267,
+  "pulse": 10268,
+  "doctor": 10269,
+  "linter": 10270,
+  "bondsman": 10271,
+  "scribe": 10272
+}

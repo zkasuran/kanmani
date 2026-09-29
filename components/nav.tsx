@@ -81,6 +81,7 @@ const GROUPS: Group[] = [
     label: "explore",
     href: "/agents",
     items: [
+      { href: "/hire", label: "hire", hint: "twelve agents for the checks before money moves" },
       { href: "/agents", label: "agents", hint: "every registered agent, filterable" },
       { href: "/operators", label: "operators", hint: "clustered by the document they registered" },
       { href: "/compare", label: "compare", hint: "two to four agents, rung first" },

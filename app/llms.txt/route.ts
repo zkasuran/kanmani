@@ -78,6 +78,12 @@ Free, no key, nothing signed for you. Full guide: ${SITE}/skill.md
 - ${SITE}/openapi.json                  OpenAPI 3.1 for frameworks and no-code tools
 - ${SITE}/build/AGENTS.md               drop-in AGENTS.md for a repo
 
+## Hire an agent
+
+Twelve agents at ${SITE}/hire, each at ${SITE}/api/service/<slug> over HTTP or A2A message/send:
+sentinel, assay, ledger, twin, pulse, bondsman (due diligence), locator, notary, scribe (payments),
+registrar, doctor, linter (free build tools). All operated by Kanmani from one owner address.
+
 ## Machine-readable
 
 - GET  ${SITE}/feed.json              every checked claim

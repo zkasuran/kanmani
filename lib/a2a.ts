@@ -25,3 +25,21 @@ export function inputFromParts(parts: A2APart[] | undefined): { agentId?: number
   return out;
 }
 
+
+/**
+ * The whole call from an A2A message for agents whose input is not just an agentId: the first data
+ * part (or JSON text part) as the input object. The agentId fields above still apply for the core
+ * agents, which accept a bare number in plain text.
+ */
+export function objectFromParts(parts: A2APart[] | undefined): Record<string, unknown> {
+  for (const p of parts ?? []) {
+    if (p.kind === "data" && p.data && typeof p.data === "object") return p.data;
+    if (typeof p.text === "string") {
+      try {
+        const j = JSON.parse(p.text);
+        if (j && typeof j === "object" && !Array.isArray(j)) return j as Record<string, unknown>;
+      } catch {}
+    }
+  }
+  return {};
+}

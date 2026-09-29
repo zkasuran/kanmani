@@ -143,8 +143,8 @@ export function openapi(site: string) {
         get: {
           operationId: "get_agent_service",
           tags: ["paid"],
-          summary: "Kanmani's own agents: price, meter and how to pay",
-          parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string", enum: ["sentinel", "assay"] } }],
+          summary: "Kanmani's twelve agents: price, meter and how to pay (see /hire)",
+          parameters: [{ name: "slug", in: "path", required: true, schema: { type: "string", enum: ["sentinel", "assay", "locator", "notary", "registrar", "ledger", "twin", "pulse", "doctor", "linter", "bondsman", "scribe"] } }],
           responses: { "402": { description: "The price (upto ceiling or exact) and the reason. Free to read." } },
         },
       },
