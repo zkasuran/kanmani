@@ -153,7 +153,7 @@ export type UriKind = "data" | "https";
  *
  * Fixed rather than whatever the object literal happened to be, because the bytes are hashed by
  * everything downstream and two orders are two different documents. Empty fields are dropped rather
- * than emitted as `""`, because a field present and empty is a claim that resolved to nothing, and
+ * than emitted as `""`, because a field present and empty is a claim that resolved to nothing and
  * this whole project is about not making those.
  */
 export function buildRecord(d: RegistrationDraft): Record<string, unknown> {
@@ -354,8 +354,8 @@ export function problems(d: RegistrationDraft, kind: UriKind, hostedAt = ""): st
  * already measured**, not on an empty form. Retyping a record you already published is the friction that
  * makes a one-field fix feel like a project.
  *
- * Deliberately lossy in one direction and honest about it. Fields this editor does not model —
- * `image`, `registrations`, `supportedTrust`, anything an operator invented — are preserved in
+ * Deliberately lossy in one direction and honest about it. Fields this editor does not model,
+ * anything an operator invented and any malformed registrations list, are preserved in
  * `carried` and written back out unchanged by `buildRecordPreserving`. Dropping somebody's fields
  * because our form has no input for them would be a worse edit than the one they came to make.
  */

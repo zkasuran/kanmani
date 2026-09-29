@@ -271,7 +271,7 @@ function parseInlineRecord(uri: string): { name?: string; endpoints: string[]; d
 /**
  * Keep a string only when it is an absolute http(s) URL, capped in length.
  *
- * These come from a document a stranger put on chain, and `Agent.endpoints` is documented as
+ * These come from a document a stranger put on chain and `Agent.endpoints` is documented as
  * "absolute http(s) only". Storing a `javascript:`, `data:text/html` or relative value verbatim
  * would make the schema lie to a consumer that then renders it as a safe link, which is an
  * open-redirect or XSS in whatever reads our data. The parse is what enforces the promise, so a

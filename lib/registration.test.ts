@@ -2,7 +2,7 @@
  * Tests for composing a registration document and the calldata that puts it on chain.
  *
  * The load-bearing ones are the two that protect a claim: that a payment assertion in a
- * registration document is caught, and that `data:` is what actually cannot rot. Everything else is
+ * registration document is caught and that `data:` is what actually cannot rot. Everything else is
  * encoding.
  */
 import { test } from "node:test";
@@ -158,13 +158,13 @@ test("skills are adopted from skills, services or endpoints, because real record
   }
 });
 
-test("a service named rather than id'd still adopts, and url counts as endpoint", () => {
+test("a service named rather than id'd still adopts and url counts as endpoint", () => {
   const a = adopt(JSON.stringify({ name: "A", services: [{ name: "web", url: "https://e" }] }), true);
   assert.equal(a?.draft.skills[0]?.id, "web");
   assert.equal(a?.draft.skills[0]?.endpoint, "https://e");
 });
 
-test("x402 is recognised however it was declared, and remains a declaration not a measurement", () => {
+test("x402 is recognised however it was declared and remains a declaration not a measurement", () => {
   assert.equal(adopt('{"name":"A","skills":[{"id":"s","payment":"x402"}]}', true)?.draft.skills[0]?.x402, true);
   assert.equal(adopt('{"name":"A","x402Support":true,"skills":[{"id":"s"}]}', true)?.draft.skills[0]?.x402, true);
   assert.equal(adopt('{"name":"A","skills":[{"id":"s"}]}', true)?.draft.skills[0]?.x402, false);

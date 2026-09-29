@@ -74,7 +74,7 @@ export function a2aCard(site: string, c: CatalogEntry) {
     capabilities: {
       streaming: false,
       pushNotifications: false,
-      extensions: paid ? [{ uri: X402_A2A_EXTENSION, description: `x402 on Monad (eip155:143): upto with a ${Number(c.priceAtomic) / 1e6} USDC ceiling, or exact.`, required: true }] : [],
+      extensions: paid ? [{ uri: X402_A2A_EXTENSION, description: `x402 on Monad (eip155:143): upto with a ${Number(c.priceAtomic) / 1e6} USDC ceiling. exact also works.`, required: true }] : [],
     },
     defaultInputModes: ["application/json"],
     defaultOutputModes: ["application/json"],
