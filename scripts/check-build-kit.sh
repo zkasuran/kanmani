@@ -22,6 +22,12 @@ echo "$r" | grep -q '"ready": true' && echo "$r" | grep -q '"function": "registe
 e=$(curl -fsS -X POST "$SITE/api/evidence/check" -H 'content-type: application/json' -d '{"document":"https://example.com/x.json"}' -o /dev/null -w '%{http_code}')
 [ "$e" = "400" ] && ok "evidence check refuses to fetch a URL" || bad "evidence check with a URL returned $e"
 
+# A real settlement on Monad, so the judge has to read the chain to say true. Anything else means the
+# server cannot reach Monad, which would turn every paid /api/verify into unknown as well.
+g=$(curl -fsS -X POST "$SITE/api/evidence/check" -H 'content-type: application/json' \
+  -d '{"document":{"network":"monad","proof_of_payment":{"network":"monad","payment_tx":"0x94fc5e709885b40e7149791c4329ff2611d2e52545f4533f6e96fe1f6c0397d8"},"rating":{"target_address":"0xDB6c6340342e71A63cD11Ebac2185204b7777777"}}}')
+echo "$g" | grep -q '"outcome": "true"' && ok "evidence check reads Monad: a real settlement comes back true" || bad "evidence check could not confirm a real Monad settlement: $(echo "$g" | grep -oE '"reason": "[^"]*"' | head -1)"
+
 m=$(curl -fsS -X POST "$SITE/mcp" -H 'content-type: application/json' -H 'accept: application/json, text/event-stream' \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list"}')
 n=$(echo "$m" | grep -oE '"name": ?"(check_registration|check_evidence|get_agent|get_account|list_claims)"' | sort -u | wc -l)
