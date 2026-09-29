@@ -1,7 +1,9 @@
 import { SITE } from "@/lib/api.ts";
 import { agentCard } from "@/lib/openapi.ts";
 
-export const dynamic = "force-static";
+// Rendered per request, not at build: SITE comes from the server env, and a build-time render baked
+// the local fallback URL into every link of the published file.
+export const dynamic = "force-dynamic";
 
 export function GET() {
   return new Response(JSON.stringify(agentCard(SITE), null, 2), {
