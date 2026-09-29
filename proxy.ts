@@ -53,6 +53,14 @@ function newNonce(): string {
 
 const WINDOW_MS = 60_000;
 const MAX_PER_WINDOW = 600;
+/**
+ * The free build checks do real work per call (RPC reads, a gas estimate, a cross-chain search) and
+ * are the endpoints a looping coding agent will hammer. 60 a minute is far above a builder iterating
+ * on a draft and far below what would starve the RPC budget for everyone else.
+ */
+const BUILD_PATHS = /^\/(api\/registration\/check|api\/evidence\/check|mcp)$/;
+const MAX_BUILD_PER_WINDOW = 60;
+const buildBuckets = new Map<string, Bucket>();
 
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
@@ -82,6 +90,22 @@ export function proxy(req: NextRequest): NextResponse {
   // Opportunistic sweep so the map cannot grow without bound.
   if (buckets.size > 20_000) {
     for (const [k, v] of buckets) if (now >= v.resetAt) buckets.delete(k);
+  }
+
+  if (req.method === "POST" && BUILD_PATHS.test(req.nextUrl.pathname)) {
+    let bb = buildBuckets.get(ip);
+    if (!bb || now >= bb.resetAt) {
+      bb = { count: 0, resetAt: now + WINDOW_MS };
+      buildBuckets.set(ip, bb);
+    }
+    if (++bb.count > MAX_BUILD_PER_WINDOW) {
+      const retryAfter = Math.max(1, Math.ceil((bb.resetAt - now) / 1000));
+      return new NextResponse(
+        JSON.stringify({ error: "rate limited", detail: `The free build checks allow ${MAX_BUILD_PER_WINDOW} calls a minute per client. Retry after the given seconds.`, retryAfterSeconds: retryAfter }),
+        { status: 429, headers: { "content-type": "application/json", "retry-after": String(retryAfter) } },
+      );
+    }
+    if (buildBuckets.size > 20_000) for (const [k, v] of buildBuckets) if (now >= v.resetAt) buildBuckets.delete(k);
   }
 
   if (b.count > MAX_PER_WINDOW) {

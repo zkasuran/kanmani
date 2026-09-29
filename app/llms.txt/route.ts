@@ -68,6 +68,16 @@ be published at all: collapsing them would let somebody else's outage publish as
 - ${SITE}/schema.json  the shape of every JSON response
 - ${SITE}/agents.md    the safe-access contract, if you are an agent reading this
 
+## Build an agent
+
+Free, no key, nothing signed for you. Full guide: ${SITE}/skill.md
+
+- POST ${SITE}/api/registration/check   draft in, problems + exact register() calldata + gas check out
+- POST ${SITE}/api/evidence/check       evidence document in, the verdict it will get out
+- MCP  ${SITE}/mcp                      the same as tools (streamable HTTP, no auth)
+- ${SITE}/openapi.json                  OpenAPI 3.1 for frameworks and no-code tools
+- ${SITE}/build/AGENTS.md               drop-in AGENTS.md for a repo
+
 ## Machine-readable
 
 - GET  ${SITE}/feed.json              every checked claim

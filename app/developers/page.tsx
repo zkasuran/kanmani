@@ -4,6 +4,7 @@ import { Reveal } from "@/components/motion.tsx";
 import { Count, Distribution, Ladder, Reproduce, TrustBadge, Verdict, outcomeMeaning } from "@/components/kit.tsx";
 import { measurement } from "@/lib/queries.ts";
 import { CHAINS, registrable } from "@/lib/chains.ts";
+import { BuildRecipes } from "@/components/build-recipes.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -39,7 +40,7 @@ export default async function Developers() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="components · api · one-line embed"
+        kicker="build an agent · components · api · embed"
         title="Render a verdict in your own product, without being able to render it wrongly."
         lead={
           <>
@@ -52,6 +53,33 @@ export default async function Developers() {
           </>
         }
       />
+
+      {/* ---------------------------------------------------------------- build an agent */}
+      <Reveal>
+        <Panel
+          id="build"
+          title="build an agent, however you build"
+          subtitle="Two free checks do the work: one turns a draft into the exact register() transaction, the other tells you what an evidence document will be judged before you publish it. Every way in below reaches those two. Nothing here takes a key: the agent's own key signs."
+        >
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              ["MCP", "https://kanmani.xyz/mcp", "five tools over streamable HTTP, no auth"],
+              ["skill", "https://kanmani.xyz/skill.md", "agentskills.io SKILL.md"],
+              ["AGENTS.md", "https://kanmani.xyz/build/AGENTS.md", "drop-in for a repo root"],
+              ["OpenAPI", "https://kanmani.xyz/openapi.json", "3.1, operationIds are tool names"],
+            ].map(([k, url, hint]) => (
+              <a key={k} href={url} className="signin-method block" target="_blank" rel="noopener">
+                <span className="font-mono text-[12px] text-[var(--color-text)]">{k}</span>
+                <span className="mt-1 block break-all font-mono text-[11px] text-[var(--color-brand)]">{url!.replace("https://", "")}</span>
+                <span className="mt-1 block text-[11.5px] text-muted">{hint}</span>
+              </a>
+            ))}
+          </div>
+          <div className="mt-5">
+            <BuildRecipes />
+          </div>
+        </Panel>
+      </Reveal>
 
       {/* ---------------------------------------------------------------- the embed */}
       <Reveal>

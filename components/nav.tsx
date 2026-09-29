@@ -101,6 +101,7 @@ const GROUPS: Group[] = [
     label: "developers",
     href: "/developers",
     items: [
+      { href: "/developers#build", label: "build an agent", hint: "MCP, skill, AGENTS.md, OpenAPI: every way in" },
       { href: "/developers#components", label: "components", hint: "the kit, rendering live data on the page" },
       { href: "/developers#embed", label: "embed", hint: "one script tag, no build step" },
       { href: "/developers#api", label: "api", hint: "open, no key, every response carries its own proof" },

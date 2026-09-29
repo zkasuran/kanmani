@@ -2176,3 +2176,14 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
 /* A disabled action must look disabled. The studio's send stays off until the sender can pay gas,
    and a dark button that does nothing when clicked reads as broken. */
 .cta:disabled, .cta-ghost:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+/* Build recipes: tabs by method, one card per tool. */
+.recipe-tab {
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  padding: 0.3rem 0.8rem;
+  color: var(--color-muted);
+  transition: border-color var(--dur-1) ease, color var(--dur-1) ease, background-color var(--dur-1) ease;
+}
+.recipe-tab:hover { color: var(--color-text); }
+.recipe-tab[aria-selected="true"] { border-color: var(--brand-line); color: var(--color-text); background: var(--color-panel-2); }
