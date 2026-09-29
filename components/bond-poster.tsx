@@ -127,6 +127,9 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
       setFacts(null);
       return;
     }
+    // Facts belong to one agent. Keeping the last agent's while the new one loads would show a ready
+    // send for the wrong agent, so they are cleared first and the button waits.
+    setFacts(null);
     let live = true;
     const read = async () => {
       const [owner, b, head, bal, allow, mon, price] = await Promise.all([
@@ -269,7 +272,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
 
   const field = "w-full rounded border border-[var(--color-line)] bg-[var(--color-ink)] px-2.5 py-1.5 font-mono text-[12.5px] text-[var(--color-text)]";
   const label = "font-mono text-[11px] uppercase tracking-wide text-faint";
-  const blocked = !plan.ok || !eligibility?.ok || usdcShort || facts?.gas?.state === "short" || busy !== null;
+  const blocked = facts === null || !plan.ok || !eligibility?.ok || usdcShort || facts?.gas?.state === "short" || busy !== null;
 
   return (
     <div className="bond-poster flex flex-col gap-4 px-5 py-4" data-testid="bond-poster">
