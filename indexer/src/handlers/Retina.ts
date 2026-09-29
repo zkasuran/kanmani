@@ -258,10 +258,12 @@ function parseInlineRecord(uri: string): { name?: string; endpoints: string[]; d
       const rawEp = typeof o.endpoint === "string" ? o.endpoint : typeof o.url === "string" ? o.url : null;
       const ep = rawEp ? absoluteHttpUrl(rawEp) : null;
       if (ep) endpoints.push(ep);
-      if (o.x402 !== undefined && o.x402 !== false) declaresX402 = true;
+      if ((o.x402 !== undefined && o.x402 !== false) || o.payment === "x402") declaresX402 = true;
     }
   }
-  if (doc.x402 !== undefined && doc.x402 !== false) declaresX402 = true;
+  // ERC-8004 registration-v1 states it at the top as x402Support. Reading only `x402` missed every
+  // spec-shaped document, including one of our own agents.
+  if ((doc.x402 !== undefined && doc.x402 !== false) || doc.x402Support === true) declaresX402 = true;
 
   return { name, endpoints: endpoints.slice(0, 32), declaresX402 };
 }

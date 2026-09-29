@@ -121,7 +121,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
   if (!s) return problem(404, "No such agent", `Known agents: ${KNOWN()}.`);
   const resource = `${SITE}/api/service/${s.slug}`;
   if (s.priceAtomic === "0") {
-    return json({ agent: s.name, sells: s.sells, why: s.why, input: s.input, example: s.example, price: { free: true }, call: `POST ${resource} with the input as JSON. A2A message/send works too.` });
+    return json({ agent: s.name, sells: s.sells, why: s.why, card: `${resource}/agent-card.json`, registration: `${resource}/registration.json`, input: s.input, example: s.example, price: { free: true }, call: `POST ${resource} with the input as JSON. A2A message/send works too.` });
   }
   const o = await offers(s.priceAtomic);
   // The body IS the x402 v2 challenge (x402Version, error, resource, accepts at the top level), so a
@@ -133,6 +133,8 @@ export async function GET(_req: Request, ctx: { params: Promise<{ slug: string }
       agent: s.name,
       sells: s.sells,
       why: s.why,
+      card: `${resource}/agent-card.json`,
+      registration: `${resource}/registration.json`,
       blockMs: MONAD_BLOCK_MS,
       input: s.input,
       example: s.example,

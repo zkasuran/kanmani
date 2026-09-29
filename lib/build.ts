@@ -57,9 +57,31 @@ export function parseRegistrationInput(body: unknown): Parsed<{
   if (rawSkills.length > 32) errors.push("skills: at most 32");
   const skills = rawSkills.slice(0, 32).map((x) => {
     const o = (x ?? {}) as Record<string, unknown>;
-    return { id: s(o.id, 200), endpoint: s(o.endpoint, 2000), x402: o.x402 === true || o.x402 === "true" };
+    return {
+      id: s(o.id, 200),
+      endpoint: s(o.endpoint, 2000),
+      x402: o.x402 === true || o.x402 === "true",
+      ...(o.protocol ? { protocol: s(o.protocol, 40) } : {}),
+      ...(o.version ? { version: s(o.version, 40) } : {}),
+    };
   });
   const refuses = Array.isArray(d.refuses) ? d.refuses.slice(0, 32).map((x) => s(x, 500)).filter(Boolean) : [];
+  const supportedTrust = Array.isArray(d.supportedTrust) ? d.supportedTrust.slice(0, 8).map((x) => s(x, 60)).filter(Boolean) : undefined;
+  let registrations: { agentId: number; agentRegistry: string }[] | undefined;
+  if (Array.isArray(d.registrations)) {
+    registrations = [];
+    for (const r of d.registrations.slice(0, 16) as Record<string, unknown>[]) {
+      const id = Number(r?.agentId);
+      const reg = String(r?.agentRegistry ?? "");
+      if (!Number.isInteger(id) || id <= 0 || !/^eip155:\d+:0x[0-9a-fA-F]{40}$/.test(reg)) {
+        errors.push('registrations: each entry is { agentId: <positive integer>, agentRegistry: "eip155:<chain>:<registry address>" }');
+        break;
+      }
+      registrations.push({ agentId: id, agentRegistry: reg });
+    }
+  }
+  const image = d.image === undefined ? undefined : s(d.image, 2000);
+  if (image && !/^(https:\/\/|ipfs:\/\/|data:image\/)\S+$/.test(image)) errors.push("image: an https://, ipfs:// or data:image/ URL");
 
   const kind = (b.kind ?? "data") as string;
   if (kind !== "data" && kind !== "https") errors.push('kind: "data" (on chain, cannot go dead) or "https" (hosted by you)');
@@ -83,7 +105,17 @@ export function parseRegistrationInput(body: unknown): Parsed<{
   return {
     ok: true,
     value: {
-      draft: { name: s(d.name, 200), description: s(d.description, 4000), url: s(d.url, 2000), skills, refuses },
+      draft: {
+        name: s(d.name, 200),
+        description: s(d.description, 4000),
+        url: s(d.url, 2000),
+        skills,
+        refuses,
+        ...(image ? { image } : {}),
+        ...(registrations?.length ? { registrations } : {}),
+        ...(supportedTrust?.length ? { supportedTrust } : {}),
+        ...(typeof d.active === "boolean" ? { active: d.active } : {}),
+      },
       kind: kind as UriKind,
       hostedAt: s(b.hostedAt, 2000),
       chainId,

@@ -37,30 +37,32 @@ const good: RegistrationDraft = {
 
 test("an empty field is dropped rather than emitted as an empty string", () => {
   const rec = buildRecord({ ...EMPTY_DRAFT, name: "A" });
-  assert.deepEqual(Object.keys(rec), ["name"]);
+  // type, x402Support and active are always stated: they are facts about the document, not empty text.
+  assert.deepEqual(Object.keys(rec), ["type", "name", "x402Support", "active"]);
   // A field present and empty would be a claim that resolved to nothing.
   assert.equal("description" in rec, false);
-  assert.equal("skills" in rec, false);
+  assert.equal("services" in rec, false);
 });
 
 test("a skill with no id is not a skill", () => {
   const rec = buildRecord({ ...EMPTY_DRAFT, name: "A", skills: [{ id: "", endpoint: "https://x", x402: true }] });
-  assert.equal("skills" in rec, false);
+  assert.equal("services" in rec, false);
 });
 
 test("x402 becomes a payment field only when the flag is set", () => {
-  const withPay = buildRecord(good).skills as Record<string, unknown>[];
-  assert.equal(withPay[0]!.payment, "x402");
-  const without = buildRecord({ ...good, skills: [{ ...good.skills[0]!, x402: false }] })
-    .skills as Record<string, unknown>[];
-  assert.equal("payment" in without[0]!, false);
+  const withPay = buildRecord(good);
+  assert.equal((withPay.services as Record<string, unknown>[])[0]!.x402, true);
+  assert.equal(withPay.x402Support, true);
+  const without = buildRecord({ ...good, skills: [{ ...good.skills[0]!, x402: false }] });
+  assert.equal("x402" in (without.services as Record<string, unknown>[])[0]!, false);
+  assert.equal(without.x402Support, false);
 });
 
 test("key order is fixed, so the same draft always hashes to the same document", () => {
   const a = recordJson(good);
   const b = recordJson({ ...good });
   assert.equal(a, b);
-  assert.deepEqual(Object.keys(JSON.parse(a)), ["name", "description", "url", "skills", "refuses"]);
+  assert.deepEqual(Object.keys(JSON.parse(a)), ["type", "name", "description", "services", "x402Support", "active", "refuses"]);
 });
 
 test("a data: URI round trips and carries no host to ask", () => {
@@ -173,6 +175,7 @@ test("fields we do not edit are carried and written back unchanged", () => {
     name: "A", description: "d",
     image: "https://img", supportedTrust: ["reputation"],
     registrations: [{ agentId: 1 }], weirdVendorField: { deep: [1, 2] },
+    // registrations here is malformed (no agentRegistry), so it is carried verbatim rather than edited.
   };
   const a = adopt(JSON.stringify(src), true);
   assert.ok(a);
@@ -183,8 +186,9 @@ test("fields we do not edit are carried and written back unchanged", () => {
   assert.equal(out.image, "https://img", "dropping a field the form cannot show would be a worse edit");
   assert.deepEqual(out.supportedTrust, ["reputation"]);
   assert.deepEqual(out.weirdVendorField, src.weirdVendorField);
+  assert.deepEqual(out.registrations, src.registrations, "a malformed entry is left as its author wrote it");
   // and our own edited fields still lead, so a diff reads rather than reshuffles
-  assert.equal(Object.keys(out)[0], "name");
+  assert.equal(Object.keys(out)[0], "type");
 });
 
 test("a round trip through adopt changes nothing it did not need to", () => {
@@ -203,4 +207,27 @@ test("garbage is refused rather than adopted as an empty draft", () => {
 test("wasOnChain is carried through, because it decides whether the record can 404", () => {
   assert.equal(adopt('{"name":"A"}', true)?.wasOnChain, true);
   assert.equal(adopt('{"name":"A"}', false)?.wasOnChain, false);
+});
+
+test("the document follows ERC-8004 registration-v1 and its services name their protocol", () => {
+  const rec = buildRecord({
+    ...good,
+    image: "https://kanmani.xyz/brand/mark-512.png",
+    skills: [{ id: "verify", endpoint: "https://kanmani.xyz/a/card.json", x402: true, protocol: "A2A", version: "0.3.0" }],
+    registrations: [{ agentId: 10256, agentRegistry: "eip155:143:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" }],
+    supportedTrust: ["reputation", "crypto-economic"],
+  });
+  assert.equal(rec.type, "https://eips.ethereum.org/EIPS/eip-8004#registration-v1");
+  assert.deepEqual((rec.services as Record<string, unknown>[])[0], { name: "A2A", endpoint: "https://kanmani.xyz/a/card.json", version: "0.3.0", skills: ["verify"], x402: true });
+  assert.deepEqual((rec.services as Record<string, unknown>[])[1], { name: "web", endpoint: "https://kanmani.xyz" });
+  assert.deepEqual(Object.keys(rec), ["type", "name", "description", "image", "services", "x402Support", "active", "registrations", "supportedTrust", "refuses"]);
+  const back = adopt(JSON.stringify(rec), true)!;
+  assert.equal(back.draft.url, "https://kanmani.xyz");
+  assert.equal(back.draft.skills[0]!.protocol, "A2A");
+  assert.equal(JSON.stringify(buildRecordPreserving(back.draft, back.carried)), JSON.stringify(rec), "v1 round trips exactly");
+});
+
+test("a registration entry that is not eip155:<chain>:<registry> is not written", () => {
+  const rec = buildRecord({ ...good, registrations: [{ agentId: 1, agentRegistry: "monad" }] });
+  assert.equal("registrations" in rec, false);
 });
