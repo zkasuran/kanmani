@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-29T16:20:22.579Z",
+  "at": "2026-09-29T16:22:37.412Z",
   "site": "https://kanmani.xyz",
   "rows": [
     {
@@ -35,7 +35,7 @@
         }
       },
       "agentId": 10252,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -155,7 +155,7 @@
         }
       },
       "agentId": 10263,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -195,7 +195,7 @@
         }
       },
       "agentId": 10264,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -235,7 +235,7 @@
         }
       },
       "agentId": 10265,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -275,7 +275,7 @@
         }
       },
       "agentId": 10266,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -315,7 +315,7 @@
         }
       },
       "agentId": 10267,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -355,7 +355,7 @@
         }
       },
       "agentId": 10268,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -395,7 +395,7 @@
         }
       },
       "agentId": 10269,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -435,7 +435,7 @@
         }
       },
       "agentId": 10270,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -475,7 +475,7 @@
         }
       },
       "agentId": 10271,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     },
     {
@@ -515,7 +515,7 @@
         }
       },
       "agentId": 10272,
-      "taifoon": "not_hireable",
+      "taifoon": "hireable",
       "ok": true
     }
   ]

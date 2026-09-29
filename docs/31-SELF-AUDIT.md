@@ -1,24 +1,24 @@
 # Self-audit: every agent Kanmani operates, checked by Kanmani
 
-Run 2026-09-29T16:20Z by `node scripts/self-audit.mjs`. Read-only: no payment, no transaction. The
+Run 2026-09-29T16:22Z by `node scripts/self-audit.mjs`. Read-only: no payment, no transaction. The
 same checks Kanmani applies to the registry, applied to ourselves first. Machine-readable:
 [`/self-audit.json`](https://kanmani.xyz/self-audit.json).
 
 | agent | id | document | spec | unique | indexed | card | doctor | linter | works | taifoon |
 |---|---|---|---|---|---|---|---|---|---|---|
-| kanmani | 10252 | pass | pass | pass | pass | pass | pass | pass | n/a | not_hireable |
+| kanmani | 10252 | pass | pass | pass | pass | pass | pass | pass | n/a | hireable |
 | sentinel | 10256 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
 | assay | 10257 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
-| locator | 10263 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| notary | 10264 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| registrar | 10265 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| ledger | 10266 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| twin | 10267 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| pulse | 10268 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| doctor | 10269 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| linter | 10270 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| bondsman | 10271 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
-| scribe | 10272 | pass | pass | pass | pass | pass | pass | pass | pass | not_hireable |
+| locator | 10263 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| notary | 10264 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| registrar | 10265 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| ledger | 10266 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| twin | 10267 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| pulse | 10268 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| doctor | 10269 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| linter | 10270 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| bondsman | 10271 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
+| scribe | 10272 | pass | pass | pass | pass | pass | pass | pass | pass | hireable |
 
 What each column checks:
 
