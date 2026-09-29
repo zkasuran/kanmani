@@ -68,7 +68,9 @@ function usdcText(atomic: bigint): string {
 
 export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
   const s = useSession();
-  const chain = viemChain(143)!;
+  // Stable across renders. A new chain object each render made the chain-read effect rerun on every
+  // render, which with its reset became a loop that never showed a reading.
+  const chain = useMemo(() => viemChain(143)!, []);
   const pub = useMemo(() => createPublicClient({ chain, transport: http() }), [chain]);
 
   const sender = useMemo<{ kind: "passkey" | "wallet"; address: `0x${string}` } | null>(() => {
