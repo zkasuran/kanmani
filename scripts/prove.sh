@@ -136,8 +136,10 @@ fi
 # ---------------------------------------------------------------- 7. Chiasm, LIVE
 echo "7. Chiasm  ·  read every chain at once  ·  expected LIVE"
 CH=$(curl -fsS "$SITE/chains" -o /tmp/_ch -w '%{http_code}')
-if [ "$CH" = "200" ] && grep -qE '35[0-9],[0-9]{3}' /tmp/_ch; then
-  ok "BSC indexed beside Monad: $(grep -oE '35[0-9],[0-9]{3}' /tmp/_ch | head -1) agents on chain 56"
+# The count is read, not bounded: it grows daily and a pattern for 35x,xxx went false at 360,000.
+BSC_N=$(sed -e 's/<[^>]*>/ /g' /tmp/_ch | tr -s ' ' | grep -oE "BNB Smart Chain's own [0-9]{1,3}(,[0-9]{3})+ agents" | grep -oE '[0-9]{1,3}(,[0-9]{3})+' | head -1)
+if [ "$CH" = "200" ] && [ -n "$BSC_N" ]; then
+  ok "BSC indexed beside Monad: $BSC_N agents on chain 56"
   note "merged on the content hash of the registration document"
 else
   bad "the chains page did not report a second chain"
