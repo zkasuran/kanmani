@@ -288,7 +288,7 @@ export function consequences(d: RegistrationDraft, kind: UriKind, hostedAt = "")
       why:
         reachable.length > 0
           ? "A skill with an endpoint can be probed, which is the difference between a declared capability and a reachable one."
-          : "Every skill here is declared and not reachable. 10,253 agents are registered on Monad and 23 have a callable endpoint.",
+          : "Every skill here is declared and not reachable. Fewer than one Monad agent in three hundred publishes an http endpoint at all: kanmani.xyz/agents shows the live count.",
     },
     {
       label: "follows ERC-8004 registration-v1",
@@ -313,7 +313,7 @@ export function consequences(d: RegistrationDraft, kind: UriKind, hostedAt = "")
     {
       label: "can take a payment",
       met: skills.some((s) => s.x402 === true),
-      why: "An endpoint that answers an x402 challenge can be paid. One third-party endpoint on Monad currently does.",
+      why: "An endpoint that answers an x402 challenge can be paid by any agent with USDC, no account needed. Linter at kanmani.xyz/hire checks the challenge is settleable.",
     },
     {
       label: "asserts no payment it has not received",
