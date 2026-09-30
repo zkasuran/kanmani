@@ -151,7 +151,7 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
 |---|---|---|
 | **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **LIVE on Monad mainnet 2026-09-24**, [`0x57aF4e4B…`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), source verified |
 | **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **shipped and live 2026-09-23.** 356,647 BSC agents indexed beside Monad's 10,256, 205,597 merged records, 3 documents referenced from both chains |
-| **CleanverseGate**, gated release | release conditioned on a compliance credential | **deployed on Monad mainnet 2026-09-30** at [`0x06Ce09EA…`](https://monadexplorer.com/address/0x06Ce09EAe9Da00A894d342C7FC4D42fc7ED7c421), source verified. Fails closed until Cleanverse registers it as a compliance pool |
+| **CleanverseGate**, gated release | release conditioned on a compliance credential | **end to end on Monad testnet 2026-09-30**: registered with Cleanverse, a verified worker paid, an unverified one refused on chain. **Deployed on mainnet** at `0x4a21a5d8…544A`, waiting on production credentials to register; fails closed until then. See [20-CLEANVERSE.md](20-CLEANVERSE.md) section 6 |
 | **Cone**, odds market | a crowd price on whether an agent delivers | not started |
 | **Choroid**, credit | borrowing power from a real settlement history, with a funded lending pool | not started |
 | **Lens**, route | Agent Hub services proxied with measured failover | not started |
@@ -262,7 +262,7 @@ wc -l lib/intents.ts lib/cleanverse.ts cre/kanmani-oracle/slashing/main.ts \
 | Alchemy self-healing re-verification | **written and tested, not fed by a live stream.** HMAC-SHA256 over the raw body in constant time, refusing every delivery when no key is configured rather than failing open; delivery id is a primary key so retries are idempotent. No delivery has yet come from a webhook created in Alchemy's own dashboard |
 | Chainlink CRE slashing workflow | **simulated 2026-09-25, recorded in [26-CRE-SIMULATION](26-CRE-SIMULATION.md).** Reads bond terms from Sclera on Monad mainnet and the claim-truth rate from our API, then refuses to rate an empty sample. Darby confirmed CLI simulation is the judged bar. The run also caught a zero-address placeholder in the config that had never been exercised |
 | Aurora Intents funding path | **live 2026-09-28.** 0.12 USDT on BSC funded a Monad escrow job through the intermediary account, destination tx `0x738af85c…a440b558`, 115,558 USDC units into Aqueous. `/fund` renders it with the transaction |
-| Cleanverse gated release | **deployed, waiting on pool registration.** Every settle fails closed until then |
+| Cleanverse gated release | **live on testnet end to end; mainnet deployed, waiting on production credentials** |
 | Qwen schema atlas | **the atlas shipped and the induction loop ran for the first time on 2026-09-28.** Recorded in [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md). Until then the five mappings carried a typed `induced` date with no artefact behind it, which `/method` has been reworded to stop implying. Qwen3.8-Max read an unmapped BSC shape and correctly returned `noClaim`, catching that a field named `value` was a percentage rather than money, which would otherwise have manufactured 41 payment claims out of uptime reports |
 | Nansen underwriting, paid per call over x402 | **not started.** Falls with Choroid |
 

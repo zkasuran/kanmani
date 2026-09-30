@@ -1,6 +1,6 @@
 # Self-audit: every agent Kanmani operates, checked by Kanmani
 
-Run 2026-09-29T16:22Z by `node scripts/self-audit.mjs`. Read-only: no payment, no transaction. The
+Run 2026-09-30T00:49Z by `node scripts/self-audit.mjs`. Read-only: no payment, no transaction. The
 same checks Kanmani applies to the registry, applied to ourselves first. Machine-readable:
 [`/self-audit.json`](https://kanmani.xyz/self-audit.json).
 

@@ -110,6 +110,15 @@ contract CleanverseGate {
     ///         it is set once. A settable validator would let one address turn every check into a pass.
     IComplianceValidator public immutable validator;
 
+    /// @notice The address Cleanverse checks when this gate is registered as a compliance pool.
+    ///
+    /// Register Compliance Pool requires an EIP-191 signature from the pool's `owner()`. A gate with no
+    /// owner cannot be registered at all, so the first deploy on 2026-09-30 could never settle.
+    /// This is an identity for that one check and nothing else: it is immutable, no function
+    /// in this contract reads it and it holds no power over any job, balance or rule. The
+    /// "no admin path" property is unchanged.
+    address public immutable owner;
+
     /* ---------------------------------------------------------------- events */
 
     /// @notice A hire was escrowed through the gate.
@@ -156,6 +165,7 @@ contract CleanverseGate {
         if (address(validator_) == address(0)) revert ZeroValidator();
         escrow = escrow_;
         validator = validator_;
+        owner = msg.sender;
     }
 
     /* ----------------------------------------------------------------- views */

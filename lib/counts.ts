@@ -14,10 +14,10 @@ export const SUITES = {
   /** `npm test` in `verifier/`. */
   verifier: { pass: 181, total: 198 },
   /**
-   * `forge test --fork-url https://rpc.monad.xyz` in `contracts/` (126 pass, 2 ffi skips, AgentPasskey
+   * `forge test --fork-url https://rpc.monad.xyz` in `contracts/` (127 pass, 2 ffi skips, AgentPasskey
    * skips itself) plus `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` (16).
    */
-  contracts: { pass: 142, total: 144 },
+  contracts: { pass: 143, total: 145 },
 } as const;
 
 export const TESTS_PASSING = SUITES.site.pass + SUITES.verifier.pass + SUITES.contracts.pass;

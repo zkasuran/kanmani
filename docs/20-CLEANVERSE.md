@@ -133,16 +133,54 @@ have code on chain 143.
 
 ---
 
-## 6. Honest limits
+## 6. The flow, end to end on Monad testnet (2026-09-30)
 
-- **The gate must be registered as a compliance pool** with Cleanverse before it settles anything.
+Cleanverse's sandbox writes to the testnet validator (`0xA645…b788` on chain 10143), so testnet is
+where the whole flow can run with the credentials the bounty publishes. Every step below is a real
+transaction or a live API answer. `scripts/cleanverse-sandbox.mjs` drives the API side.
+
+| step | what happened | evidence |
+|---|---|---|
+| deploy | gate `0xfc831E2F4FF21C4FB0B241684CB39203Bd137d2f`, escrow = testnet Aqueous `0xAbB8…c232`, `owner()` = our deployer | forge broadcast, `owner()` read on chain |
+| register | `POST /validator/register`, AES-encrypted, owner signature over `monad` + gate | validator tx [`0x1fde7e51…`](https://testnet.monadexplorer.com/tx/0x1fde7e517ca70b15a8894f7f778c68747e8dcd29a91017e170c936b9f2d64cce), `is_register` returns `true` |
+| rule | any active CVI, tier 1 or higher, no country blocked | tx [`0x87eb6dab…`](https://testnet.monadexplorer.com/tx/0x87eb6dabd44dfc2c51dfe80c896ba6241d8d8278d38e9248027f2459bdb333d9), read back with `validator/rules` |
+| issue CVI | `generate_apass` for a testnet worker `0xaA51…0936`, no identity data sent (the field is optional). Tier 20, status active | tx [`0x6ae7f07b…`](https://testnet.monadexplorer.com/tx/0x6ae7f07b5da99abb8d93ef430ff3fea175b7e76507406bb98f9149f148aef057) |
+| pass | job opened for the verified worker, `settle` paid it 1,000,000 tUSDC units | open [`0xb18196cb…`](https://testnet.monadexplorer.com/tx/0xb18196cb24acea15b5950f0542befee1604678dce0590c4485c2c143e05047de), settle [`0xea913ac3…`](https://testnet.monadexplorer.com/tx/0xea913ac399f270daec96bd6e1b374263a50803d84a4606a509dbc7176395174f), worker balance 0 then 1,000,000 |
+| refuse | job opened for a fresh wallet with no CVI, `settle` reverted `CviNotVerified()` (`0xbfeb29e5`). The worker got nothing and the escrow still holds the job | open [`0xbd1bd65f…`](https://testnet.monadexplorer.com/tx/0xbd1bd65f8835fc1b8aca10431de7c782c4cda0ac4ba8f1a3da6acbb32d585a35), failed settle [`0xd381c3e1…`](https://testnet.monadexplorer.com/tx/0xd381c3e12f5535f05f066ff4ceabcf048075b593fd393f565c39a7017a0539d0), status 0 |
+
+The validator and the gate agree in both directions: `complianceVerify(gate, worker)` is `true` and
+`cviStatus` reads `Verified`. For our own wallet, which holds no CVI, it is `false` and `Unverified`.
+
+**Two things this run found.**
+
+1. **A gate with no owner cannot be registered.** Register Compliance Pool checks an EIP-191 signature
+   against the pool's on-chain `owner()`. The first mainnet deploy (`0x06Ce09EA…c421`, 2026-09-30) had
+   no such function, because the gate deliberately has no admin. Registration answered `Invalid
+   contract owner signature.` The gate now records its deployer as an immutable `owner`. No function
+   reads it and it holds no power over any job, balance or rule. It exists for that one check. The
+   ownerless deploy is superseded and holds nothing.
+2. **The docs' example rule names a group our credential cannot issue.** The example uses
+   `allowed_group: "AB"`. CVIs issued with the published sandbox credential carry an empty group, so
+   that rule rejected the CVI we had just issued. The rule now matches on tier and status only.
+
+A first attempt at the failure case used `0x…dEaD` as the unverified worker. The validator passed it:
+the sandbox already holds a tier-50 CVI for that address. Good test data needs checking too. The
+failure case was rerun against a freshly generated wallet, confirmed `false` before the job was
+opened.
+
+**Mainnet.** The owner-bearing gate is deployed on Monad mainnet at
+`0x4a21a5d8e24E683801ECC4CF19f178d7185e544A` (tx `0xc643e2be…`, block 109,259,685, Sourcify
+`exact_match`). It cannot be registered with sandbox credentials: the sandbox rejects the owner
+signature for a mainnet address and the production API answers `Forbidden` to the published api-id.
+Until Cleanverse issues production credentials, the mainnet validator reverts `PoolNotRegistered`
+for it and every settle fails closed, which is the designed behaviour.
+
+## 7. Honest limits
+
+- **The mainnet gate must be registered as a compliance pool** before it settles anything. On testnet it is.
   That is an off-chain step (Register Compliance Pool) plus a Cleanverse review and until it lands
   `complianceVerify` reverts for the gate and every settlement fails closed. This is safe, not broken,
   but it means the fully live payout is gated on that registration.
-- **Deployed on Monad mainnet 2026-09-30** at `0x06Ce09EAe9Da00A894d342C7FC4D42fc7ED7c421`, tx `0x0a78b85b94279ed4f7ea2e5262f587fb0ceb18985ebc4c0ed282d4429432788e`, block 109,256,599,
-  0.19 MON of gas. Source verified on Sourcify (`exact_match`). `escrow()` reads Aqueous and
-  `validator()` reads the Cleanverse validator, both checked on chain after the deploy. `cviStatus` for
-  our own wallet reads `Unknown` today, which is the fail-closed state while the pool is unregistered.
 - **The off-chain client needs an IP allowlist.** Cleanverse rejects requests from an IP it has not
   allowlisted, so `lib/cleanverse.ts` is exercised against an injected fetch in tests rather than a
   live call. The on-chain check needs no allowlist and no key, which is another reason it is the

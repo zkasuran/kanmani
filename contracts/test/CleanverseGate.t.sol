@@ -251,7 +251,7 @@ contract CleanverseGateTest is Test {
     }
 
     /// A validator that returns a dirty bool (a 32-byte word that is not 0 or 1) must read as Unknown,
-    /// never panic. `cviStatus` is documented to never revert, and abi.decode(_,(bool)) would break
+    /// never panic. `cviStatus` is documented to never revert. abi.decode(_,(bool)) would break
     /// that. This fails against the pre-fix decode.
     function test_settle_dirtyBoolIsUnknownNotPanic() public {
         CleanverseGate g2 = new CleanverseGate(escrow, new DirtyBoolValidator());
@@ -390,3 +390,15 @@ contract CleanverseGateTest is Test {
     }
 }
 
+
+/// The owner exists only so Cleanverse can check a registration signature. It must be the deployer
+/// and it must not gate anything: a stranger and the owner get exactly the same answers.
+contract CleanverseGateOwnerTest is Test {
+    function test_ownerIsTheDeployerAndImmutable() public {
+        Aqueous escrow = new Aqueous(1 days);
+        address deployer = address(0xB0B);
+        vm.prank(deployer);
+        CleanverseGate g = new CleanverseGate(escrow, IComplianceValidator(address(0xDEAD)));
+        assertEq(g.owner(), deployer);
+    }
+}
