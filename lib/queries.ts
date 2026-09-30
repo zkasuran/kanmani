@@ -277,8 +277,12 @@ export type ClusterShape = {
   largestResolves: boolean | null;
 };
 
+// Only documents some agent still points at. memberCount is never decremented when an agent
+// repoints, so a document every agent has left keeps a count of 1 and would be counted as a unique
+// record with an agent behind it. See REGISTRY_HEALTH_SQL.
 const CLUSTER_SHAPE_SQL = `
-WITH r AS (SELECT * FROM "AgentRecord" WHERE "chainId" = $1),
+WITH r AS (SELECT * FROM "AgentRecord" ar WHERE ar."chainId" = $1
+             AND EXISTS (SELECT 1 FROM "Agent" a WHERE a."chainId" = $1 AND a."uriHash" = ar.id)),
      big AS (SELECT uri, "memberCount", "distinctOwners", resolves FROM r
              ORDER BY "memberCount" DESC LIMIT 1)
 SELECT (SELECT count(*) FROM r)                                              AS records,
@@ -1028,12 +1032,23 @@ export type RegistryHealth = {
   probedAt: string | null;
 };
 
+/*
+ * Agents are counted from "Agent" as it stands, not from AgentRecord."memberCount". The indexer
+ * increments memberCount when an agent points at a document and never decrements it when the agent
+ * repoints, so on 2026-09-30 71 documents with no current agent still carried a count of one each
+ * and the buckets summed to 10,344 against a registry of 10,273. A document nobody points at any
+ * more is not behind any agent, so it drops out here rather than being counted twice.
+ */
 export const REGISTRY_HEALTH_SQL = `
+WITH live AS (
+  SELECT "uriHash" AS h, count(*) AS n FROM "Agent" WHERE "chainId" = $1 AND "uriHash" IS NOT NULL GROUP BY 1
+)
 SELECT coalesce(p.state, 'not probed') AS state,
        count(*)                        AS records,
-       sum(r."memberCount")            AS agents,
+       sum(l.n)                        AS agents,
        max(p.checked_at)               AS probed_at
 FROM "AgentRecord" r
+JOIN live l ON l.h = r.id
 LEFT JOIN fovea.record_state p ON p.uri_hash = r.id
 WHERE r."chainId" = $1
 GROUP BY 1

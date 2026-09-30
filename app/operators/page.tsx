@@ -114,10 +114,10 @@ export default async function Operators() {
           hint="The host answered and said the document is not there. Not a timeout, not a guess."
         />
         <StatTile
-          label="agents behind a live 402"
+          label="agents whose document is behind x402"
           value={paywalledAgents}
           tone="brand"
-          hint="A live endpoint answering with a real x402 challenge, so a buyer could pay it."
+          hint="The registration document's own URL answered with a real x402 challenge. Service endpoints are not asked here."
         />
       </section>
 
@@ -225,8 +225,8 @@ export default async function Operators() {
           <Finding
             n={paywalledAgents}
             of={h.agentsTotal}
-            head="agents that expose a real x402 payment challenge"
-            body="A live endpoint answering with an x402 challenge, so a buyer could pay it. This is counted only on a real challenge. A host that answers 402 with a suspended-account page is counted as gone, not here, because a status code is not a protocol."
+            head="agents whose registration document sits behind an x402 challenge"
+            body="This asks the registration document's own URL, not the service endpoints the document lists, so an agent that takes x402 payments on its service (all twelve of ours do) is not counted here. It counts only a real challenge: a host that answers 402 with a suspended-account page is counted as gone, because a status code is not a protocol."
           />
         </div>
         <Derivation
