@@ -449,7 +449,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
                 <span className="font-mono">{mis.rows.nowhere}</span> were not found on any chain we searched.
               </p>
               <p className="mt-3 text-[13px] leading-relaxed text-muted">
-                That is the difference between a fabricated claim and one wrong field. The second is
+                That is the difference between a payment we cannot find and one wrong field. The second is
                 fixable in a single edit, which is what{" "}
                 <Link href="/studio" className="underline decoration-dotted hover:text-[var(--color-text)]">
                   the studio
