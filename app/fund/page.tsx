@@ -146,9 +146,11 @@ function FundBody({
         subtitle={`pay ${usdc(amount)} USDC of value from ${from}, land a funded job on Monad`}
       >
         <p className="mb-3 text-[13px] leading-relaxed text-muted">
-          Two things happen and you sign once. Intents Connect bridges your asset to the intermediary,
-          then runs the destination steps below from that account. The cross-chain part is real work.
-          It is just not your work.
+          You sign once, before you deposit. Creating the execution returns a message to sign; with that
+          signature already in, Intents Connect bridges your asset to the intermediary and runs the
+          destination steps below as one batch the moment the funds land. Sign after the deposit instead
+          and the money waits at the intermediary until you do. The cross-chain part is real work. It is
+          just not your work.
         </p>
         <ol className="space-y-3">
           <li className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
@@ -198,9 +200,11 @@ function FundBody({
             than sending a batch the escrow would reject.
           </p>
           <p>
-            If the createJob call reverts anyway, <strong>the funds are not lost</strong>. They stay in
-            your intermediary. Recovery is a separate withdrawal you authorize with Intents Connect
-            covering the gas. A short landing is a recoverable state, not a burned deposit.
+            If less than the guaranteed minimum arrives anyway, createJob reverts and the whole batch
+            reverts with it. <strong>The funds are not lost</strong>: they stay in your intermediary.
+            There is no automatic refund. Use them with a steps-only execution (for example a new job
+            sized to what arrived) or withdraw them back to your source account. A short landing is a
+            recoverable state, not a burned deposit.
           </p>
           <Row label="destination asset">
             <Mono className="text-muted">{MONAD_USDC_ASSET_ID}</Mono>
@@ -244,9 +248,10 @@ function FundBody({
           </Row>
         </div>
         <p className="mt-4 text-[12px] leading-relaxed text-muted">
-          It sat unsigned for three days first. The bridge had landed the money and the escrow was
-          still empty, so this page kept calling the path built rather than live until the escrow
-          actually held it. The payer and the agent here are both ours, so it proves the rail and
+          It sat unsigned for three days first, because we deposited before signing. The bridge had
+          landed the money and the escrow was still empty, so this page kept calling the path built
+          rather than live until the escrow actually held it. Aurora&apos;s guidance, which our script now
+          follows, is the reverse order: sign right after create, then deposit. The payer and the agent here are both ours, so it proves the rail and
           nothing about demand.
         </p>
       </Panel>
