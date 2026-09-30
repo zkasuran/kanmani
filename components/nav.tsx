@@ -163,6 +163,22 @@ export function Nav() {
   const SETTLE_MS = 300;
   /** A level move across the bar may be a scan, so a neighbour it rests on opens after this short beat. */
   const SCAN_MS = 120;
+  /**
+   * Opening from closed waits this long. A hand coming up from the page on a diagonal grazes the
+   * corner of a neighbouring label on its way to the one it wants. Opened instantly, the neighbour
+   * flashed for a frame or two before the target replaced it: traced on 72 scripted panel-to-label
+   * climbs, a third of them showed a menu nobody asked for. Resting on a label for 90ms is still
+   * well under what reads as a delay. Keyboard focus opens immediately.
+   */
+  const OPEN_MS = 90;
+  /** The label waiting to open plus where the pointer was when its clock last restarted. */
+  const opening = useRef<{ label: string; x: number; y: number } | null>(null);
+  const openNow = (label: string) => {
+    timer.current = null;
+    opening.current = null;
+    apex.current = { ...pointer.current };
+    setHover(label);
+  };
   const pointer = useRef({ x: 0, y: 0 });
   const apex = useRef<{ x: number; y: number } | null>(null);
   const panelEl = useRef<HTMLDivElement | null>(null);
@@ -260,13 +276,26 @@ export function Nav() {
       defer(label, how);
       return;
     }
-    pending.current = undefined;
     clearTimer();
+    if (!hoverRef.current) {
+      // Nothing open: a graze on the way past must not open anything. The apex is seeded when it
+      // actually opens, from where the pointer is then.
+      pending.current = undefined;
+      opening.current = { label, ...pointer.current };
+      timer.current = window.setTimeout(() => openNow(label), OPEN_MS);
+      return;
+    }
+    pending.current = undefined;
     // Seed the apex where the pointer entered, so the very first diagonal move is already protected.
     apex.current = { ...pointer.current };
     setHover(label);
   };
   const leave = () => {
+    if (opening.current && !hoverRef.current) {
+      opening.current = null;
+      clearTimer();
+      return;
+    }
     // Left through the top of the page, into the browser's own tab strip. A hand coming up from the
     // page overshoots the bar and goes there constantly, so this is not leaving the menu: it stays
     // open until the pointer comes back and lands somewhere else. Measured before this: an upward
@@ -289,10 +318,38 @@ export function Nav() {
     pending.current = undefined;
     timer.current = window.setTimeout(() => setHover(null), 120);
   };
+  /**
+   * Leaving a panel is only leaving the menu if the pointer also left the group. Coming up from the
+   * page, a hand reaches the bottom edge of a label and the panel's opening animation (it starts 6px
+   * high) slides up underneath it. The hand keeps rising, out of the panel and back onto its own
+   * label. Treating that as an exit closed the menu under a resting cursor. Nothing re-opened
+   * it, because the pointer never left the group, so its enter handler never fired again.
+   */
+  const leavePanel = (e: React.MouseEvent) => {
+    const group = (e.currentTarget as HTMLElement).parentElement;
+    const to = e.relatedTarget;
+    if (group && to instanceof Node && group.contains(to)) return;
+    leave();
+  };
   const enterPanel = (label: string) => {
+    opening.current = null;
     pending.current = undefined;
     clearTimer();
     setHover(label);
+  };
+  /**
+   * While an open is waiting, a pointer still travelling restarts its clock, so a label only opens
+   * once the hand has slowed on it. A fixed delay alone let a long diagonal that spent 90ms crossing
+   * a neighbour open that neighbour first. Moves under 3px are a resting hand's tremor and do not count.
+   */
+  const settleOpen = (e: React.MouseEvent, label: string) => {
+    pointer.current = { x: e.clientX, y: e.clientY };
+    const o = opening.current;
+    if (!o || o.label !== label) return;
+    if (Math.abs(e.clientX - o.x) + Math.abs(e.clientY - o.y) < 3) return;
+    opening.current = { label, x: e.clientX, y: e.clientY };
+    clearTimer();
+    timer.current = window.setTimeout(() => openNow(label), OPEN_MS);
   };
   /** The apex follows the pointer only while it is inside the open group's own label. */
   const trackApex = (e: React.MouseEvent, label: string) => {
@@ -363,6 +420,7 @@ export function Nav() {
                 pointer.current = { x: e.clientX, y: e.clientY };
                 enter(g.label);
               }}
+              onMouseMove={(e) => settleOpen(e, g.label)}
               onMouseLeave={(e) => {
                 pointer.current = { x: e.clientX, y: e.clientY };
                 leave();
@@ -405,7 +463,7 @@ export function Nav() {
                   onMouseEnter={() => enterPanel(g.label)}
                   onMouseLeave={(e) => {
                     pointer.current = { x: e.clientX, y: e.clientY };
-                    leave();
+                    leavePanel(e);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Escape") {
@@ -441,7 +499,7 @@ export function Nav() {
                   onMouseEnter={() => enterPanel(g.label)}
                   onMouseLeave={(e) => {
                     pointer.current = { x: e.clientX, y: e.clientY };
-                    leave();
+                    leavePanel(e);
                   }}
                 >
                   {g.items.map((i, idx) => (
