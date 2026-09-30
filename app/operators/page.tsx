@@ -195,7 +195,7 @@ export default async function Operators() {
                 These agents registered with no tokenURI at all, so there is no record row to probe.
                 Counted here rather than left out, because without them these buckets sum to{" "}
                 {(h.agentsTotal - h.agentsWithNoDocument).toLocaleString()} against a registry of{" "}
-                {h.agentsTotal.toLocaleString()} and 80 agents quietly vanish off the page.
+                {h.agentsTotal.toLocaleString()} and {h.agentsWithNoDocument.toLocaleString()} agents quietly vanish off the page.
               </p>
             </div>
           ) : null}
