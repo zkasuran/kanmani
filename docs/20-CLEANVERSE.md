@@ -139,8 +139,10 @@ have code on chain 143.
   That is an off-chain step (Register Compliance Pool) plus a Cleanverse review and until it lands
   `complianceVerify` reverts for the gate and every settlement fails closed. This is safe, not broken,
   but it means the fully live payout is gated on that registration.
-- **The deploy needs MON for gas.** Broadcasting is a real-funds step, so the build stops at a ready
-  command and a simulated gas estimate.
+- **Deployed on Monad mainnet 2026-09-30** at `0x06Ce09EAe9Da00A894d342C7FC4D42fc7ED7c421`, tx `0x0a78b85b94279ed4f7ea2e5262f587fb0ceb18985ebc4c0ed282d4429432788e`, block 109,256,599,
+  0.19 MON of gas. Source verified on Sourcify (`exact_match`). `escrow()` reads Aqueous and
+  `validator()` reads the Cleanverse validator, both checked on chain after the deploy. `cviStatus` for
+  our own wallet reads `Unknown` today, which is the fail-closed state while the pool is unregistered.
 - **The off-chain client needs an IP allowlist.** Cleanverse rejects requests from an IP it has not
   allowlisted, so `lib/cleanverse.ts` is exercised against an injected fetch in tests rather than a
   live call. The on-chain check needs no allowlist and no key, which is another reason it is the
