@@ -1,0 +1,53 @@
+{
+  "recordedAt": "2026-09-30T06:40:00Z",
+  "via": "Scribe, ERC-8004 #10272, POST https://kanmani.xyz/api/service/scribe, x402 upto on eip155:143",
+  "model": "Qwen/Qwen3.8-Max",
+  "payer": "0xDB6c6340342e71A63cD11Ebac2185204b7777777",
+  "payTo": "0xDB6c6340342e71A63cD11Ebac2185204b7777777",
+  "disclosure": "payer and payee are the same wallet, ours. Proves the path, not demand.",
+  "payment": {
+    "scheme": "upto",
+    "ceilingAtomic": "10000",
+    "chargedAtomic": "4000",
+    "meter": {
+      "unit": "model turn",
+      "used": 1,
+      "pricePerUnitAtomic": "2000",
+      "baseAtomic": "2000"
+    },
+    "transaction": "0x87a7eb4e92d71e0357f0f1f9d1147050000e0f8d8d3a78241b1bf789cb6c76f8",
+    "block": 109248917,
+    "verified": "receipt status 1, one USDC Transfer of 4000"
+  },
+  "corpus": {
+    "chainId": 56,
+    "what": "gzip-encoded data: evidence documents on BSC, first 40 by md5(id)",
+    "sampled": 40,
+    "thisShape": 36,
+    "shapeKeys": [
+      "comment",
+      "score",
+      "tag1",
+      "tag2",
+      "timestamp",
+      "version"
+    ]
+  },
+  "document": {
+    "comment": "We help agent builders reach top rankings, scale, and build agents.\nReach us on Telegram: https://t.me/agent_bldr",
+    "score": 100,
+    "tag1": "get top 1 rank -->",
+    "tag2": "https://t.me/agent_bldr",
+    "timestamp": 1770300668559,
+    "version": "1.0"
+  },
+  "answer": {
+    "converged": true,
+    "mapping": {
+      "name": "feedback-rating.v1",
+      "kind": "noClaim",
+      "note": "Plain ERC-8004 feedback document: a natural-language comment, a numeric score (100), two free-text tags used here for self-promotion (a Telegram handle/URL), a millisecond timestamp, and a version string. No settlement, transfer, or chain fields exist, so this shape asserts no payment."
+    }
+  },
+  "rawResponseHead": "  scheme upto  ceiling 10000 atomic 0x754704Bc059F8C67012fEd69BC8A327a5aafb603 on eip155:143\n  payTo  0xDB6c6340342e71A63cD11Ebac2185204b7777777\n  payer  0xDB6c6340342e71A63cD11Ebac2185204b7777777   (SAME WALLET, see header)\n  HTTP   200\n{\n  \"agent\": \"Scribe\",\n  \"chainId\": 143,\n  \"blockMs\": 266,\n  \"payment\": {\n    \"scheme\": \"upto\",\n    \"settled\": true,\n    \"transaction\": \"0x87a7eb4e92d71e0357f0f1f9d1147050000e0f8d8d3a78241b1bf789cb6c76f8\",\n    \"reason\": null,\n    \"ceilingAtomic\": \"10000\",\n    \"chargedAtomic\": \"4000\",\n    \"meter\": {\n      \"unit\": \"model turn\",\n      \"used\": 1,\n      \"pricePerUnitAtomic\": \"2000\",\n      \"baseAtomic\": \"2000\"\n    },\n    \"payer\": \"0xDB6c6340342e71A63cD11Ebac2185204b7777777\",\n    \"note\": \"Signed a maximum, charged the metered amount. The rest never left your wallet. Recompute the charge from the meter.\"\n  },\n  \"answer\": {\n    \"converged\": true,\n    \"mapping\": {\n      \"name\": \"feedback-rating.v1\",\n      \"induced\": \"2026-09-30\",\n      \"note\": \"Plain ERC-8004 feedback document: a natural-language comment, a numeric score (100), two free-text tags used here for self-promotion (a Telegram handle/URL), a millisecond timestamp, and a version string. No settlement, transfer, or chain fields exist, so this shape asserts no payment.\",\n      \"kind\": \"noClaim\",\n      \"proposal\": {\n        \"name\": \"feedback-rating.v1\",\n        \"note\": \"Plain ERC-8004 feedback document: a natural-language comment, a numeric score (100), two free-text tags used here for self-promotion (a Telegram handle/URL), a millisecond timestamp, and a version string. No settlement, transfer, or chain fields exist, so this shape\n"
+}

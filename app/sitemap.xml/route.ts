@@ -22,6 +22,7 @@ export async function GET() {
     { loc: "/compare", priority: "0.6" },
     { loc: "/method", priority: "0.9" },
     { loc: "/status", priority: "0.7" },
+    { loc: "/writing/qwen", priority: "0.7" },
     ...cl.rows.map((c) => ({ loc: `/operators/${c.uriHash}`, priority: "0.6" })),
     ...recent.rows.map((c) => ({ loc: `/claim/${encodeURIComponent(c.id)}`, priority: "0.5" })),
   ];
