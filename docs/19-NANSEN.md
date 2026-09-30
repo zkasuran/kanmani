@@ -95,3 +95,20 @@ The live call is not verified, because there is no Nansen key in this environmen
 and typed against Nansen's documented request and response. It degrades safely: a failed call is
 recorded as `unknown`, never as a fabricated label. Do not read a label count on the operators page
 as live until the CLI has run against a real key.
+
+## 2026-09-30: switched to first funders and what they showed
+
+The labels endpoint costs 100 credits a wallet. The account is on Nansen's free plan (100 trial credits,
+then 10 a day), so labels could not cover even one wallet. `profiler/address/related-wallets` costs 1
+credit and its `First Funder` relation answers the question the operators page could not: are the
+7,962 wallets behind one dead document 7,962 operators or a few funders?
+
+Run: `node --experimental-strip-types verifier/src/cli/nansen-enrich.ts --funders --clusters 1 --per-cluster 55`
+(the sample is ordered by md5(address), wallets already answered are skipped, it stops before the credit
+balance falls under `--reserve`). Stored in `fovea.wallet_funder`, append only; rendered at
+`/operators#funders` by `lib/funders.ts`.
+
+Result, 71 credits spent: 62 random wallets from the 7,962-owner eve-8004 cluster were asked and all 62
+answered. **60 of 62 were first funded by one address, `0x97cd97cf…0996`, with 11 MON each.** The other
+two came from one further funder. Six funding transactions were checked on Monad directly (from = funder,
+to = wallet, 11 MON). The page states this as a sample and describes set-up, not intent.

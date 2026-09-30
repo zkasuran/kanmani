@@ -558,3 +558,24 @@ CREATE TABLE IF NOT EXISTS fovea.build_uri (
   first_day  date    NOT NULL,
   checks     integer NOT NULL
 );
+
+-- ---------------------------------------------------------------- first funders, from Nansen
+-- Who first sent each registration wallet gas (Nansen profiler/address/related-wallets, 1 credit).
+-- Append only like every fovea table. A sampled subset, not every wallet: the page says so.
+CREATE TABLE IF NOT EXISTS fovea.wallet_funder (
+  id           bigserial PRIMARY KEY,
+  address      text        NOT NULL,
+  chain        text        NOT NULL,
+  status       text        NOT NULL CHECK (status IN ('found','none','unknown')),
+  funder       text,
+  funder_label text,
+  tx           text,
+  funded_at    text,
+  reason       text,
+  http_status  integer,
+  sample       text        NOT NULL,   -- which sampling run chose this wallet, e.g. cluster:<uriHash>
+  checked_at   timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS wallet_funder_address ON fovea.wallet_funder (address, chain, checked_at DESC);
+CREATE OR REPLACE VIEW fovea.wallet_funder_latest AS
+  SELECT DISTINCT ON (address, chain) * FROM fovea.wallet_funder ORDER BY address, chain, checked_at DESC;

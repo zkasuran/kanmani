@@ -402,3 +402,33 @@ export async function enrichWallet(
     httpStatus: res.httpStatus,
   };
 }
+
+/* ------------------------------------------------------------------ first funder */
+
+export type FirstFunder =
+  | { status: "found"; funder: string; funderLabel: string | null; tx: string; fundedAt: string | null }
+  | { status: "none"; reason: string }
+  | { status: "unknown"; reason: string };
+
+/**
+ * The wallet that first sent this one gas, from Nansen's related-wallets answer (1 credit a call).
+ *
+ * The question the operators page cannot answer alone: are 7,962 wallets behind one dead document
+ * 7,962 operators or a few funders spinning wallets up? A first funder answers it per wallet. A call
+ * that fails is `unknown`; an answer with no First Funder relation is `none`, which says Nansen saw
+ * none, not that the wallet funded itself.
+ */
+export function firstFunder(r: NansenResult<RelatedWalletsResponse>): FirstFunder {
+  if (!r.ok) return { status: "unknown", reason: r.reason };
+  const f = (r.data.data ?? [])
+    .filter((w) => /first funder/i.test(w.relation ?? "") && /^0x[0-9a-fA-F]{40}$/.test(w.address ?? ""))
+    .sort((a, b) => (a.order ?? 0) - (b.order ?? 0))[0];
+  if (!f) return { status: "none", reason: "Nansen returned no First Funder relation for this wallet" };
+  return {
+    status: "found",
+    funder: f.address.toLowerCase(),
+    funderLabel: f.address_label ? f.address_label : null,
+    tx: f.transaction_hash,
+    fundedAt: f.block_timestamp || null,
+  };
+}

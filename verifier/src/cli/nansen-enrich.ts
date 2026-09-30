@@ -44,7 +44,7 @@ import { dirname, join } from "node:path";
 import pg from "pg";
 import { MAX_BYTES, TIMEOUT_MS, resolvePublic, screenUrl, type Resolver } from "../net/guard.ts";
 import { connectionStringFrom } from "../store/store.ts";
-import { enrichWallet, type NansenAuth, type NansenHttpResponse, type NansenTransport, type WalletEnrichment } from "../../../lib/nansen.ts";
+import { enrichWallet, fetchRelatedWallets, firstFunder, NANSEN_BASE, type NansenAuth, type NansenHttpResponse, type NansenTransport, type WalletEnrichment } from "../../../lib/nansen.ts";
 
 /* ------------------------------------------------------------------ the guarded transport */
 
@@ -239,7 +239,15 @@ export async function run(argv = process.argv.slice(2)): Promise<number> {
 
   const pool = new pg.Pool({ connectionString: connectionStringFrom(), max: 4 });
   const here = dirname(fileURLToPath(import.meta.url));
-  await pool.query(readFileSync(join(here, "../store/schema.sql"), "utf8"));
+  // Replaying the whole schema needs owner rights on every fovea table, which the app role does not
+  // have in production. Migrations are applied by the database owner; --migrate is for a local DB.
+  if (argv.includes("--migrate")) await pool.query(readFileSync(join(here, "../store/schema.sql"), "utf8"));
+
+  if (argv.includes("--funders")) {
+    const code = await runFunders(pool, argv, auth, transport, a.gapMs, a.dry);
+    await pool.end();
+    return code;
+  }
 
   let wallets = await ownerWallets(pool, 143, a.limit);
   if (a.only) wallets = wallets.filter((w) => w.address === a.only!.toLowerCase());
@@ -296,4 +304,74 @@ if (import.meta.url === `file://${process.argv[1]}`) {
       console.error(e);
       process.exit(1);
     });
+}
+
+/* ------------------------------------------------------------------ first funders */
+
+/** Credits left, from Nansen's free account endpoint. Null when it cannot be read. */
+async function creditsLeft(apiKey: string): Promise<number | null> {
+  try {
+    const r = await fetch(`${NANSEN_BASE}/api/v1/account`, { headers: { apikey: apiKey }, signal: AbortSignal.timeout(10_000) });
+    const j = (await r.json()) as { credits_remaining?: number };
+    return typeof j.credits_remaining === "number" ? j.credits_remaining : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * First funders for a reproducible random sample of wallets in the largest clusters.
+ *
+ *   --funders --clusters 3 --per-cluster 25 --reserve 5
+ *
+ * The sample is ordered by md5(address), so a rerun asks the same wallets and a reader can re-derive
+ * which were chosen. Wallets with an existing found/none answer are skipped. The run stops before
+ * the credit balance would fall under --reserve, checked on Nansen's free account endpoint.
+ */
+async function runFunders(pool: pg.Pool, argv: string[], auth: NansenAuth, transport: NansenTransport, gapMs: number, dry: boolean): Promise<number> {
+  const num = (k: string, d: number) => {
+    const i = argv.indexOf(`--${k}`);
+    return i >= 0 ? Number(argv[i + 1]) : d;
+  };
+  const clusters = num("clusters", 3), per = num("per-cluster", 25), reserve = num("reserve", 5);
+  const apiKey = auth.mode === "apikey" ? auth.apiKey : "";
+  const top = await pool.query<{ id: string; uri: string; owners: string }>(
+    `SELECT id, uri, "distinctOwners" AS owners FROM "AgentRecord" WHERE "chainId" = 143 AND "distinctOwners" > 1 ORDER BY "distinctOwners" DESC LIMIT $1`,
+    [clusters],
+  );
+  let credits = await creditsLeft(apiKey);
+  console.log(`first funders: ${top.rows.length} clusters, ${per} wallets each, credits ${credits ?? "unknown"}, reserve ${reserve}`);
+  const tally = { found: 0, none: 0, unknown: 0, skipped: 0 };
+  outer: for (const c of top.rows) {
+    const w = await pool.query<{ address: string }>(
+      `SELECT lower(o.owner) AS address FROM "AgentRecordOwner" o
+        WHERE o.record_id = $1
+          AND NOT EXISTS (SELECT 1 FROM fovea.wallet_funder_latest f WHERE f.address = lower(o.owner) AND f.chain = 'monad' AND f.status IN ('found','none'))
+        ORDER BY md5(lower(o.owner)) LIMIT $2`,
+      [c.id, per],
+    );
+    console.log(`  cluster ${c.uri.slice(0, 60)} (${c.owners} owners): asking ${w.rows.length}`);
+    for (const { address } of w.rows) {
+      if (credits !== null && credits - 1 < reserve) {
+        console.log(`  stopping: ${credits} credits left, reserve ${reserve}`);
+        break outer;
+      }
+      const r = await fetchRelatedWallets(address, "monad", auth, transport).catch((e) => ({ ok: false as const, reason: String(e?.message ?? e), authMode: "apikey" as const, httpStatus: null }));
+      const f = firstFunder(r);
+      if (credits !== null && r.ok) credits -= 1;
+      tally[f.status]++;
+      if (!dry) {
+        await pool.query(
+          `INSERT INTO fovea.wallet_funder (address, chain, status, funder, funder_label, tx, funded_at, reason, http_status, sample)
+           VALUES ($1,'monad',$2,$3,$4,$5,$6,$7,$8,$9)`,
+          [address, f.status, f.status === "found" ? f.funder : null, f.status === "found" ? f.funderLabel : null, f.status === "found" ? f.tx : null, f.status === "found" ? f.fundedAt : null, f.status === "found" ? null : f.reason, r.httpStatus ?? null, `cluster:${c.id}`],
+        );
+      }
+      if (f.status !== "found") console.log(`    ${f.status} ${address} ${"reason" in f ? f.reason.slice(0, 80) : ""}`);
+      if (r.httpStatus === 403) break outer;
+      if (gapMs) await sleep(gapMs);
+    }
+  }
+  console.log(`\n${tally.found} found, ${tally.none} none, ${tally.unknown} unknown. credits now ${await creditsLeft(apiKey) ?? "unknown"}${dry ? " (dry)" : ""}`);
+  return 0;
 }
