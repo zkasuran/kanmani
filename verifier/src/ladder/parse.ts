@@ -79,13 +79,28 @@ export const executionMarket: Mapping = {
   extract(d) {
     const pop = d.proof_of_payment as Record<string, unknown>;
     const rating = isObj(d.rating) ? d.rating : undefined;
+    // Which way the rating points decides whether its target was paid. When a worker rates its
+    // buyer (`executor_rates_requester`, `seller_rates_buyer`), `target_address` is the party that
+    // PAID. Reading it as the recipient failed every such claim whose money went, correctly, to the
+    // worker. Found 2026-09-30 on tx 0xac89c81b..., which paid the rater: 22 verdicts were wrong.
+    //
+    // So the target counts as the recipient only when the document says it is the paid side. An
+    // unknown direction names no recipient and the check falls back to "a successful transaction
+    // with this hash exists on the named chain". A guess about direction must never be able to
+    // produce a false.
+    // `agent_rating` is a worker rating the agent that hired it, so `agent` is the payer here.
+    const PAID = /^(executor|seller|worker|provider)$/;
+    const tt = typeof rating?.target_type === "string" ? rating.target_type.toLowerCase() : "";
+    const ft = typeof d.feedback_type === "string" ? d.feedback_type.toLowerCase() : "";
+    const ftTarget = /_rates_([a-z]+)$/.exec(ft)?.[1] ?? "";
+    const targetPaid = PAID.test(tt) || (tt === "" && PAID.test(ftTarget));
     return {
       kind: "claim",
       mapping: this.name,
       claim: {
         network: pop.network ?? d.network,
         txHash: pop.payment_tx,
-        recipient: rating?.target_address,
+        recipient: targetPaid ? rating?.target_address : undefined,
       },
     };
   },

@@ -12,7 +12,7 @@ export const SUITES = {
   /** `npm test` in the repo root. */
   site: { pass: 311, total: 314 },
   /** `npm test` in `verifier/`. */
-  verifier: { pass: 181, total: 198 },
+  verifier: { pass: 186, total: 203 },
   /**
    * `forge test --fork-url https://rpc.monad.xyz` in `contracts/` (127 pass, 2 ffi skips, AgentPasskey
    * skips itself) plus `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` (16).

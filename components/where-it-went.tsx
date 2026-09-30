@@ -1,7 +1,7 @@
 /**
- * Where the 73 went.
+ * Where the false verdicts went.
  *
- * Every one of the 73 `false` verdicts declares Monad. This draws that single declaration splitting into
+ * Every `false` verdict declares Monad. The counts are read live from fovea.verdict_latest. This draws that single declaration splitting into
  * the chains the cited transactions actually live on, with each stream's thickness proportional to its
  * count. It is the finding that reversed the project's own headline, so it is drawn rather than listed:
  * 64 real payments on the wrong network and 9 hashes that exist nowhere read as one number for months,
@@ -177,7 +177,7 @@ export function WhereItWent({
       .filter((c) => c.count > 0)
       .sort((a, b) => b.count - a.count)
       .map((c) => ({ key: c.chain, label: c.chain, count: c.count, kind: "elsewhere" as const })),
-    ...(nowhere > 0 ? [{ key: "nowhere", label: "on no chain", count: nowhere, kind: "nowhere" as const }] : []),
+    ...(nowhere > 0 ? [{ key: "nowhere", label: "not found", count: nowhere, kind: "nowhere" as const }] : []),
   ];
   const total = dests.reduce((a, d) => a + d.count, 0);
   if (total === 0) return null;

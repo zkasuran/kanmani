@@ -446,7 +446,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
                 mean one thing: the transaction is not on the chain this document names. Once we could
                 read the other chains, {mis.rows.elsewhere} of {d.doNotResolve} turned out to be mined
                 transactions on a different one and only{" "}
-                <span className="font-mono">{mis.rows.nowhere}</span> exist nowhere at all.
+                <span className="font-mono">{mis.rows.nowhere}</span> were not found on any chain we searched.
               </p>
               <p className="mt-3 text-[13px] leading-relaxed text-muted">
                 That is the difference between a fabricated claim and one wrong field. The second is

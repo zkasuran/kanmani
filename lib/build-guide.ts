@@ -33,8 +33,8 @@ You never give Kanmani a key. It returns the exact transaction and you sign it w
    environment variable (\`AGENT_PRIVATE_KEY\`) or a keystore. Add the env file to \`.gitignore\`.
 3. **Put the document on chain** (\`kind: "data"\`, the default). 8,640 Monad agents point at hosted
    documents that now return a deletion. A \`data:\` URI cannot go dead.
-4. **Evidence must name the network the payment settled on.** 64 of the 73 Monad claims that fail
-   name \`monad\` for a payment made on another chain. Check every evidence document before publishing.
+4. **Evidence must name the network the payment settled on.** Most Monad claims that fail name
+   \`monad\` for a payment made on another chain (live counts at /claims). Check every evidence document before publishing.
 5. **\`unknown\` is not \`false\`.** It means undecided. Do not treat it as a failure.
 
 ## Step 1: check the registration and get the transaction

@@ -64,7 +64,9 @@ export async function run(argv = process.argv.slice(2)): Promise<void> {
   const a = parseArgs(argv);
   const pool = new pg.Pool({ connectionString: connectionStringFrom(), max: 4 });
   const here = dirname(fileURLToPath(import.meta.url));
-  await pool.query(readFileSync(join(here, "../store/schema.sql"), "utf8"));
+  // The app role cannot replay the whole schema in production (it does not own every fovea object).
+  // Migrations are applied by the database owner. --migrate is for a local database.
+  if (argv.includes("--migrate")) await pool.query(readFileSync(join(here, "../store/schema.sql"), "utf8"));
 
   let targets = await recordTargets(pool, 143, a.limit);
   if (a.only) targets = targets.filter((t) => t.uri.includes(a.only!));

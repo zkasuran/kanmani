@@ -1,0 +1,126 @@
+#!/usr/bin/env node
+/**
+ * Put every Monad evidence document that has no verdict yet through the ladder, then append what
+ * came back. Run on a timer (ops/systemd/kanmani-sweep.*) so a new claim does not sit unchecked
+ * until somebody remembers to look.
+ *
+ *   node --experimental-strip-types scripts/verdict-sweep.mjs            check up to 200 new claims
+ *   ... --limit 50 --dry                                                  judge, print, write nothing
+ *   ... --recheck-days 7                                                  also re-check verdicts older than 7 days
+ *   ... --recheck-reason 'the cited transaction moved %'                  re-check latest verdicts whose reason matches
+ *                                                                         (after a parser fix, so the correction is appended)
+ *
+ * It is the same ladder as everything else: `check()` in lib/check.ts runs it and rehydrate's
+ * append path writes the row. There is no second implementation. Append only, like every other
+ * writer here. A run that could not reach a document writes `unknown` with the reason, never
+ * `false`, because a failure to look is not evidence about anyone's payment.
+ */
+import { check } from "../lib/check.ts";
+import { CHAIN_ID, q } from "../lib/db.ts";
+import { couldNotCheck, liveAppendVerdict, refuseUnsupportedOutcome } from "../lib/rehydrate.ts";
+import { findTransaction } from "../lib/findtx.ts";
+
+const arg = (name, def) => {
+  const i = process.argv.indexOf(`--${name}`);
+  return i >= 0 ? process.argv[i + 1] : def;
+};
+const LIMIT = Math.min(Math.max(Number(arg("limit", "200")) || 200, 1), 2000);
+const RECHECK_DAYS = arg("recheck-days", null) === null ? null : Math.max(Number(arg("recheck-days")) || 0, 1);
+const DRY = process.argv.includes("--dry");
+const RECHECK_REASON = arg("recheck-reason", null);
+
+// New claims first, oldest block first, so a backlog clears in the order it arrived.
+const targets = await q(
+  `SELECT f.id, f."feedbackUri" AS uri, f."feedbackHash" AS hash, 'new' AS why
+     FROM "Feedback" f
+    WHERE f."chainId" = $1 AND f."feedbackUri" <> ''
+      AND NOT EXISTS (SELECT 1 FROM fovea.verdict v WHERE v.feedback_id = f.id)
+    ORDER BY f."blockNumber" ASC, f.id
+    LIMIT $2`,
+  [CHAIN_ID, LIMIT],
+);
+if (RECHECK_DAYS !== null && targets.length < LIMIT) {
+  const old = await q(
+    `SELECT f.id, f."feedbackUri" AS uri, f."feedbackHash" AS hash, 'recheck' AS why
+       FROM fovea.verdict_latest l JOIN "Feedback" f ON f.id = l.feedback_id
+      WHERE f."chainId" = $1 AND l.checked_at < now() - make_interval(days => $2)
+      ORDER BY l.checked_at ASC
+      LIMIT $3`,
+    [CHAIN_ID, RECHECK_DAYS, LIMIT - targets.length],
+  );
+  targets.push(...old);
+}
+
+if (RECHECK_REASON !== null) {
+  const hit = await q(
+    `SELECT f.id, f."feedbackUri" AS uri, f."feedbackHash" AS hash, 'fix' AS why
+       FROM fovea.verdict_latest l JOIN "Feedback" f ON f.id = l.feedback_id
+      WHERE f."chainId" = $1 AND l.reason LIKE $2
+      ORDER BY l.checked_at ASC
+      LIMIT $3`,
+    [CHAIN_ID, RECHECK_REASON, LIMIT],
+  );
+  targets.length = 0;
+  targets.push(...hit);
+}
+
+const tally = {};
+let written = 0;
+for (const t of targets) {
+  const checkedAt = new Date().toISOString();
+  let row;
+  try {
+    const r = await check({ uri: t.uri, feedbackHash: t.hash });
+    const refusal = refuseUnsupportedOutcome(r.verdict);
+    const v = r.verdict;
+    row = refusal
+      ? { feedbackId: t.id, feedbackUri: t.uri, ...couldNotCheck(refusal, checkedAt) }
+      : {
+          feedbackId: t.id,
+          feedbackUri: t.uri,
+          rung: v.rung,
+          outcome: v.outcome,
+          reason: v.reason,
+          declaredNetwork: v.declaredNetwork,
+          declaredTx: v.declaredTx,
+          mapping: v.mapping,
+          hashMatches: v.hashMatches,
+          computedHash: v.computedHash,
+          foundChain: v.foundOnChain?.chain,
+          foundChainId: v.foundOnChain?.chainId,
+          foundBlock: v.foundOnChain?.blockNumber,
+          checkedAt: v.checkedAt,
+          checkedAtBlock: v.checkedAtBlock,
+        };
+  } catch (e) {
+    row = { feedbackId: t.id, feedbackUri: t.uri, ...couldNotCheck(e?.message ?? String(e), checkedAt) };
+  }
+  // A cited transaction that is not on Monad may be a real one on another chain with the network
+  // mislabelled, which is a one-field fix rather than a missing payment. Look before recording it,
+  // so the false is split the way /claims splits it. A search that finds nothing records nothing:
+  // unsearched chains stay unsearched, never "nowhere".
+  if (row.outcome === "false" && !row.foundChain && /^0x[0-9a-fA-F]{64}$/.test(row.declaredTx ?? "") && /^no transaction with this hash/.test(row.reason)) {
+    try {
+      const f = await findTransaction(row.declaredTx, CHAIN_ID);
+      if (f.found) {
+        row.foundChain = f.found.key;
+        row.foundChainId = f.found.chainId;
+        row.foundBlock = String(f.found.blockNumber);
+        tally.elsewhere = (tally.elsewhere ?? 0) + 1;
+      }
+    } catch {
+      // The cross-chain search is extra context. Failing it leaves the Monad verdict exactly as it was.
+    }
+  }
+  tally[row.outcome] = (tally[row.outcome] ?? 0) + 1;
+  if (DRY) console.log(`  ${t.why.padEnd(7)} ${row.outcome.padEnd(8)} ${row.rung.padEnd(10)} ${t.id}  ${row.reason.slice(0, 80)}${row.foundChain ? `  [on ${row.foundChain}]` : ""}`);
+  else {
+    await liveAppendVerdict(row);
+    written++;
+  }
+}
+console.log(
+  `verdict sweep: ${targets.length} claim(s) judged, ${written} written${DRY ? " (--dry)" : ""}. ` +
+    Object.entries(tally).map(([k, n]) => `${k} ${n}`).join(", "),
+);
+process.exit(0);

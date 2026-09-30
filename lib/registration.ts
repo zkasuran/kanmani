@@ -318,7 +318,7 @@ export function consequences(d: RegistrationDraft, kind: UriKind, hostedAt = "")
     {
       label: "asserts no payment it has not received",
       met: !/proof_of_payment|payment_tx|\banchored\b/i.test(recordJson(d)),
-      why: "A registration document is not the place for a payment claim. 73 of the 85 payment claims on Monad cite a transaction that is not on the chain they name. Ours asserts none.",
+      why: "A registration document is not the place for a payment claim. Most payment claims on Monad cite a transaction that is not on the chain they name (live count at /claims). Ours asserts none.",
     },
     {
       label: "fits on chain",

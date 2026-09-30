@@ -27,13 +27,18 @@ const WORKERS = [
   },
   {
     name: "Fovea, the verdict sweep",
-    what: "Walks every claim down the ladder and appends a verdict. Never updates one.",
-    cadence: "on demand and the history of every check is kept",
+    what: "Walks every claim without a verdict down the ladder and appends one. Never updates one. A cited transaction missing from Monad is searched for on the other chains we can read, so a mislabelled network is told apart from a missing payment.",
+    cadence: "hourly, systemd timer kanmani-sweep (ops/systemd). Every check is kept",
   },
   {
     name: "the record probe",
     what: "Asks each distinct registration document whether it still answers. Deduplicated by record hash, per host, serial, with a gap, because a handful of hosts carry most of the documents.",
-    cadence: "on demand",
+    cadence: "daily at 03:30 UTC, systemd timer kanmani-probe (ops/systemd)",
+  },
+  {
+    name: "usage counts",
+    what: "Turns the access log into daily counts per surface and reads on-chain use of our contracts. Salted daily hashes, no IP stored.",
+    cadence: "every 10 minutes, systemd timer kanmani-usage (ops/systemd)",
   },
 ];
 

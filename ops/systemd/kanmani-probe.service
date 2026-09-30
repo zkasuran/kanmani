@@ -1,0 +1,17 @@
+[Unit]
+Description=Kanmani record probe: ask every distinct registration document once, per host serially with a gap
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/kanmani.env
+WorkingDirectory=/opt/kanmani
+# Other people's servers: one request at a time per host, half a second apart, four hosts at once.
+ExecStart=/usr/bin/node --experimental-strip-types --no-warnings verifier/src/cli/probe-records.ts --host-gap 500 --hosts 4 --limit 5000
+Nice=10
+TimeoutStartSec=5400
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/kanmani

@@ -1,5 +1,5 @@
 {
-  "at": "2026-09-30T00:49:33.973Z",
+  "at": "2026-09-30T07:59:37.215Z",
   "site": "https://kanmani.xyz",
   "rows": [
     {
@@ -127,7 +127,7 @@
         },
         "spec": {
           "ok": true,
-          "saw": "registration-v1, 1913 bytes, all consequences met"
+          "saw": "registration-v1, 1901 bytes, all consequences met"
         },
         "unique": {
           "ok": true,

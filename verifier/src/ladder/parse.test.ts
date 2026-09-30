@@ -18,7 +18,7 @@ test("execution.market proof_of_payment yields the cited hash", () => {
     doc({
       network: "monad",
       proof_of_payment: { network: "monad", payment_tx: `0x${"a".repeat(64)}`, status: "anchored" },
-      rating: { target_address: "0xbeef", score: 70 },
+      rating: { target_address: "0xbeef", target_type: "worker", score: 70 },
     }),
   );
   assert.equal(r.kind, "claim");
@@ -196,4 +196,56 @@ test("valid JSON is still parsed normally even when declared as text", () => {
     "text/plain",
   );
   assert.equal(r.kind, "claim", "the declaration does not stop us reading real JSON");
+});
+
+test("execution-market: a worker rating its buyer names the payer, never a recipient", () => {
+  const doc = {
+    feedback_type: "executor_rates_requester",
+    network: "monad",
+    proof_of_payment: { network: "monad", payment_tx: "0x" + "ab".repeat(32), status: "anchored" },
+    rating: { target_address: "0x945659f0eb9c34487b0c0f61ed7e9d279ace8f09", target_type: "requester", score: 100 },
+  };
+  const out = parseDocument(new TextEncoder().encode(JSON.stringify(doc)));
+  assert.equal(out.kind, "claim");
+  assert.equal((out as { claim: { recipient?: unknown } }).claim.recipient, undefined);
+});
+
+test("execution-market: a buyer rating its worker still names the worker as recipient", () => {
+  const doc = {
+    feedback_type: "requester_rates_executor",
+    network: "monad",
+    proof_of_payment: { network: "monad", payment_tx: "0x" + "cd".repeat(32), status: "anchored" },
+    rating: { target_address: "0x6e5306c83602b204acaa65ceb05ec178120ea265", target_type: "executor", score: 90 },
+  };
+  const out = parseDocument(new TextEncoder().encode(JSON.stringify(doc)));
+  assert.equal((out as { claim: { recipient?: unknown } }).claim.recipient, "0x6e5306c83602b204acaa65ceb05ec178120ea265");
+});
+
+test("execution-market: seller_rates_buyer targets the payer too, so no recipient", () => {
+  const doc = {
+    feedback_type: "seller_rates_buyer",
+    proof_of_payment: { network: "monad", payment_tx: "0x" + "ef".repeat(32), status: "anchored" },
+    rating: { target_address: "0x46bdfd8256ceeb3325725cb3b81701c3e2e32ebd", target_type: "buyer", score: 100 },
+  };
+  const out = parseDocument(new TextEncoder().encode(JSON.stringify(doc)));
+  assert.equal((out as { claim: { recipient?: unknown } }).claim.recipient, undefined);
+});
+
+test("execution-market: an unstated direction names no recipient rather than guessing", () => {
+  const doc = {
+    proof_of_payment: { network: "monad", payment_tx: "0x" + "12".repeat(32), status: "anchored" },
+    rating: { target_address: "0x46bdfd8256ceeb3325725cb3b81701c3e2e32ebd", score: 100 },
+  };
+  const out = parseDocument(new TextEncoder().encode(JSON.stringify(doc)));
+  assert.equal((out as { claim: { recipient?: unknown } }).claim.recipient, undefined);
+});
+
+test("execution-market: agent_rating is a worker rating its hirer, so no recipient", () => {
+  const doc = {
+    feedback_type: "agent_rating",
+    proof_of_payment: { network: "monad", payment_tx: "0x" + "34".repeat(32), status: "anchored" },
+    rating: { target_address: "0x46bdfd8256ceeb3325725cb3b81701c3e2e32ebd", target_type: "agent", rater_type: "worker", score: 100 },
+  };
+  const out = parseDocument(new TextEncoder().encode(JSON.stringify(doc)));
+  assert.equal((out as { claim: { recipient?: unknown } }).claim.recipient, undefined);
 });

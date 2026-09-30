@@ -81,11 +81,11 @@ export default async function AgentPage({ params }: Props) {
               different chain, which is one wrong field in a document.{" "}
               {nowhere > 0 ? (
                 <>
-                  <span className="text-[var(--color-false)]">{nowhere}</span> cite a transaction that
-                  exists on no chain we can read.
+                  <span className="text-[var(--color-false)]">{nowhere}</span> cite a transaction we did not
+                  find on any chain we searched.
                 </>
               ) : (
-                <>None cite a transaction that exists nowhere.</>
+                <>Every cited transaction was found on some chain.</>
               )}
             </>
           ) : doNot > 0 ? (
@@ -141,7 +141,7 @@ export default async function AgentPage({ params }: Props) {
           label="on no chain we can read"
           value={nowhere}
           tone="false"
-          hint="Every chain we can read was read and the cited transaction is on none of them."
+          hint="Not found on any chain we searched. A chain we cannot read is unsearched, not clear, so this is not proof the payment never happened."
         />
       </section>
 

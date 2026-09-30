@@ -221,7 +221,7 @@ const claimWithRecipient = (to: string = RECIPIENT) =>
     JSON.stringify({
       network: "monad",
       proof_of_payment: { network: "monad", payment_tx: HASH },
-      rating: { target_address: to },
+      rating: { target_address: to, target_type: "worker" },
     }),
   );
 const settleReader = (over: Partial<SettlementReader> = {}): SettlementReader => ({

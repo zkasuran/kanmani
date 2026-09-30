@@ -64,9 +64,8 @@ export default async function Studio() {
             <li>
               <span className="text-[var(--color-text)]">It will refuse a payment claim.</span> A
               registration document is not the place for one. If a draft mentions a payment proof, the
-              consequence list says so, because 73 of the 85 payment claims on Monad cite a
-              transaction that is not on the chain they name and the fix starts with not making the
-              claim.
+              consequence list says so, because most payment claims on Monad cite a transaction that
+              is not on the chain they name and the fix starts with not making the claim.
             </li>
             <li>
               <span className="text-[var(--color-text)]">Verifying yourself is free.</span> A failing

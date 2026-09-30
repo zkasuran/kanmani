@@ -1,0 +1,17 @@
+[Unit]
+Description=Kanmani verdict sweep: every Monad evidence document without a verdict goes down the ladder
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/kanmani.env
+WorkingDirectory=/opt/kanmani
+# New claims first. Up to 300 a run keeps one run well inside the timeout on a slow host.
+ExecStart=/usr/bin/node --experimental-strip-types --no-warnings scripts/verdict-sweep.mjs --limit 300
+Nice=10
+TimeoutStartSec=1800
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/kanmani

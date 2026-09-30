@@ -1,0 +1,16 @@
+[Unit]
+Description=Kanmani usage counts (access log to daily counts, no IPs stored; our contracts' events)
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/kanmani.env
+WorkingDirectory=/opt/kanmani
+ExecStart=/usr/bin/node --experimental-strip-types --no-warnings scripts/usage-aggregate.mjs --logs /var/log/caddy --max-windows 3000
+Nice=10
+TimeoutStartSec=900
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/var/log/caddy /opt/kanmani

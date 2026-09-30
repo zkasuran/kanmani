@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-635%20passing-34d399?style=flat-square&labelColor=05070a" alt="635 tests passing">
+  <img src="https://img.shields.io/badge/tests-640%20passing-34d399?style=flat-square&labelColor=05070a" alt="640 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
   <a href="docs/AS-BUILT.md"><img src="https://img.shields.io/badge/docs-what%20shipped-8b98a9?style=flat-square&labelColor=05070a" alt="What shipped"></a>
@@ -38,7 +38,7 @@ results is correct by construction and the agent can then stake its own money on
 
 ## Why this needs to exist
 
-<img src="public/readme/findings.svg" alt="85 payment claims: 12 on the chain they name, 73 not. Of those 73, 64 are real transactions on a different chain and 9 exist on no chain at all." width="100%">
+<img src="public/readme/findings.svg" alt="182 payment claims (2026-09-30): 59 on the chain they name, 123 not. Of those 123, 113 are real transactions on a different chain and 10 were not found on any chain we searched." width="100%">
 
 Monad's ERC-8004 registry holds **10,258 agents**. We read every one of them and checked every
 payment claim against the chain it names.
@@ -57,15 +57,19 @@ expires and the record stays valid on chain forever while describing nothing.
 <summary><b>The same figures, as a table</b></summary>
 <br>
 
+Measured 2026-09-30. The live split is on [/claims](https://kanmani.xyz/claims), recomputed from the
+verdict store on every load, so it moves as the hourly sweep checks new documents.
+
 | finding | number |
 |---|---:|
-| payment claims that exist at all | 85 |
-| claims where the cited transaction is really there | 12 |
-| claims where it is not | 73 |
-| **of those 73, real transactions on a different chain** | **64** |
-| **of those 73, found on no chain at all** | **9** |
+| payment claims checked against a chain | 182 |
+| claims where the cited transaction is really there | 59 |
+| claims where it is not | 123 |
+| **of those 123, real transactions on a different chain** | **113** |
+| **of those 123, not found on any chain we searched** | **10** |
 | agents pointing at one expired preview deployment | 8,093 |
 | wallets behind that single dead document | 7,962 |
+| of 62 sampled wallets there, first funded by one address (Nansen) | 60 |
 
 </details>
 
@@ -202,12 +206,12 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 
 ```bash
 cd indexer   && pnpm codegen && pnpm start     # the index
-cd verifier  && npm test                       # the verifier, 181 of 198
+cd verifier  && npm test                       # the verifier, 186 of 203
 cd contracts && forge test --fork-url https://rpc.monad.xyz && FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol   # the contracts, 143 of 145
 npm run dev                                    # the site, 311 of 314
 ```
 
-635 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
+640 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
 need an archive node.
 
 <details>

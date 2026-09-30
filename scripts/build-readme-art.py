@@ -347,11 +347,14 @@ def band(x0, y0a, y0b, x1, y1a, y1b) -> str:
 
 def findings() -> str:
     w, h = 1280, 660
-    k = 3.6  # px per claim
+    # Measured 2026-09-30 from fovea.verdict_latest (the /claims page shows the live split). The art is
+    # a snapshot, so it carries its date instead of pretending to be current.
+    C = dict(claims=182, true=59, false=123, elsewhere=113, nowhere=10, agents="10,273", when="2026-09-30")
+    k = 300 / C["claims"]  # px per claim, so the tallest column stays the same height as it grows
     top = 200
     c1, c2, c3 = 300, 640, 1000
     nw = 12
-    n85, n12, n73, n64, n9 = 85 * k, 12 * k, 73 * k, 64 * k, 9 * k
+    n85, n12, n73, n64, n9 = C["claims"] * k, C["true"] * k, C["false"] * k, C["elsewhere"] * k, C["nowhere"] * k
     # column 1
     a0, a1 = top, top + n85
     # column 2: true on top, a gap, false below
@@ -381,7 +384,7 @@ def findings() -> str:
 </defs>
 {kicker(72, 66, "the measurement")}
 <text x="72" y="116" class="sans in" style="--d:.1s" font-size="34" font-weight="600" letter-spacing="-1" fill="{TEXT}">Every payment claim on Monad, checked against the chain it names.</text>
-<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="{MUTED}">All 10,258 agents read. Every document here is hash-perfect, so every integrity check calls it verified. Integrity is not truth.</text>
+<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="{MUTED}">All {C["agents"]} agents read. Every document here is hash-perfect, so every integrity check calls it verified. Integrity is not truth.</text>
 
 <g class="bd" style="animation-delay:.4s">
   <path d="{band(c1 + nw, a0, split, c2, t0, t1)}" fill="url(#b-true)"/>
@@ -399,32 +402,32 @@ def findings() -> str:
 <rect x="{c3}" y="{z0}" width="{nw}" height="{n9}" rx="3" fill="{FALSE}" class="nd" style="animation-delay:1.6s"/>
 
 <g class="in" style="--d:.3s">
-  <text x="{c1 - 22}" y="{a0 + n85 / 2 + 6}" text-anchor="end" class="sans" font-size="76" font-weight="700" letter-spacing="-3" fill="{TEXT}">85</text>
+  <text x="{c1 - 22}" y="{a0 + n85 / 2 + 6}" text-anchor="end" class="sans" font-size="76" font-weight="700" letter-spacing="-3" fill="{TEXT}">{C["claims"]}</text>
   <text x="{c1 - 24}" y="{a0 + n85 / 2 + 36}" text-anchor="end" class="body" font-size="14.5" fill="{MUTED}">payment claims</text>
   <text x="{c1 - 24}" y="{a0 + n85 / 2 + 56}" text-anchor="end" class="body" font-size="14.5" fill="{MUTED}">that exist at all</text>
-  <text x="{c1 - 24}" y="{a0 + n85 / 2 + 86}" text-anchor="end" class="mono" font-size="11.5" letter-spacing="1.2" fill="{FAINT}">OF 10,258 AGENTS</text>
+  <text x="{c1 - 24}" y="{a0 + n85 / 2 + 86}" text-anchor="end" class="mono" font-size="11.5" letter-spacing="1.2" fill="{FAINT}">OF {C["agents"]} AGENTS · {C["when"]}</text>
 </g>
 <g class="in" style="--d:1s">
-  <text x="{c2 + 30}" y="{t0 + 36}" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="{TRUE}">12</text>
-  <text x="{c2 + 88}" y="{t0 + 22}" class="mono" font-size="12" letter-spacing="1.5" fill="{TRUE}">TRUE</text>
-  <text x="{c2 + 88}" y="{t0 + 40}" class="body" font-size="13.5" fill="{MUTED}">on the chain they name</text>
-  <text x="{c2 + 30}" y="{f0 + 42}" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="{FALSE}">73</text>
-  <text x="{c2 + 88}" y="{f0 + 26}" class="mono" font-size="12" letter-spacing="1.5" fill="{FALSE}">FALSE</text>
-  <text x="{c2 + 88}" y="{f0 + 44}" class="body" font-size="13.5" fill="{MUTED}">not on the chain they name</text>
+  <text x="{c2 + 30}" y="{t0 + 36}" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="{TRUE}">{C["true"]}</text>
+  <text x="{c2 + 118}" y="{t0 + 22}" class="mono" font-size="12" letter-spacing="1.5" fill="{TRUE}">TRUE</text>
+  <text x="{c2 + 118}" y="{t0 + 40}" class="body" font-size="13.5" fill="{MUTED}">on the chain they name</text>
+  <text x="{c2 + 30}" y="{f0 + 42}" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="{FALSE}">{C["false"]}</text>
+  <text x="{c2 + 118}" y="{f0 + 26}" class="mono" font-size="12" letter-spacing="1.5" fill="{FALSE}">FALSE</text>
+  <text x="{c2 + 118}" y="{f0 + 44}" class="body" font-size="13.5" fill="{MUTED}">not on the chain they name</text>
 </g>
 <g class="in" style="--d:1.7s">
-  <text x="{c3 + 30}" y="{e0 + 58}" class="sans" font-size="54" font-weight="700" letter-spacing="-2" fill="{ACCENT}">64</text>
+  <text x="{c3 + 30}" y="{e0 + 58}" class="sans" font-size="54" font-weight="700" letter-spacing="-2" fill="{ACCENT}">{C["elsewhere"]}</text>
   <text x="{c3 + 32}" y="{e0 + 84}" class="body" font-size="14" fill="{TEXT}">real transactions,</text>
   <text x="{c3 + 32}" y="{e0 + 103}" class="body" font-size="14" fill="{TEXT}">on a different chain</text>
   <text x="{c3 + 32}" y="{e0 + 130}" class="body" font-size="13" fill="{MUTED}">one wrong field,</text>
   <text x="{c3 + 32}" y="{e0 + 148}" class="body" font-size="13" fill="{MUTED}">fixable in one edit</text>
-  <text x="{c3 + 30}" y="{z0 + 30}" class="sans" font-size="34" font-weight="700" letter-spacing="-1" fill="{FALSE}">9</text>
-  <text x="{c3 + 62}" y="{z0 + 16}" class="body" font-size="14" fill="{TEXT}">found on</text>
-  <text x="{c3 + 62}" y="{z0 + 34}" class="body" font-size="14" fill="{TEXT}">no chain at all</text>
+  <text x="{c3 + 30}" y="{z0 + 30}" class="sans" font-size="34" font-weight="700" letter-spacing="-1" fill="{FALSE}">{C["nowhere"]}</text>
+  <text x="{c3 + 84}" y="{z0 + 16}" class="body" font-size="14" fill="{TEXT}">not found on any</text>
+  <text x="{c3 + 84}" y="{z0 + 34}" class="body" font-size="14" fill="{TEXT}">chain we searched</text>
 </g>
 <text x="72" y="626" class="body in" style="--d:2s" font-size="14" fill="{FAINT}">None of it is fraud and the project never says it is. A registry has no mechanism to keep a true statement true.</text>
 """
-    return svg(w, h, "85 payment claims: 12 on the chain they name, 73 not. Of those 73, 64 are real transactions on a different chain and 9 exist on no chain at all.", css, body)
+    return svg(w, h, f"{C['claims']} payment claims ({C['when']}): {C['true']} on the chain they name, {C['false']} not. Of those {C['false']}, {C['elsewhere']} are real transactions on a different chain and {C['nowhere']} were not found on any chain we searched.", css, body)
 
 
 # ============================================================================== cluster

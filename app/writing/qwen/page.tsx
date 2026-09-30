@@ -48,7 +48,7 @@ export default function QwenArticle() {
           </P>
           <P>
             On Monad the atlas is five hand-written mappings plus a rule for plain-text comments. Together they
-            read every one of the 1,192 documents we checked. That was the easy chain. BNB Smart Chain carries the same registries and far more evidence.
+            read every Monad evidence document we have checked. That was the easy chain. BNB Smart Chain carries the same registries and far more evidence.
             We sampled 320 of its documents and the atlas, built entirely from Monad, read <strong>none</strong> of
             them. Writing a parser per shape by hand does not scale to a registry where anyone can invent a format
             tomorrow.
