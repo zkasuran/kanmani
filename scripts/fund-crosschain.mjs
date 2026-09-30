@@ -15,7 +15,8 @@
 
 import { keccak256, toHex } from "viem";
 
-import { buildFundingSteps, planAqueousFunding, requestExecution, toWireSteps } from "../lib/intents.ts";
+import { privateKeyToAccount } from "viem/accounts";
+import { buildFundingSteps, findMessageToSign, planAqueousFunding, requestExecution, submitSignature, toIntentsSignature, toWireSteps } from "../lib/intents.ts";
 
 const KEY = process.env.AURORA_INTENTS_API_KEY;
 if (!KEY) {
@@ -108,7 +109,32 @@ const live = await requestExecution(
   { wallet: WALLET, quote: quoteSpec, steps: toWireSteps(planned.built), dry: false },
   cfg,
 );
-console.log("\n  EXECUTION CREATED");
-console.log(`  deposit ${AMOUNT_IN} USDT on BSC to: ${live.intermediaryAddress}`);
-console.log(`  then the destination steps run automatically and the escrow funds itself.`);
-console.log(JSON.stringify(live, (_k, v) => (typeof v === "bigint" ? v.toString() : v), 1).slice(0, 700));
+console.log("\n  EXECUTION CREATED", live.id);
+
+// Sign BEFORE depositing, per Aurora (mentor answer 2026-09-29): with the authorization already in, the
+// batch runs by itself when the bridge lands. Our first run signed afterwards and the funds sat at the
+// intermediary for three days until we did.
+const msg = findMessageToSign(live.raw);
+if (!msg) {
+  console.error("  no messageToSign in the create response. Not depositing: the steps could not run.");
+  process.exit(1);
+}
+const pk = process.env.DEPLOYER_PRIVATE_KEY;
+if (!pk) {
+  console.error("  DEPLOYER_PRIVATE_KEY is not set, so the execution cannot be signed. Not depositing.");
+  process.exit(2);
+}
+const signer = privateKeyToAccount(pk.startsWith("0x") ? pk : `0x${pk}`);
+if (signer.address.toLowerCase() !== WALLET.toLowerCase()) {
+  console.error(`  the key signs as ${signer.address}, not the execution wallet ${WALLET}. Not depositing.`);
+  process.exit(1);
+}
+const sub = await submitSignature({ wallet: WALLET, executionId: live.id, signature: toIntentsSignature(await signer.signMessage({ message: msg })) }, cfg);
+if (!sub.ok) {
+  console.error(`  submit refused (HTTP ${sub.status}): ${JSON.stringify(sub.body).slice(0, 300)}. Not depositing.`);
+  process.exit(1);
+}
+console.log("  signed and submitted: the steps will run as soon as the deposit lands");
+console.log(`  deposit ${AMOUNT_IN} (18dp) USDT on BSC to: ${live.depositAddress}`);
+console.log("  if less than quote.minAmountOut arrives, the batch reverts and the funds stay at the");
+console.log(`  intermediary ${live.intermediary}; recover them with a steps-only execution or a withdrawal.`);

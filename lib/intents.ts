@@ -42,6 +42,7 @@
  *
  * `fetch` is injected, so the tests drive every branch with no network of their own.
  */
+import { base58 } from "@scure/base";
 import {
   encodeFunctionData,
   decodeFunctionData,
@@ -502,3 +503,50 @@ function errText(err: unknown): string {
 
 
 
+
+/* ------------------------------------------------------------------ signing the execution */
+
+/**
+ * The destination steps run only after the wallet signs the execution's messageToSign. Aurora's
+ * guidance (mentor answer of 2026-09-29 plus developer-guides/submit-signing): sign right after create,
+ * before depositing, so the batch runs by itself the moment the bridge lands.
+ *
+ * Format: EIP-191 personal_sign over the exact string, the 65-byte signature with v normalised to 0/1,
+ * base58 encoded and prefixed `secp256k1:`. Posted to /executions/{wallet}/submit.
+ */
+
+/** messageToSign from a create or status response, wherever the service nested it. */
+export function findMessageToSign(raw: unknown, depth = 0): string | null {
+  if (!raw || typeof raw !== "object" || depth > 6) return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.messageToSign === "string" && o.messageToSign.length > 0) return o.messageToSign;
+  for (const v of Object.values(o)) {
+    const f = findMessageToSign(v, depth + 1);
+    if (f) return f;
+  }
+  return null;
+}
+
+/** 0x r||s||v (v 27/28 or 0/1) -> `secp256k1:<base58 of r||s||v01>`. */
+export function toIntentsSignature(hex: `0x${string}`): string {
+  const b = Uint8Array.from(Buffer.from(hex.slice(2), "hex"));
+  if (b.length !== 65) throw new Error(`signature is ${b.length} bytes, expected 65`);
+  const v = b[64]!;
+  b[64] = v >= 27 ? v - 27 : v;
+  if (b[64]! > 1) throw new Error(`recovery id ${v} is not 0, 1, 27 or 28`);
+  return `secp256k1:${base58.encode(b)}`;
+}
+
+export async function submitSignature(
+  a: { wallet: string; executionId: string; signature: string },
+  cfg: { apiKey: string; baseUrl?: string; timeoutMs?: number },
+): Promise<{ ok: boolean; status: number; body: unknown }> {
+  const r = await fetch(`${cfg.baseUrl ?? INTENTS_BASE_URL}/executions/${a.wallet}/submit`, {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-api-key": cfg.apiKey },
+    body: JSON.stringify({ executionId: a.executionId, signature: a.signature }),
+    signal: AbortSignal.timeout(cfg.timeoutMs ?? 30_000),
+  });
+  const body = await r.json().catch(() => null);
+  return { ok: r.ok, status: r.status, body };
+}
