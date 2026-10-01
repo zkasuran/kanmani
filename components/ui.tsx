@@ -6,7 +6,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { Outcome, Rung } from "@/lib/queries.ts";
-import { prizeAmount, type Post } from "@/lib/writing.ts";
 
 /* ------------------------------------------------------------------ unknown is never zero */
 
@@ -356,30 +355,5 @@ export function Row({ label, children }: { label: string; children: ReactNode })
       <dt className="w-44 shrink-0 font-mono text-[11px] uppercase tracking-wide text-faint">{label}</dt>
       <dd className="min-w-0 flex-1 break-words text-sm">{children}</dd>
     </div>
-  );
-}
-
-/**
- * The money a writing is tied to, shown at the top of the piece so the value is the first thing a
- * reader sees. The amount wears the one accent and is the largest thing in the badge, the program is
- * quiet beside it. Theme-aware through tokens, same in light and dark.
- */
-export function Prize({
-  post,
-  className = "",
-}: {
-  post: Pick<Post, "prizeUsd" | "prizeKind" | "program">;
-  className?: string;
-}) {
-  return (
-    <span
-      className={`inline-flex items-baseline gap-2 rounded-full border border-[var(--color-line)] bg-[var(--color-panel)]/70 px-3.5 py-1.5 ${className}`}
-      title={`This work is for the ${post.program}, worth ${prizeAmount(post)}.`}
-    >
-      <span className="font-mono text-[18px] font-semibold leading-none tracking-tight text-[var(--color-brand)]">
-        {prizeAmount(post)}
-      </span>
-      <span className="text-[12px] leading-none text-muted">{post.program}</span>
-    </span>
   );
 }

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Mono, Num, PageHeader, Panel, Prize, Row } from "@/components/ui.tsx";
-import { postBySlug } from "@/lib/writing.ts";
+import { Mono, Num, PageHeader, Panel, Row } from "@/components/ui.tsx";
 import { atlasGap, mappingProposals, type AtlasGap, type MappingProposalRow } from "@/lib/queries.ts";
 
 /**
@@ -50,12 +49,10 @@ export default async function QwenArticle() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="writing · qwen 3.8 max · 2026-09-30"
+        kicker="blog · qwen 3.8 max · 2026-09-30"
         title="How Qwen 3.8 Max reads evidence nobody wrote a parser for"
         lead="Kanmani checks whether the payment an ERC-8004 agent's evidence document claims actually happened on the chain it names. That check needs to know which fields hold the chain and the transaction. Qwen finds them in shapes we have never seen. The verifier refuses any answer it cannot confirm."
-      >
-        <Prize post={postBySlug("qwen")!} />
-      </PageHeader>
+      />
 
       <Panel title="the problem Qwen solves">
         <div className="space-y-3">
@@ -211,7 +208,7 @@ export default async function QwenArticle() {
           <P>
             <strong>What a keyed run has and has not proven.</strong> The loop, its round-trip gate and its
             ambiguity guard are proven offline by ten tests with no key and no network. The credited run belongs
-            on Alibaba Cloud Model Studio with <Mono>qwen3.8-max</Mono>, so the $5,000 Qwen grant pays for it.
+            on Alibaba Cloud Model Studio with <Mono>qwen3.8-max</Mono>, so the Qwen grant pays for it.
             Until that key runs the proposer fills this queue with whichever Qwen3.8-Max host is configured. GMI
             Cloud serves the same weights but spends GMI credits, not the Qwen grant, so this page names which
             credential paid rather than implying the grant did.

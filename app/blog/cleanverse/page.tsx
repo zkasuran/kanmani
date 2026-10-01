@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Prize, Row } from "@/components/ui.tsx";
-import { postBySlug } from "@/lib/writing.ts";
+import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 
 /**
  * The Cleanverse piece. Every on-chain fact here was read with eth_call on 2026-10-01 against Monad
@@ -22,16 +21,13 @@ const AUSD = "0xaC0893567D43C3E7e6e35a72803df05416C1f20D";
 const POLICY = "0x36489bE45fa84f70a0c2BDB11D824Be608CB12Dd";
 
 export default function Cleanverse() {
-  const post = postBySlug("cleanverse")!;
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="writing · cleanverse · 2026-10-01"
+        kicker="blog · cleanverse · 2026-10-01"
         title="A dollar that checks both sides before it moves"
         lead="The Cleanverse bounty asks for asset movement gated by on-chain identity. Before wiring a real compliance asset into our escrow we read, off the chain, exactly what it would do. The answer decided the whole integration."
-      >
-        <Prize post={post} />
-      </PageHeader>
+      />
 
       <Panel title="what Access USDC enforces, read not guessed">
         <div className="space-y-3">

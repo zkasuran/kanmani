@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Prize, Row } from "@/components/ui.tsx";
-import { postBySlug } from "@/lib/writing.ts";
+import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 
 /**
  * The thesis piece. Structural facts only (the ladder, owner-initiated validation, the mislabel
@@ -19,16 +18,13 @@ function P({ children }: { children: React.ReactNode }) {
 }
 
 export default function ClaimTruth() {
-  const post = postBySlug("claim-truth")!;
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="writing · the thesis · 2026-10-01"
+        kicker="blog · the thesis · 2026-10-01"
         title="Hash integrity is not claim truth"
         lead="Monad has more than ten thousand registered ERC-8004 agents. The registry cannot tell you which of them did the work or whether the payments their records cite ever happened. That second gap is the one nobody else closes."
-      >
-        <Prize post={post} />
-      </PageHeader>
+      />
 
       <Panel title="the gap every other tool leaves open">
         <div className="space-y-3">

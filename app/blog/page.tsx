@@ -1,17 +1,16 @@
 import Link from "next/link";
-import { PageHeader, Prize } from "@/components/ui.tsx";
-import { POSTS } from "@/lib/writing.ts";
+import { PageHeader } from "@/components/ui.tsx";
+import { POSTS } from "@/lib/blog.ts";
 
 /**
- * The writing index: one card per post, each led by the money the work is for. This is a listing,
- * not an essay, so it stays scannable. The cards and the nav submenu both come from lib/writing.ts,
- * so adding a post in one place shows it in both.
+ * The blog index: one card per post. This is a listing, not an essay, so it stays scannable. The
+ * cards come from lib/blog.ts, so adding a post there shows it here.
  */
 
 export const metadata = {
-  title: "Writing",
+  title: "Blog",
   description:
-    "Short pieces on what Kanmani built and what each piece is worth: the claim-truth thesis, the Cleanverse compliance gate, Mera PRF key derivation, the Nansen funder trace and the Qwen mapping loop.",
+    "Short pieces on what Kanmani built: the claim-truth thesis, the Cleanverse compliance gate, Mera PRF key derivation, the Nansen funder trace and the Qwen mapping loop.",
 };
 
 function fmtDate(iso: string): string {
@@ -20,26 +19,23 @@ function fmtDate(iso: string): string {
   return `${month} ${d}, ${y}`;
 }
 
-export default function WritingIndex() {
+export default function BlogIndex() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="writing"
-        title="What we built and what each piece is worth"
-        lead="One short read per integration. Every figure traces to a transaction, a recorded run or a live query. The money the work is for sits at the top of each page."
+        kicker="blog"
+        title="What we built, in short reads"
+        lead="One piece per integration. Every figure traces to a transaction, a recorded run or a live query, with the command to re-derive it."
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         {POSTS.map((p) => (
           <Link
             key={p.slug}
-            href={`/writing/${p.slug}`}
+            href={`/blog/${p.slug}`}
             className="elevated panel-hover group flex flex-col gap-3 rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5 transition-colors"
           >
-            <div className="flex items-center justify-between gap-3">
-              <Prize post={p} />
-              <span className="font-mono text-[11px] text-faint">{fmtDate(p.date)}</span>
-            </div>
+            <span className="font-mono text-[11px] text-faint">{fmtDate(p.date)}</span>
             <h2 className="text-[17px] font-semibold leading-snug tracking-tight text-[var(--color-text)] group-hover:text-[var(--color-brand)]">
               {p.title}
             </h2>

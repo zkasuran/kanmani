@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Prize, Row } from "@/components/ui.tsx";
-import { postBySlug } from "@/lib/writing.ts";
+import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 
 /**
  * The Nansen piece. The finding is in docs/19-NANSEN.md and rendered live on the operators page.
@@ -21,16 +20,13 @@ function P({ children }: { children: React.ReactNode }) {
 const FUNDER = "0x97cd97cfe21799bacbf39d0a53469e5f82f30996";
 
 export default function Nansen() {
-  const post = postBySlug("nansen")!;
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="writing · nansen · 2026-10-01"
+        kicker="blog · nansen · 2026-10-01"
         title="Sixty of sixty-two wallets share one funder"
         lead="Thousands of agents on Monad point at one deleted document. The registry calls them all registered. Nansen answers the question the registry cannot: where did the gas to create them come from."
-      >
-        <Prize post={post} />
-      </PageHeader>
+      />
 
       <Panel title="the question a cluster raises">
         <div className="space-y-3">

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Prize, Row } from "@/components/ui.tsx";
-import { postBySlug } from "@/lib/writing.ts";
+import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 
 /**
  * The Mera PRF piece. The namespaces and the derivation are facts from lib/iris.ts and lib/vault.ts.
@@ -19,16 +18,13 @@ function P({ children }: { children: React.ReactNode }) {
 }
 
 export default function MeraPrf() {
-  const post = postBySlug("mera-prf")!;
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="writing · mera prf · 2026-10-01"
+        kicker="blog · mera prf · 2026-10-01"
         title="One passkey, four keys, nothing stored"
         lead="A passkey can do more than sign in. Its PRF output is deterministic key material, so one ceremony seeds a family of unrelated keys that reconstruct anywhere, with nothing kept on a disk or a server."
-      >
-        <Prize post={post} />
-      </PageHeader>
+      />
 
       <Panel title="the primitive: deterministic key material from a passkey">
         <div className="space-y-3">

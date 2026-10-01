@@ -4,7 +4,7 @@ import pg from "pg";
 import { connectionStringFrom } from "../verifier/src/store/store.ts";
 
 /**
- * atlasGap() and mappingProposals() read the review queue the /writing/qwen and /method figures come
+ * atlasGap() and mappingProposals() read the review queue the /blog/qwen and /method figures come
  * from. This proves those figures are queried, not typed: insert a proposal and the counts move
  * (flagship 9.2, spec 19 D.5).
  *
