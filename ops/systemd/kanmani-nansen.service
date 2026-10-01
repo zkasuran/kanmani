@@ -1,0 +1,21 @@
+[Unit]
+Description=Kanmani Nansen sample: grow the first-funder sample and reach the top funders, inside the daily credit floor
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/kanmani.env
+WorkingDirectory=/opt/kanmani
+SyslogIdentifier=kanmani-nansen
+# One run spends at most --budget billed calls and never drops the balance under --reserve. Both
+# guards hold even if the account credit read fails. 1 credit a call (related-wallets), 400ms apart.
+# --funder-reach adds one 1-credit call per cluster for the funder's own funder. The 100-credit
+# labels endpoint and the 5-credit counterparties endpoint are never run here.
+ExecStart=/usr/bin/node --experimental-strip-types --no-warnings verifier/src/cli/nansen-enrich.ts --funders --funder-reach --clusters 20 --per-cluster 10 --budget 5 --reserve 5 --gap 400
+Nice=10
+TimeoutStartSec=1800
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/kanmani

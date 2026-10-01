@@ -320,27 +320,59 @@ async function creditsLeft(apiKey: string): Promise<number | null> {
 }
 
 /**
- * First funders for a reproducible random sample of wallets in the largest clusters.
+ * Whether another billed Nansen call is allowed this run.
  *
- *   --funders --clusters 3 --per-cluster 25 --reserve 5
+ * Two guards in one, and both run every time. The budget is call-based, so it holds even when the
+ * credit read failed (`credits` is null): an unattended daily timer can never overspend because it
+ * lost sight of the balance. The reserve is balance-based and goes quiet on a null read. Whichever
+ * trips first stops the run. This is the guard the live timer leans on, proven by a test that makes
+ * the old reserve-only path fail it first.
+ */
+export function withinBudget(spent: number, budget: number, credits: number | null, reserve: number): boolean {
+  if (spent >= budget) return false;
+  if (credits !== null && credits - 1 < reserve) return false;
+  return true;
+}
+
+/**
+ * First funders for a reproducible random sample of wallets in the largest clusters, plus an
+ * optional one-step reach up the graph.
+ *
+ *   --funders --clusters 20 --per-cluster 10 --budget 5 --reserve 5 --funder-reach
  *
  * The sample is ordered by md5(address), so a rerun asks the same wallets and a reader can re-derive
- * which were chosen. Wallets with an existing found/none answer are skipped. The run stops before
- * the credit balance would fall under --reserve, checked on Nansen's free account endpoint.
+ * which were chosen. Wallets with an existing found/none answer are skipped. One run spends at most
+ * --budget billed calls (default 5) and never drops the balance under --reserve. The budget cap is
+ * call-based, so it holds even if Nansen's account read fails; both guards run together through
+ * withinBudget. --funder-reach then asks, once per cluster, who first funded that cluster's own top
+ * funder (1 credit, same endpoint, new subject), sharing the same budget so it can never overspend.
+ *
+ * creditsLeft is injectable so a test drives the whole run with no socket.
  */
-async function runFunders(pool: pg.Pool, argv: string[], auth: NansenAuth, transport: NansenTransport, gapMs: number, dry: boolean): Promise<number> {
+export async function runFunders(
+  pool: pg.Pool,
+  argv: string[],
+  auth: NansenAuth,
+  transport: NansenTransport,
+  gapMs: number,
+  dry: boolean,
+  opts: { creditsFn?: (apiKey: string) => Promise<number | null> } = {},
+): Promise<number> {
+  const creditsFn = opts.creditsFn ?? creditsLeft;
   const num = (k: string, d: number) => {
     const i = argv.indexOf(`--${k}`);
     return i >= 0 ? Number(argv[i + 1]) : d;
   };
-  const clusters = num("clusters", 3), per = num("per-cluster", 25), reserve = num("reserve", 5);
+  const clusters = num("clusters", 3), per = num("per-cluster", 25), reserve = num("reserve", 5), budget = num("budget", 5);
+  const reach = argv.includes("--funder-reach");
   const apiKey = auth.mode === "apikey" ? auth.apiKey : "";
   const top = await pool.query<{ id: string; uri: string; owners: string }>(
     `SELECT id, uri, "distinctOwners" AS owners FROM "AgentRecord" WHERE "chainId" = 143 AND "distinctOwners" > 1 ORDER BY "distinctOwners" DESC LIMIT $1`,
     [clusters],
   );
-  let credits = await creditsLeft(apiKey);
-  console.log(`first funders: ${top.rows.length} clusters, ${per} wallets each, credits ${credits ?? "unknown"}, reserve ${reserve}`);
+  let credits = await creditsFn(apiKey);
+  let spent = 0;
+  console.log(`first funders: ${top.rows.length} clusters, ${per} wallets each, credits ${credits ?? "unknown"}, budget ${budget}, reserve ${reserve}${reach ? ", funder-reach on" : ""}`);
   const tally = { found: 0, none: 0, unknown: 0, skipped: 0 };
   outer: for (const c of top.rows) {
     const w = await pool.query<{ address: string }>(
@@ -352,13 +384,18 @@ async function runFunders(pool: pg.Pool, argv: string[], auth: NansenAuth, trans
     );
     console.log(`  cluster ${c.uri.slice(0, 60)} (${c.owners} owners): asking ${w.rows.length}`);
     for (const { address } of w.rows) {
-      if (credits !== null && credits - 1 < reserve) {
-        console.log(`  stopping: ${credits} credits left, reserve ${reserve}`);
+      if (!withinBudget(spent, budget, credits, reserve)) {
+        console.log(`  stopping: spent ${spent}/${budget}, ${credits ?? "unknown"} credits left, reserve ${reserve}`);
         break outer;
       }
       const r = await fetchRelatedWallets(address, "monad", auth, transport).catch((e) => ({ ok: false as const, reason: String(e?.message ?? e), authMode: "apikey" as const, httpStatus: null }));
       const f = firstFunder(r);
-      if (credits !== null && r.ok) credits -= 1;
+      // Only a billed (200) call counts against budget and credits. A 429/402/500 is ok:false and
+      // deducts nothing, matching Nansen not charging rejected or rate-limited requests.
+      if (r.ok) {
+        spent += 1;
+        if (credits !== null) credits -= 1;
+      }
       tally[f.status]++;
       if (!dry) {
         await pool.query(
@@ -372,6 +409,52 @@ async function runFunders(pool: pg.Pool, argv: string[], auth: NansenAuth, trans
       if (gapMs) await sleep(gapMs);
     }
   }
-  console.log(`\n${tally.found} found, ${tally.none} none, ${tally.unknown} unknown. credits now ${await creditsLeft(apiKey) ?? "unknown"}${dry ? " (dry)" : ""}`);
+  // --funder-reach: one step up the graph. For each cluster's current top funder, ask who first
+  // funded IT (1 credit, same endpoint, new subject), under the same budget so it can never
+  // overspend. Idempotent: a funder with a reach row already is skipped. Stored under the tag
+  // funder:<address> so it never collides with the cluster:<id> sample rows.
+  if (reach) {
+    for (const c of top.rows) {
+      const tf = await pool.query<{ funder: string }>(
+        `SELECT funder FROM fovea.wallet_funder_latest
+          WHERE sample = 'cluster:' || $1 AND chain = 'monad' AND status = 'found' AND funder IS NOT NULL
+          GROUP BY funder ORDER BY count(*) DESC LIMIT 1`,
+        [c.id],
+      );
+      const funder = tf.rows[0]?.funder;
+      if (!funder) continue;
+      const seen = await pool.query(
+        `SELECT 1 FROM fovea.wallet_funder WHERE sample = 'funder:' || $1 AND chain = 'monad' AND status IN ('found','none') LIMIT 1`,
+        [funder],
+      );
+      if (seen.rows.length) {
+        tally.skipped += 1;
+        continue;
+      }
+      if (!withinBudget(spent, budget, credits, reserve)) {
+        console.log(`  funder-reach stopping: spent ${spent}/${budget}, ${credits ?? "unknown"} credits left, reserve ${reserve}`);
+        break;
+      }
+      const r = await fetchRelatedWallets(funder, "monad", auth, transport).catch((e) => ({ ok: false as const, reason: String(e?.message ?? e), authMode: "apikey" as const, httpStatus: null }));
+      const f = firstFunder(r);
+      if (r.ok) {
+        spent += 1;
+        if (credits !== null) credits -= 1;
+      }
+      tally[f.status] += 1;
+      if (!dry) {
+        await pool.query(
+          `INSERT INTO fovea.wallet_funder (address, chain, status, funder, funder_label, tx, funded_at, reason, http_status, sample)
+           VALUES ($1,'monad',$2,$3,$4,$5,$6,$7,$8,$9)`,
+          [funder, f.status, f.status === "found" ? f.funder : null, f.status === "found" ? f.funderLabel : null, f.status === "found" ? f.tx : null, f.status === "found" ? f.fundedAt : null, f.status === "found" ? null : f.reason, r.httpStatus ?? null, `funder:${funder}`],
+        );
+      }
+      console.log(`  funder-reach ${funder}: ${f.status}`);
+      if (r.httpStatus === 403) break;
+      if (gapMs) await sleep(gapMs);
+    }
+  }
+
+  console.log(`\n${tally.found} found, ${tally.none} none, ${tally.unknown} unknown, ${tally.skipped} skipped. spent ${spent}, credits now ${await creditsFn(apiKey) ?? "unknown"}${dry ? " (dry)" : ""}`);
   return 0;
 }

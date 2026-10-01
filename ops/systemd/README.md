@@ -6,7 +6,7 @@ somebody's memory. Install or update:
 ```bash
 sudo cp ops/systemd/kanmani-*.{service,timer} /etc/systemd/system/
 sudo systemctl daemon-reload
-sudo systemctl enable --now kanmani-usage.timer kanmani-sweep.timer kanmani-recheck.timer kanmani-probe.timer
+sudo systemctl enable --now kanmani-usage.timer kanmani-sweep.timer kanmani-recheck.timer kanmani-probe.timer kanmani-nansen.timer
 ```
 
 | unit | runs | does |
@@ -15,3 +15,4 @@ sudo systemctl enable --now kanmani-usage.timer kanmani-sweep.timer kanmani-rech
 | `kanmani-sweep` | hourly | every Monad evidence document without a verdict goes down the ladder (`scripts/verdict-sweep.mjs`) |
 | `kanmani-recheck` | every 6 hours | rechecks documents that can change (http, ipfs) and every unknown. `data:` documents are on chain and cannot change, so they are not rechecked |
 | `kanmani-probe` | daily, 03:30 UTC | asks every distinct registration document once, one request at a time per host (`verifier/src/cli/probe-records.ts`) |
+| `kanmani-nansen` | daily, 05:00 UTC | grows the Nansen first-funder sample and the funder-reach, 1 credit a call, at most `--budget` 5 billed calls a day holding a 5-credit reserve. Never runs the 100-credit labels or 5-credit counterparties endpoints (`verifier/src/cli/nansen-enrich.ts --funders --funder-reach`) |
