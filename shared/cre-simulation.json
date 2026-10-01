@@ -1,0 +1,41 @@
+{
+  "$comment": [
+    "The last recorded CRE workflow simulation, in machine-readable form, so /bond renders the real",
+    "run rather than a hard-coded string. Item 8.1 regenerates this file from a fresh capture and the",
+    "lib/cre-sim.ts validator refuses a mangled paste, so a bad edit fails at build and test rather",
+    "than rendering an undefined count as a number.",
+    "",
+    "Every value here is quoted from a real run, never invented. featured is Run A (agent 10182,",
+    "observation mode, the 238 bps output), captured 2026-09-22 when the workflow was first built and",
+    "simulated against live Monad mainnet. bondRead is Run B (agent 10256), the chain half reading a",
+    "real deployed bond's terms, transcript in docs/26-CRE-SIMULATION.md dated 2026-09-25. No single",
+    "run shows a full slash because no agent has both a bond and a decided sample, which is by design."
+  ],
+  "capturedAt": "2026-09-22T00:00:00Z",
+  "command": "cre workflow simulate slashing -T staging-settings --non-interactive --trigger-index 0",
+  "cliVersion": "v1.35.0",
+  "sdkVersion": "1.22",
+  "chain": { "name": "monad-mainnet", "chainId": 143, "selector": "8481857512324358265" },
+  "scleraAddress": "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf",
+  "externalCall": {
+    "chainRead": "eth_call bonds(uint256) on Sclera 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf, Monad mainnet chain 143, block LATEST",
+    "httpGet": "GET https://kanmani.xyz/api/sla/<agentId>?fromBlock=&toBlock="
+  },
+  "featured": {
+    "agentId": 10182,
+    "mode": "observation",
+    "measured": { "sampleSize": 42, "trueCount": 1, "unknownCount": 0, "rateBps": 238 },
+    "log": [
+      "measured 1/42 claims true = 238bps (0 undecided, excluded from both sides)",
+      "OBSERVED agent=10182 rate=238bps sample=42 (no bond, no verdict)"
+    ],
+    "result": "OBSERVED agent=10182 rate=238bps sample=42 (no bond, no verdict)",
+    "liveCheck": "https://kanmani.xyz/api/sla/10182"
+  },
+  "bondRead": {
+    "agentId": 10256,
+    "log": "bond read from chain: floor 8000bps, window 107757352..107973352, minSample 5, nonce 1",
+    "source": "docs/26-CRE-SIMULATION.md"
+  },
+  "docsHref": "https://github.com/zkasuran/kanmani/blob/main/docs/26-CRE-SIMULATION.md"
+}
