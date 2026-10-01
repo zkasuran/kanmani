@@ -7,6 +7,7 @@ import { Spotlight } from "@/components/motion.tsx";
 import { Nav } from "@/components/nav.tsx";
 import { SessionProvider } from "@/components/session.tsx";
 import { ThemeToggle } from "@/components/theme-toggle.tsx";
+import { cardFigures, cardLine, cardVersion } from "@/lib/og-card.ts";
 import "./globals.css";
 
 /**
@@ -26,7 +27,7 @@ const display = Space_Grotesk({
   display: "swap",
 });
 
-export const metadata: Metadata = {
+const baseMetadata: Metadata = {
   title: {
     default: "Kanmani",
     template: "%s · Kanmani",
@@ -38,21 +39,32 @@ export const metadata: Metadata = {
     title: "Kanmani",
     description: "Every payment claim in Monad's agent registry, checked against the chain it names.",
     type: "website",
-    images: [{ url: "/og.png", width: 1200, height: 630, alt: "Kanmani. Every payment claim on Monad, checked against the chain it names." }],
   },
   /**
-   * summary_large_image, because the card carries a real measurement (85 claims checked, 73 did not
-   * resolve) and a thumbnail would make that unreadable. The figures are drawn at build time from our
-   * own feed, so the card cannot quote a number the site contradicts.
+   * summary_large_image, because the card carries a live measurement and a thumbnail would make it
+   * unreadable. The image itself is set in generateMetadata below.
    */
   twitter: {
     card: "summary_large_image",
     title: "Kanmani",
     description: "Every payment claim in Monad's agent registry, checked against the chain it names.",
-    images: ["/og.png"],
   },
   robots: { index: true, follow: true },
 };
+
+/**
+ * The card URL carries a version made of what the card says. Platforms cache a preview per image
+ * URL, so a new version is what makes a shared link show today's figures instead of last week's.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const f = await cardFigures();
+  const card = { url: `/og.png?v=${cardVersion(f)}`, width: 1200, height: 630, alt: `Kanmani. Every payment claim on Monad, checked against the chain it names. ${cardLine(f)}` };
+  return {
+    ...baseMetadata,
+    openGraph: { ...baseMetadata.openGraph, images: [card] },
+    twitter: { ...baseMetadata.twitter, images: [card.url] },
+  };
+}
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   // Set by proxy.ts per request. Reading it makes every page render per request, which they already

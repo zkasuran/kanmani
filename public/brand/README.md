@@ -15,7 +15,7 @@ the trust model visible without turning the identity into a generic shield or ch
 | `mark-180.png` | apple-touch-icon, the only size iOS reads |
 | `mark-512.png`, `mark-512-transparent.png` | PWA and organization avatars |
 | `header.png` | 1500x500, X header |
-| `../og.png` | 1200x630, Open Graph and every social preview |
+| `/og.png` | 1200x630, Open Graph and every social preview. Drawn live by `app/og.png/route.tsx` from `lib/og/base.png` plus the current figures |
 | `../banner.png` | 1280x640, README banner |
 | `../readme/*.svg` | the animated README diagrams, drawn by `scripts/build-readme-art.py` |
 
