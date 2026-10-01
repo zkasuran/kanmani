@@ -85,7 +85,7 @@ export default function MeraPrf() {
           <P>
             The attestation key signs verification receipts. Anyone can check one against the public endpoint, so
             its output is public evidence produced by an identity that holds no funds and is not an account. That
-            is the furthest thing from a passkey wallet, which is exactly what the bounty rewards: a PRF namespace
+            is the furthest thing from a passkey wallet, which is the point of the primitive: a PRF namespace
             doing non-account work.
           </P>
           <P>

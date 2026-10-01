@@ -26,7 +26,7 @@ export default function Cleanverse() {
       <PageHeader
         kicker="blog · cleanverse · 2026-10-01"
         title="A dollar that checks both sides before it moves"
-        lead="The Cleanverse bounty asks for asset movement gated by on-chain identity. Before wiring a real compliance asset into our escrow we read, off the chain, exactly what it would do. The answer decided the whole integration."
+        lead="Cleanverse gates asset movement behind an on-chain identity. Before wiring a real compliance asset into our escrow we read, off the chain, exactly what it would do. The answer decided the whole integration."
       />
 
       <Panel title="what Access USDC enforces, read not guessed">

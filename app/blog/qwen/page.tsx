@@ -3,7 +3,7 @@ import { Mono, Num, PageHeader, Panel, Row } from "@/components/ui.tsx";
 import { atlasGap, mappingProposals, type AtlasGap, type MappingProposalRow } from "@/lib/queries.ts";
 
 /**
- * The Qwen write-up the bounty asks for: how Qwen 3.8 Max is used here and what it was worth.
+ * The Qwen write-up: how Qwen 3.8 Max is used here and what it was worth.
  *
  * Every figure on this page comes from a recorded run, a transaction anyone can open or a live query
  * against the database. The two offline run records live in the repository
@@ -208,10 +208,9 @@ export default async function QwenArticle() {
           <P>
             <strong>What a keyed run has and has not proven.</strong> The loop, its round-trip gate and its
             ambiguity guard are proven offline by ten tests with no key and no network. The credited run belongs
-            on Alibaba Cloud Model Studio with <Mono>qwen3.8-max</Mono>, so the Qwen grant pays for it.
-            Until that key runs the proposer fills this queue with whichever Qwen3.8-Max host is configured. GMI
-            Cloud serves the same weights but spends GMI credits, not the Qwen grant, so this page names which
-            credential paid rather than implying the grant did.
+            on Alibaba Cloud Model Studio with <Mono>qwen3.8-max</Mono>. Until that key is in place the proposer
+            fills this queue with whichever Qwen 3.8 Max host is configured. GMI Cloud serves the same weights on
+            a separate credential, so this page names which credential actually paid rather than implying.
           </P>
         </div>
       </Panel>
