@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-640%20passing-34d399?style=flat-square&labelColor=05070a" alt="640 tests passing">
+  <img src="https://img.shields.io/badge/tests-646%20passing-34d399?style=flat-square&labelColor=05070a" alt="646 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
   <a href="docs/AS-BUILT.md"><img src="https://img.shields.io/badge/docs-what%20shipped-8b98a9?style=flat-square&labelColor=05070a" alt="What shipped"></a>
@@ -208,10 +208,10 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 cd indexer   && pnpm codegen && pnpm start     # the index
 cd verifier  && npm test                       # the verifier, 186 of 203
 cd contracts && forge test --fork-url https://rpc.monad.xyz && FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol   # the contracts, 143 of 145
-npm run dev                                    # the site, 311 of 314
+npm run dev                                    # the site, 317 of 320
 ```
 
-640 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
+646 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
 need an archive node.
 
 <details>

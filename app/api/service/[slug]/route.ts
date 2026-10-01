@@ -4,6 +4,8 @@ import { chargeFor } from "@/lib/metering.ts";
 import { EXTRAS, extraBySlug, extraCharge, isInputError } from "@/lib/agent-extras.ts";
 import type { Meter } from "@/lib/upto.ts";
 import { inputFromParts, objectFromParts, type A2APart } from "@/lib/a2a.ts";
+import { AgentRefError, resolveAgentRef } from "@/lib/agent-ref.ts";
+import { CHAIN_ID, q1 } from "@/lib/db.ts";
 import { settlementRequirements, type UptoPayload, type UptoRequirements } from "@/lib/upto.ts";
 import {
   challenge,
@@ -62,7 +64,12 @@ type Target = {
   example: Record<string, unknown>;
   priceAtomic: string;
   work: (input: Record<string, unknown>, ceiling: bigint) => Promise<{ answer: unknown; meter: Meter; charge: bigint }>;
+  /** Checks run before any payment is asked for, so a caller never pays to be told no. */
+  precheck?: (input: Record<string, unknown>) => Promise<void>;
 };
+
+const agentIndexed = async (agentId: number) =>
+  Boolean(await q1(`SELECT 1 FROM "Agent" WHERE "chainId" = $1 AND "agentId" = $2 LIMIT 1`, [CHAIN_ID, String(agentId)]));
 
 function spec(slug: string): Target | undefined {
   const core = (AGENTS as Record<string, (typeof AGENTS)[AgentSlug]>)[slug];
@@ -75,9 +82,12 @@ function spec(slug: string): Target | undefined {
       input: core.input,
       example: JSON.parse(core.input),
       priceAtomic: core.priceAtomic,
+      async precheck(input) {
+        await resolveAgentRef(input, core.input, agentIndexed);
+      },
       async work(input, ceiling) {
-        const agentId = Number(input.agentId);
-        if (!Number.isInteger(agentId) || agentId <= 0) throw Object.assign(new Error(`agentId must be a positive integer. Send ${core.input}`), { input: true });
+        // Resolved again here, so work can never run on an agent the precheck would have refused.
+        const { agentId } = await resolveAgentRef(input, core.input, agentIndexed);
         const answer =
           core.slug === "sentinel"
             ? await sentinel(agentId, Number.isFinite(Number(input.maxAgeBlocks)) ? Number(input.maxAgeBlocks) : 64)
@@ -185,6 +195,17 @@ async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): 
       if (isInput(e)) return problem(400, "Input not accepted", (e as Error).message, { expected: s.input, example: s.example });
       console.error(`[/api/service/${s.slug}] failed:`, (e as Error).message);
       return problem(500, "The agent did not complete", (e as Error).message.slice(0, 200), { retryable: true });
+    }
+  }
+
+  if (s.precheck) {
+    try {
+      await s.precheck(body);
+    } catch (e) {
+      if (e instanceof AgentRefError) {
+        return problem(e.notMeasured ? 422 : 400, e.notMeasured ? "Not measured here" : "Input not accepted", e.message, { expected: s.input, example: s.example, charged: false });
+      }
+      throw e;
     }
   }
 
@@ -354,6 +375,18 @@ async function a2a(s: Spec, body: Record<string, unknown>, headers: Headers): Pr
     return r.status === 200
       ? task("completed", `${s.name} answered.`, {}, [{ artifactId: crypto.randomUUID(), name: s.slug, parts: [{ kind: "data", data: { answer: out.answer, meter: out.meter } }] }])
       : task(r.status === 400 ? "input-required" : "failed", `${s.name}: ${out.detail ?? `HTTP ${r.status}`}`, { example: s.example });
+  }
+
+  if (s.precheck) {
+    try {
+      await s.precheck(input);
+    } catch (e) {
+      if (e instanceof AgentRefError) {
+        // Refused before payment is requested. "rejected" tells a broker not to pay or retry.
+        return task(e.notMeasured ? "rejected" : "input-required", `${s.name}: ${e.message}`, { example: s.example, charged: false });
+      }
+      throw e;
+    }
   }
 
   const payload = msg.metadata?.["x402.payment.payload"];

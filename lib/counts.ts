@@ -10,7 +10,7 @@
  */
 export const SUITES = {
   /** `npm test` in the repo root. */
-  site: { pass: 311, total: 314 },
+  site: { pass: 317, total: 320 },
   /** `npm test` in `verifier/`. */
   verifier: { pass: 186, total: 203 },
   /**
