@@ -75,6 +75,7 @@ const GROUPS: Group[] = [
       { href: "/pay", label: "pay", hint: "settle a job without a wallet" },
       { href: "/bond", label: "bond", hint: "stake on your own claim-truth rate" },
       { href: "/fund", label: "fund", hint: "pay from another chain" },
+      { href: "/compliance", label: "compliance", hint: "settle only to a verified on-chain identity" },
     ],
   },
   {

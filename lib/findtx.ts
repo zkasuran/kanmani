@@ -164,3 +164,65 @@ export function explain(r: SearchResult): string {
   }
   return `Searched every chain we can read (${r.searched.length}) and the transaction is on none of them. Combined with the declared chain, that is the whole set, so the hash does not correspond to a mined transaction anywhere we cover.`;
 }
+
+/* ------------------------------------------------------------------ which provider actually answered */
+
+/**
+ * The provider name derived from an endpoint, never hardcoded.
+ *
+ * This is the honesty valve on "searched via Alchemy". A chain still pointed at a public node reads as
+ * its own host, so the label on every surface tracks what the search actually hits rather than a string
+ * an operator forgot to update. An Alchemy multichain endpoint is `<network>.g.alchemy.com`.
+ */
+export function providerOf(url: string): string {
+  try {
+    const host = new URL(url).host.toLowerCase();
+    return host.endsWith(".g.alchemy.com") ? "Alchemy" : host;
+  } catch {
+    return url;
+  }
+}
+
+export type SearchedChain = { chainId: number; key: string; displayName: string; provider: string };
+
+/**
+ * The chains a mislabelled claim is searched on, with the provider behind each, derived from config.
+ *
+ * Same filter as `findTransaction` (exclude the declared chain, require an https endpoint), so the
+ * string shown on `/claims`, on the claim page and in the Locator answer cannot drift from what the
+ * search actually hits. The provider comes from the live endpoint through `providerOf`, never a
+ * constant, which is what keeps "searched via Alchemy" true only while those endpoints are Alchemy.
+ */
+export function searchedChains(
+  declaredChainId: number | null,
+  env: Record<string, string | undefined> = process.env,
+): SearchedChain[] {
+  const out: SearchedChain[] = [];
+  for (const c of CHAINS) {
+    if (c.id === declaredChainId) continue;
+    const url = endpointFor(c, env);
+    if (!url) continue;
+    out.push({ chainId: c.id, key: c.key, displayName: c.displayName, provider: providerOf(url) });
+  }
+  return out;
+}
+
+/**
+ * One sentence naming the provider that backs the search. Groups by provider, so the common case of a
+ * single provider reads cleanly and a mixed set names each host honestly.
+ */
+export function searchedVia(list: SearchedChain[]): string {
+  if (list.length === 0) return "no chains are reachable for the cross-chain search";
+  const byProvider = new Map<string, string[]>();
+  for (const c of list) {
+    const keys = byProvider.get(c.provider) ?? [];
+    keys.push(c.key);
+    byProvider.set(c.provider, keys);
+  }
+  if (byProvider.size === 1) {
+    const [provider, keys] = [...byProvider.entries()][0];
+    return `searched via ${provider}: ${keys.join(", ")}`;
+  }
+  const parts = [...byProvider.entries()].map(([provider, keys]) => `${provider} (${keys.join(", ")})`);
+  return `searched via ${parts.join(" and ")}`;
+}

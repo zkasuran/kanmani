@@ -188,3 +188,91 @@ for it and every settle fails closed, which is the designed behaviour.
 - **`symbol()` on aUSDC reverts locally.** It returns a string built with an opcode this project's
   Shanghai EVM target does not activate, so the fork test reads `decimals()` (which works and is the
   load-bearing fact) and takes the symbol from the off-chain read.
+
+## 8. aUSDC as the escrow token: who needs whitelisting (6.1, read only)
+
+Section 6 ran the whole flow with our own tUSDC, a plain MockToken, so aUSDC's own transfer gate was
+never exercised. This section closes that gap. Every line below is an `eth_call` run on 2026-10-01
+against Monad mainnet (chain 143) and testnet (chain 10143). No transaction, no funds, no write to the
+Cleanverse API. Rerun it with `bash scripts/cleanverse-cva-sim.sh`. The on-chain assertion lives in
+`contracts/test/CleanverseCvaFork.t.sol` (`forge test --match-contract CleanverseCvaForkTest
+--fork-url https://rpc.monad.xyz`).
+
+### aUSDC gates every transfer through its own policy
+
+aUSDC does not route through the gate's Compliance Validator. It calls its own CVA Policy inside the
+ERC20 transfer:
+
+| Contract | Address | Read |
+| --- | --- | --- |
+| CVA Policy | `0x36489bE45fa84f70a0c2BDB11D824Be608CB12Dd` | `aUSDC.policy()` returns it on both chains |
+
+The gate's validator does not know aUSDC: `isRegistered(aUSDC)` is `false` on both chains and
+`complianceVerify(aUSDC, ...)` reverts `PoolNotRegistered`. So once aUSDC is the token, two independent
+gates fire. Layer 1 is the gate's own CVI check on the worker. Layer 2 is aUSDC's intrinsic check on
+every hop.
+
+### The rule is minTier 5 and it checks both parties
+
+`getRulesV2(aUSDC)` is one rule, `(allowedGroup 0x0000, allowedSubGroup 0x0000, minTier 5, minSubTier
+0, countryBitmap 0)`, identical on both chains. A party is compliant only with a Cleanverse CVI of tier
+5 or higher. No group, no country.
+
+The policy checks the sender as well as the recipient. Proven on the live testnet policy with the tier
+20 worker against a counterparty that holds no CVI:
+
+```
+canTransfer(aUSDC, worker[ok] -> gate[none]) => revert 0xa6725971(gate)    # the 'to' is checked
+canTransfer(aUSDC, gate[none] -> worker[ok]) => revert 0xa6725971(gate)    # the 'from' is checked first
+canTransfer(aUSDC, worker[ok] -> worker[ok]) => true
+```
+
+`0xa6725971(offender)` is the policy's own compliance-block error, one address naming the first party
+with no CVI. It is not in the signature databases, so treat it as `error 0xa6725971(address offender)`,
+observed verbatim. A transfer that clears compliance but holds no balance reverts `0xe450d38c`
+(`ERC20InsufficientBalance`) instead, so an `eth_call` cleanly separates a compliance block from an
+empty wallet.
+### Verdict: Aqueous and the gate both need a CVI, so do the buyer and the worker
+
+Our escrow path moves aUSDC through four addresses, three of which hold no CVI today:
+
+```
+canTransfer(aUSDC, buyer   -> gate)    => revert 0xa6725971(buyer)      # mainnet and testnet
+canTransfer(aUSDC, gate    -> Aqueous) => revert 0xa6725971(gate)
+canTransfer(aUSDC, Aqueous -> gate)    => revert 0xa6725971(Aqueous)
+```
+
+Trace the hops. `open` moves buyer -> gate -> Aqueous. `settle` moves Aqueous -> gate -> worker. The
+union of addresses that must be compliant is buyer, gate, Aqueous, worker. The worker already holds a
+tier 20 CVI on testnet and passes. The other three fail.
+
+So **yes, both Aqueous and the gate need whitelisting**, together with the buyer and the worker. The
+whitelist is a CVI of tier 5 or higher issued to each address.
+
+Two consequences, both good for the build:
+
+- **No contract change.** Aqueous and the gate are immutable and token agnostic. Whitelisting is an
+  off-chain Cleanverse action, issuing CVIs to the four addresses, not a redeploy.
+- **We cannot touch aUSDC's rule.** aUSDC is Cleanverse's own asset, so we cannot call `setRuleV2` on
+  it. The only lever is getting CVIs issued to our addresses: `generate_apass` on the sandbox for
+  testnet, Cleanverse for mainnet.
+
+A blocked hop is a safe revert, never a fund loss. If any party is missing a CVI, `open` reverts before
+escrowing or `settle` reverts with the funds still escrowed and refundable. aUSDC's error bubbles
+through Aqueous and the gate as `0xa6725971`, not as the gate's own `CviNotVerified`.
+
+### Still external (do these in order, they need the sandbox key or Cleanverse)
+
+- **6.2 testnet aUSDC faucet plus whitelist.** `generate_apass` a tier 5 or higher CVI to the buyer
+  `0xDB6c..7777`, the testnet gate `0xfc83..7d2f` and the testnet Aqueous `0xAbB8..c232` (the worker
+  already holds tier 20). A party must hold its CVI before it can receive aUSDC, because the funding
+  transfer is itself gated on the recipient, so whitelist first then fund. The testnet aUSDC faucet or
+  mint path is not in the Cleanverse PDFs, so it is the one open mentor-or-support question for 6.2.
+- **6.3 the pass and refuse rerun on testnet with aUSDC.** Pass: open a gate job for the CVI worker
+  with aUSDC, then settle pays the worker in aUSDC. Refuse: open for a fresh wallet with no CVI, settle
+  reverts with no aUSDC moved. When those hashes land they replace the tUSDC rows in section 6.
+- **6.5 mainnet, when Cleanverse replies.** Register the mainnet gate pool and issue tier 5 or higher
+  CVIs to the buyer `0xDB6c..7777`, the mainnet gate `0x4a21..544a` and the mainnet Aqueous
+  `0xd75f..Fc32` on aUSDC, plus a mainnet CVI to a worker, then run the same pass and refuse on chain
+  143.
+
