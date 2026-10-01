@@ -627,3 +627,72 @@ CREATE INDEX IF NOT EXISTS funder_counterparty_address
 CREATE OR REPLACE VIEW fovea.funder_counterparty_latest AS
   SELECT DISTINCT ON (address, chain, counterparty) *
   FROM fovea.funder_counterparty ORDER BY address, chain, counterparty, checked_at DESC;
+
+
+-- ---------------------------------------------------------------- the atlas review queue
+--
+-- A candidate mapping Qwen induced for a document shape the hand-written atlas could not read.
+--
+-- **This table never changes a verdict.** The verdict pipeline reads only ATLAS in
+-- verifier/src/ladder/parse.ts and imports nothing from here. A reviewed proposal takes effect only
+-- as a code diff that adds the mapping to ATLAS, which lands in the append-only verdict trail as
+-- false/true with both timestamps. So the worst a wrong Qwen proposal can do is sit in this queue and
+-- be rejected. `status` is advisory metadata for the queue UI; no code reads status='accepted' to
+-- move a number, and a test proves it.
+--
+-- Append only and in `fovea`, the same posture as every table here, so an Envio resync of `public`
+-- cannot drop it and no foreign key ties it to the indexer's rows. One row per distinct shape: N
+-- claims of one shape collapse to one `shape_key`, which is the credit guard (propose per shape, not
+-- per claim). A non-converged attempt is still written so the gap stays an honest number rather than
+-- a silent retry.
+CREATE TABLE IF NOT EXISTS fovea.mapping_proposal (
+  id             bigserial   PRIMARY KEY,
+
+  -- Stable id for the shape: the document's sorted top-level keys joined with commas, so N claims of
+  -- one shape map to one row and a re-run supersedes rather than duplicates.
+  shape_key      text        NOT NULL,
+  -- The unmapped claims this shape covers, as feedback ids. No foreign key, same reason as every
+  -- other fovea table: the referenced Feedback row lives in the schema Envio drops and rebuilds.
+  feedback_ids   text[]      NOT NULL,
+  -- One feedbackUri the proposal was induced from, so a reader can fetch the same document.
+  example_uri    text        NOT NULL,
+
+  -- The client label that produced it. Must read qwen3.8-max for a real credited run; a --require-qwen
+  -- proposer run refuses to write a row whose label is anything else.
+  model          text        NOT NULL,
+
+  converged      boolean     NOT NULL,
+  -- The induce loop's own round-trip result, stored explicitly rather than inferred from converged,
+  -- so a storage bug is catchable and a hand-forced value still cannot move a verdict.
+  round_trip_ok  boolean     NOT NULL,
+  iterations     integer     NOT NULL,
+  tool_calls     integer     NOT NULL,
+
+  -- The InducedMapping, null when the loop did not converge.
+  proposal       jsonb,
+  -- The full TranscriptStep[] so the agentic steps (propose, run parser as a tool, read, revise) are
+  -- visible to a reviewer rather than summarised.
+  transcript     jsonb       NOT NULL,
+  -- Set when converged is false.
+  give_up_reason text,
+
+  -- Advisory only. Nothing in the verdict pipeline reads this to change a number.
+  status         text        NOT NULL DEFAULT 'pending'
+                   CHECK (status IN ('pending','accepted','rejected','superseded')),
+  -- Who moved it off pending, null while pending. A promotion is still a code diff, not a status flip.
+  reviewer       text,
+  reviewed_at    timestamptz,
+
+  checked_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS mapping_proposal_shape_checked
+  ON fovea.mapping_proposal (shape_key, checked_at DESC);
+
+CREATE INDEX IF NOT EXISTS mapping_proposal_status
+  ON fovea.mapping_proposal (status);
+
+CREATE OR REPLACE VIEW fovea.mapping_proposal_latest AS
+SELECT DISTINCT ON (shape_key) *
+FROM fovea.mapping_proposal
+ORDER BY shape_key, checked_at DESC, id DESC;

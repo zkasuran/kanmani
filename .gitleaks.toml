@@ -1,0 +1,20 @@
+# gitleaks configuration for Kanmani.
+#
+# The full history scan (scripts/scan-secrets.sh) runs the default ruleset over every ref. Two
+# values trip the loose generic-api-key rule and both are PUBLIC on-chain addresses, readable with
+# eth_getCode / eth_call on Monad mainnet (chain 143). They are allowlisted by their exact value, by
+# literal regex, so a real hex key pasted into any file still trips. The allowlist narrows by value,
+# never by path: a path-wide allowlist over lib/*.test.ts would hide a real secret dropped into a
+# test later.
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Public on-chain addresses are not secrets. Each is readable on chain 143."
+regexTarget = "match"
+regexes = [
+  '''0x1E30531CD3ea6DE2958DB363418a5382C419dC24''',  # AgentPasskey contract, README.md:108, eth_getCode on 143
+  '''0x754704Bc059F8C67012fEd69BC8A327a5aafb603''',  # x402 test fixture token, lib/x402.test.ts, public token
+  '''0xDB6c6340342e71A63cD11Ebac2185204b7777777''',  # house EOA, public, appears in many fixtures
+]

@@ -7,7 +7,8 @@
  * or on none. This moves the mouse from each label to its panel's first and last item at a realistic
  * event rate and checks which menu is open and which item is under the pointer on arrival.
  *
- *   node scripts/check-nav.mjs [url] [width]      defaults https://kanmani.xyz/ 1440
+ *   node scripts/e2e/nav.mjs [url] [width]      defaults https://kanmani.xyz/ 1440
+ *   npm run e2e                                 runs this and every other suite under scripts/e2e/
  */
 import { chromium } from "playwright";
 

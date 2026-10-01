@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, SectionHead } from "@/components/ui.tsx";
+import { Mono, Num, PageHeader, Panel, SectionHead } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
+import { mappingProposals, atlasGap, type AtlasGap, type MappingProposalRow } from "@/lib/queries.ts";
 import { ATLAS } from "../../verifier/src/ladder/parse.ts";
 import { CHAINS } from "../../verifier/src/chains.ts";
 
@@ -50,7 +51,17 @@ const RUNGS = [
   },
 ];
 
-export default function Method() {
+export default async function Method() {
+  // The review queue is read from the database, newest per shape. Both reads degrade to empty or
+  // unknown rather than crashing a page that is otherwise static: the queue is additive, not a
+  // dependency the ladder prose rests on.
+  const proposals: MappingProposalRow[] = (await mappingProposals()).rows;
+  let gap: AtlasGap | null = null;
+  try {
+    gap = await atlasGap();
+  } catch {
+    gap = null;
+  }
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       {/* ---------------------------------------------------------------- header */}
@@ -145,6 +156,87 @@ export default function Method() {
           document no mapping reads comes back with its keys attached, so the shape can be added
           rather than guessed at.
         </p>
+      </Panel>
+      </Reveal>
+
+      <hr className="rule-soft" />
+
+      {/* ---------------------------------------------------------------- the review queue */}
+      <Reveal>
+      <Panel
+        id="review-queue"
+        title="the review queue"
+        subtitle="Mappings a model induced for a document shape the hand atlas could not read. Each one was confirmed to round-trip through the parser above, then parked here for a human. This is the depth the Qwen bounty rewards: the model proposes, the deterministic parser checks, a person decides."
+      >
+        <p className="max-w-3xl text-[13.5px] leading-relaxed text-muted">
+          A proposal is a candidate, not a verdict. The model proposes a mapping. The parser confirms
+          it round-trips. Then it waits here for review.{" "}
+          <span className="text-[var(--color-text)]">Nothing on this queue has changed a verdict on
+          this site.</span>{" "}
+          A mapping only moves a number after a human reviews it and adds it to the atlas in code, which
+          lands in the append-only verdict trail as{" "}
+          <Mono className="text-[var(--color-false)]">unknown</Mono> →{" "}
+          <Mono className="text-[var(--color-true)]">true</Mono> or{" "}
+          <Mono className="text-[var(--color-false)]">false</Mono>.
+        </p>
+
+        {gap ? (
+          <p className="mt-3 text-[13px] text-muted">
+            <Num value={gap.unparsed} /> intact document{gap.unparsed === 1 ? "" : "s"} no mapping reads
+            right now. <Num value={gap.pendingProposals} /> converged proposal
+            {gap.pendingProposals === 1 ? "" : "s"} wait here to close that.{" "}
+            <Link href="/claims?outcome=unknown&rung=intact" className="text-[var(--color-brand)] hover:underline">
+              see the unmapped claims →
+            </Link>
+          </p>
+        ) : null}
+
+        {proposals.length === 0 ? (
+          <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
+            The queue is empty right now. When the proposer runs against a shape the hand atlas cannot
+            read, the candidate it induces appears here with its full transcript, the model that
+            proposed it and the round-trip result. It still does not touch a verdict.
+          </p>
+        ) : (
+          <div className="mt-4 space-y-3">
+            {proposals.map((p) => (
+              <div key={p.shapeKey} className="rounded border border-[var(--color-line)] p-3">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <Mono className="text-[12.5px] text-[var(--color-brand)]">
+                    {p.proposalName ?? p.shapeKey}
+                  </Mono>
+                  <Mono className="text-[11px] text-faint">{p.status}</Mono>
+                </div>
+                <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 font-mono text-[11.5px] text-faint">
+                  <span>model {p.model || "unknown"}</span>
+                  <span>
+                    round-trips {p.converged && p.roundTripOk ? "yes" : "no"} · {p.iterations} turn
+                    {p.iterations === 1 ? "" : "s"} · {p.toolCalls} parser call
+                    {p.toolCalls === 1 ? "" : "s"}
+                  </span>
+                  <span>
+                    covers <Num value={p.coveredClaims} /> claim{p.coveredClaims === 1 ? "" : "s"}
+                  </span>
+                  <span>{p.checkedAt.slice(0, 10)}</span>
+                </div>
+                {p.converged && p.proposalNote ? (
+                  <p className="mt-1 text-[13px] text-muted">{p.proposalNote}</p>
+                ) : (
+                  <p className="mt-1 text-[13px] text-muted">
+                    no mapping found yet{p.proposalKind ? ` (${p.proposalKind})` : ""}. The gap stays
+                    visible rather than retried silently.
+                  </p>
+                )}
+                <Link
+                  href="/claims?outcome=unknown&rung=intact"
+                  className="mt-1 inline-block font-mono text-[11.5px] text-faint hover:text-muted"
+                >
+                  the claims this shape covers →
+                </Link>
+              </div>
+            ))}
+          </div>
+        )}
       </Panel>
       </Reveal>
 

@@ -13,10 +13,11 @@
  *   - Tool calling is supported on chat completions via the `tools` parameter. The one documented
  *     constraint is that `tools` cannot be combined with `stream: true`, so this client never
  *     streams. Source: alibabacloud.com/help/en/model-studio/compatibility-of-openai-with-dashscope
- *   - The Qwen 3 Max model id is `qwen3-max` (the officially released, agent-and-tool tuned model).
- *     The bounty names "Qwen 3.8 Max"; set QWEN_MODEL to the exact granted id (for example
- *     qwen3.8-max) so the wire model matches the credit grant. Source:
- *     help.aliyun.com/en/model-studio/model-qwen3-max
+ *   - The model id is `qwen3.8-max`, the same string on Alibaba Cloud Model Studio / DashScope and
+ *     on QwenCloud. This is the exact model the "best builds with Qwen 3.8 Max" bounty names, so the
+ *     wire model matches the credit grant by default. Qwen3.8-Max shipped 2026-08-03 (a sparse MoE,
+ *     1M-token context, hybrid thinking mode). Sources: apidog.com/blog/qwen-3-8-api,
+ *     together.ai/models/qwen3-8-max, alibabacloud.com/help/en/model-studio.
  *
  * BUILT, UNVERIFIED against a live call: no DASHSCOPE_API_KEY is present in this environment, so no
  * request has been sent. The orchestration is fully tested through the seam. See CONTENT-qwen.html
@@ -26,7 +27,7 @@
 import type { ChatClient, ChatRequest, ChatResponse, ChatMessage } from "./model.ts";
 
 export const DEFAULT_BASE_URL = "https://dashscope-intl.aliyuncs.com/compatible-mode/v1";
-export const DEFAULT_MODEL = "qwen3-max";
+export const DEFAULT_MODEL = "qwen3.8-max";
 
 /**
  * Keys are read in order and the first present one wins.

@@ -20,12 +20,17 @@ npx tsx verifier/src/atlas/demo.ts
 The record of the run below is `verifier/src/atlas/inductions/gebo-uptime-report.v1.json`, including the
 full transcript.
 
-## Why there was nothing to induce on Monad
+## Where the gap is on Monad
 
-`noMappingReadTheShape` is **0** for Monad. Every document there is already read by a hand-written
-mapping, which is why the integration had no pressure behind it and went unrun.
+`noMappingReadTheShape` was **0** for Monad through 2026-09-28: every document was read by a
+hand-written mapping, which is why the integration had no pressure behind it at first. That changed on
+2026-09-30, when agent 10255 wrote three `tab-settlement-feedback` documents the hand atlas could not
+read, so the Monad gap is **3** now and live. Those three are the first Monad shape the induction loop
+has a real reason to run against. The candidate it proposes sits in the review queue on `/method`.
+The current count is read from the database on each render, so this prose does not drift again: see
+`/method#review-queue` and `/writing/qwen`.
 
-The gap was on the other chain. BSC holds **25,643 evidence documents** against Monad's 1,287 and none
+The larger gap is on the other chain. BSC holds **25,643 evidence documents** against Monad's 1,287 and none
 had ever been through the atlas. Sampling 320 of them:
 
 | | |
