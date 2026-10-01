@@ -1342,3 +1342,96 @@ export async function mislabelled(): Promise<Sourced<MislabelledSplit>> {
   }
   return src(MISLABELLED_SQL, { elsewhere, nowhere, byChain });
 }
+
+/* ------------------------------------------------------------------ the atlas review queue */
+
+/**
+ * The induced-mapping proposals waiting for review.
+ *
+ * This reads fovea.mapping_proposal_latest and nothing in the verdict pipeline reads it back. A
+ * proposal is a candidate the model induced for a document shape the hand atlas could not read; it
+ * becomes a verdict only when a human reviews it and adds the mapping to ATLAS in code. So this query
+ * powers a queue the reader can inspect, never a number on a claim.
+ *
+ * The SQL travels with the rows, like every reader here, so /method can print what it ran.
+ */
+export type MappingProposalRow = {
+  shapeKey: string;
+  feedbackIds: string[];
+  /** How many live claims this one shape would resolve once its mapping is added. */
+  coveredClaims: number;
+  model: string;
+  converged: boolean;
+  roundTripOk: boolean;
+  iterations: number;
+  toolCalls: number;
+  proposalName: string | null;
+  proposalNote: string | null;
+  proposalKind: string | null;
+  status: string;
+  checkedAt: string;
+};
+
+export const MAPPING_PROPOSALS_SQL = `
+SELECT shape_key, feedback_ids, model, converged, round_trip_ok, iterations, tool_calls,
+       proposal, give_up_reason, status, checked_at
+FROM fovea.mapping_proposal_latest
+ORDER BY converged DESC, checked_at DESC`;
+
+export async function mappingProposals(): Promise<Sourced<MappingProposalRow[]>> {
+  try {
+    const rows = await q<Record<string, unknown>>(MAPPING_PROPOSALS_SQL);
+    return src(
+      MAPPING_PROPOSALS_SQL,
+      rows.map((r) => {
+        const p = (r.proposal as { name?: string; note?: string; kind?: string } | null) ?? null;
+        const ids = (r.feedback_ids as string[] | null) ?? [];
+        return {
+          shapeKey: String(r.shape_key),
+          feedbackIds: ids,
+          coveredClaims: ids.length,
+          model: String(r.model ?? ""),
+          converged: Boolean(r.converged),
+          roundTripOk: Boolean(r.round_trip_ok),
+          iterations: Number(r.iterations ?? 0),
+          toolCalls: Number(r.tool_calls ?? 0),
+          proposalName: p?.name ?? null,
+          proposalNote: p?.note ?? null,
+          proposalKind: p?.kind ?? null,
+          status: String(r.status ?? "pending"),
+          checkedAt: new Date(r.checked_at as string).toISOString(),
+        };
+      }),
+    );
+  } catch {
+    // The table may not exist yet on an installation that has not applied the schema. An empty queue
+    // is the honest answer there, the same posture agentActions() takes, never an error page.
+    return src(MAPPING_PROPOSALS_SQL, []);
+  }
+}
+
+/**
+ * The gap in two numbers a page can state from the database rather than from prose: how many intact
+ * documents no mapping reads, and how many converged proposals wait in the queue to close that gap.
+ *
+ * `unparsed` reuses measurement().unknownUnparsed, the same count /method and /feed.json already show.
+ * `pendingProposals` is null when the queue table has not been applied yet, unknown rather than a
+ * misleading zero.
+ */
+export type AtlasGap = { unparsed: number; pendingProposals: number | null };
+
+export const ATLAS_GAP_SQL = `
+SELECT count(*) FILTER (WHERE status = 'pending' AND converged) AS pending_converged
+FROM fovea.mapping_proposal_latest`;
+
+export async function atlasGap(): Promise<AtlasGap> {
+  const m = await measurement();
+  let pendingProposals: number | null;
+  try {
+    const r = await q1<{ pending_converged: string }>(ATLAS_GAP_SQL);
+    pendingProposals = Number(r?.pending_converged ?? 0);
+  } catch {
+    pendingProposals = null;
+  }
+  return { unparsed: m.rows.unknownUnparsed, pendingProposals };
+}

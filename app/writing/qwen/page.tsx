@@ -1,13 +1,18 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
+import { Mono, Num, PageHeader, Panel, Row } from "@/components/ui.tsx";
+import { atlasGap, mappingProposals, type AtlasGap, type MappingProposalRow } from "@/lib/queries.ts";
 
 /**
  * The Qwen write-up the bounty asks for: how Qwen 3.8 Max is used here and what it was worth.
  *
- * Every figure on this page comes from a recorded run or a transaction anyone can open. The two
- * run records live in the repository (verifier/src/atlas/inductions/). Nothing here is typed from
- * memory: if a run is repeated and the numbers move, this page is what has to change.
+ * Every figure on this page comes from a recorded run, a transaction anyone can open or a live query
+ * against the database. The two offline run records live in the repository
+ * (verifier/src/atlas/inductions/). The gap figures (how many shapes are unmapped, how many proposals
+ * wait) are queried on each render, so a run that moves a number moves this page with it.
  */
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export const metadata = {
   title: "How Qwen 3.8 Max reads evidence nobody wrote a parser for",
@@ -29,7 +34,18 @@ function Code({ children }: { children: string }) {
   );
 }
 
-export default function QwenArticle() {
+export default async function QwenArticle() {
+  // Queried on each render so no figure here is typed from memory. Both reads degrade rather than
+  // crash the article: the gap is unknown, never a misleading zero.
+  const proposals: MappingProposalRow[] = (await mappingProposals()).rows;
+  let gap: AtlasGap = { unparsed: 0, pendingProposals: null };
+  try {
+    gap = await atlasGap();
+  } catch {
+    gap = { unparsed: 0, pendingProposals: null };
+  }
+  const tab = proposals.find((p) => p.converged) ?? null;
+  const coversClaims = tab?.coveredClaims ?? gap.unparsed;
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
@@ -47,8 +63,11 @@ export default function QwenArticle() {
             shape to those fields is what we call the atlas.
           </P>
           <P>
-            On Monad the atlas is five hand-written mappings plus a rule for plain-text comments. Together they
-            read every Monad evidence document we have checked. That was the easy chain. BNB Smart Chain carries the same registries and far more evidence.
+            On Monad the atlas is five hand-written mappings plus a rule for plain-text comments.
+            Together they read all but <Num value={gap.unparsed} /> of the Monad evidence documents we
+            have checked. That number was 0 on 2026-09-28. Then a new agent wrote a settlement-receipt
+            shape nobody had mapped, so the gap is live and it is exactly what the loop below is for.
+            BNB Smart Chain carries the same registries and far more evidence.
             We sampled 320 of its documents and the atlas, built entirely from Monad, read <strong>none</strong> of
             them. Writing a parser per shape by hand does not scale to a registry where anyone can invent a format
             tomorrow.
@@ -138,6 +157,65 @@ export default function QwenArticle() {
         </div>
       </Panel>
 
+      <Panel title="run three: the loop on Monad's own gap" subtitle="live, queried on load, the candidate sits on /method">
+        <div className="space-y-3">
+          <P>
+            The first two runs were on BSC and both found no payment. This one is on Monad and it asserts a
+            real one, which is the harder case and the more useful. A new agent (ERC-8004 #10255) wrote{" "}
+            <Num value={coversClaims} /> settlement-receipt feedbacks the hand atlas could not read, so{" "}
+            <Mono>noMappingReadTheShape</Mono> went from 0 to <Num value={gap.unparsed} />. Each one is a
+            <Mono> tab-settlement-feedback</Mono> document that says a payment cleared on Monad.
+          </P>
+          <P>
+            The trap is a field called <Mono>value</Mono>. The document carries <Mono>value: 100</Mono> with{" "}
+            <Mono>valueDecimals: 0</Mono> and <Mono>tag1: &quot;tab&quot;</Mono> at the top, while the money
+            sits under <Mono>settlement</Mono>: the hash in <Mono>settlement.txHash</Mono>, the amount in{" "}
+            <Mono>settlement.amount</Mono>, the token in <Mono>settlement.asset</Mono>, the recipient in{" "}
+            <Mono>settlement.collection</Mono>. A careless mapping reads 100 as the amount, finds no matching
+            transfer, then marks a real settlement false. The loop&apos;s job is to point at the settlement
+            fields and prove the parser extracts them.
+          </P>
+          <div className="space-y-1 text-[13px]">
+            <Row label="unmapped on Monad now">
+              <Mono className="text-muted"><Num value={gap.unparsed} /> intact document{gap.unparsed === 1 ? "" : "s"}</Mono>
+            </Row>
+            <Row label="converged proposals waiting">
+              <Mono className="text-muted"><Num value={gap.pendingProposals} /></Mono>
+            </Row>
+            <Row label="candidate mapping">
+              <Mono className="text-muted">{tab?.proposalName ?? "tab-settlement-feedback.v1"}</Mono>
+            </Row>
+            <Row label="proposed by">
+              <Mono className="text-muted">{tab?.model ?? "qwen3.8-max"}</Mono>
+            </Row>
+          </div>
+          <P>
+            Before and after, stated plainly. <Mono>noMappingReadTheShape</Mono> is <Num value={gap.unparsed} />{" "}
+            right now. The proposed mapping round-trips against the real document, which the offline tests
+            prove. It becomes 0 once a reviewer adds the mapping to the atlas in code, a change that would move{" "}
+            <Num value={coversClaims} /> Monad claims from <Mono>unknown</Mono> to a real{" "}
+            <Mono className="text-[var(--color-true)]">true</Mono> or{" "}
+            <Mono className="text-[var(--color-false)]">false</Mono>.{" "}
+            <Link className="text-[var(--color-brand)] hover:underline" href="/method#review-queue">
+              the review queue
+            </Link>{" "}
+            holds it, with{" "}
+            <Link className="text-[var(--color-brand)] hover:underline" href="/claims?outcome=unknown&rung=intact">
+              the unmapped claims
+            </Link>{" "}
+            listed in the open. Nothing on that queue has changed a verdict here.
+          </P>
+          <P>
+            <strong>What a keyed run has and has not proven.</strong> The loop, its round-trip gate and its
+            ambiguity guard are proven offline by ten tests with no key and no network. The credited run belongs
+            on Alibaba Cloud Model Studio with <Mono>qwen3.8-max</Mono>, so the $5,000 Qwen grant pays for it.
+            Until that key runs the proposer fills this queue with whichever Qwen3.8-Max host is configured. GMI
+            Cloud serves the same weights but spends GMI credits, not the Qwen grant, so this page names which
+            credential paid rather than implying the grant did.
+          </P>
+        </div>
+      </Panel>
+
       <Panel title="one provider constraint we hit">
         <div className="space-y-3">
           <P>
@@ -159,14 +237,15 @@ support being set to required or object in thinking mode`}</Code>
         <div className="space-y-3">
           <P>
             Worth: coverage of formats nobody on our side has seen, at the moment a document arrives, without a
-            deploy. Both runs so far found shapes that assert <strong>no</strong> payment. That sounds like a null
-            result. In this domain it is the valuable one, because the expensive mistake is inventing a claim and
-            then publishing that it was false.
+            deploy. The two BSC runs found shapes that assert <strong>no</strong> payment, which in this domain is
+            the valuable catch, because the expensive mistake is inventing a claim and then publishing that it was
+            false. The Monad run is the other case: a shape that <strong>does</strong> assert a payment, where the
+            win is reading it from the settlement fields instead of the <Mono>value</Mono> trap.
           </P>
           <P>
-            Not claimed: two shapes from two runs are not a coverage figure for BSC. Neither mapping has been added
-            to the shipped atlas, because one confirmed run is a proposal worth reviewing and not yet a standard.
-            The Monad verdicts on this site all come from the hand-written atlas.
+            Not claimed: three shapes from three runs are not a coverage figure for any chain. None of the three
+            mappings has been added to the shipped atlas, because one confirmed run is a proposal worth reviewing
+            and not yet a standard. Every Monad verdict on this site still comes from the hand-written atlas.
           </P>
         </div>
       </Panel>

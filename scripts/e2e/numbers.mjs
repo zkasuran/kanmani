@@ -16,7 +16,8 @@
  *   reduced   prefers-reduced-motion
  *   capture   viewport grown to the full page, as full-page screenshots and previews do
  *
- *   node scripts/check-numbers.mjs [url]     default https://kanmani.xyz/
+ *   node scripts/e2e/numbers.mjs [url]     default https://kanmani.xyz/
+ *   npm run e2e                            runs this and every other suite under scripts/e2e/
  *
  * Exit 0 only if every counter is correct in every mode.
  */

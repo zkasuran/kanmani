@@ -5,7 +5,7 @@ posture for a hackathon entry, where the point is that the work can be read and 
 into a competing submission.
 
 It is the wrong posture for two files. The tension was recorded in
-[`docs/14-GAPS.md`](docs/14-GAPS.md) §6 before it was resolved here.
+[`docs/14-GAPS.md`](14-GAPS.md) §6 before it was resolved here.
 
 ## The two files and how they differ
 

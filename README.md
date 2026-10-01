@@ -205,7 +205,7 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)'
 ## Running it
 
 ```bash
-cd indexer   && pnpm codegen && pnpm start     # the index
+cd indexer   && npm run codegen && npm start   # the index
 cd verifier  && npm test                       # the verifier, 186 of 203
 cd contracts && forge test --fork-url https://rpc.monad.xyz && FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol   # the contracts, 143 of 145
 npm run dev                                    # the site, 317 of 320
@@ -224,7 +224,7 @@ need an archive node.
 | `verifier/` | the judge: resolve a document, compare its bytes to the on-chain commitment, read the cited transaction |
 | `contracts/` | Aqueous (escrow) and Sclera (bonds), both deployed and verified |
 | `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
-| `docs/` | [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [17-CONTRACT-AUDIT](docs/17-CONTRACT-AUDIT.md) and [18-BUGS-FIXED](docs/18-BUGS-FIXED.md) are the security review, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
+| `docs/` | the [docs index](docs/README.md) lists all of them. [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [17-CONTRACT-AUDIT](docs/17-CONTRACT-AUDIT.md) and [18-BUGS-FIXED](docs/18-BUGS-FIXED.md) are the security review, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
 | `public/brand/` | the [media package](public/brand/README.md) |
 | `public/readme/` | the diagrams in this file, drawn by [`scripts/build-readme-art.py`](scripts/build-readme-art.py) |
 

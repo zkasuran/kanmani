@@ -54,7 +54,7 @@ export type ChatRequest = {
 export type ChatResponse = { message: ChatMessage };
 
 export interface ChatClient {
-  /** Names the model in the transcript, e.g. "qwen3-max" or "scripted-fake". */
+  /** Names the model in the transcript, e.g. "qwen3.8-max" or "scripted-fake". */
   readonly label: string;
   chat(req: ChatRequest): Promise<ChatResponse>;
 }
