@@ -235,6 +235,19 @@ GET  /.well-known/agent-registration.json   our own ERC-8004 record`} />
           <Snippet code={`curl -sS https://kanmani.xyz/api/agent/10182 | jq '.data.claims'
 curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=1' | jq '.data.total'
 curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps is null on an empty sample, never 0`} />
+          <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
+            Integration notes:{" "}
+            <a
+              href="https://github.com/zkasuran/kanmani/blob/main/docs/19-NANSEN.md"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[var(--color-brand)] hover:underline"
+            >
+              How the Nansen integration works
+            </a>{" "}
+            covers the endpoint, the data category, the request shape, the credits and a command block
+            that reproduces the first-funder finding.
+          </p>
         </Panel>
       </Reveal>
 

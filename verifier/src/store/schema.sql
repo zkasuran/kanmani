@@ -604,3 +604,26 @@ CREATE TABLE IF NOT EXISTS fovea.pay_run (
 );
 
 CREATE INDEX IF NOT EXISTS pay_run_source_idx ON fovea.pay_run (source, net, recorded_at DESC);
+-- ---------------------------------------------------------------- funder counterparties, from Nansen
+-- The deferred, budget-gated second category: entity-labelled counterparties of a top funder, with
+-- USD volumes (Nansen profiler/address/counterparties, 5 credits a call). NOT on any timer, because
+-- one call is the whole free-plan daily budget. Monad coverage for this endpoint is unverified in
+-- Nansen's docs, so a row only lands after a one-off manual call that comes back for Monad. Append
+-- only like every fovea table. `group_by` records whether the row is wallet-level or entity-level.
+CREATE TABLE IF NOT EXISTS fovea.funder_counterparty (
+  id                 bigserial PRIMARY KEY,
+  address            text        NOT NULL,   -- the funder whose counterparties these are
+  chain              text        NOT NULL,
+  counterparty       text        NOT NULL,
+  counterparty_label text,
+  interaction_count  integer,
+  volume_usd         double precision,
+  source_input       text,                   -- Combined | Tokens | ETH
+  group_by           text        NOT NULL CHECK (group_by IN ('wallet','entity')),
+  checked_at         timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS funder_counterparty_address
+  ON fovea.funder_counterparty (address, chain, checked_at DESC);
+CREATE OR REPLACE VIEW fovea.funder_counterparty_latest AS
+  SELECT DISTINCT ON (address, chain, counterparty) *
+  FROM fovea.funder_counterparty ORDER BY address, chain, counterparty, checked_at DESC;

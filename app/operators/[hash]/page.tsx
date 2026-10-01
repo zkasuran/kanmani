@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { Addr, Derivation, Mono, Num, Panel, Pct, Row } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { clusterMembers, clusterOwners, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
+import { clusterFunder } from "@/lib/funders.ts";
+import { funderSummary } from "@/lib/nansen.ts";
+import { funderReachFor } from "@/lib/funder-reach.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -29,10 +32,15 @@ export default async function ClusterPage({ params, searchParams }: Props) {
   const c = await probedCluster(hash);
   if (!c) notFound();
 
-  const [members, owners] = await Promise.all([
+  const [members, owners, fund] = await Promise.all([
     clusterMembers(hash, PER_PAGE, (page - 1) * PER_PAGE),
     clusterOwners(hash, 60),
+    clusterFunder(hash), // hash === AgentRecord.id === the sample key suffix
   ]);
+  const funder = funderSummary(fund);
+  // One step up the funding graph: who first funded this cluster's top funder. Read from our own
+  // store, no Nansen call. Only looked up when the cluster has a sampled top funder.
+  const reach = funder.status === "sampled" ? await funderReachFor(funder.topFunder) : null;
   const pages = Math.ceil(c.memberCount / PER_PAGE);
   // Agents registered by a wallet that registered more than one against this same document.
   const repeats = c.memberCount - c.distinctOwners;
@@ -177,6 +185,64 @@ export default async function ClusterPage({ params, searchParams }: Props) {
           <Derivation sql={owners.sql} note={`$2 = ${c.uriHash}`} />
         </Panel>
       </div>
+
+      <Panel title="who funded these wallets, from Nansen" id="funders">
+        {funder.status === "unsampled" ? (
+          <p className="text-[13px] text-muted">
+            <span className="unknown-value">unknown</span>: {funder.sentence}
+          </p>
+        ) : (
+          <>
+            <p className="text-[13.5px] leading-relaxed text-[var(--color-text)]">
+              <Num value={funder.topFunderWallets} /> of <Num value={funder.found} /> sampled wallets were first funded by{" "}
+              <a
+                className="font-mono text-[var(--color-brand)] hover:underline"
+                href={`https://monadexplorer.com/address/${funder.topFunder}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {funder.topFunder.slice(0, 6)}…{funder.topFunder.slice(-4)}
+              </a>
+              {funder.topFunderLabel ? <span className="text-muted"> ({funder.topFunderLabel})</span> : null}.{" "}
+              <span className="text-muted">
+                {funder.distinctFunders} distinct funder{funder.distinctFunders === 1 ? "" : "s"} across the sample.
+              </span>
+            </p>
+            {funder.exampleTx ? (
+              <p className="mt-1 font-mono text-[11.5px] text-faint">
+                one funding tx:{" "}
+                <a
+                  className="hover:underline"
+                  href={`https://monadexplorer.com/tx/${funder.exampleTx}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {funder.exampleTx.slice(0, 12)}…
+                </a>
+              </p>
+            ) : null}
+            {reach && reach.status === "found" && reach.reachFunder ? (
+              <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+                That funder was itself first funded by{" "}
+                <a
+                  className="font-mono text-[var(--color-brand)] hover:underline"
+                  href={`https://monadexplorer.com/address/${reach.reachFunder}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {reach.reachFunder.slice(0, 6)}…{reach.reachFunder.slice(-4)}
+                </a>
+                {reach.reachFunderLabel ? <span> ({reach.reachFunderLabel})</span> : null}, one step further up the funding graph.
+              </p>
+            ) : null}
+            <p className="mt-2 text-[12px] leading-relaxed text-muted">
+              A shared funder describes how the wallets were set up, not anyone&apos;s intent. It does say the wallet
+              count overstates the number of independent operators. Unsampled wallets are{" "}
+              <span className="unknown-value">unknown</span>, never counted either way.
+            </p>
+          </>
+        )}
+      </Panel>
 
       <Panel
         title="the agents"

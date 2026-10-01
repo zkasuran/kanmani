@@ -432,3 +432,151 @@ export function firstFunder(r: NansenResult<RelatedWalletsResponse>): FirstFunde
     fundedAt: f.block_timestamp || null,
   };
 }
+
+/* ------------------------------------------------------------------ funder summary (display) */
+
+/**
+ * The display shape for one cluster's first-funder sample, with the honesty rule in one place.
+ *
+ * Twin's paid answer and the per-cluster page both render a funder sample. They share this formatter
+ * so the "unknown when unsampled" rule lives once and is unit-testable with no database: a cluster
+ * nobody has asked about says so, it never says "0 of 0 share a funder". `unknown` is never `0`.
+ */
+export type FunderSummary =
+  | {
+      status: "sampled";
+      sampled: number;
+      found: number;
+      distinctFunders: number;
+      topFunder: string;
+      topFunderLabel: string | null;
+      topFunderWallets: number;
+      exampleTx: string | null;
+      sentence: string;
+    }
+  | { status: "unsampled"; sentence: string };
+
+/**
+ * Turn a cluster's funder row (or null when no sample exists) into the display shape.
+ *
+ * `row` is the ClusterFunders shape from lib/funders.ts, or null. A missing row, a row that asked
+ * nobody (`found === 0`) or a row with no top funder is unsampled, never a false "0 share a funder".
+ */
+export function funderSummary(
+  row: {
+    sampled: number;
+    found: number;
+    distinctFunders: number;
+    topFunder: string | null;
+    topFunderLabel: string | null;
+    topFunderWallets: number;
+    exampleTx: string | null;
+  } | null,
+): FunderSummary {
+  if (!row || row.found === 0 || !row.topFunder) {
+    return {
+      status: "unsampled",
+      sentence: "No wallet in this cluster has been sampled for its first funder yet.",
+    };
+  }
+  const sentence =
+    `${row.topFunderWallets} of ${row.found} sampled wallets share one first funder` +
+    (row.distinctFunders > 1 ? `; ${row.distinctFunders} distinct funders across the sample.` : ".");
+  return {
+    status: "sampled",
+    sampled: row.sampled,
+    found: row.found,
+    distinctFunders: row.distinctFunders,
+    topFunder: row.topFunder,
+    topFunderLabel: row.topFunderLabel,
+    topFunderWallets: row.topFunderWallets,
+    exampleTx: row.exampleTx,
+    sentence,
+  };
+}
+
+/* ------------------------------------------------------------------ counterparties (deferred, 5 credits)
+ *
+ * The richer second category: entity-labelled counterparties of a funder, with USD volumes. It
+ * answers "which known entity, if any, sits behind the funder" far better than a raw address. It is
+ * NOT on any timer: at 5 credits a call it is the whole spendable daily budget on the free plan, so
+ * it runs as a one-off manual command on a day the balance can take it. Its Monad coverage is not
+ * stated in Nansen's docs, so the one live call is read before any render is wired. The client and
+ * store are built and typed here so that command is ready; nothing below calls Nansen on its own.
+ *
+ * Request shape from docs.nansen.ai/api/profiler/address-counterparties (read 2026-10-01): required
+ * `chain` and a `date` from/to range, optional `address`, `group_by` one of wallet|entity (default
+ * wallet), `source_input` Combined|Tokens|ETH (default Combined). Response data[] of
+ * ProfilerCounterparty. The `date` requirement is new; related-wallets needs no date.
+ */
+
+export type ProfilerCounterparty = {
+  counterparty_address: string;
+  counterparty_address_label?: string;
+  interaction_count?: number;
+  total_volume_usd?: number;
+  volume_in_usd?: number;
+  volume_out_usd?: number;
+};
+
+export type AddressCounterpartiesResponse = {
+  pagination?: { page: number; per_page: number; is_last_page: boolean };
+  data: ProfilerCounterparty[];
+};
+
+/**
+ * Counterparties of one address over a date range (5 credits, Pro and free identical). `group_by`
+ * defaults to `entity`, which is the point of this call: a known entity behind the funder beats a
+ * raw address. Deferred and budget-gated, so this is the only entry point and it is never scheduled.
+ */
+export function fetchAddressCounterparties(
+  address: string,
+  chain: NansenChain,
+  dateFrom: string,
+  dateTo: string,
+  auth: NansenAuth,
+  transport: NansenTransport,
+  groupBy: "wallet" | "entity" = "entity",
+): Promise<NansenResult<AddressCounterpartiesResponse>> {
+  return callNansen<AddressCounterpartiesResponse>(
+    "/api/v1/profiler/address/counterparties",
+    { address, chain, date: { from: dateFrom, to: dateTo }, group_by: groupBy },
+    auth,
+    transport,
+  );
+}
+
+export type CounterpartySummary =
+  | {
+      status: "found";
+      topCounterparty: string;
+      topCounterpartyLabel: string | null;
+      distinctCounterparties: number;
+      topVolumeUsd: number | null;
+    }
+  | { status: "none"; reason: string }
+  | { status: "unknown"; reason: string };
+
+/**
+ * The top counterparty by interaction count, its label and the distinct count, from a counterparties
+ * response. A failed call is `unknown`; an empty answer is `none` (Nansen holds nothing for Monad or
+ * this range), never an invented entity. Pure, so the honesty rule is unit-tested with no network.
+ */
+export function summarizeCounterparties(
+  r: NansenResult<AddressCounterpartiesResponse>,
+): CounterpartySummary {
+  if (!r.ok) return { status: "unknown", reason: r.reason };
+  const rows = (r.data.data ?? []).filter((c) => /^0x[0-9a-fA-F]{40}$/.test(c.counterparty_address ?? ""));
+  if (rows.length === 0) {
+    return { status: "none", reason: "Nansen returned no counterparties for this address and range" };
+  }
+  const top = [...rows].sort((a, b) => (b.interaction_count ?? 0) - (a.interaction_count ?? 0))[0]!;
+  const distinct = new Set(rows.map((c) => c.counterparty_address.toLowerCase())).size;
+  return {
+    status: "found",
+    topCounterparty: top.counterparty_address.toLowerCase(),
+    topCounterpartyLabel: top.counterparty_address_label ? top.counterparty_address_label : null,
+    distinctCounterparties: distinct,
+    topVolumeUsd: typeof top.total_volume_usd === "number" ? top.total_volume_usd : null,
+  };
+}

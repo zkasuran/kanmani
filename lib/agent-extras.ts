@@ -14,6 +14,8 @@
  */
 import { agent, claimTruthWindow, claims, indexProgress, probedCluster } from "./queries.ts";
 import { q, CHAIN_ID } from "./db.ts";
+import { clusterFunder } from "./funders.ts";
+import { funderSummary } from "./nansen.ts";
 import { findTransaction, explain, searchedChains, searchedVia } from "./findtx.ts";
 import { evidenceCheck, isFailure, registrationCheck } from "./build-server.ts";
 import { bondFor, usdc } from "./bonds.ts";
@@ -147,6 +149,9 @@ export const EXTRAS: Extra[] = [
       if (!a!.uriHash) return { answer: { agentId: id, shared: null, why: "The agent declares no registration document, so there is nothing to compare." }, meter: meter("sibling", 0, 50, 1000) };
       const cluster = await probedCluster(a!.uriHash);
       const sib = await q<{ agentId: string; owner: string }>(`SELECT "agentId", owner FROM "Agent" WHERE "chainId" = $1 AND "uriHash" = $2 AND "agentId" <> $3 ORDER BY "agentId" DESC LIMIT 25`, [CHAIN_ID, a!.uriHash, id]);
+      // The first-funder sample for this cluster, read from our own fovea store (no Nansen call, so
+      // Twin's meter is unchanged). unknown when nobody in the cluster has been sampled yet.
+      const fund = funderSummary(await clusterFunder(a!.uriHash));
       return {
         answer: {
           agentId: id,
@@ -155,6 +160,20 @@ export const EXTRAS: Extra[] = [
           distinctOwners: cluster?.distinctOwners ?? 1,
           documentState: cluster?.state ?? null,
           siblings: sib.map((s) => ({ agentId: Number(s.agentId), owner: s.owner })),
+          firstFunderSample:
+            fund.status === "sampled"
+              ? {
+                  sentence: fund.sentence,
+                  sampled: fund.sampled,
+                  found: fund.found,
+                  distinctFunders: fund.distinctFunders,
+                  topFunder: fund.topFunder,
+                  topFunderLabel: fund.topFunderLabel,
+                  topFunderWallets: fund.topFunderWallets,
+                  exampleTx: fund.exampleTx,
+                  source: "nansen:profiler/address/related-wallets (First Funder relation, 1 credit a wallet)",
+                }
+              : { status: "unknown", why: fund.sentence },
           reproduce: `curl -s https://kanmani.xyz/api/agent/${id} | jq .data.registration`,
         },
         meter: meter("sibling", sib.length, 50, 1000),

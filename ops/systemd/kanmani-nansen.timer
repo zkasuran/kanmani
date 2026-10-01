@@ -1,0 +1,10 @@
+[Unit]
+Description=Run the Kanmani Nansen sample once a day, after the daily credit top-up
+
+[Timer]
+OnCalendar=*-*-* 05:00:00 UTC
+RandomizedDelaySec=30min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
