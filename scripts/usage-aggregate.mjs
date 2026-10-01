@@ -26,7 +26,22 @@ const arg = (k, d) => { const i = process.argv.indexOf(k); return i > 0 ? proces
 const LOG_DIR = arg("--logs", "/var/log/caddy");
 const LOG_PREFIX = arg("--prefix", "kanmani");
 const RPC = process.env.RPC_MONAD || "https://rpc.monad.xyz";
-const OURS = new Set((process.env.KANMANI_OWN_ADDRESSES || "0xdb6c6340342e71a63cd11ebac2185204b7777777").toLowerCase().split(","));
+// Every wallet we control. The deployer, the zero-MON demo buyer we generated for the gasless
+// settlement plus the Aurora Intents intermediary that our own cross-chain fund created (it is
+// controlled by the deployer through a chain signature). Missing either one published our own two
+// escrow jobs as use by others, which is the exact mistake this page exists not to make.
+const OURS = new Set(
+  (
+    process.env.KANMANI_OWN_ADDRESSES ||
+    [
+      "0xdb6c6340342e71a63cd11ebac2185204b7777777",
+      "0x27a8ae37f59bdcd147b09ddc1f35ac64697c1f92",
+      "0x004f15d9b733676b344c25fab983c73d1a1b29b2",
+    ].join(",")
+  )
+    .toLowerCase()
+    .split(","),
+);
 
 function connectionString() {
   const e = process.env;
