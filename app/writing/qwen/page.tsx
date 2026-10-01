@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { Mono, Num, PageHeader, Panel, Row } from "@/components/ui.tsx";
+import { Mono, Num, PageHeader, Panel, Prize, Row } from "@/components/ui.tsx";
+import { postBySlug } from "@/lib/writing.ts";
 import { atlasGap, mappingProposals, type AtlasGap, type MappingProposalRow } from "@/lib/queries.ts";
 
 /**
@@ -52,7 +53,9 @@ export default async function QwenArticle() {
         kicker="writing · qwen 3.8 max · 2026-09-30"
         title="How Qwen 3.8 Max reads evidence nobody wrote a parser for"
         lead="Kanmani checks whether the payment an ERC-8004 agent's evidence document claims actually happened on the chain it names. That check needs to know which fields hold the chain and the transaction. Qwen finds them in shapes we have never seen. The verifier refuses any answer it cannot confirm."
-      />
+      >
+        <Prize post={postBySlug("qwen")!} />
+      </PageHeader>
 
       <Panel title="the problem Qwen solves">
         <div className="space-y-3">

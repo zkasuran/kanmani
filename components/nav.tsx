@@ -24,6 +24,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AccountLabel, AccountMenu } from "@/components/account.tsx";
+import { POSTS } from "@/lib/writing.ts";
 
 type Item = { href: string; label: string; hint: string };
 type Group = { label: string; href: string; items: Item[]; /** Renders its own panel instead of items. */ account?: true };
@@ -98,6 +99,15 @@ const GROUPS: Group[] = [
       { href: "/status", label: "coverage", hint: "what is measured, how fresh it is, what is missing" },
       { href: "/status#corrections", label: "corrections", hint: "every published claim we have had to withdraw" },
     ],
+  },
+  {
+    label: "writing",
+    href: "/writing",
+    items: POSTS.map((p) => ({
+      href: `/writing/${p.slug}`,
+      label: p.navLabel ?? p.title,
+      hint: p.hook,
+    })),
   },
   {
     label: "developers",
