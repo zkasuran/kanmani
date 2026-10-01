@@ -61,6 +61,14 @@ const MAX_PER_WINDOW = 600;
 const BUILD_PATHS = /^\/(api\/registration\/check|api\/evidence\/check|mcp)$/;
 const MAX_BUILD_PER_WINDOW = 60;
 const buildBuckets = new Map<string, Bucket>();
+/**
+ * The keyed cross-chain funding routes each spend a real Aurora Intents Connect call and share one
+ * account key. A judge clicking through the flow is far under 20 a minute; a loop trips it. The GET
+ * status read is cheap and keyless, so it rides the general limit. The durable cap is Aurora's own key limit.
+ */
+const FUND_PATHS = /^\/api\/fund\/(quote|create|submit)$/;
+const MAX_FUND_PER_WINDOW = 20;
+const fundBuckets = new Map<string, Bucket>();
 
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
@@ -106,6 +114,22 @@ export function proxy(req: NextRequest): NextResponse {
       );
     }
     if (buildBuckets.size > 20_000) for (const [k, v] of buildBuckets) if (now >= v.resetAt) buildBuckets.delete(k);
+  }
+
+  if (req.method === "POST" && FUND_PATHS.test(req.nextUrl.pathname)) {
+    let fb = fundBuckets.get(ip);
+    if (!fb || now >= fb.resetAt) {
+      fb = { count: 0, resetAt: now + WINDOW_MS };
+      fundBuckets.set(ip, fb);
+    }
+    if (++fb.count > MAX_FUND_PER_WINDOW) {
+      const retryAfter = Math.max(1, Math.ceil((fb.resetAt - now) / 1000));
+      return new NextResponse(
+        JSON.stringify({ error: "rate limited", detail: `The cross-chain funding routes allow ${MAX_FUND_PER_WINDOW} calls a minute per client. Retry after the given seconds.`, retryAfterSeconds: retryAfter }),
+        { status: 429, headers: { "content-type": "application/json", "retry-after": String(retryAfter) } },
+      );
+    }
+    if (fundBuckets.size > 20_000) for (const [k, v] of fundBuckets) if (now >= v.resetAt) fundBuckets.delete(k);
   }
 
   if (b.count > MAX_PER_WINDOW) {

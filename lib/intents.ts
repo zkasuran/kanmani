@@ -550,3 +550,428 @@ export async function submitSignature(
   const body = await r.json().catch(() => null);
   return { ok: r.ok, status: r.status, body };
 }
+
+/* ------------------------------------------------------------------ /api/fund/* server routes
+ *
+ * Additions for spec 09 item 3.1. Everything above is unchanged: these are new exports only, so the
+ * tested forward client keeps working byte for byte and the routes stay thin surfaces over this file.
+ * The routes read `AURORA_INTENTS_API_KEY` server-side and never put it, or `raw`, in a response.
+ */
+
+/** Decimal base-unit string to bigint, or null when the field is missing or not a decimal. */
+function toBigintOrNull(x: unknown): bigint | null {
+  return typeof x === "string" && /^\d+$/.test(x) ? BigInt(x) : null;
+}
+
+/** The signing material a create response carries, so the client can sign immediately (mentor ruling 2026-09-29). */
+export type SigningPayload = {
+  /** The exact string to personal_sign, proven live. */
+  messageToSign: string | null;
+  /** The documented canonical field, preferred when present. */
+  payloadJson: string | null;
+  /** erc191 for EVM origin, raw_ed25519/nep413/sep53 otherwise. Lets a non-EVM origin sign right. */
+  signingStandard: string | null;
+  /** Whether the service already recorded a signature for this execution. */
+  messageSigned: boolean | null;
+};
+
+/**
+ * Pull the signing payload out of a create or status body.
+ *
+ * Both `details.payload.payload_json` (the documented canonical field) and `details.messageToSign`
+ * (proven live by tx 0x738af85c) name the same thing. We surface both and prefer `payload_json`, with
+ * `findMessageToSign` as the recursive fallback so a differently nested response still resolves.
+ */
+export function parseSigningPayload(raw: unknown): SigningPayload {
+  const result = (raw as { result?: unknown })?.result as { details?: unknown } | undefined;
+  const details = (result?.details ?? {}) as Record<string, unknown>;
+  const payload = details.payload as Record<string, unknown> | undefined;
+  const payloadJson = payload && typeof payload.payload_json === "string" ? payload.payload_json : null;
+  const direct = typeof details.messageToSign === "string" && details.messageToSign.length > 0 ? details.messageToSign : null;
+  const signingStandard =
+    typeof details.signingStandard === "string"
+      ? details.signingStandard
+      : payload && typeof payload.standard === "string"
+        ? payload.standard
+        : null;
+  const messageSigned = typeof details.messageSigned === "boolean" ? details.messageSigned : null;
+  return { messageToSign: direct ?? findMessageToSign(raw), payloadJson, signingStandard, messageSigned };
+}
+
+/** One execution as the by-wallet status read returns it, projected to what the UI needs. */
+export type ExecutionListItem = {
+  id: string;
+  status: string | null;
+  messageSigned: boolean | null;
+  minAmountOut: bigint | null;
+  networkFee: bigint | null;
+  intermediary: string | null;
+  depositAddress: string | null;
+  destinationAsset: string | null;
+  deadline: string | null;
+};
+
+/**
+ * Read the single execution matching `id` out of the by-wallet list response.
+ *
+ * Intents Connect indexes executions by wallet and has no by-id endpoint, so the status read returns
+ * an array and we filter it here. The array sits under `result` (the schema types `result` as the
+ * array), but a stubbed `{ result: { items: [...] } }` shape is also accepted so the shape is robust
+ * either way. Returns null when the array is empty or carries no match, which the route turns into 404.
+ */
+export function parseExecutionList(body: unknown, id: string): ExecutionListItem | null {
+  const result = (body as { result?: unknown })?.result;
+  const items: unknown[] | null = Array.isArray(result)
+    ? result
+    : Array.isArray((result as { items?: unknown })?.items)
+      ? (result as { items: unknown[] }).items
+      : null;
+  if (!items) return null;
+  const match = items.find((d) => d && typeof d === "object" && (d as { id?: unknown }).id === id) as
+    | { id: string; status?: unknown; quote?: Record<string, unknown>; details?: Record<string, unknown> }
+    | undefined;
+  if (!match) return null;
+  const quote = match.quote ?? {};
+  const details = match.details ?? {};
+  const deadline = quote.deadline;
+  return {
+    id: match.id,
+    status: typeof match.status === "string" ? match.status : null,
+    messageSigned: typeof details.messageSigned === "boolean" ? details.messageSigned : null,
+    minAmountOut: toBigintOrNull(quote.minAmountOut),
+    networkFee: toBigintOrNull(details.networkFee),
+    intermediary: typeof details.intermediaryAddress === "string" ? details.intermediaryAddress : null,
+    depositAddress: typeof quote.depositAddress === "string" ? quote.depositAddress : null,
+    destinationAsset: typeof quote.destinationAsset === "string" ? quote.destinationAsset : null,
+    deadline: typeof deadline === "string" ? deadline : typeof deadline === "number" ? String(deadline) : null,
+  };
+}
+
+/* APPEND-MARKER-INTENTS */
+
+/** The keyless by-wallet status read, filtered to one execution id. No api key is sent. */
+export async function getExecution(
+  a: { wallet: string; id: string },
+  cfg: Pick<IntentsConfig, "baseUrl" | "fetchImpl" | "timeoutMs">,
+): Promise<ExecutionListItem | null> {
+  const base = assertBase(cfg.baseUrl);
+  if (!ADDRESS_RE.test(a.wallet)) throw new IntentsConfigError("wallet must be a 0x address");
+  const doFetch = cfg.fetchImpl ?? (globalThis.fetch as unknown as FetchLike);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? 15000);
+  let res: { ok: boolean; status: number; json: () => Promise<unknown> };
+  try {
+    res = await doFetch(`${base}/executions/${a.wallet}?id=${encodeURIComponent(a.id)}`, {
+      method: "GET",
+      headers: { accept: "application/json" },
+      redirect: "error",
+      signal: controller.signal,
+    });
+  } catch (err) {
+    throw new IntentsError(`request failed: ${errText(err)}`);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    throw new IntentsError("response was not json");
+  }
+  return parseExecutionList(body, a.id);
+}
+
+/** A synthetic Terms for a dry quote. Hash and salt are placeholders: a dry quote prices calldata shape, not a real job. */
+function quoteTerms(agent: `0x${string}`, amount: bigint, usdc?: string): Terms {
+  return {
+    agent,
+    token: (usdc ?? USDC_MONAD) as `0x${string}`,
+    amount,
+    pricePerUnit: 0n,
+    deadline: 4102444800n,
+    termsHash: ("0x" + "00".repeat(32)) as `0x${string}`,
+    salt: ("0x" + "11".repeat(32)) as `0x${string}`,
+  };
+}
+
+export type FundQuoteParams = {
+  wallet: string;
+  originAsset: string;
+  amount: string;
+  agent: `0x${string}`;
+  destinationAsset?: string;
+  slippageTolerance?: number;
+  /** The USDC the job is to hold. When omitted the quote sizes `needed` to the delivery, so never short. */
+  jobAmount?: bigint;
+  usdc?: string;
+  aqueous?: string;
+};
+
+export type FundQuoteResult = {
+  minAmountOut: bigint;
+  networkFee: bigint | null;
+  intermediary: string | null;
+  depositAddress: string | null;
+  /** What the job needs: the requested jobAmount, or the delivery itself when none was requested. */
+  needed: bigint;
+  /** True when the guaranteed delivery is below `needed`. Reported, never thrown, so the UI can warn. */
+  shortfall: boolean;
+};
+
+/**
+ * Price a cross-chain fund without creating anything. Builds the destination batch for the requested
+ * job amount (so the quote carries the service fee), runs a dry execution and reports whether the
+ * guaranteed delivery covers the job. It never throws on a short quote: that is the UI's to show.
+ */
+export async function quoteFunding(params: FundQuoteParams, cfg: IntentsConfig): Promise<FundQuoteResult> {
+  const steps =
+    params.jobAmount !== undefined
+      ? toWireSteps(
+          buildFundingSteps({
+            amount: params.jobAmount,
+            terms: quoteTerms(params.agent, params.jobAmount, params.usdc),
+            usdc: params.usdc,
+            aqueous: params.aqueous,
+          }).steps,
+        )
+      : [];
+  const quote = await requestExecution(
+    {
+      wallet: params.wallet,
+      quote: {
+        originAsset: params.originAsset,
+        amount: params.amount,
+        destinationAsset: params.destinationAsset,
+        slippageTolerance: params.slippageTolerance,
+      },
+      steps,
+      dry: true,
+    },
+    cfg,
+  );
+  const needed = params.jobAmount ?? quote.minAmountOut;
+  return {
+    minAmountOut: quote.minAmountOut,
+    networkFee: quote.networkFee,
+    intermediary: quote.intermediary,
+    depositAddress: quote.depositAddress,
+    needed,
+    shortfall: quote.minAmountOut < needed,
+  };
+}
+
+export type FundCreateParams = {
+  wallet: string;
+  originAsset: string;
+  amount: string;
+  agent: `0x${string}`;
+  /** The USDC the job must hold. Required: a create sizes the escrow and the shortfall guard runs against it. */
+  jobAmount: bigint;
+  destinationAsset?: string;
+  slippageTolerance?: number;
+  usdc?: string;
+  aqueous?: string;
+  deadline?: bigint;
+  pricePerUnit?: bigint;
+  termsHash?: `0x${string}`;
+  salt?: `0x${string}`;
+};
+
+export type FundCreateResult = {
+  id: string | null;
+  wallet: string;
+  status: string | null;
+  depositAddress: string | null;
+  intermediary: string | null;
+  minAmountOut: bigint;
+  needed: bigint;
+  messageToSign: string | null;
+  payloadJson: string | null;
+  signingStandard: string | null;
+};
+
+/**
+ * Create the execution, with the shortfall guard first. `planAqueousFunding` runs the stepped dry
+ * quote and throws `ShortfallError` when the delivery would be short, so an execution the escrow would
+ * revert on is never created. On success the create response is parsed and its signing payload is
+ * projected so the client can sign straight away. The api key and `raw` never leave this function.
+ */
+export async function createFunding(params: FundCreateParams, cfg: IntentsConfig): Promise<FundCreateResult> {
+  const terms: Terms = {
+    agent: params.agent,
+    token: (params.usdc ?? USDC_MONAD) as `0x${string}`,
+    amount: params.jobAmount,
+    pricePerUnit: params.pricePerUnit ?? params.jobAmount,
+    deadline: params.deadline ?? 4102444800n,
+    termsHash: params.termsHash ?? (("0x" + "00".repeat(32)) as `0x${string}`),
+    salt: params.salt ?? (("0x" + "11".repeat(32)) as `0x${string}`),
+  };
+  const quoteSpec = {
+    originAsset: params.originAsset,
+    amount: params.amount,
+    destinationAsset: params.destinationAsset,
+    slippageTolerance: params.slippageTolerance,
+  };
+  const plan = await planAqueousFunding(
+    { wallet: params.wallet, quote: quoteSpec, terms, usdc: params.usdc, aqueous: params.aqueous },
+    cfg,
+  );
+  const created = await requestExecution(
+    { wallet: params.wallet, quote: quoteSpec, steps: toWireSteps(plan.built), dry: false },
+    cfg,
+  );
+  const sig = parseSigningPayload(created.raw);
+  return {
+    id: created.id,
+    wallet: params.wallet,
+    status: created.status,
+    depositAddress: created.depositAddress,
+    intermediary: created.intermediary,
+    minAmountOut: created.minAmountOut,
+    needed: plan.amount,
+    messageToSign: sig.messageToSign,
+    payloadJson: sig.payloadJson,
+    signingStandard: sig.signingStandard,
+  };
+}
+
+/** The status read for a wallet and id. Keyless, by wallet with an id filter (there is no by-id endpoint). */
+export async function readFundingStatus(
+  a: { wallet: string; id: string },
+  cfg: Pick<IntentsConfig, "baseUrl" | "fetchImpl" | "timeoutMs">,
+): Promise<ExecutionListItem | null> {
+  return getExecution(a, cfg);
+}
+
+const SIGNATURE_RE = /^secp256k1:[1-9A-HJ-NP-Za-km-z]+$/;
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+
+/**
+ * Post a signature to Intents Connect, on the injected-fetch seam so it is testable the same way the
+ * rest of this client is. Separate from the older `submitSignature` (which uses the global fetch), so
+ * nothing existing changes. The signature format and the wallet/id are validated before the key is sent.
+ */
+export async function submitFundingSignature(
+  a: { wallet: string; executionId: string; signature: string },
+  cfg: IntentsConfig,
+): Promise<{ status: string | null; messageSigned: boolean | null }> {
+  const base = assertBase(cfg.baseUrl);
+  if (!cfg.apiKey) throw new IntentsConfigError("apiKey is required for POST /executions/{wallet}/submit");
+  if (!ADDRESS_RE.test(a.wallet)) throw new IntentsConfigError("wallet must be a 0x address");
+  if (!UUID_RE.test(a.executionId)) throw new IntentsConfigError("executionId must be a uuid");
+  if (!SIGNATURE_RE.test(a.signature)) throw new IntentsConfigError("signature must be secp256k1:<base58>");
+  const doFetch = cfg.fetchImpl ?? (globalThis.fetch as unknown as FetchLike);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? 30000);
+  let res: { ok: boolean; status: number; json: () => Promise<unknown> };
+  try {
+    res = await doFetch(`${base}/executions/${a.wallet}/submit`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": cfg.apiKey },
+      body: JSON.stringify({ executionId: a.executionId, signature: a.signature }),
+      redirect: "error",
+      signal: controller.signal,
+    });
+  } catch (err) {
+    throw new IntentsError(`request failed: ${errText(err)}`);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  let body: unknown;
+  try {
+    body = await res.json();
+  } catch {
+    body = null;
+  }
+  const result = (body as { result?: { status?: unknown } })?.result;
+  const status = result && typeof result.status === "string" ? result.status : null;
+  return { status, messageSigned: parseSigningPayload(body).messageSigned };
+}
+
+/* ------------------------------------------------------------------ steps-only recovery (3.3)
+ *
+ * A short landing or an expiry leaves USDC at the intermediary, which the source wallet owns. Recovery
+ * is a steps-only execution: no 1click quote, no bridge, no deposit address. The intermediary already
+ * holds the destination token and the steps run from that balance. Documented at
+ * api-reference/.../request-steps-execution and settled by Chris Gutkowski (2026-09-29).
+ */
+
+/** A steps-only execution response, projected to what recovery needs. No bridge, so no quote.minAmountOut. */
+export type StepsExecution = {
+  id: string | null;
+  status: string | null;
+  intermediary: string | null;
+  networkFee: bigint | null;
+  messageToSign: string | null;
+  payloadJson: string | null;
+  signingStandard: string | null;
+};
+
+/** Lenient parse for a steps-only execution: it carries no 1click quote, so minAmountOut is not required. */
+export function parseStepsExecution(body: unknown): StepsExecution {
+  const result = (body as { result?: unknown })?.result as
+    | { id?: unknown; status?: unknown; details?: Record<string, unknown> }
+    | undefined;
+  if (!result || typeof result !== "object") throw new IntentsError("response had no result object");
+  const details = result.details ?? {};
+  const sig = parseSigningPayload(body);
+  return {
+    id: typeof result.id === "string" ? result.id : null,
+    status: typeof result.status === "string" ? result.status : null,
+    intermediary: typeof details.intermediaryAddress === "string" ? details.intermediaryAddress : null,
+    networkFee: toBigintOrNull(details.networkFee),
+    messageToSign: sig.messageToSign,
+    payloadJson: sig.payloadJson,
+    signingStandard: sig.signingStandard,
+  };
+}
+
+/**
+ * POST a steps-only execution to `/executions/{wallet}/steps`. Same SSRF host-pin, timeout,
+ * `redirect:"error"` and fail-closed posture as `requestExecution`, on the injected-fetch seam. No
+ * `originAsset` and no 1click quote: the steps run from the token already at the intermediary.
+ */
+export async function requestStepsExecution(
+  params: { wallet: string; steps: IntentsStep[]; dry: boolean; destinationAsset?: string },
+  cfg: IntentsConfig,
+): Promise<StepsExecution> {
+  const base = assertBase(cfg.baseUrl);
+  if (!cfg.apiKey) throw new IntentsConfigError("apiKey is required for POST /executions/{wallet}/steps");
+  if (!ADDRESS_RE.test(params.wallet)) throw new IntentsConfigError("wallet must be a 0x address");
+
+  const doFetch = cfg.fetchImpl ?? (globalThis.fetch as unknown as FetchLike);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), cfg.timeoutMs ?? 15000);
+  const body = JSON.stringify({
+    version: "1.0",
+    type: "evm",
+    destinationAsset: params.destinationAsset ?? MONAD_USDC_ASSET_ID,
+    steps: params.steps,
+    dry: params.dry,
+  });
+
+  let res: { ok: boolean; status: number; json: () => Promise<unknown> };
+  try {
+    res = await doFetch(`${base}/executions/${params.wallet}/steps`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-api-key": cfg.apiKey },
+      body,
+      redirect: "error",
+      signal: controller.signal,
+    });
+  } catch (err) {
+    throw new IntentsError(`request failed: ${errText(err)}`);
+  } finally {
+    clearTimeout(timer);
+  }
+  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  let parsed: unknown;
+  try {
+    parsed = await res.json();
+  } catch {
+    throw new IntentsError("response was not json");
+  }
+  return parseStepsExecution(parsed);
+}

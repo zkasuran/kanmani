@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { Addr, Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
+import { FundFlow } from "@/components/fund-flow.tsx";
+import { MultiSourceQuotes } from "@/components/fund/MultiSourceQuotes.tsx";
+import { RecoveryPanel } from "@/components/fund/RecoveryPanel.tsx";
+import { SOURCE_QUOTE_CHAINS } from "@/lib/fund-sources.ts";
 import {
   buildFundingSteps,
   AQUEOUS_MONAD,
@@ -8,6 +12,9 @@ import {
   type BuiltStep,
 } from "@/lib/intents.ts";
 import { USDC_MONAD } from "@/lib/x402.ts";
+
+/** A demo wallet for the public read-only panels (dry quotes and a keyless balance read, no funds move). */
+const DEMO_WALLET = "0xDB6c6340342e71A63cD11Ebac2185204b7777777";
 
 export const metadata = {
   title: "Fund from any chain",
@@ -88,6 +95,24 @@ export default async function Fund({ searchParams }: Props) {
         }
       />
       {/* body continues below */}
+      <Panel
+        title="fund a job now, live"
+        subtitle="pick a source chain and asset, see the guaranteed delivery and fee, sign once, then watch it land"
+      >
+        <FundFlow sources={SOURCE_QUOTE_CHAINS} />
+      </Panel>
+      <Panel
+        title="what each source chain would deliver"
+        subtitle="a live dry quote per chain, including a non-EVM source, so the cross-chain reach is shown not asserted"
+      >
+        <MultiSourceQuotes wallet={DEMO_WALLET} agent={DEMO_WALLET} />
+      </Panel>
+      <Panel
+        title="recover a short landing or an expiry"
+        subtitle="if a delivery lands short or a deadline passes, the money waits in an account only you control"
+      >
+        <RecoveryPanel wallet={DEMO_WALLET} agent={DEMO_WALLET} />
+      </Panel>
       <FundBody from={from} amount={amount} steps={steps} terms={terms} />
     </div>
   );
