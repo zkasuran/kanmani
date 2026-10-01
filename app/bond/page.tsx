@@ -3,6 +3,7 @@ import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
 import { Reveal } from "@/components/motion.tsx";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
 import { BondPoster } from "@/components/bond-poster.tsx";
+import { CrePanel } from "@/components/cre-panel.tsx";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -204,6 +205,11 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
             </p>
           </div>
         </div>
+      </Reveal>
+
+      {/* ---------------------------------------------------------------- the workflow that decides */}
+      <Reveal>
+        <CrePanel />
       </Reveal>
 
       {/* ---------------------------------------------------------------- the security work */}

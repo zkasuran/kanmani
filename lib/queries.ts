@@ -1342,3 +1342,250 @@ export async function mislabelled(): Promise<Sourced<MislabelledSplit>> {
   }
   return src(MISLABELLED_SQL, { elsewhere, nowhere, byChain });
 }
+
+/* ============================================================ the indexer panel (spec 17, 7.1)
+ *
+ * Four reads that describe the indexer itself rather than the agents it holds: how far each chain
+ * has processed, how many rows each entity carries, what each handler wrote, and where the two
+ * chains cross on one registration document. Every one reads Envio's own `public` schema, which is
+ * dropped and recreated on a resync (lib/db.ts), so every one fails closed to `null`, rendered as
+ * "could not read" rather than as a zero that would read as a measurement.
+ */
+
+/** Per chain: head, processed, lag and events, from Envio's own chain_metadata view. */
+export type ChainStatusRow = {
+  chainId: number;
+  /** source_block, the height HyperSync reports. Null when the view could not be read. */
+  head: number | null;
+  /** progress_block, fully processed. Lag is head minus this. */
+  processed: number | null;
+  lag: number | null;
+  fetched: number | null;
+  events: number | null;
+  isHyperSync: boolean | null;
+  /** Set when historical sync finished, null while still catching up. */
+  caughtUpAt: string | null;
+};
+
+export const CHAIN_STATUS_SQL = `
+SELECT chain_id,
+       block_height                            AS head,
+       latest_processed_block                  AS processed,
+       (block_height - latest_processed_block) AS lag,
+       latest_fetched_block_number             AS fetched,
+       num_events_processed                    AS events,
+       is_hyper_sync                           AS is_hyper_sync,
+       timestamp_caught_up_to_head_or_endblock AS caught_up_at
+FROM public.chain_metadata
+ORDER BY chain_id`;
+
+export async function chainStatus(): Promise<Sourced<ChainStatusRow[] | null>> {
+  // chain_metadata is a view over Envio's envio_chains table and lives in `public`, which a resync
+  // drops. A failed read is unknown, never a row of zeros, so this mirrors indexProgress().
+  try {
+    const rows = await q<{
+      chain_id: string | number;
+      head: string | number | null;
+      processed: string | number | null;
+      lag: string | number | null;
+      fetched: string | number | null;
+      events: string | number | null;
+      is_hyper_sync: boolean | null;
+      caught_up_at: string | Date | null;
+    }>(CHAIN_STATUS_SQL);
+    const num = (x: string | number | null) => (x == null ? null : Number(x));
+    return src(
+      CHAIN_STATUS_SQL,
+      rows.map((r) => ({
+        chainId: Number(r.chain_id),
+        head: num(r.head),
+        processed: num(r.processed),
+        lag: num(r.lag),
+        fetched: num(r.fetched),
+        // The view types this float4, so round it back to the integer count it really is.
+        events: r.events == null ? null : Math.round(Number(r.events)),
+        isHyperSync: r.is_hyper_sync == null ? null : Boolean(r.is_hyper_sync),
+        caughtUpAt: r.caught_up_at == null ? null : new Date(r.caught_up_at).toISOString(),
+      })),
+    );
+  } catch {
+    return src(CHAIN_STATUS_SQL, null);
+  }
+}
+
+/** One row count per entity per chain. The two cross-chain tables carry no chainId, so it is null. */
+export type EntityCount = { entity: string; chainId: number | null; n: number };
+
+export const ENTITY_COUNTS_SQL = `
+SELECT 'Agent'            AS entity, "chainId", count(*) AS n FROM "Agent"            GROUP BY "chainId"
+UNION ALL SELECT 'AgentRecord',      "chainId", count(*) FROM "AgentRecord"      GROUP BY "chainId"
+UNION ALL SELECT 'AgentRecordOwner', "chainId", count(*) FROM "AgentRecordOwner" GROUP BY "chainId"
+UNION ALL SELECT 'Feedback',         "chainId", count(*) FROM "Feedback"         GROUP BY "chainId"
+UNION ALL SELECT 'Validation',       "chainId", count(*) FROM "Validation"       GROUP BY "chainId"
+UNION ALL SELECT 'ChiasmRecord',     NULL::integer, count(*) FROM "ChiasmRecord"
+UNION ALL SELECT 'ChiasmPresence',   NULL::integer, count(*) FROM "ChiasmPresence"
+ORDER BY entity, "chainId" NULLS FIRST`;
+
+export async function entityCounts(): Promise<Sourced<EntityCount[] | null>> {
+  try {
+    const rows = await q<{ entity: string; chainId: string | number | null; n: string }>(ENTITY_COUNTS_SQL);
+    return src(
+      ENTITY_COUNTS_SQL,
+      rows.map((r) => ({
+        entity: r.entity,
+        chainId: r.chainId == null ? null : Number(r.chainId),
+        n: Number(r.n),
+      })),
+    );
+  } catch {
+    return src(ENTITY_COUNTS_SQL, null);
+  }
+}
+
+/**
+ * What each handler wrote, per chain.
+ *
+ * This is the fallback count, not an exact per-event-name count. The exact source is Envio's
+ * raw_events table, which this deployment keeps off (rawEvents defaults false) to save a write on
+ * every log, so the honest column here is "rows this handler wrote" rather than "raw logs seen".
+ * Two IdentityRegistry events, MetadataSet and URIUpdated, mutate an Agent in place and keep no
+ * counter of their own, so they are folded into the Agent row rather than invented. See
+ * indexer/README.md for the exact-count path (rawEvents: true plus one resync).
+ */
+export type HandlerCounts = {
+  chainId: number;
+  registered: number;
+  laterTransfers: number;
+  metadataUpdates: number;
+  newFeedback: number;
+  feedbackRevoked: number;
+  responses: number;
+  validationRequests: number;
+  validationResponses: number;
+};
+export type HandlerActivity = {
+  perChain: HandlerCounts[];
+  /** Events the fallback cannot count on their own, stated rather than hidden. */
+  foldedIntoAgent: string[];
+};
+
+export const HANDLER_ACTIVITY_SQL = `
+SELECT c."chainId",
+       COALESCE(a.registered, 0)           AS registered,
+       COALESCE(a.later_transfers, 0)      AS later_transfers,
+       COALESCE(a.metadata_updates, 0)     AS metadata_updates,
+       COALESCE(f.new_feedback, 0)         AS new_feedback,
+       COALESCE(f.feedback_revoked, 0)     AS feedback_revoked,
+       COALESCE(f.responses, 0)            AS responses,
+       COALESCE(v.validation_requests, 0)  AS validation_requests,
+       COALESCE(v.validation_responses, 0) AS validation_responses
+FROM (SELECT "chainId" FROM "Agent"
+      UNION SELECT "chainId" FROM "Feedback"
+      UNION SELECT "chainId" FROM "Validation") c
+LEFT JOIN (SELECT "chainId", count(*) AS registered,
+                  sum("transferCount") AS later_transfers,
+                  sum("metadataUpdateCount") AS metadata_updates
+           FROM "Agent" GROUP BY "chainId") a ON a."chainId" = c."chainId"
+LEFT JOIN (SELECT "chainId", count(*) AS new_feedback,
+                  count(*) FILTER (WHERE revoked) AS feedback_revoked,
+                  count(*) FILTER (WHERE "responseUri" IS NOT NULL) AS responses
+           FROM "Feedback" GROUP BY "chainId") f ON f."chainId" = c."chainId"
+LEFT JOIN (SELECT "chainId", count(*) AS validation_requests,
+                  count(*) FILTER (WHERE response IS NOT NULL) AS validation_responses
+           FROM "Validation" GROUP BY "chainId") v ON v."chainId" = c."chainId"
+ORDER BY c."chainId"`;
+
+export async function handlerActivity(): Promise<Sourced<HandlerActivity | null>> {
+  try {
+    const rows = await q<Record<string, string | number | null>>(HANDLER_ACTIVITY_SQL);
+    const n = (x: string | number | null | undefined) => Number(x ?? 0);
+    return src(HANDLER_ACTIVITY_SQL, {
+      perChain: rows.map((r) => ({
+        chainId: Number(r.chainId),
+        registered: n(r.registered),
+        laterTransfers: n(r.later_transfers),
+        metadataUpdates: n(r.metadata_updates),
+        newFeedback: n(r.new_feedback),
+        feedbackRevoked: n(r.feedback_revoked),
+        responses: n(r.responses),
+        validationRequests: n(r.validation_requests),
+        validationResponses: n(r.validation_responses),
+      })),
+      foldedIntoAgent: ["MetadataSet", "URIUpdated"],
+    });
+  } catch {
+    return src(HANDLER_ACTIVITY_SQL, null);
+  }
+}
+
+/** The merge the per-chain tables cannot answer: documents referenced from more than one chain. */
+export type CrossChainSummary = { documents: number; onBothChains: number; keyCollisions: number };
+export type CrossChainDetail = {
+  uriHash: string;
+  uri: string;
+  chainCount: number;
+  chainIds: number[];
+  agentCount: number;
+  firstSeenChainId: number;
+  uriConflict: boolean;
+  chainId: number;
+  agentsOnChain: number;
+  firstAgentId: string;
+};
+export type CrossChainMerge = { summary: CrossChainSummary; detail: CrossChainDetail[] };
+
+export const CROSS_CHAIN_SUMMARY_SQL = `
+SELECT count(*)                                              AS documents,
+       count(*) FILTER (WHERE "chainCount" >= 2)             AS on_both_chains,
+       count(*) FILTER (WHERE "chainCount" >= 2
+                        AND "uriConflict")                   AS key_collisions
+FROM "ChiasmRecord"`;
+
+export const CROSS_CHAIN_DETAIL_SQL = `
+SELECT r.id AS uri_hash, r.uri, r."chainCount", r."chainIds", r."agentCount",
+       r."firstSeenChainId", r."uriConflict",
+       p."chainId", p."agentCount" AS agents_on_chain, p."firstAgentId"
+FROM "ChiasmRecord" r
+JOIN "ChiasmPresence" p ON p.record_id = r.id
+WHERE r."chainCount" >= 2 AND NOT r."uriConflict"
+ORDER BY r."agentCount" DESC, r.id, p."chainId"`;export async function crossChainMerge(): Promise<Sourced<CrossChainMerge | null>> {
+  const sql = `${CROSS_CHAIN_SUMMARY_SQL}\n\n${CROSS_CHAIN_DETAIL_SQL}`;
+  try {
+    const summaryRow = await q1<{ documents: string; on_both_chains: string; key_collisions: string }>(
+      CROSS_CHAIN_SUMMARY_SQL,
+    );
+    const detail = await q<{
+      uri_hash: string;
+      uri: string | null;
+      chainCount: string | number;
+      chainIds: unknown;
+      agentCount: string | number;
+      firstSeenChainId: string | number;
+      uriConflict: boolean;
+      chainId: string | number;
+      agents_on_chain: string | number;
+      firstAgentId: string | number;
+    }>(CROSS_CHAIN_DETAIL_SQL);
+    return src(sql, {
+      summary: {
+        documents: Number(summaryRow?.documents ?? 0),
+        onBothChains: Number(summaryRow?.on_both_chains ?? 0),
+        keyCollisions: Number(summaryRow?.key_collisions ?? 0),
+      },
+      detail: detail.map((r) => ({
+        uriHash: r.uri_hash,
+        uri: r.uri ?? "",
+        chainCount: Number(r.chainCount),
+        chainIds: parseChainIds(r.chainIds),
+        agentCount: Number(r.agentCount),
+        firstSeenChainId: Number(r.firstSeenChainId),
+        uriConflict: Boolean(r.uriConflict),
+        chainId: Number(r.chainId),
+        agentsOnChain: Number(r.agents_on_chain),
+        firstAgentId: String(r.firstAgentId),
+      })),
+    });
+  } catch {
+    return src(sql, null);
+  }
+}
