@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Derivation, DistBar, Mono, Num, OutcomeBadge, Panel, RungLadder, StatTile } from "@/components/ui.tsx";
 import { claims, claimsCount, mappingCoverage, type Outcome } from "@/lib/queries.ts";
+import { searchedChains, searchedVia } from "@/lib/findtx.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -156,6 +157,14 @@ export default async function Claims({ searchParams }: Props) {
             same filter as JSON →
           </a>
         </p>
+        {(() => {
+          const searched = searchedChains(143);
+          return searched.length > 0 ? (
+            <p className="pt-1 font-mono text-[11px] text-faint">
+              false verdicts are {searchedVia(searched)}, so a mislabelled network is told apart from a missing payment
+            </p>
+          ) : null;
+        })()}
       </div>
 
       {/* ---------------------------------------------------------------- rows */}

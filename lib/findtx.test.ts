@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { endpointFor, explain, findTransaction, type SearchResult } from "./findtx.ts";
+import { endpointFor, explain, findTransaction, providerOf, searchedChains, searchedVia, type SearchResult, type SearchedChain } from "./findtx.ts";
 
 const HASH = `0x${"a".repeat(64)}` as const;
 
@@ -94,4 +94,51 @@ test("explain never reports a chain it did not search", async () => {
   });
   const said = explain(r);
   assert.ok(said.includes(String(r.searched.length)));
+});
+
+/* ------------------------------------------------------------------ searched-via (Alchemy visibility) */
+
+const ALCHEMY_ENV = {
+  RPC_ETHEREUM: "https://eth-mainnet.g.alchemy.com/v2/KEY",
+  RPC_BASE: "https://base-mainnet.g.alchemy.com/v2/KEY",
+  RPC_OPTIMISM: "https://opt-mainnet.g.alchemy.com/v2/KEY",
+  RPC_ARBITRUM: "https://arb-mainnet.g.alchemy.com/v2/KEY",
+  RPC_POLYGON: "https://polygon-mainnet.g.alchemy.com/v2/KEY",
+};
+
+test("providerOf reads the label off the endpoint, so a public node never reads as Alchemy", () => {
+  assert.equal(providerOf("https://eth-mainnet.g.alchemy.com/v2/KEY"), "Alchemy");
+  assert.equal(providerOf("https://opt-mainnet.g.alchemy.com/v2/KEY"), "Alchemy");
+  assert.equal(providerOf("https://eth.llamarpc.com"), "eth.llamarpc.com");
+  assert.equal(providerOf("https://bsc-dataseed.bnbchain.org"), "bsc-dataseed.bnbchain.org");
+});
+
+test("searchedChains labels the five non-Monad chains as Alchemy and never includes the declared chain", () => {
+  const list = searchedChains(143, ALCHEMY_ENV);
+  const viaAlchemy = list.filter((c) => c.provider === "Alchemy").map((c) => c.key).sort();
+  assert.deepEqual(viaAlchemy, ["arbitrum", "base", "ethereum", "optimism", "polygon"]);
+  assert.ok(!list.some((c) => c.chainId === 143), "the declared chain is never searched");
+});
+
+test("searchedChains drops a chain with no endpoint and no public RPC", () => {
+  // With nothing configured, only chains that carry a publicRpc remain. Ethereum has none, so it is out.
+  const list = searchedChains(143, {});
+  assert.ok(!list.some((c) => c.key === "ethereum"), "ethereum has no endpoint, so it is not searched");
+});
+
+test("searchedVia renders one provider inline and a mixed set honestly", () => {
+  const allAlchemy: SearchedChain[] = ["ethereum", "base", "arbitrum", "optimism", "polygon"].map((key, i) => ({
+    chainId: i,
+    key,
+    displayName: key,
+    provider: "Alchemy",
+  }));
+  assert.equal(searchedVia(allAlchemy), "searched via Alchemy: ethereum, base, arbitrum, optimism, polygon");
+
+  const mixed: SearchedChain[] = [
+    { chainId: 1, key: "ethereum", displayName: "Ethereum", provider: "Alchemy" },
+    { chainId: 8453, key: "base", displayName: "Base", provider: "Alchemy" },
+    { chainId: 137, key: "polygon", displayName: "Polygon", provider: "polygon-rpc.com" },
+  ];
+  assert.equal(searchedVia(mixed), "searched via Alchemy (ethereum, base) and polygon-rpc.com (polygon)");
 });

@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, TxLink, outcomeMeaning } from "@/components/ui.tsx";
 import { claim, verdictHistory, VERDICT_HISTORY_SQL } from "@/lib/queries.ts";
+import { searchedChains, searchedVia } from "@/lib/findtx.ts";
+import { resolveDeclared } from "@/lib/chains.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -25,6 +27,8 @@ export default async function ClaimPage({ params }: Props) {
 
   const history = await verdictHistory(c.id);
   const isDataUri = c.feedbackUri.startsWith("data:");
+  const declaredId = (c.declaredNetwork ? resolveDeclared(c.declaredNetwork)?.id : null) ?? 143;
+  const searched = c.declaredTx ? searchedChains(declaredId) : [];
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
@@ -148,6 +152,18 @@ export default async function ClaimPage({ params }: Props) {
                 <span className="unknown-value">not looked for</span>
               )}
             </Row>
+            {c.declaredTx ? (
+              <Row label="cross-chain search">
+                {searched.length > 0 ? (
+                  <span className="text-muted">
+                    {searchedVia(searched)}
+                    {!c.foundChain && c.outcome === "false" ? ", found on none of them" : ""}
+                  </span>
+                ) : (
+                  <span className="unknown-value">no cross-chain endpoints configured</span>
+                )}
+              </Row>
+            ) : null}
             <Row label="checked at">
               {c.checkedAt ? (
                 <Mono className="text-muted">

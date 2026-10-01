@@ -14,7 +14,7 @@
  */
 import { agent, claimTruthWindow, claims, indexProgress, probedCluster } from "./queries.ts";
 import { q, CHAIN_ID } from "./db.ts";
-import { findTransaction, explain } from "./findtx.ts";
+import { findTransaction, explain, searchedChains, searchedVia } from "./findtx.ts";
 import { evidenceCheck, isFailure, registrationCheck } from "./build-server.ts";
 import { bondFor, usdc } from "./bonds.ts";
 import { meteredCharge, type Meter } from "./upto.ts";
@@ -73,8 +73,18 @@ export const EXTRAS: Extra[] = [
       need(/^0x[0-9a-fA-F]{64}$/.test(h), "txHash must be 0x followed by 64 hex characters");
       const declared = i.declaredChainId === undefined ? null : Number(i.declaredChainId);
       const r = await findTransaction(h, Number.isInteger(declared) ? declared : null);
+      const searched = searchedChains(Number.isInteger(declared) ? declared : 143);
       return {
-        answer: { txHash: h, found: r.found, searchedChainIds: r.searched, unreachable: r.unreachable, sentence: explain(r), checkedAt: r.checkedAt },
+        answer: {
+          txHash: h,
+          found: r.found,
+          searchedChainIds: r.searched,
+          searched,
+          searchedVia: searchedVia(searched),
+          unreachable: r.unreachable,
+          sentence: explain(r),
+          checkedAt: r.checkedAt,
+        },
         meter: meter("chain searched", r.searched.length, 500, 1000),
       };
     },

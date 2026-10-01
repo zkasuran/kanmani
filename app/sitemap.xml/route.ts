@@ -19,6 +19,7 @@ export async function GET() {
     { loc: "/operators", priority: "0.9" },
     { loc: "/claims", priority: "0.8" },
     { loc: "/verify", priority: "0.8" },
+    { loc: "/compliance", priority: "0.7" },
     { loc: "/compare", priority: "0.6" },
     { loc: "/method", priority: "0.9" },
     { loc: "/status", priority: "0.7" },
