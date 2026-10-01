@@ -7,6 +7,10 @@
  *   node --experimental-strip-types scripts/verdict-sweep.mjs            check up to 200 new claims
  *   ... --limit 50 --dry                                                  judge, print, write nothing
  *   ... --recheck-days 7                                                  also re-check verdicts older than 7 days
+ *   ... --recheck-hours 6 --mutable-only                                  re-check documents that can change, every 6 hours
+ *                                                                         (http and ipfs documents plus every unknown; a
+ *                                                                         data: document is on chain and cannot change)
+ *   ... --gap 300                                                         wait 300 ms between documents fetched over the network
  *   ... --recheck-reason 'the cited transaction moved %'                  re-check latest verdicts whose reason matches
  *                                                                         (after a parser fix, so the correction is appended)
  *
@@ -25,7 +29,17 @@ const arg = (name, def) => {
   return i >= 0 ? process.argv[i + 1] : def;
 };
 const LIMIT = Math.min(Math.max(Number(arg("limit", "200")) || 200, 1), 2000);
-const RECHECK_DAYS = arg("recheck-days", null) === null ? null : Math.max(Number(arg("recheck-days")) || 0, 1);
+const RECHECK_HOURS =
+  arg("recheck-hours", null) !== null
+    ? Math.max(Number(arg("recheck-hours")) || 0, 1)
+    : arg("recheck-days", null) !== null
+      ? Math.max(Number(arg("recheck-days")) || 0, 1) * 24
+      : null;
+// Only documents whose bytes can change. A data: URI is the document itself, written on chain, so
+// rechecking it can only reproduce the same verdict. Unknowns are always eligible: a host that was
+// down may be back.
+const MUTABLE_ONLY = process.argv.includes("--mutable-only");
+const GAP_MS = Math.min(Math.max(Number(arg("gap", "0")) || 0, 0), 10_000);
 const DRY = process.argv.includes("--dry");
 const RECHECK_REASON = arg("recheck-reason", null);
 
@@ -39,14 +53,15 @@ const targets = await q(
     LIMIT $2`,
   [CHAIN_ID, LIMIT],
 );
-if (RECHECK_DAYS !== null && targets.length < LIMIT) {
+if (RECHECK_HOURS !== null && targets.length < LIMIT) {
   const old = await q(
     `SELECT f.id, f."feedbackUri" AS uri, f."feedbackHash" AS hash, 'recheck' AS why
        FROM fovea.verdict_latest l JOIN "Feedback" f ON f.id = l.feedback_id
-      WHERE f."chainId" = $1 AND l.checked_at < now() - make_interval(days => $2)
+      WHERE f."chainId" = $1 AND l.checked_at < now() - make_interval(hours => $2)
+        AND (NOT $4::boolean OR f."feedbackUri" NOT LIKE 'data:%' OR l.outcome = 'unknown')
       ORDER BY l.checked_at ASC
       LIMIT $3`,
-    [CHAIN_ID, RECHECK_DAYS, LIMIT - targets.length],
+    [CHAIN_ID, RECHECK_HOURS, LIMIT - targets.length, MUTABLE_ONLY],
   );
   targets.push(...old);
 }
@@ -66,7 +81,16 @@ if (RECHECK_REASON !== null) {
 
 const tally = {};
 let written = 0;
+let changed = 0;
+const before = new Map(
+  (targets.length
+    ? await q(`SELECT feedback_id, outcome FROM fovea.verdict_latest WHERE feedback_id = ANY($1)`, [targets.map((t) => t.id)])
+    : []
+  ).map((r) => [r.feedback_id, r.outcome]),
+);
 for (const t of targets) {
+  // Other people's servers: one document at a time, with a gap when it goes over the network.
+  if (GAP_MS > 0 && !t.uri.startsWith("data:")) await new Promise((r) => setTimeout(r, GAP_MS));
   const checkedAt = new Date().toISOString();
   let row;
   try {
@@ -113,6 +137,10 @@ for (const t of targets) {
     }
   }
   tally[row.outcome] = (tally[row.outcome] ?? 0) + 1;
+  if (before.has(t.id) && before.get(t.id) !== row.outcome) {
+    changed++;
+    console.log(`  changed ${t.id}: ${before.get(t.id)} -> ${row.outcome}  ${row.reason.slice(0, 90)}`);
+  }
   if (DRY) console.log(`  ${t.why.padEnd(7)} ${row.outcome.padEnd(8)} ${row.rung.padEnd(10)} ${t.id}  ${row.reason.slice(0, 80)}${row.foundChain ? `  [on ${row.foundChain}]` : ""}`);
   else {
     await liveAppendVerdict(row);
@@ -121,6 +149,7 @@ for (const t of targets) {
 }
 console.log(
   `verdict sweep: ${targets.length} claim(s) judged, ${written} written${DRY ? " (--dry)" : ""}. ` +
-    Object.entries(tally).map(([k, n]) => `${k} ${n}`).join(", "),
+    Object.entries(tally).map(([k, n]) => `${k} ${n}`).join(", ") +
+    (before.size ? `. ${changed} changed verdict` : ""),
 );
 process.exit(0);

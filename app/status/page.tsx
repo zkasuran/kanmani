@@ -28,7 +28,7 @@ const WORKERS = [
   {
     name: "Fovea, the verdict sweep",
     what: "Walks every claim without a verdict down the ladder and appends one. Never updates one. A cited transaction missing from Monad is searched for on the other chains we can read, so a mislabelled network is told apart from a missing payment.",
-    cadence: "hourly, systemd timer kanmani-sweep (ops/systemd). Every check is kept",
+    cadence: "new claims hourly (kanmani-sweep). Documents that can change plus every unknown rechecked every 6 hours (kanmani-recheck). Every check is kept",
   },
   {
     name: "the record probe",

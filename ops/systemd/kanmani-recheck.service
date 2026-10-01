@@ -1,0 +1,18 @@
+[Unit]
+Description=Kanmani recheck: documents that can change (http, ipfs) and every unknown, down the ladder again
+After=network-online.target postgresql.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/kanmani.env
+WorkingDirectory=/opt/kanmani
+# Verdicts older than 6 hours on documents whose bytes can change. data: documents are on chain and
+# are not rechecked. 300 ms between network fetches, one document at a time.
+ExecStart=/usr/bin/node --experimental-strip-types --no-warnings scripts/verdict-sweep.mjs --limit 1000 --recheck-hours 6 --mutable-only --gap 300
+Nice=10
+TimeoutStartSec=3600
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ReadOnlyPaths=/opt/kanmani
