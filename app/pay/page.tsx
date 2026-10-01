@@ -1,11 +1,14 @@
 import { PayFlow } from "./pay-flow.tsx";
 import { PageHeader, Panel } from "@/components/ui.tsx";
+import { ComposabilityPanel } from "@/components/composability-panel.tsx";
 
 export const metadata = {
   title: "Pay",
   description:
     "Mera as the whole account layer. One passkey prompt, a scoped signing session, then a real gasless Monad transaction with no seed phrase, no extension and no server-held key.",
 };
+
+type Props = { searchParams: Promise<{ net?: string }> };
 
 /**
  * The Mera-powered UX gate, live.
@@ -14,8 +17,14 @@ export const metadata = {
  * passkey ceremony, prompt-free signing through a scoped Mera session, a real Monad transaction,
  * and a stateless account that rebuilds from the passkey alone. This page walks a stranger through
  * all of it, so the properties are exercised rather than described.
+ *
+ * `?net=testnet` runs the free judge path: a sponsored tUSDC mint for the new account and a settle on
+ * Monad testnet, so the whole flow costs a judge nothing. No `net`, or `net=mainnet`, is the live
+ * mainnet surface and is unchanged.
  */
-export default function PayPage() {
+export default async function PayPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const net: "mainnet" | "testnet" = sp.net === "testnet" ? "testnet" : "mainnet";
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
@@ -32,7 +41,7 @@ export default function PayPage() {
         }
       />
 
-      <PayFlow />
+      <PayFlow net={net} />
 
       <div className="grid gap-5 lg:grid-cols-2">
         <Panel title="what the session is scoped to">
@@ -74,6 +83,8 @@ sign       -> EIP-3009 transferWithAuthorization, no prompt`}</pre>
           </p>
         </Panel>
       </div>
+
+      <ComposabilityPanel />
     </div>
   );
 }

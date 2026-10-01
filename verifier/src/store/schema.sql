@@ -579,3 +579,28 @@ CREATE TABLE IF NOT EXISTS fovea.wallet_funder (
 CREATE INDEX IF NOT EXISTS wallet_funder_address ON fovea.wallet_funder (address, chain, checked_at DESC);
 CREATE OR REPLACE VIEW fovea.wallet_funder_latest AS
   SELECT DISTINCT ON (address, chain) * FROM fovea.wallet_funder ORDER BY address, chain, checked_at DESC;
+
+-- ---------------------------------------------------------------- time to first transaction
+--
+-- Taps and seconds from a cold landing to a confirmed Monad transaction, which the Mera UX bounty
+-- scores. One row per settled run. `source` keeps real mainnet settles apart from CI rehearsals, so
+-- the published median is of real runs and never mixed. `tx_hash` is UNIQUE, so one settlement
+-- records one run and a replay cannot inflate the median. A `real` + `mainnet` row is only inserted
+-- after its cited tx is read on chain and matched, which is this project's own thesis applied to its
+-- own numbers.
+--
+-- Append only, same as every fovea table. It survives an Envio resync because it is not in `public`.
+CREATE TABLE IF NOT EXISTS fovea.pay_run (
+  id              bigserial   PRIMARY KEY,
+  source          text        NOT NULL CHECK (source IN ('real','ci')),
+  app_taps        integer     NOT NULL CHECK (app_taps >= 0 AND app_taps <= 1000),
+  passkey_prompts integer     NOT NULL CHECK (passkey_prompts >= 0 AND passkey_prompts <= 100),
+  elapsed_ms      integer     NOT NULL CHECK (elapsed_ms >= 0 AND elapsed_ms <= 3600000),
+  -- The settlement this run cites. UNIQUE so one tx records one run. NULL only for 'ci' testnet runs.
+  tx_hash         text        UNIQUE,
+  net             text        NOT NULL CHECK (net IN ('mainnet','testnet')),
+  payer           text,
+  recorded_at     timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS pay_run_source_idx ON fovea.pay_run (source, net, recorded_at DESC);

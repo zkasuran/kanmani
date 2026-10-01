@@ -9,6 +9,7 @@ import {
   SessionError,
   type SessionScope,
 } from "./session.ts";
+import { repromptFor } from "./session-reprompt.ts";
 
 /**
  * The pinned PRF vector, the same one iris and Sclera assert against, so the account address is a
@@ -171,4 +172,56 @@ test("a payment session only pays the recipient its scope names", async () => {
     () => session.assertCanPay(10_000n, "0x1111111111111111111111111111111111111111"),
     (e: unknown) => isSessionError(e) && e.code === "WRONG_SIGNER",
   );
+});
+
+/* ---------------------------------------------- the three re-prompt cases, as the UI drives them */
+
+test("within scope signs with no prompt, over cap prompts, after expiry renews once", async () => {
+  const clock = fakeClock();
+  let ceremonies = 0;
+  const connect = async () => {
+    ceremonies += 1;
+    return deriveKeys(PINNED_PRF);
+  };
+  const open = () =>
+    connectAndOpenSession({ connect, scope: scope(50_000n), ttlMs: 10_000, seams: { now: clock.now } });
+
+  // 1. Within scope: one ceremony onboards, two signatures run with no further prompt.
+  const { session } = await open();
+  assert.equal(ceremonies, 1);
+  session.assertCanPay(50_000n);
+  session.assertCanPay(10_000n);
+  await session.account.signMessage({ message: "a" });
+  await session.account.signMessage({ message: "b" });
+  assert.equal(ceremonies, 1, "the session signs prompt-free within scope");
+  assert.equal(repromptFor(null), "none");
+
+  // 2. Over the cap: refused, and the UI maps it to raiseCap, which re-prompts.
+  const over = (() => {
+    try {
+      session.assertCanPay(50_001n);
+      return null;
+    } catch (e) {
+      return e as SessionError;
+    }
+  })();
+  assert.ok(over && over.code === "SCOPE_EXCEEDED");
+  assert.equal(repromptFor(over.code), "raiseCap");
+  assert.equal(session.ended(), false, "a scope miss is a bad request, not a dropped session");
+
+  // 3. After expiry: refused, mapped to renew, one more ceremony reopens the session.
+  clock.advance(10_001);
+  const expired = (() => {
+    try {
+      session.assertCanPay(10_000n);
+      return null;
+    } catch (e) {
+      return e as SessionError;
+    }
+  })();
+  assert.ok(expired && expired.code === "SESSION_EXPIRED");
+  assert.equal(repromptFor(expired.code), "renew");
+  const reopened = await open();
+  assert.equal(ceremonies, 2, "renew runs exactly one more ceremony");
+  reopened.session.assertCanPay(10_000n);
 });

@@ -126,3 +126,40 @@ export function shortAddress(address: string): string {
   const a = getAddress(address);
   return `${a.slice(0, 6)}…${a.slice(-4)}`;
 }
+
+/* ------------------------------------------------------------------ the one write path */
+
+/**
+ * The minimal storage surface a session write touches.
+ *
+ * Narrowed to `setItem` and `removeItem` on purpose, so the only thing that can reach a store is a
+ * string this file produced. A fake with the same two methods is all a test needs to see every byte
+ * that would be written, which is how the no-persist invariant is proven rather than asserted in a
+ * comment.
+ */
+export type StorageLike = {
+  setItem(key: string, value: string): void;
+  removeItem(key: string): void;
+};
+
+/**
+ * Exactly the string that reaches storage.
+ *
+ * One function so there is a single place where a `StoredSession` becomes bytes. A key cannot leak
+ * through a second serializer that nobody is watching, because there is no second serializer.
+ */
+export function serializeSession(s: StoredSession): string {
+  return JSON.stringify(s);
+}
+
+/**
+ * Write the session, or clear it when null.
+ *
+ * The component's `write` calls this and nothing else, so the test over this function is a test over
+ * the real write path rather than a parallel copy. It only ever serializes a `StoredSession`, which
+ * holds `{v, address, method, kind, since}` and nothing derived, so no key can be written here.
+ */
+export function persistSession(storage: StorageLike, s: StoredSession | null): void {
+  if (s) storage.setItem(SESSION_KEY, serializeSession(s));
+  else storage.removeItem(SESSION_KEY);
+}

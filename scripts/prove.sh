@@ -225,6 +225,21 @@ M=0; for s in kanmani sentinel assay locator notary registrar ledger twin pulse 
   curl -fsS "$SITE/api/service/$s/registration.json" | grep -q '"onChainMatches": true' && M=$((M+1)); done
 [ "$M" = "13" ] && ok "all 13 agents carry their registration-v1 document on chain, byte for byte" || bad "only $M of 13 agents carry their intended document on chain"
 
+# ---------------------------------------------------------------- 12. Composability, every link is a real tx
+echo "12. Composability  ·  each stack layer links a settled chain-143 tx  ·  expected status 1"
+if have_cast; then
+  for H in \
+    0x94fc5e709885b40e7149791c4329ff2611d2e52545f4533f6e96fe1f6c0397d8 \
+    0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e \
+    0x399bdce466786717078e7ea95afd0e59d30e61c0901d24e6db38d28c0d9745f5; do
+    ST=$(cast receipt "$H" status --rpc-url "$RPC" 2>/dev/null | tr -d ' ')
+    [ "$ST" = "true" ] || [ "$ST" = "1" ] && ok "composability tx ${H:0:12}… mined success on chain 143" || bad "composability tx ${H:0:12}… did not read as a success receipt"
+  done
+  note "the Mera-account row is hollow until plan 1.5 fills its hash, so the panel is honest at 3 of 4"
+else
+  sk "cast absent, cannot read the composability receipts"
+fi
+
 echo
 echo "-------------------------------------------------------------"
 printf 'PASS %d   FAIL %d   SKIP %d\n' "$pass" "$fail" "$skip"

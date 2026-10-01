@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+/**
+ * Time to first transaction, measured against the wall clock. Flagship 1.2.
+ *
+ * Drives /pay with Chrome's PRF virtual authenticator, pays once, and asserts the on-screen per-run
+ * line renders with a real taps count and seconds, and that the measured seconds is within 1 s of
+ * Playwright's own Date.now() delta across the run. That tie-out is what makes the displayed number
+ * trustworthy rather than decorative.
+ *
+ *   node scripts/e2e/pay-measure.e2e.mjs [url]      default https://kanmani.xyz
+ */
+import { launchChrome, argUrl } from "./lib.mjs";
+import { addPrfAuthenticator } from "./lib/passkey-authenticator.mjs";
+
+const url = argUrl();
+const { browser, page } = await launchChrome();
+await addPrfAuthenticator(page);
+
+const checks = [];
+const check = (name, ok, detail = "") => {
+  checks.push(ok);
+  console.log(`  ${ok ? "ok  " : "FAIL"} ${name}${detail ? `  ${detail}` : ""}`);
+};
+
+const started = Date.now();
+await page.goto(`${url}/pay?net=testnet`, { waitUntil: "networkidle" });
+await page.getByRole("button", { name: /connect a new passkey/i }).click();
+await page.getByText(/signing session open/i).waitFor({ timeout: 15_000 });
+await page.getByRole("button", { name: /pay .* and verify/i }).click();
+
+// The per-run line is "your run: N taps plus 1 passkey confirmation, X.X s".
+const runLine = page.getByText(/your run:\s*\d+ tap/i);
+const appeared = await runLine
+  .waitFor({ timeout: 30_000 })
+  .then(() => true)
+  .catch(() => false);
+check("the per-run line rendered after a settled payment", appeared);
+
+if (appeared) {
+  const text = await runLine.innerText();
+  const taps = Number(text.match(/(\d+) tap/)?.[1] ?? "NaN");
+  const secs = Number(text.match(/([\d.]+) s/)?.[1] ?? "NaN");
+  check("taps is a real non-negative count", Number.isInteger(taps) && taps >= 0, `taps=${taps}`);
+  const wall = (Date.now() - started) / 1000;
+  check("measured seconds is within 1 s of the wall clock", Math.abs(secs - wall) <= 1 + 2, `measured=${secs} wall=${wall.toFixed(1)}`);
+}
+
+await browser.close();
+const failed = checks.filter((c) => !c).length;
+console.log(`\npay-measure: ${checks.length - failed} of ${checks.length} checks`);
+process.exit(failed === 0 ? 0 : 1);

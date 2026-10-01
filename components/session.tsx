@@ -19,6 +19,7 @@ import { type IrisKeys } from "@/lib/iris.ts";
 import { viemChain } from "@/lib/chains.ts";
 import {
   parseSession,
+  persistSession,
   sessionRecord,
   walletLoginMessage,
   SESSION_KEY,
@@ -109,8 +110,9 @@ export function useSession(): SessionState {
 
 function write(s: StoredSession | null) {
   try {
-    if (s) window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(s));
-    else window.sessionStorage.removeItem(SESSION_KEY);
+    // One write path, defined in lib/login.ts, so the no-persist test over `persistSession` is a
+    // test over exactly these bytes rather than a parallel copy that could drift.
+    persistSession(window.sessionStorage, s);
   } catch {
     // Storage can be disabled. The session then lasts for this page only, which is still correct.
   }

@@ -14,7 +14,6 @@
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Row } from "@/components/ui.tsx";
 import { createAccount, signIn, webAuthnAvailable, type CeremonyOutcome } from "@/lib/passkey.ts";
 import type { IrisKeys } from "@/lib/iris.ts";
 import {
@@ -23,6 +22,9 @@ import {
   type ScopedSession,
 } from "@/lib/session.ts";
 import { payForVerification, verificationPrice, verificationScope, type PayResult } from "@/lib/pay.ts";
+import type { PayNetName } from "@/lib/pay-net.ts";
+import { SessionScope } from "@/components/session-scope.tsx";
+import { PayMeasure, type PayMeasureHandle } from "@/components/pay-measure.tsx";
 
 /** Five minutes. Long enough to pay a few times, short enough that a walked-away tab stops signing. */
 const SESSION_TTL_MS = 5 * 60_000;
@@ -34,7 +36,7 @@ function mmss(ms: number): string {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
 }
 
-export function PayFlow() {
+export function PayFlow({ net = "mainnet" }: { net?: PayNetName }) {
   const [available, setAvailable] = useState<boolean | null>(null);
   const [busy, setBusy] = useState<"connect" | "pay" | null>(null);
   const [keys, setKeys] = useState<IrisKeys | null>(null);
@@ -43,7 +45,10 @@ export function PayFlow() {
   const [target, setTarget] = useState("");
   const [result, setResult] = useState<PayResult | null>(null);
   const [note, setNote] = useState<{ kind: "error" | "info"; cause: string; fix?: string } | null>(null);
+  const [funding, setFunding] = useState<{ kind: "ok" | "info" | "error"; text: string } | null>(null);
+  const [expired, setExpired] = useState(false);
   const host = useRef("this site");
+  const measure = useRef<PayMeasureHandle>(null);
 
   useEffect(() => {
     setAvailable(webAuthnAvailable());
@@ -60,7 +65,8 @@ export function PayFlow() {
       if (left <= 0) {
         session.end();
         setSession(null);
-        setNote({ kind: "info", cause: "The signing session expired. Connect again to open a new one." });
+        setExpired(true);
+        setNote({ kind: "info", cause: "The signing session expired. Renew it to carry on without going back to the top." });
       }
     };
     tick();
@@ -68,17 +74,45 @@ export function PayFlow() {
     return () => clearInterval(id);
   }, [session]);
 
-  const price = verificationPrice();
-  const scope = verificationScope(SCOPE_MAX_ATOMIC, host.current);
+  const price = verificationPrice(net);
+  const scope = verificationScope(SCOPE_MAX_ATOMIC, host.current, net);
+
+  /** Testnet only: the house mints a little tUSDC to the new account so the judge funds nothing. */
+  const sponsorMint = useCallback(async (address: `0x${string}`) => {
+    setFunding({ kind: "info", text: "funding this account with testnet tUSDC, on the house…" });
+    try {
+      const r = await fetch("/api/testnet/mint", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ address }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (r.ok && j?.data) {
+        setFunding({
+          kind: "ok",
+          text: j.data.minted
+            ? "funded by the house, testnet only. This account can pay now with no funding step."
+            : "already funded. This account can pay now with no funding step.",
+        });
+      } else {
+        setFunding({ kind: "error", text: j?.detail ?? "the sponsored mint is not available right now." });
+      }
+    } catch (e) {
+      setFunding({ kind: "error", text: (e as Error).message });
+    }
+  }, []);
 
   const connect = useCallback(
     async (kind: "create" | "signin") => {
       setBusy("connect");
       setNote(null);
       setResult(null);
+      setFunding(null);
+      setExpired(false);
       try {
         const { session: opened, keys: derived } = await connectAndOpenSession({
           connect: async () => {
+            measure.current?.onCeremony();
             const outcome: CeremonyOutcome = kind === "create" ? await createAccount("kanmani") : await signIn();
             if (!outcome.ok) throw outcome;
             return outcome.keys;
@@ -88,6 +122,7 @@ export function PayFlow() {
         });
         setKeys(derived);
         setSession(opened);
+        if (net === "testnet") void sponsorMint(derived.account.address);
       } catch (e) {
         const o = e as CeremonyOutcome;
         if (o && typeof o === "object" && "cause" in o) {
@@ -99,8 +134,34 @@ export function PayFlow() {
         setBusy(null);
       }
     },
-    [scope],
+    [scope, net, sponsorMint],
   );
+
+  /** One sign-in ceremony reopens a session with the same scope, so expiry is one tap not a restart. */
+  const renew = useCallback(async () => {
+    setBusy("connect");
+    setNote(null);
+    try {
+      const { session: opened, keys: derived } = await connectAndOpenSession({
+        connect: async () => {
+          measure.current?.onCeremony();
+          const outcome = await signIn();
+          if (!outcome.ok) throw outcome;
+          return outcome.keys;
+        },
+        scope,
+        ttlMs: SESSION_TTL_MS,
+      });
+      setKeys(derived);
+      setSession(opened);
+      setExpired(false);
+    } catch (e) {
+      const o = e as CeremonyOutcome;
+      setNote({ kind: "error", cause: o && typeof o === "object" && "cause" in o ? o.cause : (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  }, [scope]);
 
   const pay = useCallback(async () => {
     if (!session) return;
@@ -108,21 +169,35 @@ export function PayFlow() {
     setNote(null);
     setResult(null);
     const trimmed = target.trim();
-    // A document URL checks that document, anything else is treated as a claim id already on the
-    // site. A URL always takes the paid path, an already-checked claim comes back free.
-    const spec = trimmed.startsWith("http") ? { uri: trimmed } : { id: trimmed };
+    // Testnet always takes the paid path against the testnet verifier, defaulting to a self-contained
+    // demo document when no URL is given. Mainnet treats a URL as a document and anything else as a
+    // claim id already on the site.
+    const spec =
+      net === "testnet"
+        ? { uri: trimmed.startsWith("http") ? trimmed : "" }
+        : trimmed.startsWith("http")
+          ? { uri: trimmed }
+          : { id: trimmed };
+    const endpoint = net === "testnet" ? "/api/testnet/verify" : "/api/verify";
     try {
       const res = await payForVerification({
         session,
         target: spec,
-        resourceUrl: typeof window !== "undefined" ? `${window.location.origin}/api/verify` : "/api/verify",
+        endpoint,
+        resourceUrl: typeof window !== "undefined" ? `${window.location.origin}${endpoint}` : endpoint,
+        net,
       });
       setResult(res);
+      if (res.ok && res.settlement.settled && res.settlement.transaction) {
+        measure.current?.onReceipt(res.settlement);
+      }
       if (!res.ok) setNote({ kind: "info", cause: res.reason });
     } catch (e) {
+      // A mid-action expiry becomes a one-tap renew rather than a trip back to the top.
       if (isSessionError(e) && (e.code === "SESSION_EXPIRED" || e.code === "SESSION_ENDED")) {
         setSession(null);
-        setNote({ kind: "info", cause: "The signing session expired mid-action. Connect again to continue." });
+        setExpired(true);
+        setNote({ kind: "info", cause: "The signing session expired mid-action. Renew it and pay again." });
       } else if (isSessionError(e) && e.code === "SCOPE_EXCEEDED") {
         setNote({ kind: "error", cause: e.message, fix: "Open a new session with a higher ceiling." });
       } else {
@@ -131,10 +206,11 @@ export function PayFlow() {
     } finally {
       setBusy(null);
     }
-  }, [session, target]);
+  }, [session, target, net]);
 
   return (
     <PayFlowView
+      net={net}
       available={available}
       busy={busy}
       keys={keys}
@@ -144,8 +220,12 @@ export function PayFlow() {
       setTarget={setTarget}
       result={result}
       note={note}
+      funding={funding}
       price={price}
+      expired={expired}
+      measureRef={measure}
       onConnect={connect}
+      onRenew={renew}
       onPay={pay}
       onEnd={() => {
         session?.end();
@@ -158,6 +238,7 @@ export function PayFlow() {
 }
 
 type ViewProps = {
+  net: PayNetName;
   available: boolean | null;
   busy: "connect" | "pay" | null;
   keys: IrisKeys | null;
@@ -167,8 +248,12 @@ type ViewProps = {
   setTarget: (v: string) => void;
   result: PayResult | null;
   note: { kind: "error" | "info"; cause: string; fix?: string } | null;
+  funding: { kind: "ok" | "info" | "error"; text: string } | null;
   price: { atomic: bigint; usdc: string };
+  expired: boolean;
+  measureRef: React.RefObject<PayMeasureHandle | null>;
   onConnect: (kind: "create" | "signin") => void;
+  onRenew: () => void;
   onPay: () => void;
   onEnd: () => void;
   mmss: (ms: number) => string;
@@ -179,7 +264,6 @@ const STEP = "eyebrow";
 
 function PayFlowView(p: ViewProps) {
   const connected = p.session !== null;
-  const address = p.session?.address ?? p.keys?.account.address ?? null;
 
   return (
     <div className="space-y-5">
@@ -216,64 +300,88 @@ function PayFlowView(p: ViewProps) {
         </p>
       </section>
 
-      {/* ---------------------------------------------------------------- the session */}
+      {/* ---------------------------------------------------------------- the session, in plain language */}
       {connected && p.session ? (
         <section className={`${CARD} border-[var(--color-brand)]/40`}>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-[var(--color-true)]" />
-              <p className={STEP}>signing session open</p>
-            </div>
-            <div className="text-right">
-              <div className="stat-value tnum text-[1.5rem] text-[var(--color-text)]">{p.mmss(p.remaining)}</div>
-              <div className="eyebrow mt-0.5">until the next prompt</div>
-            </div>
-          </div>
-          <p className="mt-4 text-[13.5px] leading-relaxed text-[var(--color-text)]">{p.session.scope.label}</p>
-          <dl className="mt-3">
-            <Row label="account">
-              <span className="break-all font-mono text-[13px] text-muted">{address}</span>
-            </Row>
-            <Row label="ceiling">
-              <span className="font-mono text-[13px] text-muted">
-                {p.session.scope.maxAmountAtomic.toString()} atomic units
-              </span>
-            </Row>
-          </dl>
-          <button onClick={p.onEnd} className="cta-ghost mt-4">
-            end session now
-          </button>
-          <p className="mt-3 text-[12px] leading-relaxed text-faint">
-            The session key lives in this tab and is zeroed on expiry or when you end it. The next
-            action after that re-runs the one-prompt ceremony.
+          <SessionScope
+            session={p.session}
+            remaining={p.remaining}
+            mmss={p.mmss}
+            onEnd={p.onEnd}
+            onRenew={p.onRenew}
+            busy={p.busy !== null}
+          />
+        </section>
+      ) : null}
+
+      {/* ---------------------------------------------------------------- expired: renew in one tap */}
+      {!p.session && p.expired ? (
+        <section className={`${CARD} border-[var(--color-unknown)]/40`}>
+          <p className="eyebrow">session expired</p>
+          <p className="mt-2 text-[13.5px] leading-relaxed">
+            The signing session ended, which is the safe default for a key held in memory. Renew runs
+            one sign-in and reopens the same scope. Nothing was lost, the account comes back from the
+            passkey.
           </p>
+          <button onClick={p.onRenew} disabled={p.busy !== null} className="cta mt-3 disabled:opacity-40">
+            {p.busy === "connect" ? "waiting for the prompt…" : "renew session"}
+          </button>
+        </section>
+      ) : null}
+
+      {/* ---------------------------------------------------------------- testnet: funded by the house */}
+      {p.net === "testnet" && p.funding ? (
+        <section
+          className={`${CARD} ${
+            p.funding.kind === "error"
+              ? "border-[var(--color-false)]/40"
+              : p.funding.kind === "ok"
+                ? "border-[var(--color-true)]/40"
+                : "border-[var(--color-unknown)]/40"
+          }`}
+        >
+          <p className="eyebrow">testnet, free judge path</p>
+          <p className="mt-2 text-[13.5px] leading-relaxed">{p.funding.text}</p>
         </section>
       ) : null}
 
       {/* ---------------------------------------------------------------- step 2: pay */}
       <section className={CARD}>
-        <p className={STEP}>step 2 &middot; pay {p.price.usdc} USDC, gasless</p>
+        <p className={STEP}>
+          step 2 &middot; pay {p.price.usdc} {p.net === "testnet" ? "tUSDC" : "USDC"}, gasless
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <input
             value={p.target}
             onChange={(e) => p.setTarget(e.target.value)}
-            placeholder="a claim id or a document URL to check"
+            placeholder={p.net === "testnet" ? "optional document URL, or leave blank for the demo" : "a claim id or a document URL to check"}
             className="min-w-[16rem] flex-1 rounded border border-[var(--color-line)] bg-[var(--color-ink)] px-3 py-2 font-mono text-[12.5px] outline-none focus:border-[var(--color-line-bright)]"
           />
           <button
             onClick={p.onPay}
-            disabled={!connected || p.busy !== null || p.target.trim() === ""}
+            disabled={!connected || p.busy !== null || (p.net !== "testnet" && p.target.trim() === "")}
             className="cta disabled:opacity-40"
           >
             {p.busy === "pay" ? "signing and settling…" : `pay ${p.price.usdc} and verify`}
           </button>
         </div>
-        <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
-          The session signs one EIP-3009 authorization with no prompt. The facilitator relays it and
-          pays the gas, so your account never needs MON. Your account does need the {p.price.usdc}{" "}
-          USDC it is paying, so fund the address above before the first paid check. A claim already
-          checked comes back free, a document URL is fetched and settled on chain.
-        </p>
+        {p.net === "testnet" ? (
+          <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+            The session signs one EIP-3009 authorization with no prompt. The facilitator relays it and
+            pays the gas, and the house minted the tUSDC above, so a brand-new passkey reaches a
+            confirmed testnet transaction with zero funding steps. Leave the box blank for a
+            self-contained demo document.
+          </p>
+        ) : (
+          <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
+            The session signs one EIP-3009 authorization with no prompt. The facilitator relays it and
+            pays the gas, so your account never needs MON. Your account does need the {p.price.usdc}{" "}
+            USDC it is paying, so fund the address above before the first paid check. A claim already
+            checked comes back free, a document URL is fetched and settled on chain.
+          </p>
+        )}
+        {/* Taps and seconds, measured on this page. The widget holds the counters and the aggregate. */}
+        <PayMeasure ref={p.measureRef} net={p.net} />
       </section>
 
       {/* ---------------------------------------------------------------- the result */}

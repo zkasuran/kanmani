@@ -18,6 +18,7 @@ import {
   verificationScope,
 } from "./pay.ts";
 import { NETWORK, paymentFrom, requirements, USDC_MONAD } from "./x402.ts";
+import { TESTNET_USDC_FALLBACK } from "./pay-net.ts";
 
 const PINNED_PRF = new Uint8Array(32).map((_, i) => i + 1);
 const PINNED_ACCOUNT = "0x92c2a8984eb7b890FfB4c6B57560Ac4E4868454B";
@@ -278,4 +279,63 @@ test("a verification scope names its ceiling in USDC", () => {
   assert.match(s.label, /0\.05 USDC/);
   assert.match(s.label, /kanmani\.xyz/);
   assert.equal(s.maxAmountAtomic, 50_000n);
+});
+
+/* ---------------------------------------------- the testnet path, beside mainnet, not replacing it */
+
+const TESTNET_DOMAIN = {
+  name: "Kanmani Test USD",
+  version: "1",
+  chainId: 10143,
+  verifyingContract: (process.env.TESTNET_USDC ?? TESTNET_USDC_FALLBACK) as `0x${string}`,
+} as const;
+
+test("a testnet authorization signs under TestUSDC's own domain and recovers to the account", async () => {
+  const session = await pinnedSession();
+  const auth = buildAuthorization({ from: session.address, now: 1_700_000_000_000, nonce: `0x${"55".repeat(32)}`, net: "testnet" });
+  // Built from the testnet requirements, so the recipient and amount are the testnet config's.
+  assert.equal(auth.to, "0xDB6c6340342e71A63cD11Ebac2185204b7777777");
+  assert.equal(auth.value, "10000");
+
+  const signature = await signAuthorization(session, auth, "testnet");
+  const recovered = await recoverTypedDataAddress({
+    domain: TESTNET_DOMAIN,
+    types: TYPES,
+    primaryType: "TransferWithAuthorization",
+    message: messageOf(auth),
+    signature,
+  });
+  assert.equal(recovered.toLowerCase(), session.address.toLowerCase(), "the facilitator recovers the account under TestUSDC's domain");
+
+  // The mainnet domain must NOT verify the testnet signature: the two chains are genuinely separate.
+  const crossOk = await verifyTypedData({
+    address: session.address,
+    domain: EXPECTED_DOMAIN,
+    types: TYPES,
+    primaryType: "TransferWithAuthorization",
+    message: messageOf(auth),
+    signature,
+  });
+  assert.equal(crossOk, false, "a testnet signature does not verify under the mainnet domain");
+});
+
+test("a testnet payment header reads back through the testnet-aware paymentFrom", async () => {
+  const session = await pinnedSession();
+  const auth = buildAuthorization({ from: session.address, now: 1_700_000_000_000, nonce: `0x${"66".repeat(32)}`, net: "testnet" });
+  const signature = await signAuthorization(session, auth, "testnet");
+  const payload = buildPaymentPayload({ resourceUrl: "https://kanmani.xyz/api/testnet/verify", authorization: auth, signature, net: "testnet" });
+  const header = encodePaymentHeader(payload);
+
+  // The testnet route passes eip155:10143, so the testnet network is accepted here.
+  const parsed = paymentFrom(new Headers({ "payment-signature": header }), ["exact"], "eip155:10143");
+  assert.equal(parsed.ok, true);
+  if (parsed.ok) {
+    assert.equal(parsed.payload.accepted.network, "eip155:10143");
+    assert.equal((parsed.payload.payload as { authorization: Record<string, string> }).authorization.from, session.address);
+  }
+
+  // The mainnet endpoint rejects a testnet payment, so a testnet header cannot settle on mainnet.
+  const wrong = paymentFrom(new Headers({ "payment-signature": header }));
+  assert.equal(wrong.ok, false);
+  if (!wrong.ok) assert.match(wrong.reason, /eip155:143/);
 });

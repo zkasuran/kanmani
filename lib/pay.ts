@@ -23,7 +23,8 @@
  */
 
 import { type ScopedSession, SessionError, type SessionScope } from "./session.ts";
-import { NETWORK, PAY_TO, type PaymentPayload, requirements, resourceInfo } from "./x402.ts";
+import { NETWORK, type PaymentPayload, resourceInfo } from "./x402.ts";
+import { payNet, requirementsFor, usdcDomainFor, type PayNetName } from "./pay-net.ts";
 
 /** USDC on Monad is six decimals, read off the token, not assumed. */
 export const USDC_DECIMALS = 6;
@@ -49,14 +50,8 @@ export type Eip712Domain = {
 };
 
 /** The EIP-712 domain USDC signs `TransferWithAuthorization` under, built from the x402 config. */
-export function usdcDomain(): Eip712Domain {
-  const req = requirements();
-  return {
-    name: req.extra.name,
-    version: req.extra.version,
-    chainId: chainIdFromNetwork(req.network),
-    verifyingContract: req.asset as `0x${string}`,
-  };
+export function usdcDomain(net: PayNetName = "mainnet"): Eip712Domain {
+  return usdcDomainFor(net);
 }
 
 /** The EIP-3009 struct. Field order and widths match USDC's typehash on chain 143. */
@@ -108,8 +103,9 @@ export function buildAuthorization(opts: {
   ttlSeconds?: number;
   nonce?: `0x${string}`;
   randomBytes?: (n: number) => Uint8Array;
+  net?: PayNetName;
 }): Eip3009Authorization {
-  const req = requirements();
+  const req = requirementsFor(opts.net ?? "mainnet");
   const nowSec = Math.floor((opts.now ?? Date.now()) / 1000);
   const ttl = opts.ttlSeconds ?? req.maxTimeoutSeconds;
   return {
@@ -134,6 +130,7 @@ export function buildAuthorization(opts: {
 export async function signAuthorization(
   session: ScopedSession,
   auth: Eip3009Authorization,
+  net: PayNetName = "mainnet",
 ): Promise<`0x${string}`> {
   if (auth.from.toLowerCase() !== session.address.toLowerCase()) {
     throw new SessionError(
@@ -144,7 +141,7 @@ export async function signAuthorization(
   session.assertCanPay(BigInt(auth.value), auth.to);
 
   return session.account.signTypedData({
-    domain: usdcDomain(),
+    domain: usdcDomain(net),
     types: TRANSFER_WITH_AUTHORIZATION_TYPES,
     primaryType: "TransferWithAuthorization",
     message: {
@@ -163,11 +160,12 @@ export function buildPaymentPayload(opts: {
   resourceUrl: string;
   authorization: Eip3009Authorization;
   signature: `0x${string}`;
+  net?: PayNetName;
 }): PaymentPayload {
   return {
     x402Version: 2,
     resource: resourceInfo(opts.resourceUrl),
-    accepted: requirements(),
+    accepted: requirementsFor(opts.net ?? "mainnet"),
     payload: {
       signature: opts.signature,
       authorization: opts.authorization as unknown as Record<string, string>,
@@ -190,8 +188,8 @@ export function encodePaymentHeader(payload: PaymentPayload): string {
 }
 
 /** The token amount for one verification, in atomic units and as human USDC. */
-export function verificationPrice(): { atomic: bigint; usdc: string } {
-  const atomic = BigInt(requirements().amount);
+export function verificationPrice(net: PayNetName = "mainnet"): { atomic: bigint; usdc: string } {
+  const atomic = BigInt(requirementsFor(net).amount);
   return { atomic, usdc: formatUsdc(atomic) };
 }
 
@@ -212,14 +210,19 @@ export function formatUsdc(atomic: bigint): string {
  * The ceiling is what the user agrees to when they open the session. Any single payment above it is
  * refused with SCOPE_EXCEEDED before the key signs.
  */
-export function verificationScope(maxAmountAtomic: bigint, resourceHost: string): SessionScope {
+export function verificationScope(
+  maxAmountAtomic: bigint,
+  resourceHost: string,
+  net: PayNetName = "mainnet",
+): SessionScope {
   return {
     label: `x402 verification payments up to ${formatUsdc(maxAmountAtomic)} USDC on ${resourceHost}`,
     maxAmountAtomic,
     resourceHost,
     // Pin the recipient to the one this site is paid at. A session opened here can then only ever
-    // sign a transfer to us, never to an address a tampered page slipped into the authorization.
-    payTo: PAY_TO,
+    // sign a transfer to us, never to an address a tampered page slipped into the authorization. The
+    // same house EOA is the payee on both networks.
+    payTo: payNet(net).payTo,
   };
 }
 
@@ -266,7 +269,9 @@ export async function payForVerification(opts: {
   ttlSeconds?: number;
   nonce?: `0x${string}`;
   randomBytes?: (n: number) => Uint8Array;
+  net?: PayNetName;
 }): Promise<PayResult> {
+  const net = opts.net ?? "mainnet";
   const endpoint = opts.endpoint ?? "/api/verify";
   const resourceUrl = opts.resourceUrl ?? endpoint;
   const headerName = opts.headerName ?? "X-PAYMENT";
@@ -278,9 +283,10 @@ export async function payForVerification(opts: {
     ttlSeconds: opts.ttlSeconds,
     nonce: opts.nonce,
     randomBytes: opts.randomBytes,
+    net,
   });
-  const signature = await signAuthorization(opts.session, auth);
-  const payload = buildPaymentPayload({ resourceUrl, authorization: auth, signature });
+  const signature = await signAuthorization(opts.session, auth, net);
+  const payload = buildPaymentPayload({ resourceUrl, authorization: auth, signature, net });
   const header = encodePaymentHeader(payload);
 
   const res = await doFetch(endpoint, {
@@ -311,7 +317,7 @@ export async function payForVerification(opts: {
       paid: Boolean(data.paid),
       settled: Boolean(payment.settled),
       transaction: tx,
-      txUrl: tx ? `${MONAD_EXPLORER_TX}${tx}` : null,
+      txUrl: tx ? `${payNet(net).explorerTx}${tx}` : null,
       payer: (payment.payer as string | null) ?? null,
       verdict: data.verdict ?? null,
     },

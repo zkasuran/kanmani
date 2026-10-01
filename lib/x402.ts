@@ -161,6 +161,8 @@ export function paymentFrom(
   headers: Headers,
   /** Which schemes this endpoint serves. Exact only unless a route opts in to upto. */
   schemes: readonly Scheme[] = ["exact"],
+  /** The network this endpoint settles on. Mainnet by default, the testnet route passes eip155:10143. */
+  expectedNetwork: string = NETWORK,
 ): { ok: true; payload: PaymentPayload; header: string } | { ok: false; reason: string } {
   const v2 = headers.get("payment-signature");
   const v1 = headers.get("x-payment");
@@ -210,8 +212,8 @@ export function paymentFrom(
   if (!schemes.includes(accepted.scheme as Scheme)) {
     return { ok: false, reason: `scheme ${String(accepted.scheme)} is not served here, use ${schemes.join(" or ")}` };
   }
-  if (accepted.network !== NETWORK) {
-    return { ok: false, reason: `network ${String(accepted.network)} is not served here, use ${NETWORK}` };
+  if (accepted.network !== expectedNetwork) {
+    return { ok: false, reason: `network ${String(accepted.network)} is not served here, use ${expectedNetwork}` };
   }
 
   const inner = p.payload as { signature?: unknown; authorization?: unknown; permit2Authorization?: unknown } | undefined;
