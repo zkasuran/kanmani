@@ -1,20 +1,23 @@
 # Atlas induction: what Qwen actually did
 
-**The honest position before this run.** The five shipped mappings carried `induced: "2026-09-19"` as a
-typed string. The Qwen client and the induction loop existed with tests and **had never been run**, so no
-artefact showed a model had produced anything. `/method` said the mappings were "induced from real
-documents", which was true of the process in the sense that a human read real documents and invited a
-reading it could not support.
+**The honest position before this run.** The five shipped mappings are hand-written, plus a rule for
+plain-text comments. Each carried `induced: "2026-09-19"` as a typed string, which is only the date a
+human added it. The Qwen client and the induction loop existed with tests and **had never been run**,
+so no artefact showed a model had produced anything. Calling the hand atlas "induced" invited a reading
+the repo could not support.
 
 This document is the artefact that was missing.
 
 ## Run it yourself
 
 ```bash
+# the offline convergence demo (no key, no network): watches the loop propose, run the parser, revise
+npx tsx verifier/src/atlas/demo.ts
+
+# a real Qwen run: swap ScriptedModel for qwenFromEnv() in demo.ts, then set a key and host
 export GMI_API_KEY=...            # or DASHSCOPE_API_KEY
 export QWEN_BASE_URL=https://api.gmi-serving.com/v1
 export QWEN_MODEL=Qwen/Qwen3.8-Max
-npx tsx verifier/src/atlas/demo.ts
 ```
 
 The record of the run below is `verifier/src/atlas/inductions/gebo-uptime-report.v1.json`, including the
@@ -25,13 +28,13 @@ full transcript.
 `noMappingReadTheShape` was **0** for Monad through 2026-09-28: every document was read by a
 hand-written mapping, which is why the integration had no pressure behind it at first. That changed on
 2026-09-30, when agent 10255 wrote three `tab-settlement-feedback` documents the hand atlas could not
-read, so the Monad gap is **3** now and live. Those three are the first Monad shape the induction loop
-has a real reason to run against. The candidate it proposes sits in the review queue on `/method`.
-The current count is read from the database on each render, so this prose does not drift again: see
-`/method#review-queue` and `/writing/qwen`.
+read, so the Monad gap is live, shown on `/method#review-queue`. Those three are the first Monad shape
+the induction loop has a real reason to run against. The candidate it proposes sits in the review queue
+on `/method`. The current count is read from the database on each render, so this prose does not drift
+again: see `/method#review-queue` and `/blog/qwen`.
 
-The larger gap is on the other chain. BSC holds **25,643 evidence documents** against Monad's 1,287 and none
-had ever been through the atlas. Sampling 320 of them:
+The larger gap is on the other chain. As of the 2026-09-28 sampling run, BSC held **25,643 evidence
+documents** against Monad's 1,287 and none had ever been through the atlas. Sampling 320 of them:
 
 | | |
 |---|---|
@@ -44,12 +47,16 @@ a manufactured one.
 
 ## What the model found and why it matters
 
-Converged in 3 turns, 1 tool call, 10.2 seconds. It proposed `gebo-uptime-report.v1` with **`claim:
-null`** and this reasoning:
+Converged in one turn with a single tool call. It proposed `gebo-uptime-report.v1` with **`claim:
+null`** and this reasoning, quoted from the artefact:
 
-> `value`/`valueDecimals` are a percentage (10000 at 2 decimals = 100.00% uptime), not a settlement
-> amount. No tx hash, payer, recipient, token or payment network exists in the document, so the shape
-> asserts no payment.
+<!-- voice-gate:off  quoted verbatim from the induction artefact -->
+
+> GEBO uptime probe report. value/valueDecimals are a percentage (10000 @ 2 decimals = 100.00%
+> uptime), not a settlement amount. No tx hash, payer, recipient, token, or payment network exists in
+> the document, so the shape asserts no payment: claim is null.
+
+<!-- voice-gate:on -->
 
 **That is a false positive avoided, not a gap closed.** A parser written in a hurry sees `value: "10000"`
 in an evidence document and reads a payment of 10,000 atomic units. There are 41 documents of this shape

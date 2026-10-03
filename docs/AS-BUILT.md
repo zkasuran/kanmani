@@ -14,15 +14,15 @@ CLI that produces them. [`16-METHOD.md`](16-METHOD.md) reproduces every publishe
 hand. Claims about tests carry the command that runs them.
 
 ```bash
-npm test                              # 215 tests, 212 pass, 3 skip. the site
-cd verifier && npm test               # 189 tests, 172 pass, 17 skip without a database
-cd contracts && forge test            # 127 tests, 119 pass, 8 fork tests skipped without a fork URL
+node --test --experimental-strip-types 'lib/**/*.test.ts'   # 438 tests, 427 pass, 11 skip. the site
+cd verifier && npm test               # 225 tests, 198 pass, 27 skip without a database
+cd contracts && forge test            # 133 tests, 124 pass, 9 skip (6 fork, 2 P256, 1 other)
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**537 tests pass across the three suites.** That is the number quoted on the site. Counted rather than
-carried forward: 237 of 240 in the site suite, 181 of 198 in the verifier, 119 of 127 in contracts. The
-differences are deliberate skips, mostly fork tests that need an archive node.
+**749 tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: 427 of 438 in the site suite, 198 of 225 in the verifier, 124 of 133 in contracts. The
+differences are 47 deliberate skips, mostly fork tests that need an archive node.
 
 ---
 
@@ -44,12 +44,12 @@ described as live would be the exact failure this project exists to attack.
 
 ### Retina, the index
 
-Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **10,252 agents** at
-census time, matching the registry's own counter slot exactly, **2,012 distinct registration
-documents** and **9,188 feedbacks**.
+Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **10,276 agents** at
+census time, matching the registry's own counter slot exactly, **2,053 distinct registration
+documents** and **9,288 feedbacks**.
 
-The live index reads **10,253** and **2,013** today, because we then registered ourselves as agent
-10252. That is the registry growing rather than a corrected error, it can only ever grow and
+The slot can only ever grow, so a later read shows the same figure or higher, never lower. We are
+inside that count: we registered ourselves as agent 10252 along the way.
 [`16-METHOD.md`](16-METHOD.md) section 1 says which figure is which.
 
 Load-bearing rather than an integration: `feedbackURI` and `feedbackHash` exist only as
@@ -63,17 +63,18 @@ incremented both, which made them provably equal and destroyed the only interest
 
 ### Fovea, the verdict ladder
 
-Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **1,192** documents carrying
+Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **1,292** documents carrying
 a URI have been taken through it. Four outcomes. `unknown` is never `false`.
 
 | outcome | count |
 |---|---|
 | `noClaim` | 1,095 |
-| `false` | 73 |
-| of those, real transactions on another chain | 64 |
-| of those, on no chain we can read | 9 |
-| `true` | 12 |
-| `unknown` | 12 |
+| `false` | 123 |
+| `true` | 59 |
+| `unknown` | 15 |
+| of those, the bytes no longer match their commitment | 10 |
+| of those, no mapping reads the shape | 3 |
+| of those, the document would not answer | 2 |
 
 Verdicts are append only, in their own `fovea` Postgres schema rather than Envio's `public`,
 because `public` is dropped and recreated on every resync. A re-check writes a new row, so a
@@ -81,12 +82,12 @@ document somebody repairs reads as `false` to `true` with both timestamps.
 
 ### The registration probe
 
-All **2,012** distinct documents asked once each, deduplicated by record hash so one dead URL is
-fetched once rather than 8,093 times. Per host, serial, with a gap, because three hosts carry
-1,771 of them.
+All **2,053** distinct documents asked once each, deduplicated by record hash so one dead URL is
+fetched once rather than 8,093 times. Per host, serial, with a gap, because a handful of hosts carry
+most of them.
 
 Eight states rather than a boolean, as a SQL view so page, feed and API cannot disagree. The
-headline: **8,640 agents point at a document whose host answered and said it is not there**. 8,093
+headline: **8,641 agents point at a document whose host answered and said it is not there**. 8,093
 of those share one URL across 7,962 wallets.
 
 ### Aqueous, the escrow
@@ -119,9 +120,9 @@ paid us. That is stated everywhere it appears.
 
 ### Iris and Vitreous, the account layer
 
-One passkey ceremony gives three independent keys through HKDF-SHA256 with a distinct info per
+One passkey ceremony gives **four** independent keys through HKDF-SHA256 with a distinct info per
 namespace: an account key, an attestation key that signs receipts and deliberately cannot move
-money, plus an AES-256-GCM content key.
+money, a secp256k1 on-chain attestation key the Sclera bond recovers, plus an AES-256-GCM content key.
 
 Nothing is stored. No cookie, no token, no cached credential id. The passkey is discoverable so the
 browser offers it unprompted, which means there is no returning-user path and therefore none that
@@ -136,7 +137,7 @@ decrypts. A stranger holding the ciphertext gets an authentication failure. A fo
 Registered as **agent 10252** with the record written into `tokenURI` rather than hosted, because
 we had just measured that 8,093 agents point at one document that returns a deletion.
 
-The registry held **zero** rows against the Reputation Registry's 9,188 feedbacks. It holds one
+The registry held **zero** rows against the Reputation Registry's 9,288 feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index
 that follows the contract went from 0 to 1.
 
@@ -180,11 +181,13 @@ nothing compared, so one could be half-added and still look integrated.
 
 ### Chiasm, the cross-chain merge, with data in it
 
-**BNB Smart Chain was backfilled on 2026-09-23** and the index now holds two chains: **356,647
-agents on BSC against 10,256 on Monad**, a separate population rather than a mirror.
+**BNB Smart Chain was backfilled on 2026-09-23** and the index now holds two chains: **362,682
+agents on BSC against 10,276 on Monad**, a separate population rather than a mirror. BSC grows daily,
+so that figure is a 2026-10-03 read of `/chains`.
 
 Chiasm merges the two on the content hash of the registration document, which is the only key that
-means the same thing on both chains. 205,597 merged records and the result worth reporting:
+means the same thing on both chains. 205,597 merged records at the 2026-09-23 backfill and the result
+worth reporting:
 
 | documents referenced from | records | agents |
 |---|---|---|
@@ -197,9 +200,9 @@ the ones with no host to ask, because a self-contained document is the only kind
 
 The resync was the honest cost. Envio refused to start when the chain was added, rather than
 destroying data and named the three options. The reset then rebuilt Monad to exactly its previous
-figures, 10,256 agents and 9,188 feedbacks, while **`fovea.verdict` kept all 2,384 rows** because it
-lives outside the schema Envio drops. That separation was designed for this and this is the first
-time it was load-bearing.
+figures, 10,256 agents and 9,188 feedbacks on that day (since grown to 10,276 and 9,288), while
+**`fovea.verdict` kept all 2,384 rows** because it lives outside the schema Envio drops. That
+separation was designed for this and this is the first time it was load-bearing.
 
 ```bash
 sudo -u postgres psql -d envio-dev -c 'select "chainId", count(*) from public."Agent" group by 1;'
@@ -241,14 +244,14 @@ recorded rather than quietly patched. What it does now:
 
 Proven before shipping rather than asserted: a browser-style viem client reaches Monad at block
 107471803 and simulating the exact `register()` call the studio builds returns agent id `10256`, the
-next id the registry would mint.
+next id the registry would mint at that block.
 
 Two rules are enforced in code rather than asserted here. The calldata decodes back to the document
 that was previewed and a draft that mentions a payment proof fails its own consequence check,
 because a registration document is not the place for a payment claim.
 
 ```bash
-node --test --experimental-strip-types 'lib/registration.test.ts'    # 14 pass
+node --test --experimental-strip-types 'lib/registration.test.ts'    # 24 pass
 curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/studio # 200
 ```
 
@@ -289,16 +292,17 @@ Served from a route rather than committed as a static asset so the origin follow
 `NEXT_PUBLIC_SITE_URL` instead of being hardcoded twice.
 
 ```bash
-curl -sS https://kanmani.xyz/embed.js -o /tmp/e.js && node --check /tmp/e.js   # valid, 4,471 bytes
+curl -sS https://kanmani.xyz/embed.js -o /tmp/e.js && node --check /tmp/e.js   # valid, 4,470 bytes
 curl -sSI https://kanmani.xyz/embed.js | grep -i access-control-allow-origin   # *
 ```
 
 `/developers` renders every component against live data from the same functions our own pages use, so
 a broken component there means a broken site.
 
-**The navigation is four groups rather than eleven tabs**: explore, build, trust, developers. Nothing
-was deleted; depth is one hover away instead of eleven siblings competing for one row. `developers` is
-the only group that is a destination in itself, because it is what the product is for.
+**The navigation is grouped rather than eleven flat tabs**: create, verify, settle, explore, reports,
+blog and developers. Nothing was deleted; depth is one hover away instead of eleven siblings competing
+for one row. `developers` is the only group that is a destination in itself, because it is what the
+product is for.
 
 ### Light and dark, with the verdict distinction surviving both
 
@@ -385,13 +389,14 @@ good.
 
 ### Cornea, the surface
 
-Nineteen pages, nine machine-readable GET surfaces and 14 route handlers. Every page can print
-the SQL behind its numbers. `/verify` imports the verifier's own `judge()` rather than
-reimplementing the ladder, so the site and the command line cannot give different answers.
+Thirty pages, twelve machine-readable GET surfaces and thirty-eight route handlers. Every page can
+print the SQL behind its numbers. `/verify` imports the verifier's own `judge()` rather than
+reimplementing the ladder, so the site and the command line cannot give different answers. `/blog`
+carries the write-ups and `/compliance` reads the Cleanverse gate live.
 
 ```bash
 for p in / /agents /operators /claims /compare /verify /studio /pay /fund /account \
-         /method /chains /status /validate /developers; do
+         /method /chains /status /validate /developers /blog /bond /compliance /create /hire; do
   printf '%s %s\n' "$p" "$(curl -sS -o /dev/null -w '%{http_code}' https://kanmani.xyz$p)"
 done
 ```
@@ -402,14 +407,14 @@ folds into a sheet on a phone. Motion follows monad.xyz's language: a drifting a
 hero, a one-shot brand sweep, a marquee of the machine-readable surfaces, scroll-reveal and a
 count-up on the headline figure. All of it is neutralised under `prefers-reduced-motion`.
 
-**The navigation states the product's order rather than an index.** Six categorised groups with hover
+**The navigation states the product's order rather than an index.** Seven categorised groups with hover
 menus, sequenced the way somebody moves through the thing: `create`, `verify`, `settle`, `explore`,
-`developers`, `status`. It replaced two worse shapes. First eleven flat tabs, which read as a filing
-cabinet, then four groups whose order was arbitrary, so `explore` came first and the first thing a
-visitor saw was somebody else's data instead of anything they could do. `status` is last and is a
-destination rather than a group, because "how old is that number" is a question a reader only has after
-they have believed something. The hero offers the same four actions in the same order, so the page and
-the navigation cannot teach different sequences.
+`reports`, `blog`, `developers`. It replaced two worse shapes. First eleven flat tabs, which read as a
+filing cabinet, then four groups whose order was arbitrary, so `explore` came first and the first thing
+a visitor saw was somebody else's data instead of anything they could do. `reports` sits late because
+"how old is that number" is a question a reader only has after they have believed something. The hero
+offers the same four actions in the same order, so the page and the navigation cannot teach different
+sequences.
 
 `/bond` is the surface for Sclera and was written the day Sclera went live, because a `settle → bond`
 menu entry pointing at nothing would have been exactly the clumsiness the reordering was meant to
@@ -444,24 +449,15 @@ for itself: a clearing house, never an exposé. Every layer on the stack carries
 chip and those chips deliberately borrow neither the verdict green nor the verdict red, because a
 statement about our build must never be readable as a verdict about an agent.
 
----
-
-## Built, not yet live
-
-**This section replaces one that said these were "not started". That was true when it was written
-and it is now false.** Leaving it up would be a published claim that no longer matches what a check
-returns, which is the failure this project exists to attack. Each line below says what exists, what
-does not and the command that shows which.
-
-### Sclera, the bond that makes "trust becomes a price" a mechanism. LIVE
+### Sclera, the bond that makes "trust becomes a price" a mechanism
 
 An agent stakes USDC against a floor on its own claim-truth rate over a block window, with a
 minimum sample below which nothing can slash. Stay above the floor and the stake returns when the
 window matures. Fall below it and the bond is forfeit.
 
 ```bash
-wc -l contracts/src/Sclera.sol                    # 410
-cd contracts && forge test --match-path 'test/Sclera*'   # 33 pass in ScleraCrossSign, plus Sclera.t.sol and ScleraFork.t.sol
+wc -l contracts/src/Sclera.sol                    # 453
+cd contracts && forge test --match-path 'test/Sclera*'   # 46 tests, 44 pass, 2 skip (39 in Sclera.t.sol, 2 in ScleraCrossSign.t.sol, 5 in ScleraFork.t.sol)
 ```
 
 The slash is authorised by a signature, not by the caller. Monad's CRE forwarder
@@ -471,7 +467,7 @@ nothing. Sclera recovers the signer and requires one key fixed at deploy. That k
 the same passkey ceremony as everything else and is pinned in two independent implementations:
 
 **Corrected 2026-09-25, from Chainlink's own answer.** There are **two** forwarders on Monad mainnet
-and we had read only one. Darby at Chainlink Labs supplied both and both were then checked on chain:
+and we had read only one. Darb at Chainlink Labs supplied both and both were then checked on chain:
 
 | address | `typeAndVersion()` | bytes |
 |---|---|---|
@@ -569,10 +565,14 @@ the Identity Registry, the registry is an immutable constructor argument with no
 mutation-tested: disabling the check turns four tests red. Finding 10, six unreachable refusal emits, is
 also closed.
 
-**What is missing is the deployment itself.** No Sclera address is recorded and no `SCLERA` variable is
-set in the running environment, so the site calls this layer `built` rather than `live`. The one
-remaining join is a signature produced by our code, accepted by the deployed contract, in a single
-test. Everything up to that line is green.
+---
+
+## Built, not yet live
+
+**This section replaces one that said these were "not started". That was true when it was written
+and it is now false.** Leaving it up would be a published claim that no longer matches what a check
+returns, which is the failure this project exists to attack. Each line below says what exists, what
+does not and the command that shows which.
 
 ### The claim-truth endpoint a slashing oracle reads
 
@@ -590,7 +590,7 @@ would slash an agent nobody has rated yet.
 ### The CRE slashing workflow
 
 ```bash
-wc -l cre/kanmani-oracle/slashing/main.ts     # 280
+wc -l cre/kanmani-oracle/slashing/main.ts     # 318
 ```
 
 Written against `@chainlink/cre-sdk`. It reads the endpoint above and signs a verdict. Not deployed
@@ -631,9 +631,9 @@ not run is a claim; an absent one is a boundary.
 ### CleanverseGate and Chiasm
 
 ```bash
-wc -l contracts/src/CleanverseGate.sol          # 326
+wc -l contracts/src/CleanverseGate.sol          # 347
 ls indexer/src/handlers/                        # Retina.ts  Chiasm.ts
-wc -l lib/cleanverse.ts lib/intents.ts          # 189, 504
+wc -l lib/cleanverse.ts lib/intents.ts          # 189, 977
 ```
 
 The compliance-gated release contract, the cross-chain handler and the Aurora Intents funding path
@@ -678,10 +678,10 @@ flip is scheduled for the day the submission window opens, 2026-10-02.
 The most useful entries, because each is a place the build was wrong and the data corrected it.
 
 **The thesis got narrower and more accurate.** This was designed expecting documents citing one
-chain while the payment sat on another. Every one of the 85 payment claims names `monad`. The
+chain while the payment sat on another. Every one of the 182 payment claims names `monad`. The
 failure is simpler than the one designed for, so the site says the simpler thing.
 
-**The denominator moved from 9,188 to 85.** Most ERC-8004 feedback on Monad is not a payment claim.
+**The denominator moved from 9,288 to 182.** Most ERC-8004 feedback on Monad is not a payment claim.
 1,026 documents are chess ELO records. Sampling recent-first had given the opposite impression,
 because the head of a list is never a random sample.
 
@@ -698,8 +698,8 @@ for anyone who is not the agent's owner. Optic became a responder rather than a 
 constraint explains the empty registry better than any theory about adoption.
 
 **80 agents were falling out of a join silently.** The state buckets summed to 10,172 against a
-registry of 10,252. No query failed and no test went red. The page now prints its own sum next to
-the total.
+registry of 10,252 at census time. No query failed and no test went red. The page now prints its own
+sum next to the total.
 
 ---
 
@@ -720,7 +720,7 @@ Shipped 2026-09-25 and live on Monad mainnet.
 | Sentinel | 10256 | A pre-hire verdict stamped with the block it was measured at, refused if staler than the caller's bound | 10,000 atomic USDC, floor 8000bps |
 | Assay | 10257 | The bond an agent should post: a floor in bps plus a premium, from its measured claim-truth rate | 10,000 atomic USDC, floor 8000bps |
 
-The registry has 10,258 agents and most are not worth hiring, so adding another generic one would have
+The registry has 10,276 agents and most are not worth hiring, so adding another generic one would have
 been noise. A swap router or a chat wrapper also runs identically on any EVM chain, which is why neither
 is here: shipping one would demonstrate nothing about Monad beyond that it executes bytecode.
 
@@ -810,7 +810,8 @@ real pages and an action-first hero already matched. Five things did not.
 Two numbers on the site were contradicted by our own database: `/chains` said 356,647 BSC agents against
 a real 357,444 and `/studio` said 2,012 distinct documents against 2,016. Neither was a calculation
 error. They were true on the day somebody typed them into a sentence, which is the same mechanism this
-project publishes findings about in other people's records.
+project publishes findings about in other people's records. Both populations have grown since: the
+distinct-document count is 2,053 today.
 
 Every population figure now comes from a query, including one a client component had been asserting
 inline. `agentsByChain()` was added because no per-chain count existed, which is the root cause: the
@@ -824,7 +825,8 @@ compare link are identifiers.
 
 ## The writing gate is a command
 
-`bin/voice-gate.mjs` checks em dashes, comma-before-and and the AI tells in CLAUDE.md and
+The gate lives in the workspace that drives this build rather than in this repository.
+`bin/voice-gate.mjs` there checks em dashes, comma-before-and and the AI tells in CLAUDE.md.
 `bin/portal-post.sh` runs it before a request is built and refuses to POST on a hit.
 
 It exists because the rule was already written down and relied on being remembered. A dashboard update

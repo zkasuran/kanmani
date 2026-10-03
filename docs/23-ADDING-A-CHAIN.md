@@ -42,8 +42,10 @@ cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'getVersion()(string)' --rp
 ```
 
 **If the addresses differ, do not edit the canonical set.** Add a `registries` object to that
-chain's entry instead. Monad testnet is exactly this case, which is why the override exists rather
-than an assumption that the addresses are universal.
+chain's entry instead. Monad testnet is the case the override was built for: its registries sit at a
+different address set, which `indexer/config.yaml` records as 1,829 agents. This build is mainnet
+only, so testnet is not a registry entry today. The override still exists so a chain with its own
+addresses never forces an edit to the shared set.
 
 ---
 
@@ -68,7 +70,8 @@ a gap: it means we can read receipts on that chain while no agent lives there, w
 "registered on Monad, paid on Base" a checkable statement. Ethereum is `null` today.
 
 `indexed` is `true` only when the chain is **in the live database**, not when it is merely configured.
-BNB Smart Chain is configured and not synced, so it is `false`. Setting it to `true` because the
+A chain can sit in the config while its backfill is still running. For that window `indexed` stays
+`false`. Both Monad and BSC are synced today, so both read `true`. Setting it to `true` because the
 config exists would be a published claim that a check contradicts.
 
 **Aliases are the part that decides whether a claim is readable at all**, because authors type a word
@@ -79,12 +82,9 @@ by declaration order.
 ### 2. Find the start block, without scanning an empty chain
 
 A backfill from block 0 on a chain with a 100M-block head wastes hours. The start block is the proxy
-deployment. Ask HyperSync for the first log at the three addresses from block 0:
-
-```bash
-# Monad's equivalent is 52,952,790 and BSC's is 79,027,268, each found this way.
-# Monad keeps start_block 0 deliberately: the population and the USDC rail are both there.
-```
+deployment. Query HyperSync for the first log at the three addresses from block 0. Monad's answer was
+52,952,790 and BSC's was 79,027,268, each found that way. Monad keeps `start_block` 0 deliberately:
+the population and the USDC rail are both there.
 
 ### 3. Set the endpoint
 
@@ -141,8 +141,9 @@ project: a check that passes on the shape of the data rather than its content.
   deploying it there or verifying the receipt cross-chain and the second is already possible with
   `locate`. This document does not cover either.
 * **Merging standing across chains.** `Chiasm` merges an operator's rows on the content hash of the
-  registration document, which is the only key that means the same thing on both chains. It is built
-  and it has nothing to merge until a second chain is in the live index. See
+  registration document, which is the only key that means the same thing on both chains. BSC was
+  backfilled into the live index on 2026-09-23, so it now has data to merge and reports the 3
+  documents referenced from both chains rather than nothing. See
   [`14-GAPS.md`](14-GAPS.md).
 * **Claiming "any chain".** The number of chains is on `/chains` beside every claim that depends on
   it. A chain outside the list is `unknown`. "Runs on any chain" would be precisely the unbacked

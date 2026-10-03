@@ -43,7 +43,7 @@ deliberately kept apart here.
 
 - Signing keys are DERIVED. The secp256k1 and ed25519 private scalars come straight out of HKDF. No
   key is wrapped or stored, there is nothing to decrypt to get one back, the passkey reproduces them.
-- Content is ENCRYPTED. The content key feeds AES-256-GCM in `lib/vault.ts:77`. A fresh random 12-byte
+- Content is ENCRYPTED. The content key feeds AES-256-GCM in `lib/vault.ts:86`. A fresh random 12-byte
   nonce is drawn on every seal (`lib/vault.ts:83`), never a counter, because there is no state to keep
   a counter correct.
 - The context string is bound as GCM additional authenticated data (`lib/vault.ts:87`), so a blob
@@ -74,8 +74,8 @@ compartmentalisation that does not exist.
 
 Mera ships a secret vault and we follow its construction, an AES-256-GCM key from the PRF output via
 HKDF with a fixed `info` string. Mera's own `info` is `mera.v1.encrypt.secret`
-(`node_modules/@category-labs/mera/src/secret.ts:24`, whose comment says it "separates it from other
-keys derived from the same PRF output"). Ours is `kanmani.vitreous.v1`.
+(`node_modules/@category-labs/mera/src/secret.ts:24`, whose comment says it "keeps the encryption key
+distinct from any other key derived from the same PRF output"). Ours is `kanmani.vitreous.v1`.
 
 Two differences, both in our favour on the "nothing sensitive persisted" criterion:
 
@@ -107,18 +107,19 @@ copy-ready `curl` so a judge runs the same check from their own shell.
   independent output. The salt may be a constant or zero (section 2.2), so a fixed non-secret salt is
   within the spec and stronger than the zero salt it permits. `https://www.rfc-editor.org/rfc/rfc5869`.
 - Mera, passkeys and PRF: "A ceremony is one WebAuthn call and one user-verification prompt", "Salts
-  act as namespaces", "The same credential, rpId, and salt produce the same 32 bytes on every synced
-  device". `https://mera.category.xyz/concepts/passkeys-and-prf/`.
+  act as namespaces".
+  "The same credential, rpId, and salt produce the same 32 bytes on every synced device".  <!-- voice-gate:allow quoted upstream wording -->
+  `https://mera.category.xyz/concepts/passkeys-and-prf/`.
 - Mera, secret vault format: the v1 format stores `credentialId` and `prfSalt`, while "The encryption
   key and the PRF output are never stored." `https://mera.category.xyz/reference/secret-vault-format/`.
 - WebAuthn PRF extension (W3C WebAuthn Level 3), built on CTAP2 `hmac-secret`, evaluated during an
   assertion, 32 bytes per salt. This is why desktop Chrome without Google Password Manager returns no
   PRF, as the account page's authenticator matrix states. `https://www.w3.org/TR/webauthn-3/#prf-extension`.
-- Kai Jun Eer, Category Labs (organizer-reviewed mentor answers): HKDF `info` per key "counts as salts
-  genuinely namespaced" (2026-09-18). Because the PRF output is deterministic "the PRF output key
-  are always recoverable, even when cross device", so nothing needs persisting (2026-09-21). He stated
-  in both answers that he is not involved in judging, so these confirm the mechanics and are not a
-  judging guarantee. The design is stated as ours, with his confirmation cited as support.
+- Kai Jun Eer, Category Labs (organizer-reviewed mentor answers): asked whether HKDF `info` per key
+  counts as salts being genuinely namespaced, he answered yes (2026-09-18). Because the PRF output is
+  deterministic "the PRF output key are always recoverable, even when cross device", so nothing needs
+  persisting (2026-09-21). He stated he is not involved in judging, so these confirm the mechanics and
+  are not a judging guarantee. The design is stated as ours, with his confirmation cited as support.
 
 ## The limit of the unit test
 
