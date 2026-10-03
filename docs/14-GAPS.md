@@ -8,7 +8,7 @@ items that are embarrassing.
 Each entry says what is missing, what exists instead and what it would take to close. Where a
 decision has already been made to cut something, the reason is given rather than implied.
 
-**State as of 2026-09-24.** Submission closes 2026-10-14T03:59Z. I am one person.
+**State as of 2026-10-02.** Submission closes 2026-10-14T03:59Z. I am one person.
 
 **What moved on 2026-09-23/24**, so a reader can see which entries are fresh: Sclera passed its gating
 security review, which found a real blocker (§3, audit Finding 9), got fixed, deployed to mainnet and
@@ -78,9 +78,9 @@ wired into the live ladder.
 
 | rung | state |
 |---|---|
-| `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all 1,192 documents through them |
+| `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all 1,292 documents through them |
 | `payable` | **written and tested, not wired.** A live x402 probe of an agent's own endpoint |
-| `settled` | **written and tested, not wired.** Proof that a payment to that agent cleared |
+| `settled` | **wired into `judge()` to strengthen the `true` rung's recipient match, not exposed as a separate rung.** A distinct "a payment to that agent cleared" rung is still absent |
 
 ```bash
 ls verifier/src/ladder/
@@ -90,18 +90,24 @@ grep -n 'export type Rung' verifier/src/ladder/verdict.ts
 # "declared" | "resolvable" | "intact" | "parsed" | "true"
 
 grep -nE '^import' verifier/src/ladder/verdict.ts
-# intact, parse, locate. Neither payable nor settled is imported.
+# intact, parse, locate, settled. payable is not imported, so the payable rung does not run.
 ```
 
 So the ladder **runs** as five rungs and is described as five everywhere on the site, including on
 `/method`.
 
-**Considered and declined 2026-09-24.** Wiring them was attempted as a task and stopped on inspection,
-which is worth recording as a decision rather than as an omission. The two rungs are not appendable
-steps: `payable` probes an agent's **own service endpoint** and `settled` needs proof a payment to that
-agent cleared, so neither can be computed from what `judge()` currently receives. Both would change the
-function's input shape, the sweep that calls it, the `Rung` type stored on every historical verdict plus
-the five-bead ladder the UI draws.
+**Considered and declined 2026-09-24, then half reopened.** Wiring them was attempted as a task and
+stopped on inspection, which is worth recording as a decision rather than as an omission. Neither is an
+appendable step: `payable` probes an agent's **own service endpoint** and `settled` needs proof a payment
+to that agent cleared, so neither could be computed from what `judge()` received at the time. Exposing
+either as a rung would still change the `Rung` type stored on every historical verdict plus the
+five-bead ladder the UI draws.
+
+`settled` came back later as a check rather than a rung. `judge()`'s input gained a
+`settlementReaderFor`, so `settledCheck` now reads the receipt and confirms a cited payment reached the
+claimed recipient before an outcome is allowed to be `true`. It records that at the existing
+`parsed` or `true` rung. `payable` is the one still declined, because it probes an agent's own service
+endpoint which `judge()` has no reader for.
 
 That is a migration touching every published verdict. Doing it in the last hour of a session to
 close a checklist item is how a measurement layer acquires a silent inconsistency between old and new
@@ -140,17 +146,17 @@ intermediary moved 115,558 USDC units into Aqueous and 2,505 to Aurora as its fe
 The corrected picture:
 
 ```bash
-ls contracts/src/          # Aqueous.sol  CleanverseGate.sol  Sclera.sol  TestUSDC.sol
-wc -l contracts/src/Sclera.sol                          # 410
+ls contracts/src/          # AgentPasskey.sol  Aqueous.sol  CleanverseGate.sol  Sclera.sol  TestUSDC.sol
+wc -l contracts/src/Sclera.sol                          # 453
 cd contracts && forge test --match-path 'test/Sclera*'  # passes
 ls indexer/src/handlers/   # Retina.ts  Chiasm.ts
-wc -l lib/intents.ts lib/cleanverse.ts                  # 504, 189
+wc -l lib/intents.ts lib/cleanverse.ts                  # 977, 189
 ```
 
 | planned | what it was for | state |
 |---|---|---|
 | **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **LIVE on Monad mainnet 2026-09-24**, [`0x57aF4e4B…`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), source verified |
-| **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **shipped and live 2026-09-23.** 356,647 BSC agents indexed beside Monad's 10,256, 205,597 merged records, 3 documents referenced from both chains |
+| **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **shipped and live 2026-09-23.** 356,647 BSC agents indexed beside Monad's 10,276, 205,597 merged records, 3 documents referenced from both chains |
 | **CleanverseGate**, gated release | release conditioned on a compliance credential | **end to end on Monad testnet 2026-09-30**: registered with Cleanverse, a verified worker paid, an unverified one refused on chain. **Deployed on mainnet** at `0x4a21a5d8…544A`, waiting on production credentials to register; fails closed until then. See [20-CLEANVERSE.md](20-CLEANVERSE.md) section 6 |
 | **Cone**, odds market | a crowd price on whether an agent delivers | not started |
 | **Choroid**, credit | borrowing power from a real settlement history, with a funded lending pool | not started |
@@ -167,7 +173,7 @@ costs one atomic unit to fake is the thing this project exists to attack.
 **Fixed 2026-09-24.** `postBond` reads `ownerOf` from the ERC-8004 Identity Registry, which is an
 immutable constructor argument with no setter. Six new tests and the mutation that proves they matter:
 replacing the check with `if (false)` turns four of them red. Finding 10 is closed too. The contract
-suite is 127 tests, 119 passing, 8 fork tests skipped without a fork URL.
+suite is 133 tests, 124 passing, 9 skipped.
 
 **Deployed 2026-09-24** at `0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`, source verified `exact_match`, 0.250 MON of gas. The ownership
 check is proven on the live contract: `postBond` for an agent we do not own reverts `NotAgentOwner()`.
@@ -229,16 +235,11 @@ below the minimum and nothing can fall below the floor. The slashing path is cov
 and by fork tests against real mainnet state, not by a slash of our own money on chain. Those are
 different strengths of evidence and the difference is not collapsed here.
 
-**What "built, not deployed" costs, stated exactly.** No Sclera address is recorded anywhere and no
-`SCLERA` variable is set in the running environment, so no bond has ever been posted or slashed with
-real money. The thesis sentence "trust becomes a price" is therefore **demonstrable in tests and not
-yet demonstrable on chain.** The site labels that layer `built` for this reason and a judge reading
-the repository will find exactly what this paragraph describes.
-
-The one remaining join is named rather than glossed: a signature produced by our signing code,
-accepted by the deployed contract, inside one test. The signing side and the checking side were each
-built from the same spec and each verifies on its own. Closing that join is the first thing after
-deployment.
+The join between the two sides is closed. A slashing signature produced by our TypeScript signing
+code is accepted by the Sclera contract inside two cross-deployment tests,
+`contracts/test/ScleraCrossSign.t.sol`, which call the signer over FFI and then slash the bond. They
+skip without `--ffi` and pass with it, so the deploy, the bond, the release and the signer join are all
+done. A live slash is what section 3 still leaves open.
 
 **The decision date is 2026-10-02**, when each remaining layer is asked one question: finishing or
 limping? Limping gets cut whole into this document the same day. **There is no thin tier**, because a
@@ -254,17 +255,17 @@ grep as proof. That grep now returns matches, so the table is rewritten against 
 ```bash
 wc -l lib/intents.ts lib/cleanverse.ts cre/kanmani-oracle/slashing/main.ts \
       app/api/webhooks/alchemy/route.ts
-# 504, 189, 280, 45
+# 977, 189, 318, 45
 ```
 
 | integration | state |
 |---|---|
 | Alchemy self-healing re-verification | **written and tested, not fed by a live stream.** HMAC-SHA256 over the raw body in constant time, refusing every delivery when no key is configured rather than failing open; delivery id is a primary key so retries are idempotent. No delivery has yet come from a webhook created in Alchemy's own dashboard |
-| Chainlink CRE slashing workflow | **simulated 2026-09-25, recorded in [26-CRE-SIMULATION](26-CRE-SIMULATION.md).** Reads bond terms from Sclera on Monad mainnet and the claim-truth rate from our API, then refuses to rate an empty sample. Darby confirmed CLI simulation is the judged bar. The run also caught a zero-address placeholder in the config that had never been exercised |
+| Chainlink CRE slashing workflow | **simulated 2026-09-25, recorded in [26-CRE-SIMULATION](26-CRE-SIMULATION.md).** Reads bond terms from Sclera on Monad mainnet and the claim-truth rate from our API, then refuses to rate an empty sample. Darb confirmed CLI simulation is the judged bar. The run also caught a zero-address placeholder in the config that had never been exercised |
 | Aurora Intents funding path | **live 2026-09-28.** 0.12 USDT on BSC funded a Monad escrow job through the intermediary account, destination tx `0x738af85c…a440b558`, 115,558 USDC units into Aqueous. `/fund` renders it with the transaction |
 | Cleanverse gated release | **live on testnet end to end; mainnet deployed, waiting on production credentials** |
 | Qwen schema atlas | **the atlas shipped and the induction loop ran for the first time on 2026-09-28.** Recorded in [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md). Until then the five mappings carried a typed `induced` date with no artefact behind it, which `/method` has been reworded to stop implying. Qwen3.8-Max read an unmapped BSC shape and correctly returned `noClaim`, catching that a field named `value` was a percentage rather than money, which would otherwise have manufactured 41 payment claims out of uptime reports |
-| Nansen underwriting, paid per call over x402 | **not started.** Falls with Choroid |
+| Nansen underwriting, paid per call over x402 | **not started.** Falls with Choroid. The Nansen read itself did run: the related-wallets First Funder pass spent 71 real credits on 2026-09-30 and renders on `/operators`. Only the labels endpoint and the paid-per-call product are unbuilt |
 
 **The honest summary is that the integration code is real and the live wiring is the gap.** Every row
 above says which half is which, because "we integrated Alchemy" and "a webhook Alchemy created has
@@ -309,8 +310,8 @@ browser the page says it is a CORS setting rather than a fault and offers the pa
 **MIT**, the only two files in the repository that are, since everything else stays SAND-1.0,
 source-available with no derivatives. The reasoning is in [`24-KIT-LICENCE.md`](24-KIT-LICENCE.md) and it
 is short: a component that exists to be rendered inside somebody else's product cannot be read-only, because
-**what the kit publishes is a constraint rather than an asset.** It makes three mistakes unavailable. It also
-a restrictive licence on a safety property works against its own purpose.
+**what the kit publishes is a constraint rather than an asset.** It makes three mistakes unavailable. It
+also means a restrictive licence on a safety property works against its own purpose.
 
 A narrower grant was considered and rejected: "you may copy this to display Kanmani verdicts" sounds
 tighter and is worse, because it makes every consumer read a bespoke licence and decide whether they
@@ -355,19 +356,18 @@ the agent or that the document is good. The registry decides ownership and the l
 An endpoint implying otherwise would be manufacturing standing out of a signature, which is the shape
 of claim this project exists to check rather than to produce.
 
-## 8. Traction is three contacts, zero integrations and two agents of our own
+## 8. Traction is three contacts, two external paid hires and twelve agents of our own
 
-Traction is 20% of the score. The honest count today, 2026-09-24:
+Traction is 20% of the score. The honest count today, 2026-10-02:
 
 | | count |
 |---|---|
 | operators contacted | **3** |
-| operators integrated | **0** |
-| jobs settled that we did not create ourselves | **0** |
+| operators integrated | **1** |
+| jobs settled that we did not create ourselves | **2** |
 | forum threads | **1 submitted, held for moderation** |
-| progress updates posted | 6 |
+| progress updates posted | 23, as of 2026-10-01 |
 | mentor questions asked / fielded / answered | 6 / 6 / 4 |
-| forum threads | 1 submitted, awaiting moderation |
 
 **Four of six mentor questions are answered, read 2026-09-25.** This document said one, which was stale:
 three answers had arrived and had not been read.
@@ -375,7 +375,7 @@ three answers had arrived and had not been read.
 | mentor | answered | what it settled |
 |---|---|---|
 | Kai Jun Eer, Category Labs | 2026-09-18 | HKDF namespacing from one PRF output is sound |
-| Darby, Chainlink Labs | 2026-09-20 | **CLI simulation is what they judge**, no testnet DON exists for participants, plus both Monad forwarder addresses |
+| Darb, Chainlink Labs | 2026-09-20 | **CLI simulation is what they judge**, no testnet DON exists for participants, plus both Monad forwarder addresses |
 | Denham, Envio | 2026-09-21 | `@crossChain` is correct and putting `chainId` in the id is the right shape |
 | Kai Jun Eer, Category Labs | 2026-09-21 | PRF output is deterministic per passkey, so cross-device needs no enrolment and no persisted key |
 
@@ -384,7 +384,7 @@ to our own audit: Chainlink's answer revealed **two** forwarders on Monad mainne
 the permissionless-`report` finding was about the mock. The conclusion held because Sclera trusts neither.
 
 **All four are replied to, 2026-09-25.** The reply to Chainlink carries the two-forwarder correction
-back, since Darby said he would feed the addresses to his team. It asks the one question left worth
+back, since Darb said he would feed the addresses to his team. It asks the one question left worth
 asking: whether the real `KeystoneForwarder` validates the DON signature set before calling, so that a
 consumer gating on `msg.sender` would be safe. Our design does not depend on the answer, because the signature
 check stays either way, but the audit should state the reason correctly rather than assert a property of
@@ -394,10 +394,10 @@ a contract we have not read.
 short-landing behaviour.
 
 The three targets are named because the whole population was measured, which is the one advantage
-here: I can name every payable agent on Monad because I checked all 10,253 and there are three.
+here: I can name every payable agent on Monad because I checked all 10,276 and there are three.
 
 1. **Execution Market / Ultravioleta DAO**, reachable through the contact they publish in their own
-   `/.well-known/x402`. Their claims are the majority of the 73 that do not resolve on the named chain. 64 of those 73 are real transactions on a different chain rather than missing payments. A per-document
+   `/.well-known/x402`. Their claims are all 123 that do not resolve on the named chain. 113 of those 123 are real transactions on a different chain rather than missing payments. A per-document
    pass or fail costs them nothing and fixes their record.
 2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
 3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
@@ -416,7 +416,7 @@ about somebody else's work has to survive them checking it. For Ultravioleta, bo
 were read from `rpc.monad.xyz` directly rather than only through our own API. For The Agora, all eight
 documents were confirmed answering 200 and the commit-pinned URL I recommended was verified to return
 byte-identical content, so the fix is a genuine drop-in rather than advice. For Envio the arithmetic was
-re-checked (356,647 + 10,256 = 366,903).
+re-checked (356,647 + 10,276 = 366,923).
 
 Two of the three are not findings against the recipient, which matters for the tone rule. The Agora's
 records are healthy and the note is preventive, about a mutable branch pointer rather than a defect.
@@ -443,21 +443,29 @@ It also offers to be corrected if `network` means something we have misread.
 **Targets 2 and 3 are not yet approached** and the honest reason is channel rather than intent: ADEXTO
 and Mogmatic publish no contact beyond an endpoint and Ultravioleta was reached through their own repo
 rather than by mail. The drafts for all three are written and need a person with a mailbox to send, not
-more work. Outreach was scheduled to start 2026-10-01. If no integration
+more work. Outreach started 2026-10-01 and the first result landed the same day, below. If no further integration
 lands, the outreach record ships with what happened stated plainly, because a documented attempt beats
 an invented number and an invented one would be caught.
 
 ---
 
-**Two agents of our own are live, 2026-09-25.** Sentinel (10256) and Assay (10257), both registered on
-Monad mainnet with inline `data:` records, both bonded at 10,000 atomic USDC against a floor of 8000bps,
-both answering over x402. This is not traction. It is dogfooding and the distinction matters: payer and
-payee are the same wallet, so USDC did not move and nothing here shows demand. What it does show is that
-the stack is usable by an agent rather than only by a reader and it found three real bugs that the test
-suite had not.
+**Twelve agents of our own are live.** Sentinel (10256) and Assay (10257) first on 2026-09-25, then ten
+more (10263 through 10272), all registered on Monad mainnet with inline `data:` records, all operated by
+Kanmani from one owner address and offered on `/hire` over x402. Our own calls to them are dogfooding
+rather than traction. The distinction matters: payer and payee are the same wallet, so USDC does not
+move and a self-payment shows no demand. What it does show is that the stack is usable by an agent
+rather than only by a reader and it found three real bugs that the test suite had not.
 
-The weakest part is unchanged. Three operators contacted, one forum post held for moderation, zero
-external integrations.
+**The first payment from outside arrived 2026-10-01.** Taifoon's broker, another team, hired and paid
+both Sentinel and Assay: a pre-hire verdict on agent 10261, transaction
+`0x7ea89118…bfc54eed` at block 109665099, plus a bond quote on agent 10182, transaction
+`0xa4cf2aa0…4374960f2` at block 109665117. Each is one EIP-3009 transfer of 10000 atomic units, 0.01
+USDC, from their payer `0x5808980304CaF94C512884a6D1299664913E218E` to our address, submitted by the
+x402 facilitator. Both read status 1 on mainnet. Two jobs and 0.02 USDC is early rather than
+substantial, so it is not called revenue, but it is the first demand that is not ours.
+
+The weakest part is still outreach. Three operators contacted, one forum post held for moderation, one
+operator integrated.
 
 ## 9. Submission artifacts: two made, two videos outstanding
 
@@ -476,7 +484,7 @@ previous entry of mine shipped a working paid service and died anyway on an unfi
 
 ## 10. Measurement we cannot complete and why it stays unknown
 
-Twelve of the 1,192 documents have no verdict beyond `unknown`. Each stays that way deliberately.
+Fifteen of the 1,292 documents have no verdict beyond `unknown`. Each stays that way deliberately.
 
 **Ten documents whose bytes no longer match their on-chain commitment.** All on one host. Five
 feedbacks cite the same URL with five different committed hashes while the URL serves one identical
@@ -488,10 +496,15 @@ author never committed to and attribute it to them. **This is an argument about 
 should be stored rather than about anybody's conduct:** a live endpoint cannot keep a promise about
 its bytes, content addressing can. It is never written as an accusation.
 
-**Two `ipfs://` documents no gateway would serve.** `ipfs.io` did not answer. A working gateway would
-close these two and nothing else, so it is small and it is still open.
+**Two `ipfs://` documents no gateway would serve.** The gateway answers HTTP 429. A working gateway
+would close these two and nothing else, so it is small and it is still open.
 
-Neither group is counted as `false`. A failure to look is not evidence that a payment did not happen.
+**Three documents whose shape no published mapping reads.** The ladder stops at `intact` because there
+is no mapping for that record shape, so it will not guess a claim out of a document it cannot parse.
+Closing these means writing a mapping, which is the review queue `/method` publishes.
+
+None of the three groups is counted as `false`. A failure to look is not evidence that a payment did
+not happen.
 
 ---
 
@@ -499,21 +512,18 @@ Neither group is counted as `false`. A failure to look is not evidence that a pa
 
 Small, real and better written here than discovered by a reader.
 
-* **A dead type in the indexer schema.** `Verdict` is still declared in `indexer/schema.graphql` at
-  lines 11, 117 and 123, left over from when verdicts lived in Envio's `public` schema. The real table
-  is `fovea.verdict`, outside Envio, which is what lets it survive a resync. Nothing reads the dead
-  one. **Removing it forces a full resync**, so it is batched with the next schema change rather than
-  done alone. Verify with `grep -n Verdict indexer/schema.graphql`.
-* **Eight contract tests skip without a fork URL.** `forge test` reports 127 tests, 119 passing and 8
-  skipped. They are the fork tests and they are skipped rather than silently passing, but a reader
-  should know the 119 is not the whole suite.
-* **Seventeen verifier tests skip without a database.** Same shape: 189 tests, 172 pass, 17 need
-  Postgres and say so. The site suite is 215 tests, 212 passing, 3 skipped. **503 pass in total.**
-* **Census figures and live figures differ by one agent.** Documents written at census time say 10,252
-  agents and 2,012 distinct records. The live index reads 10,253 and 2,013 because we registered
-  ourselves as agent 10252 afterwards. Section 1 of [`16-METHOD.md`](16-METHOD.md) explains which
-  number is which and why re-running the census against a moving registry would change every derived
-  percentage in `03-POPULATION.md`.
+* **Nine contract tests skip without their dependency.** `forge test` reports 133 tests, 124 passing
+  and 9 skipped: six Aqueous fork tests without a fork URL, two cross-signing tests without `--ffi` and
+  one that needs the P256 precompile profile. They skip rather than silently passing, but a reader
+  should know the 124 is not the whole suite.
+* **Twenty-seven verifier tests skip without a live dependency.** Same shape: 225 tests, 198 pass, 27
+  need Postgres or a live endpoint and say so. The site suite is 438 tests, 427 passing, 11 skipped.
+  **749 pass in total.**
+* **Census figures and live figures differ because the registry keeps growing.** Documents written at
+  census time say 10,252 agents and 2,012 distinct records. The live index now reads 10,276 and 2,053,
+  because registrations have continued since the census and one of them is ours, agent 10252. Section 1
+  of [`16-METHOD.md`](16-METHOD.md) explains which number is which and why re-running the census
+  against a moving registry would change every derived percentage in `03-POPULATION.md`.
 
 ---
 
@@ -522,20 +532,21 @@ Small, real and better written here than discovered by a reader.
 Listed because each one reads like a hole in the data until you know what it is and two of them cost
 real time to understand.
 
-* **80 agents in no probe bucket.** They carry no `tokenURI` at all, so there is no document to ask
-  about. The eight states sum to 10,173 and only reach 10,253 when those 80 are added. A registration
-  that says nothing about itself is a finding, not a join failure. The page prints its own sum beside
-  the total so this cannot hide again.
+* **Agents in no probe bucket.** They carry no `tokenURI` at all, so there is no document to ask about.
+  At census the eight states summed to 10,173 and only reached 10,253 once those 80 were added; the live
+  page now reconciles 63 of them against a registry of 10,276. A registration that says nothing about
+  itself is a finding, not a join failure. The page prints its own sum beside the total so this cannot
+  hide again.
 * **One record marked `not probed`.** It is ours, written on chain after the probe pass ran. Unknown
   rather than assumed, including about ourselves.
 * **`noClaim` is 0 among the HTTP documents.** Agent cards are the only `noClaim` shape there and they
   are exactly the documents failing the intact check, so they stop before parse. It reads like a parser
   that never fires. It is not.
-* **The Validation Registry held zero rows against 9,188 feedbacks.** Not low adoption.
+* **The Validation Registry held zero rows against 9,288 feedbacks.** Not low adoption.
   `validationRequest` reverts `Not authorized` for anyone who is not the agent's owner, so nobody can
   publish a verdict about somebody else unilaterally. The constraint explains the empty registry better
   than any theory about uptake and learning it cost a reverted transaction.
-* **Every one of the 85 claims names Monad.** The build expected documents citing one chain while the
+* **Every one of the 182 claims names Monad.** The build expected documents citing one chain while the
   payment sat elsewhere, which is why `locate` reads seven chains. That is not what happens. The
   multi-chain reader stays anyway, because a "not found" means nothing without the published list of
   places it was looked for.
@@ -547,14 +558,14 @@ real time to understand.
 A full-surface security pass fixed a batch of issues in place (the SSRF guard, the verifier's true rung,
 the paid-endpoint replay, a set of input-validation gaps, the compliance-gate decode and the secrets
 posture before the flip). The writeups are in [`17-CONTRACT-AUDIT.md`](17-CONTRACT-AUDIT.md) findings 11
-onward. Four items were deferred rather than fixed, each for a stated reason. They are gaps until
-they land:
+onward. Four items were deferred rather than fixed, each for a stated reason. One has since landed and
+is marked so. The rest are gaps until they do:
 
-1. **The verifier's stronger true rung needs a re-sweep to reach the stored numbers.** `judge()` now
-   checks that a cited payment reached the claimed recipient rather than only that the transaction
-   exists. New reads get the real check, but the counts already in `fovea.verdict` were computed the old
-   way, so the site shows them until a full re-sweep runs and the app redeploys. Trigger: before the
-   submission window, run the sweep and redeploy, then confirm the headline counts.
+1. **Done. The verifier's stronger true rung is in the stored numbers.** `judge()` checks that a cited
+   payment reached the claimed recipient rather than only that the transaction exists. The re-sweep ran
+   on 2026-10-03: all 182 payment claims plus the 15 unknowns carry a verdict written that day. 25 of
+   the 59 `true` rows carry the settled-path reason naming the recipient plus the confirmation depth. The 1,095 `noClaim` rows still date from the first pass, which is correct, since a document
+   that asserts no payment has no recipient to re-check.
 2. **Indexer source fixes need codegen and a resync to reach the live data.** `agentWallet` is now
    checksummed and the dead `Verdict` entity is gone in the schema, but the running index holds the old
    rows until it is re-indexed. Trigger: run codegen and a resync when the next deploy goes out.

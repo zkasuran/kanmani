@@ -134,13 +134,13 @@ so a read at block 53,010,000 returns `-32602 Block requested not found`. Every 
 historical, so every sweep failed: **5,276 of 5,276**, measured on a throwaway index.
 
 Together with the previous two bugs, that meant both halves of the cross-check were dead and the pair
-rendered as a confident `0` for a registry holding 10,252 agents.
+rendered as a confident `0` for a registry holding 10,276 agents.
 
 Fixed by reading at `latest`, which is what the number is for anyway: the row is overwritten each sweep
 and `/status` compares against now, so a historical population has no reader. Write-up in the
 [audit](17-CONTRACT-AUDIT.md#finding-7-the-freeze-detector-asked-a-non-archive-node-for-historical-state).
 
-**Guard:** a clean index now publishes `counterSlotCount: 10252` against 10,252 rows counted by the
+**Guard:** a clean index now publishes `counterSlotCount: 10276` against 10,276 rows counted by the
 independent log path.
 
 **One wrong theory along the way, kept visible.** After the `latest` fix about 70% of backfill sweeps
@@ -189,8 +189,9 @@ real token was passing in an environment where the real token does not exist.
 Nothing in the output said so. The tell was the gas: roughly 2,400 per test, which is too small to have
 done anything at all.
 
-Fixed with `vm.skip`, which reports `[SKIP]` and is visible in the summary. The suite now reads
-`31 tests passed, 0 failed, 6 skipped` without a fork URL and the 6 are named.
+Fixed with `vm.skip`, which reports `[SKIP]` and is visible in the summary. The Aqueous suites now
+read `43 tests passed, 0 failed, 6 skipped` without a fork URL and the 6 are named. A bare `forge
+test` over the whole contracts project reads 124 passed, 0 failed and 9 skipped.
 
 **The transferable part:** a failure that looks like success is the worst kind and a skip must announce
 itself. Also, read the cost of a passing test occasionally. Work that did not happen is cheap.
@@ -259,7 +260,8 @@ Fixed with `releaseWithAuthorization`, `settleMeteredWithAuthorization` and
 `refundWithAuthorization`, each taking an EIP-712 signature that anyone can submit. Write-up in the
 [audit](17-CONTRACT-AUDIT.md#finding-8-a-gasless-entrance-with-no-gasless-exit).
 
-**Guard:** 11 tests, every one asserting `buyer.balance == 0` at the end. On the live testnet
+**Guard:** 12 gasless tests. The three that run a full lifecycle each assert `buyer.balance == 0` at
+the end, the other nine assert the relayer cannot move the money. On the live testnet
 deployment the demo buyer finished the whole lifecycle with a MON balance of 0 **and a transaction
 count of 0**. All five new checks were mutation tested.
 
@@ -339,6 +341,20 @@ A follow-up pass closed the medium and low items the first pass deferred:
 * The indexer checksums `agentWallet` to match the other addresses and drops the dead `Verdict` entity.
 * Smaller: the webhook info endpoint stops reflecting the raw database error, `usdc()` formats with
   BigInt, the self-registration read-back tolerates a revert and the Qwen client caps its response.
+
+## Found in the bond contract
+
+Two fixes landed in Sclera and are written up in full in the contract audit rather than repeated here,
+so this page stays the whole list without duplicating them.
+
+* **Anyone could post a bond for an agent they did not own.** `postBond` never checked ownership, so a
+  stranger could bond any agent with a floor that can never be slashed and the agent would read as
+  bonded. Fixed by reading `ownerOf` from the ERC-8004 Identity Registry, which is an immutable
+  constructor argument. See
+  [17-CONTRACT-AUDIT.md](17-CONTRACT-AUDIT.md#finding-9-anyone-can-post-a-bond-for-an-agent-they-do-not-own).
+* **Every `ReportRefused` event was discarded.** The event was declared and never read, so a refusal
+  left no trace. Removed rather than kept unused. See
+[17-CONTRACT-AUDIT.md](17-CONTRACT-AUDIT.md#finding-10-every-reportrefused-event-is-discarded).
 
 ## Still open
 

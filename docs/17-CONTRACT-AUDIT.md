@@ -1,9 +1,12 @@
 # 17. Security audit
 
-**Reviewed 2026-09-18, before deployment.** The escrow has never been deployed, so nothing in it was
+**Reviewed 2026-09-18, before any mainnet deployment.** The escrow has never been deployed to mainnet
+and has never held real user funds, so nothing in it was
 ever live and no user funds were ever at risk. The indexer and the deploy stack were running.
 
-**Eight issues were found and fixed**, across all three components. Two were fund-loss bugs in the
+**The first review, on 2026-09-18, found eight issues and fixed them**, across all three components
+below. Later passes, findings 9 to 17, extended the review to Sclera, the compliance gate, the
+verifier, the API routes plus the secrets posture. Two were fund-loss bugs in the
 escrow, one of them high severity and one that defeated the main feature. Both are published here with
 the exploit, the fix and the proof, because an audit that only lists what it found clean is not
 evidence of anything.
@@ -22,7 +25,7 @@ field, which took about a minute each.
 |---|---|
 | Method | manual review, then a written exploit or a query for every candidate finding |
 | Reviewer | zkasuran, with AI assistance. See the disclosure at the end |
-| Status after fixes | 61 contract tests (55 pass, 6 skip without a fork url), 0 compiler errors, indexer typecheck clean |
+| Status after fixes | the contract suite is 133 tests, 124 pass and 9 skip without a fork url or a profile, 0 compiler errors, indexer typecheck clean. The Aqueous family in this first pass was 61 of them, 55 pass and 6 fork skips |
 | Escrow deployed | Monad testnet `0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C`. Mainnet not yet |
 
 ---
@@ -212,8 +215,8 @@ so the running stack matches the file and the stack was restarted. Then, against
 | Request | Result |
 |---|---|
 | `x-hasura-admin-secret: testing` | `access-denied`, `invalid "x-hasura-admin-secret"` |
-| the new secret | 200, `Agent_aggregate` returns 10,252 |
-| no credentials at all | 200, `Agent_aggregate` returns 10,252 |
+| the new secret | 200, `Agent_aggregate` returns 10,276 |
+| no credentials at all | 200, `Agent_aggregate` returns 10,276 |
 
 The third row is the one that matters, because a fix that locked judges out would be its own failure.
 
@@ -309,7 +312,7 @@ is the on-chain counter slot.
 
 ### The proof
 
-The aggregate query was run against the live endpoint anonymously and returns 10,252 agents and 9,188
+The aggregate query was run against the live endpoint anonymously and returns 10,276 agents and 9,288
 feedbacks, which matches the counter slot read independently from the chain.
 
 ---
@@ -364,7 +367,7 @@ All of them.
 
 **So both halves of the cross-check were dead at the same time.** Finding 5 pinned the log side at 0,
 this pinned the chain side at nothing and the `?? 0n` from Finding 6 rendered the pair as a confident
-`0` for a registry holding 10,252 agents. The check whose only job was to notice a number had gone
+`0` for a registry holding 10,276 agents. The check whose only job was to notice a number had gone
 stale was the stalest number on the page.
 
 Nothing said so, because the failure path was a bare `catch { return null }` with no log. A silent null
@@ -375,7 +378,7 @@ is indistinguishable from a chain with nothing to report.
 Read at `latest`:
 
 ```ts
-params: [IDENTITY, COUNTER_SLOT, "latest"],
+params: [chain.identity, COUNTER_SLOT, "latest"],
 ```
 
 Head is also what the number is for. `IndexState` is one row that every sweep overwrites and `/status`
@@ -394,14 +397,14 @@ Two supporting changes in the same pass:
 
 ### The proof
 
-A clean index built from scratch after the fix. `counterSlotCount` holds **10252**, against **10,252**
+A clean index built from scratch after the fix. `counterSlotCount` holds **10276**, against **10,276**
 agent rows produced by a completely independent path, the logs. The two agree, which is the comparison
 the field was added for and the first time it has been possible to make it.
 
 ### A wrong theory, then the measurement that killed it
 
-This section existed in an earlier draft of this document saying something else. It is worth
-leaving the correction visible rather than quietly editing it.
+This section existed in an earlier draft of this document saying something else. The correction stays
+visible rather than quietly edited out.
 
 After the `latest` fix, **about 70% of sweeps still failed during a backfill**: 2,140 RPC errors and
 1,565 timeouts out of roughly 5,276, with the floor set at the registry's first registration. The
@@ -418,7 +421,7 @@ produce one number. Raising the floor from the registry's deployment block to a 
 resync from 5,276 sweeps to about 76, because a historical population has no reader.
 
 **Measured after that change: 13 failures, down from 3,869.** A 99.6% reduction, with `counterSlotCount`
-still landing on 10252.
+still landing on 10276.
 
 The floor never needs bumping. The chain only moves forward, so any floor below head keeps sweeping
 forever. The value is only meaningful at head anyway.
@@ -476,7 +479,7 @@ amount through `claimDelivered`. **The feature that existed to help a buyer with
 feature that could cost them everything** and the more completely a buyer matched the target user
 the more exposed they were. Someone who held a little MON was fine. Someone who held none was not.
 
-It is worth being precise about why this counts as a finding rather than a missing nice-to-have.
+This is a finding, not a missing nice-to-have.
 The contract's stated property is that both sides always have an exit that does not depend on the
 other answering. For a gasless buyer that was false and it was false in the exact configuration
 the product was built to serve.
@@ -513,7 +516,7 @@ Four properties worth naming, because each is a thing that goes wrong in this cl
 
 ### The proof
 
-Eleven tests in `AqueousGasless.t.sol` and a live run. Every test asserts `buyer.balance == 0` at
+Twelve tests in `AqueousGasless.t.sol` and a live run. Every test asserts `buyer.balance == 0` at
 the end, because the moment the buyer needs one wei the claim is gone and a test that only checked
 the token balances would not notice.
 
@@ -590,12 +593,12 @@ tempting response is to loosen the contract until the test passes.
 ```bash
 cd contracts
 forge install foundry-rs/forge-std
-forge test                                   # 31 unit and regression tests
-forge test --fork-url "$MONAD_RPC"           # +6 against real USDC on Monad mainnet
+forge test                                   # 124 pass, 9 skip without the fork url and profiles below
+forge test --fork-url "$MONAD_RPC"           # the fork tests run against real USDC and the live registry
 ```
 
 The fork tests **report as skipped rather than passed** without a fork URL. An earlier version used an
-early return, which forge reports as `[PASS]`, so five tests that never touched a fork read as green.
+early return, which forge reports as `[PASS]`, so six tests that never touched a fork read as green.
 The gas figure of roughly 2,400 was the tell.
 
 To re-run the fix verification, make `authNonceFor` ignore `Terms` and confirm
@@ -607,8 +610,9 @@ To re-run the fix verification, make `authNonceFor` ignore `Terms` and confirm
 
 AI assistance (Claude, Anthropic) was used in writing this contract, its tests and this document. The
 design, the review and the decisions are the author's and every finding here was verified by an
-executable exploit rather than accepted as an assertion. Verified before publishing: 37 tests passing
-across two suites, 0 compiler warnings and both fixes confirmed by reverting them and watching the
+executable exploit rather than accepted as an assertion. Verified before publishing: 124 tests passing
+and 9 skipped without a fork url across the contract suite, 0 compiler errors and both fixes confirmed
+by reverting them and watching the
 regression tests fail.
 
 ---
@@ -622,7 +626,7 @@ regression tests fail.
 `postBond` takes an `agentId` and never asks who owns it.
 
 ```bash
-grep -cE "ownerOf|IdentityRegistry|0x8004A169" contracts/src/Sclera.sol    # 0
+grep -cE "ownerOf|IdentityRegistry|0x8004A169" contracts/src/Sclera.sol    # 0 before the fix below; 5 after
 ```
 
 The contract validates that the id is non-zero, that the amount is non-zero, that the rate is within
@@ -707,10 +711,10 @@ implied.
 ### Status
 
 **Closed 2026-09-24.** The gate is satisfied for this finding. The security review is gating rather
-than advisory in this project, and this is the finding that gate exists for. No test covered it:
+than advisory in this project. This is the finding that gate exists for. No test covered it:
 
 ```bash
-grep -niE "notOwner|ownerOf|squat" contracts/test/Sclera.t.sol    # no matches
+grep -niE "notOwner|ownerOf|squat" contracts/test/Sclera.t.sol    # no matches when this was opened; the regression tests below now match
 ```
 
 ## Finding 10: every ReportRefused event is discarded
@@ -791,7 +795,7 @@ breaking a legitimate fetch.
 and an end-to-end `guardedFetch` against a real loopback server reached through `[::ffff:127.0.0.1]`,
 which asserts the body never comes back. The earlier test fed the dotted string straight to the
 function, so it matched the regex and never exercised what the URL parser actually produces. The suite
-is 18 green after the change.
+is 19 green after the change.
 
 ## Finding 12: the verifier called a claim true when only the transaction existed
 
@@ -931,16 +935,6 @@ but the counts have no second source or on-chain cross-check. This matters only 
 wired, which it is not: the workflow reads, decides and encodes a report and no code in the repo signs
 or submits it, so the "verdict carries its own authorization" property lives entirely in the deployed
 Sclera and is not exercised by a simulation. Both are disclosed in the CRE writeup.
-
-**Session scope is advisory and a receipt's signer is not bound to its identity.** The browser session
-gate checks the amount but not the recipient or the action and the generic account it exposes can sign
-anything a caller hands it, so the separation between paying and authorising an agent change is not
-enforced in code. Separately, an action receipt names an EVM `signer` and an ed25519 `identity` and the
-signature only proves the identity, so a receipt can name any address as its signer. Both are
-client-side changes that need the passkey flow to verify and both are partly disclosed already. The
-fix is a scope-enforcing account wrapper that runs the gate inside every signing method, a `payTo` in
-the scope and an account-key binding signature stored beside the receipt. Deferred to a change that can
-exercise the browser path rather than shipped unverified.
 
 **Indexer items that need a resync.** The cross-chain reference counters are permissionless and can be
 inflated by registering a throwaway agent on the other chain with the same URI, the dead `Verdict`

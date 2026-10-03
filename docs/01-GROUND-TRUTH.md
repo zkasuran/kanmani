@@ -7,7 +7,7 @@ Kanmani, you can find it below beside a command you can run yourself, against a 
 key and no account. This is the substrate: the verdicts, the escrow, the x402 endpoint and the
 registry writes all sit on top of it. If a row here is wrong, something above it is wrong too.
 
-Every command was run against mainnet at block `106639913` on 2026-09-21. Outputs are copied from
+Every command was run against mainnet at block `109750000` on 2026-10-02. Outputs are copied from
 the terminal rather than retyped. Where a number moves on its own, the section says so. `cast` is
 Foundry's CLI, version 1.7.1 here.
 
@@ -46,8 +46,8 @@ than an implementation. A nonzero code size is the whole test for "this address 
 | Identity `symbol()` | | `cast call $ID "symbol()(string)" --rpc-url $R` | `"AGENT"` |
 
 The Identity Registry is an ERC-721 collection. These three addresses are listed in
-`indexer/config.yaml` under chain `143` and nowhere else. They are the only registry addresses
-anything here talks to.
+`indexer/config.yaml` under chain `143`. They are the only ERC-8004 registry addresses anything here
+talks to.
 
 ## 3. None of the three registries exist on Monad testnet
 
@@ -81,8 +81,8 @@ cast call $ID "totalSupply()(uint256)" --rpc-url $R
 # Error: server returned an error response: error code 3: execution reverted, data: "0x"
 
 cast storage $ID 0xa040f782729de4970518741823ec1276cbcd41a0c7493f62d173341566a04e00 --rpc-url $R
-# 0x000000000000000000000000000000000000000000000000000000000000280d
-cast to-dec 0x000000000000000000000000000000000000000000000000000000000000280d    # 10253
+# 0x0000000000000000000000000000000000000000000000000000000000002824
+cast to-dec 0x0000000000000000000000000000000000000000000000000000000000002824    # 10276
 ```
 
 Empty revert data means there is no such function, not that a check failed. `totalSupply` is absent
@@ -100,16 +100,18 @@ fail:
 |---|---|---|
 | `0` | `cast call $ID "ownerOf(uint256)(address)" 0 --rpc-url $R` | `0x89E9E1ab11dD1B138b1dcE6d6A4a0926aaFD5029` |
 | `10252` | `cast call $ID "ownerOf(uint256)(address)" 10252 --rpc-url $R` | `0xDB6c6340342e71A63cD11Ebac2185204b7777777` |
-| `10253` | `cast call $ID "ownerOf(uint256)(address)" 10253 --rpc-url $R` | revert `0x7e273289…280d` |
+| `10275` | `cast call $ID "ownerOf(uint256)(address)" 10275 --rpc-url $R` | `0x42478Ed9A429eC320d243469Fa5d6595BCc8daa5` |
+| `10276` | `cast call $ID "ownerOf(uint256)(address)" 10276 --rpc-url $R` | revert `0x7e273289…2824` |
 
 `0x7e273289` is the selector for `ERC721NonexistentToken(uint256)`, which `cast sig
-"ERC721NonexistentToken(uint256)"` confirms. Its argument is `0x280d`, which is 10253. The slot
-value and the last existing id agree. A wrong slot would not agree.
+"ERC721NonexistentToken(uint256)"` confirms. Its argument is `0x2824`, which is 10276. The slot
+value and the first nonexistent id agree. A wrong slot would not agree.
 
 **This number grows.** It read `10252` when the population survey ran, so that survey covers ids `0`
-through `10251`. We then registered as id `10252`, which is why the slot reads `10253` today. You
-will see the same or a higher number, never a lower one. Running the indexer locally,
-`SELECT count(*) FROM "Agent" WHERE "chainId" = 143` returns `10253` too. A gap between the
+through `10251`. We then registered as id `10252`, which bumped the slot to `10253`. It reads
+`10276` today, so 23 more agents have registered since. You will see the same or a higher number,
+never a lower one. Running the indexer locally,
+`SELECT count(*) FROM "Agent" WHERE "chainId" = 143` returns `10276` too. A gap between the
 log-derived count and the slot is an indexer that has fallen behind, which is why both get published
 rather than just the friendlier one.
 
@@ -198,14 +200,17 @@ A=0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52    # agent
 cast balance $B --rpc-url $R                                # 0        MON, at both ends
 cast call $U "balanceOf(address)(uint256)" $B  --rpc-url $R # 800000   0.80 USDC returned
 cast call $U "balanceOf(address)(uint256)" $A  --rpc-url $R # 600000   0.60 USDC earned
-cast call $U "balanceOf(address)(uint256)" $AQ --rpc-url $R # 0        nothing retained
+cast call $U "balanceOf(address)(uint256)" $AQ --rpc-url $R # 115558   later jobs; this one retained nothing
 
 cast receipt 0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5 --rpc-url $R
 # status 1 (success) / blockNumber 106463284
 # from 0xDB6c6340342e71A63cD11Ebac2185204b7777777 / to 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32
 ```
 
-The settling transaction pays the agent and returns the remainder in one transaction.
+The settling transaction pays the agent and returns the remainder in one transaction. The buyer and
+agent addresses were used once for this job, so they still read as it left them. The escrow is one
+shared contract though, so its own balance moves on with every later job. The agent's 0.60 plus the
+buyer's 0.80 refund account for this job's whole 1.40, so this job retained nothing.
 
 **What this does not prove.** The agent in that run is ours. It is evidence the settlement machinery
 works on mainnet in real USDC. It is not evidence that an agent did paid work for a stranger.
@@ -215,20 +220,23 @@ works on mainnet in real USDC. It is not evidence that an agent did paid work fo
 ```bash
 F=https://x402-facilitator.molandak.org
 curl -s $F/supported | jq -c '.kinds[] | {scheme,network,x402Version}'
-# {"scheme":"upto","network":"eip155:143","x402Version":2}
+# {"scheme":"batch-settlement","network":"eip155:10143","x402Version":2}
+# {"scheme":"batch-settlement","network":"eip155:143","x402Version":2}
+# {"scheme":"upto","network":"eip155:10143","x402Version":2}
 # {"scheme":"exact","network":"eip155:10143","x402Version":2}
 # {"scheme":"exact","network":"eip155:143","x402Version":2}
-# {"scheme":"upto","network":"eip155:10143","x402Version":2}
+# {"scheme":"upto","network":"eip155:143","x402Version":2}
 
 curl -s $F/supported | jq -r '.signers | to_entries[] | "\(.key) \(.value[0])"'
 # eip155:10143 0x7f6a2850669202519f0FE8aa912451238820Db86
 # eip155:143   0x7f6a2850669202519f0FE8aa912451238820Db86
 ```
 
-So: x402 version `2` on every kind, schemes `exact` plus `upto`, networks `eip155:143` plus
-`eip155:10143`, one signer `0x7f6a2850669202519f0FE8aa912451238820Db86` on both. Kanmani uses
-`exact` on `eip155:143` only. This endpoint is served live, so what you see is whatever is current:
-the header comment in `lib/x402.ts` records three kinds read on 2026-09-20 against the four above.
+So: x402 version `2` on every kind, schemes `exact`, `upto` plus `batch-settlement`, networks
+`eip155:143` plus `eip155:10143`, one signer `0x7f6a2850669202519f0FE8aa912451238820Db86` on both.
+Kanmani uses `exact` on `eip155:143` only. This endpoint is served live, so what you see is whatever
+is current: the header comment in `lib/x402.ts` records three kinds read on 2026-09-20 against the
+six above.
 That is the endpoint changing under us rather than a disagreement.
 
 Our own x402 payment settled on mainnet, submitted by that signer:
@@ -245,7 +253,7 @@ does not prove a stranger paid us.
 ## 9. The Validation Registry authorization rule
 
 This one took a reverted transaction to learn. It explains a number we had measured and could not
-account for: the Reputation Registry held 9,188 feedbacks while the Validation Registry held zero
+account for: the Reputation Registry held 9,288 feedbacks while the Validation Registry held zero
 rows. **Only an agent's NFT owner can open a validation. They name the validator when they do.**
 
 Reproduce it with three simulated callers. Nothing is sent, nothing is signed, no key is needed.
@@ -346,7 +354,7 @@ curl -s $G | grep -ic '0x8004A169FB4a3325136EB29fA0ceB6D2e539a432'   # 1
 
 The guide's heading reads "3. Validation Registry (coming soon)" and its Contract Addresses section
 gives an address for Identity plus Reputation while Validation reads "(coming soon)". Read
-2026-09-21. This is not a complaint. It is the reason nobody had used the registry. It is also why
+2026-10-02. This is not a complaint. It is the reason nobody had used the registry. It is also why
 "check the chain, not the documentation" is a habit here rather than a slogan.
 
 ## What this page does not establish

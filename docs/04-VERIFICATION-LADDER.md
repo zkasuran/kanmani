@@ -9,8 +9,10 @@ question the one before it cannot. A claim stops at the first rung it fails and 
 which rung that was. **A rung never exceeds its evidence.** If the document could not be fetched,
 nothing downstream of `resolvable` gets an opinion about it.
 
-The code is `verifier/src/ladder/`. Five files, one per concern, plus `verifier/src/chains.ts` for
-the chain list. Every rung below names the file that implements it.
+The code is `verifier/src/ladder/`, seven source files: five that back the output rungs
+(`resolve.ts`, `intact.ts`, `parse.ts`, `locate.ts`, `verdict.ts`) plus the two check modules
+`payable.ts` and `settled.ts` that are not rungs, with `verifier/src/chains.ts` for the chain list.
+Every rung below names the file that implements it.
 
 ---
 
@@ -21,7 +23,7 @@ the chain list. Every rung below names the file that implements it.
 | `declared` | is there a URI at all? | `resolve.ts` | the URI cannot be turned into bytes |
 | `resolvable` | are these the committed bytes? | `intact.ts` | the hash does not match or cannot be compared |
 | `intact` | can anyone read the shape? | `parse.ts` | no published mapping matches |
-| `parsed` | did the cited transaction happen? | `locate.ts` | the document claims nothing or the chain says no or we could not look |
+| `parsed` | did the cited transaction happen? | `settled.ts` / `locate.ts` | the document claims nothing or the chain says no or we could not look |
 | `true` | | | nothing stops here, this is the end |
 
 The `rung` field on a verdict records **the last rung cleared**, not the one being attempted. A
@@ -69,8 +71,9 @@ be closed rather than guessed at.
 reason: no published mapping reads this document shape: <why>
 ```
 
-Zero claims in the live corpus sit here today. That number is published anyway, because a coverage
-gap that only appears when it is non-zero is not a measurement.
+Three claims in the live corpus sit here today, each an intact document whose shape no published
+mapping reads yet. The count is published whether it is zero or three, because a coverage gap that
+only shows up once it is non-zero is not a measurement.
 
 ### `parsed`
 
@@ -87,31 +90,38 @@ for it, reads the head, then asks for the receipt. Three endings live at this ru
 
 **Question:** nothing. This rung is the end of the ladder.
 
-Reached only when `locate` returns a receipt. The verdict records the chain, its EIP-155 id, the
-block the transaction landed in and the chain head at the moment of the check.
+Reached when the payment is confirmed on chain. When a settlement reader is supplied and the claim
+names a recipient, `settledCheck` reads the receipt and confirms the transfer reached that
+recipient. Otherwise `locate` confirms a successful transaction with the cited hash exists. The
+verdict records the chain, its EIP-155 id, the block the transaction landed in and the chain head at
+the moment of the check.
 
 ```
-reason: cited transaction is on Monad at block 97452789
+reason: a successful transaction with this hash is on Monad at block 97452789
 ```
 
-### The rungs that do not exist
+### Why the ladder stops at `true`
 
 The original design had two more rungs after `true`:
 
-- **`payable`**, which would have asked whether the payment described is one the recipient could
-  actually have accepted.
-- **`settled`**, which would have asked whether the value moved and stayed moved.
+- **`payable`**, could a buyer pay this agent right now.
+- **`settled`**, did the value move to the claimed recipient and stay moved.
 
-**Neither is implemented.** There is no `payable` or `settled` anywhere in `verifier/src`. Prove it:
+Neither is a value in the verdict's rung enum. `Rung` in `verifier/src/ladder/verdict.ts` is five
+strings, `declared | resolvable | intact | parsed | true`, so a verdict never reports a sixth or a
+seventh rung and the live `/method` shows five. Prove the enum:
 
 ```bash
-grep -rn "payable\|settled" verifier/src --include=*.ts
+grep -n "type Rung" verifier/src/ladder/verdict.ts
 ```
 
-The only hits are `stateMutability: "nonpayable"` in two ABI fragments and a local variable in
-`verifier/src/net/fetch.ts`. Neither is a rung. The ladder stops at `true` and the verdict type
-carries five rung values, not seven. What was dropped and why is in
-[14-GAPS.md](14-GAPS.md).
+Both checks are built, as modules rather than rungs. `settledCheck` in
+`verifier/src/ladder/settled.ts` is folded into `judge()`: when a settlement reader is supplied and
+the claim names a recipient, it reads the receipt and confirms the transfer reached that recipient
+before the outcome is allowed to be `true`, then records the result at the existing `parsed` or
+`true` rung, never a new one. `payableCheck` in `verifier/src/ladder/payable.ts` runs as a
+standalone probe behind `src/cli/payable.ts`. Both carry their own tests. Why they stayed checks
+rather than rungs is in [14-GAPS.md](14-GAPS.md).
 
 ---
 
@@ -136,21 +146,26 @@ with:
 
 ```bash
 psql "$FOVEA_DATABASE_URL" -c \
-  "select outcome, regexp_replace(reason,'[0-9]{5,}','<n>') as shape, count(*)
+  "select outcome,
+          regexp_replace(regexp_replace(reason,'0x[0-9a-f]{6,}','<addr>'),'[0-9]+','<n>') as shape,
+          count(*)
      from fovea.verdict_latest group by 1,2 order by 3 desc;"
 ```
 
 | outcome | reason | count |
 |---|---|---|
 | `noClaim` | `game rating, no payment asserted, so there is no payment claim to check` | 1,026 |
-| `false` | `no transaction with this hash on Monad at block <n>` | 73 |
+| `false` | `no transaction with this hash on Monad at block <n>` | 123 |
 | `noClaim` | `plain text the author wrote as text/plain, no payment asserted, so there is no payment claim to check` | 66 |
-| `true` | `cited transaction is on Monad at block <n>` | 12 |
+| `true` | `a successful transaction with this hash is on Monad at block <n>` | 34 |
+| `true` | `<n> atomic units of <addr> reached <addr> on Monad at block <n>, <n> blocks deep` | 25 |
 | `unknown` | `the bytes served now do not match the hash committed on chain, so this document cannot be checked against what its author committed to` | 10 |
+| `unknown` | `no published mapping reads this document shape: no mapping matches this shape` | 3 |
 | `noClaim` | `conversation rating, no payment asserted, so there is no payment claim to check` | 3 |
-| `unknown` | `evidence document could not be read: HTTP 429` | 2 |
+| `unknown` | `evidence document could not be read: HTTP <n>` | 2 |
 
-Seven distinct strings over 1,192 claims. Every one of them describes what was observed. None of them
+Nine distinct strings over 1,292 claims. Two of them are `true`: one from `locate` finding the cited
+transaction, one from `settledCheck` watching the transfer reach the named recipient. Every one of them describes what was observed. None of them
 describes what anyone intended. That is enforced by a test, not by a review habit:
 
 ```ts
@@ -170,7 +185,7 @@ Three schemes appear in the corpus. They have nothing in common but the name "UR
 | scheme | count | how it resolves |
 |---|---|---|
 | `data:` | 1,095 | decoded in process, no network at all |
-| `http(s):` | 95 | fetched through the SSRF guard |
+| `http(s):` | 195 | fetched through the SSRF guard |
 | `ipfs://` | 2 | through a gateway, so still a guarded fetch |
 
 **`data:`** is RFC 2397, `data:[<mediatype>][;base64],<data>`. Both encodings appear. The size cap is
@@ -195,7 +210,7 @@ re-screened every hop. The size cap is enforced on the bytes as they arrive, nev
 `Content-Length`.
 
 **The guard is the most security-critical file in this build. It is also the one that almost never
-runs.** 1,095 of 1,192 claims are `data:` URIs, so 92% of this corpus touches no network at all. That
+runs.** 1,095 of 1,292 claims are `data:` URIs, so 85% of this corpus touches no network at all. That
 is stated plainly rather than left for a reader to work out, because a reader who assumes the guard
 is on the hot path will mis-weigh both the risk and the performance story. There is a test that
 proves the `data:` path cannot reach the network, by handing it a resolver that throws if called.
@@ -266,24 +281,24 @@ nobody gets told.
 
 The fix is not a rule about behaviour. It is content addressing or writing the record into
 `tokenURI` as a `data:` URI so the bytes and the commitment cannot drift apart. Our own registration
-does the second one: 554 bytes inline, no host to go stale.
+does the second one: 2,017 bytes inline, no host to go stale.
 
 There is a side effect worth naming. `agent-card.v1` is a published mapping in the atlas and it has
-**zero rows** in the corpus, because the only ten documents it was induced from now stop one rung
+**zero rows** in the corpus, because the only ten documents it was written from now stop one rung
 earlier. The mapping is real, it is tested and this corpus never exercises it.
 
 ---
 
 ## Parse and the atlas
 
-The atlas is five published mappings. Each carries a name, the date it was induced from real
-documents and a note. A test enforces the date and the note, because a mapping can move a verdict.
+The atlas is five published mappings. Each carries a name, the date it was hand-written from real
+documents (the code field is named `induced`) and a note. A test enforces the date and the note, because a mapping can move a verdict.
 
 | mapping | induced | reads | rows in corpus |
 |---|---|---|---|
-| `execution-market.v1` | 2026-09-19 | `proof_of_payment.payment_tx` | 60 `false`, 2 `true` |
+| `execution-market.v1` | 2026-09-19 | `proof_of_payment.payment_tx` | 110 `false`, 49 `true` |
 | `execution-market-transactions.v1` | 2026-09-19 | older shape, `transactions.payment_tx` | 13 `false`, 10 `true` |
-| `elo-record.v1` | 2026-09-19 | a chess rating, no payment | 1,026 `noClaim` |
+| `elo-record.v1` | 2026-09-19 | a game rating, no payment | 1,026 `noClaim` |
 | `conversation-score.v1` | 2026-09-19 | a conversation rating, no payment | 3 `noClaim` |
 | `agent-card.v1` | 2026-09-19 | an ERC-8004 capability card, no payment | 0 |
 | `plain-text-comment.v1` | 2026-09-19 | prose, no payment | 66 `noClaim` |
@@ -294,7 +309,7 @@ psql "$FOVEA_DATABASE_URL" -c \
      group by mapping, outcome order by 3 desc;"
 ```
 
-**These mappings are induced from real documents, then published.** A reader re-running the pipeline
+**These mappings are hand-written from real documents, then published.** A reader re-running the pipeline
 executes them deterministically, with no model anywhere in the loop and gets the same numbers. A
 model's only job is to propose a mapping for a shape nobody has seen. The chain decides every
 verdict, so a wrong proposal costs a retry and can never produce a wrong `true`.
@@ -326,7 +341,7 @@ over the live corpus left 23 documents unplaced and the keys said where to look.
 
 ### `noClaim` is a result, not a coverage gap
 
-1,095 of 1,192 documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
+1,095 of 1,292 documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
 at all.** A document that never asserted a payment cannot be wrong about one, so counting it as
 unparsed would inflate our own published gap number with documents that are perfectly well formed.
 
@@ -408,7 +423,7 @@ That verdict carries `checkedAtBlock`, because a verdict is a measurement at a t
 ### The match is on the error TYPE, not a message substring
 
 Providers signal "no such transaction" by throwing about as often as by returning `null` and the two
-are indistinguishable from the shape of a thrown error alone. So the translation lives in one place,
+are indistinguishable from the shape of a thrown error alone. So the translation lives in one file,
 `verifier/src/rpc.ts` and it matches on the error name:
 
 ```ts
@@ -449,7 +464,7 @@ Two consequences follow and both are load-bearing:
    is append only for the same reason: a re-check writes a new row, so a fixed document shows as
    `false -> true` with both timestamps.
 
-On the live corpus, all seven chains are configured. Every one of the 85 payment claims names
+On the live corpus, all seven chains are configured. Every one of the 182 payment claims names
 `monad`, so the other six carried no traffic in this sweep. They are in the table anyway, because the
 table is what a `false` is relative to.
 
@@ -499,7 +514,7 @@ blockNumber  | 98436195
 
 Identical to `feedbackHash`. These are the bytes the author committed to.
 
-**Step 3, `intact` to `parsed`.** The atlas runs. Note that this document carries *both*
+**Step 3, `intact` to `parsed`.** The atlas runs. This document carries *both*
 `proof_of_payment` and `transactions`, so two mappings could plausibly fire. They do not, because
 `execution-market-transactions.v1` matches only when `proof_of_payment` is absent. Exactly one hit:
 
@@ -567,30 +582,40 @@ cd verifier && npm test
 ```
 
 ```
-# tests 94
-# pass 89
+# tests 225
+# pass 198
 # fail 0
-# skipped 5
+# skipped 27
 ```
 
-The 5 skips are the Postgres store tests, which skip when `ENVIO_PG_PASSWORD` or
-`FOVEA_DATABASE_URL` is unset. They pass against a live database. Everything else runs with no
-network and no database.
+27 skip without a live dependency rather than failing. Six are the Postgres store tests, which skip
+when `ENVIO_PG_PASSWORD` or `FOVEA_DATABASE_URL` is unset. The other 21 are live probes that
+self-skip with a stated reason when their endpoint or key is unset: the `payable` and `settled`
+checks, the Alchemy fallback probe in `rpc.test.ts`, the atlas proposer plus the two Nansen probes.
+All of them pass against their live dependency. Everything else runs with no network and no
+database.
 
-The ladder's own share is 58 of those tests. Per file, with
-`node --test --experimental-strip-types <file>`:
+The ladder's own share is 144 of those tests, counting the seven files in `src/ladder/`. Per file,
+with `node --test --experimental-strip-types <file>`:
 
 | file | tests |
 |---|---|
-| `src/ladder/parse.test.ts` | 15 |
+| `src/ladder/payable.test.ts` | 45, 3 skipped without a live endpoint |
+| `src/ladder/settled.test.ts` | 31, 4 skipped without a live endpoint |
+| `src/ladder/parse.test.ts` | 20 |
+| `src/net/guard.test.ts` | 19 |
 | `src/ladder/locate.test.ts` | 14 |
+| `src/ladder/verdict.test.ts` | 14 |
 | `src/ladder/resolve.test.ts` | 13 |
-| `src/ladder/verdict.test.ts` | 9 |
-| `src/ladder/intact.test.ts` | 7 |
-| `src/net/guard.test.ts` | 15 |
+| `src/atlas/induce.test.ts` | 10 |
+| `src/atlas/propose.test.ts` | 9, 4 skipped without a live dependency |
+| `src/cli/nansen-enrich.test.ts` | 8, 4 skipped without a live dependency |
 | `src/optic.test.ts` | 8 |
 | `src/store/records.test.ts` | 8 |
-| `src/store/store.test.ts` | 5, all skipped without a database |
+| `src/ladder/intact.test.ts` | 7 |
+| `src/cli/nansen-funders.test.ts` | 7, 5 skipped without a live dependency |
+| `src/rpc.test.ts` | 6, 1 skipped without a live fallback endpoint |
+| `src/store/store.test.ts` | 6, all skipped without a database |
 
 ### Mutation testing
 
@@ -638,17 +663,24 @@ Full suite still green. `# fail 0`.
 
 Two things this taught, both worth more than the mutation cost:
 
-**One, the suite has no test over `rpc.ts` at all.** Every `locate` test supplies a fake
-`ChainReader`, which is what makes the decision logic testable with no network. That same seam means
-the translation from a viem error into `null`-or-rethrow is never exercised. No test file imports
-`rpc.ts`:
+**One, `chainReaderOf` is still not tested.** Every `locate` test supplies a fake `ChainReader`,
+which is what makes the decision logic testable with no network. `src/rpc.test.ts` now imports
+`rpc.ts` and exercises the Monad fallback composition, `readerWithFallback` and
+`settlementReaderWithFallback`, but it injects its own `ChainReader`, so the translation inside
+`chainReaderOf` from a viem error into `null`-or-rethrow, the exact line this mutation edits, is
+never run. `chainReaderOf` is not exported and the only path that builds it, `readerFor`, opens a
+real client, so no offline test reaches it:
 
 ```bash
 grep -rn "from \"\.\./rpc\|from \"\./rpc" verifier/src --include=*.test.ts
 ```
 
-returns nothing. The property that a provider failure is `unknown` is covered above the seam and not
-at it.
+```
+src/rpc.test.ts:4:import { readerWithFallback, settlementReaderWithFallback } from "./rpc.ts";
+```
+
+The one hit is the fallback runner, above the seam. The property that a provider failure is
+`unknown` is covered above the seam and not at it, so this mutation still survives.
 
 **Two, this mutation is behaviour-preserving today and wrong later.** viem's current message contains
 `could not be found`, so the mutated code returns `null` for exactly the cases the original did. A
