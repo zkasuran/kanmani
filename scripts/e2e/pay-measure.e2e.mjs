@@ -9,11 +9,11 @@
  *
  *   node scripts/e2e/pay-measure.e2e.mjs [url]      default https://kanmani.xyz
  */
-import { launchChrome, argUrl } from "./lib.mjs";
+import { launchPage, argUrl } from "./lib.mjs";
 import { addPrfAuthenticator } from "./lib/passkey-authenticator.mjs";
 
 const url = argUrl();
-const { browser, page } = await launchChrome();
+const { browser, page } = await launchPage();
 await addPrfAuthenticator(page);
 
 const checks = [];

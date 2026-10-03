@@ -17,7 +17,7 @@
  * stale credential. Either must make the suite report a failure. A 10/10 that cannot go red is not
  * evidence.
  */
-import { launchChrome, argUrl } from "./lib.mjs";
+import { launchPage, argUrl } from "./lib.mjs";
 import { addPrfAuthenticator, clearCredentials } from "./lib/passkey-authenticator.mjs";
 
 const url = argUrl();
@@ -50,7 +50,7 @@ async function clearAllStorage(page) {
   });
 }
 
-const { browser, context, page } = await launchChrome();
+const { browser, context, page } = await launchPage();
 const { cdp, authenticatorId } = await addPrfAuthenticator(page);
 
 let passed = 0;

@@ -26,6 +26,19 @@ export async function launchChrome() {
 }
 
 /**
+ * A browser with one context and one page already open, for suites that drive a single tab.
+ * `launchChrome` returns the bare browser; five suites were written against this shape and
+ * destructured `{ browser, context, page }` out of a value that had none of them, so every one died
+ * on its first line before reaching the site.
+ */
+export async function launchPage() {
+  const browser = await launchChrome();
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  return { browser, context, page };
+}
+
+/**
  * A suite opts out of the current URL by exiting 2 with a stated reason, which the runner counts as
  * SKIP rather than a failure. Used where a check needs something the given URL does not expose (a
  * local build, a virtual authenticator that will not seed against a remote origin).

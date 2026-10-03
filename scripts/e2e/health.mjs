@@ -24,7 +24,7 @@ const ROUTES = [
   "/validate",
   "/chains",
   "/developers",
-  "/writing/qwen",
+  "/blog/qwen",
   "/login",
   "/studio",
   "/fund",

@@ -10,11 +10,11 @@
  *
  *   node scripts/e2e/session-design.e2e.mjs [url]      default https://kanmani.xyz
  */
-import { launchChrome, argUrl } from "./lib.mjs";
+import { launchPage, argUrl } from "./lib.mjs";
 import { addPrfAuthenticator, getCredential } from "./lib/passkey-authenticator.mjs";
 
 const url = argUrl();
-const { browser, page } = await launchChrome();
+const { browser, page } = await launchPage();
 const { cdp, authenticatorId } = await addPrfAuthenticator(page);
 
 const checks = [];

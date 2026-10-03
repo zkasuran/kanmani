@@ -45,7 +45,7 @@ async function accountAddress(page) {
   return m[0];
 }
 
-const { browser } = await launchChrome();
+const browser = await launchChrome();
 
 // Context A: create a passkey, read its fingerprint and store a note under the content key.
 const ctxA = await browser.newContext();
