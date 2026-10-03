@@ -1,6 +1,6 @@
-# 3. What the <!-- n:agents -->10,277<!-- /n --> agents actually are
+# 3. What the <!-- n:agents -->10,278<!-- /n --> agents actually are
 
-Monad mainnet's ERC-8004 Identity Registry held <!-- n:agents -->10,277<!-- /n --> agents when we read it. This document is the
+Monad mainnet's ERC-8004 Identity Registry held <!-- n:agents -->10,278<!-- /n --> agents when we read it. This document is the
 census: how many of those agents describe themselves with the same file, what those files do when
 you ask them, what the feedback attached to them actually says.
 
@@ -10,8 +10,8 @@ arithmetic rather than as a plausible-looking number. Section 9 reproduces all o
 
 | what | count |
 |---|---|
-| agents | <!-- n:agents -->10,277<!-- /n --> |
-| distinct registration documents | <!-- n:documents -->2,054<!-- /n --> |
+| agents | <!-- n:agents -->10,278<!-- /n --> |
+| distinct registration documents | <!-- n:documents -->2,055<!-- /n --> |
 | feedbacks | <!-- n:feedbacks -->9,288<!-- /n --> |
 | feedbacks carrying an evidence URI | <!-- n:withPointer -->1,292<!-- /n --> |
 | validations, before we wrote one | 0 |
@@ -51,7 +51,7 @@ behind" rather than "these agents do not exist". A clean index publishes 10276 a
 
 ## 2. One row per document, not one row per agent
 
-<!-- n:agents -->10,277<!-- /n --> agents resolve to **<!-- n:documents -->2,054<!-- /n --> distinct registration documents**. The index stores one row per
+<!-- n:agents -->10,278<!-- /n --> agents resolve to **<!-- n:documents -->2,055<!-- /n --> distinct registration documents**. The index stores one row per
 document (`AgentRecord`), joined from the agent by a stable hash of the URI string, with
 `memberCount` for how many agents point at it plus `distinctOwners` for how many wallets registered
 those agents. This is not storage economy. It is the only reason the interesting facts are visible.
@@ -111,7 +111,7 @@ would answer "who holds these agents today" while the published claim is about w
 
 ## 4. Eight states, because a boolean publishes a rate limit as a deletion
 
-Every one of the <!-- n:documents -->2,054<!-- /n --> documents was asked once. The probe stores what happened
+Every one of the <!-- n:documents -->2,055<!-- /n --> documents was asked once. The probe stores what happened
 (`fovea.record_probe`). A separate view (`fovea.record_state`) decides what that means, so a better
 definition reclassifies old probes without re-fetching anybody's server.
 

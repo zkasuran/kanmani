@@ -22,7 +22,8 @@
  *   node scripts/refresh-numbers.mjs --check      offline gate: markers match the snapshot and the
  *                                                 test counts match lib/counts.ts. verify.sh runs this
  *   node scripts/refresh-numbers.mjs --check --live   also fail if the snapshot no longer matches the
- *                                                 live site. The canary runs this
+ *                                                 live site, allowing population counts to drift by
+ *                                                 NUMBERS_DRIFT (default 0.5%). The canary runs this
  *   node scripts/refresh-numbers.mjs --mark FILE...   adopt markers: wrap the snapshot's distinctive
  *                                                 figures in FILE where they appear unmarked
  *
@@ -76,6 +77,9 @@ const KEYS = {
   testsContractsSkipped: "contract suite skipped on the default profile",
   testsRootPassing: "`npm test` at the root, which runs the app and verifier suites together",
 };
+
+/** Population counts that grow on their own as people register. Everything else is held exact. */
+const GROWING = ["agents", "documents", "feedbacks", "withPointer", "goneAgents", "oneDocAgents", "oneDocWallets"];
 
 /** Figures distinctive enough to adopt automatically with --mark. Small ones are marked by hand. */
 const AUTO_MARK = ["agents", "documents", "feedbacks", "withPointer", "goneAgents", "oneDocAgents", "oneDocWallets", "noClaim"];
@@ -282,10 +286,22 @@ if (CHECK) {
   bad.push(...r.bad);
 
   if (LIVE) {
+    // The registry grows by a handful of agents a day, so an exact match would fail every scheduled
+    // run and teach everyone to ignore it. Population counts may drift by DRIFT before this fails;
+    // the drift is still printed. Verdict and test figures have no tolerance: if one of those moves,
+    // a sentence built on it may have stopped being true.
+    const DRIFT = Number(process.env.NUMBERS_DRIFT ?? 0.005);
     const now = await live();
+    const notes = [];
     for (const [k, v] of Object.entries(now.values)) {
-      if (snap.values[k] !== v) bad.push(`${k} is ${fmt(v)} live at block ${now.atBlock}, the snapshot says ${fmt(snap.values[k])}`);
+      const was = snap.values[k];
+      if (was === v) continue;
+      const rel = was === 0 ? Infinity : Math.abs(v - was) / was;
+      const line = `${k} is ${fmt(v)} live at block ${now.atBlock}, the snapshot says ${fmt(was)}`;
+      if (GROWING.includes(k) && rel <= DRIFT) notes.push(line);
+      else bad.push(line);
     }
+    for (const n of notes) console.log(`note  ${n}, within the ${DRIFT * 100}% allowance`);
   }
 
   if (bad.length) {
