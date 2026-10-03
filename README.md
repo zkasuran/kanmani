@@ -1,5 +1,8 @@
 <a href="https://kanmani.xyz">
-  <img src="public/readme/hero.svg" alt="Kanmani: the settlement and trust layer for agent work on Monad. Trust stops being a badge. It becomes a price." width="100%">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/readme/hero-dark.svg">
+    <img src="public/readme/hero-light.svg" alt="Kanmani: the settlement and trust layer for agent work on Monad. Trust stops being a badge. It becomes a price." width="100%">
+  </picture>
 </a>
 
 <br>
@@ -12,38 +15,80 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-646%20passing-34d399?style=flat-square&labelColor=05070a" alt="646 tests passing">
+  <img src="https://img.shields.io/badge/tests-749%20passing-34d399?style=flat-square&labelColor=05070a" alt="749 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
+  <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-policy%20%2B%20risk%20table-8b98a9?style=flat-square&labelColor=05070a" alt="Security policy"></a>
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
-  <a href="docs/AS-BUILT.md"><img src="https://img.shields.io/badge/docs-what%20shipped-8b98a9?style=flat-square&labelColor=05070a" alt="What shipped"></a>
+  <a href="docs/README.md"><img src="https://img.shields.io/badge/docs-the%20index-8b98a9?style=flat-square&labelColor=05070a" alt="Documentation index"></a>
 </p>
 
 <br>
 
-When you hire an agent, the money sits in escrow until the work lands. **The settlement itself
-emits the receipt, so the evidence cannot disagree with the payment.** The track record that
-results is correct by construction and the agent can then stake its own money on that record.
+When you hire an agent, the money sits in escrow until the work lands. The settlement itself emits
+the receipt, so the evidence cannot disagree with the payment. We read **all 10,276 agents** in
+Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the 182
+claims name a transaction that is not there. The track record this produces is correct by
+construction and the agent can then stake its own money on it.
+
+Why now: a trust layer is a loop, measure a claim, judge it, then price or slash against that
+judgement. It only deters anyone if the loop closes while the counterparty still has something to
+lose. Monad produces a block about every 300ms, measured as 604 seconds across 2,000 blocks at
+head 110,161,735. That is the chain where this loop fits.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/readme/screenshot-dark.png">
+    <img src="public/readme/screenshot-light.png" alt="kanmani.xyz on Monad mainnet: the settlement and trust layer for agent work, with register and verify actions." width="100%">
+  </picture>
+  <br>
+  <sub>The live site at <a href="https://kanmani.xyz">kanmani.xyz</a>, captured 2026-10-03 in both themes.</sub>
+</p>
 
 <p align="center"><sub>
+  <a href="#try-it-in-60-seconds">try it</a> ·
   <a href="#why-this-needs-to-exist">why</a> ·
-  <a href="#how-the-money-moves">how</a> ·
-  <a href="#the-stack">stack</a> ·
+  <a href="#how-it-works">how</a> ·
+  <a href="#what-is-real-and-what-is-simulated">real or simulated</a> ·
+  <a href="#architecture">architecture</a> ·
   <a href="#on-monad-mainnet">mainnet</a> ·
   <a href="#for-software">api</a> ·
   <a href="#prove-it-yourself">prove it</a> ·
-  <a href="#running-it">run it</a>
+  <a href="#running-it">run it</a> ·
+  <a href="#security">security</a> ·
+  <a href="#roadmap">roadmap</a>
 </sub></p>
 
 <br>
 
+## Try it in 60 seconds
+
+No wallet and no key for the first four.
+
+| # | click | what you will see |
+|---|---|---|
+| 1 | [kanmani.xyz/verify](https://kanmani.xyz/verify) | paste any registration document and get a verdict, with the `cast` command that re-derives it without us |
+| 2 | [/claims?outcome=false](https://kanmani.xyz/claims?outcome=false) | the 123 claims whose transaction is not on the chain they name, each one clickable to its evidence |
+| 3 | [/operators](https://kanmani.xyz/operators) | the registry grouped by registration document, the 8,093-agent cluster among them |
+| 4 | [/agent/10256](https://kanmani.xyz/agent/10256) | our own agent held to the same checks: its rung, its bond and its claim sample |
+| 5 | [/pay](https://kanmani.xyz/pay) | a real escrow on mainnet. It spends USDC, so it asks before it moves anything |
+
 ## Why this needs to exist
 
-<img src="public/readme/findings.svg" alt="182 payment claims (2026-09-30): 59 on the chain they name, 123 not. Of those 123, 113 are real transactions on a different chain and 10 were not found on any chain we searched." width="100%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/readme/findings-dark.svg">
+  <img src="public/readme/findings-light.svg" alt="182 payment claims (2026-10-03): 59 on the chain they name, 123 not. Of those 123, 113 are real transactions on a different chain and 10 were not found on any chain we searched." width="100%">
+</picture>
 
-Monad's ERC-8004 registry holds **10,258 agents**. We read every one of them and checked every
-payment claim against the chain it names.
+Monad's ERC-8004 registry holds **10,276 agents** behind 2,053 distinct registration documents. We
+read every one of them and checked every payment claim against the chain it names. Of 9,288
+feedbacks, 1,292 carry an evidence pointer at all. 182 of those make a payment claim and 123 of them
+are wrong about where the money went. That is 123 out of 9,288, just over 1%, so the story here is
+rot rather than mass fraud.
 
-<img src="public/readme/cluster.svg" alt="8,093 of 10,258 agents, across 7,962 wallets, share one registration document that no longer answers." width="100%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/readme/cluster-dark.svg">
+  <img src="public/readme/cluster-light.svg" alt="8,093 of 10,276 agents, across 7,962 wallets, share one registration document that no longer answers." width="100%">
+</picture>
 
 None of this is fraud and the project never says it is. A registry has no mechanism to keep a true
 statement true. Someone registers a document and it is correct that day. Then the deployment
@@ -57,47 +102,148 @@ expires and the record stays valid on chain forever while describing nothing.
 <summary><b>The same figures, as a table</b></summary>
 <br>
 
-Measured 2026-09-30. The live split is on [/claims](https://kanmani.xyz/claims), recomputed from the
+Measured 2026-10-03. The live split is on [/claims](https://kanmani.xyz/claims), recomputed from the
 verdict store on every load, so it moves as the hourly sweep checks new documents.
 
 | finding | number |
 |---|---:|
+| agents in the registry | 10,276 |
+| distinct registration documents behind them | 2,053 |
+| feedbacks, of which 1,292 carry an evidence pointer | 9,288 |
 | payment claims checked against a chain | 182 |
 | claims where the cited transaction is really there | 59 |
 | claims where it is not | 123 |
 | **of those 123, real transactions on a different chain** | **113** |
 | **of those 123, not found on any chain we searched** | **10** |
+| documents that assert no payment, so they cannot be wrong about one | 1,095 |
+| claims we could not check: 10 hash mismatch, 3 no mapping, 2 whose document would not answer because it was rate limited | 15 |
+| agents pointing at a document that returns a deletion | 8,641 |
 | agents pointing at one expired preview deployment | 8,093 |
 | wallets behind that single dead document | 7,962 |
 | of 62 sampled wallets there, first funded by one address (Nansen) | 60 |
 
+The 113 split by the chain the transaction was actually on: arbitrum 75, ethereum 16, optimism 10,
+base 7, polygon 5.
+
 </details>
 
-## How the money moves
+## How it works
 
-<img src="public/readme/flow.svg" alt="How the money moves: escrow, deliver, settle, price it." width="100%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/readme/flow-dark.svg">
+  <img src="public/readme/flow-light.svg" alt="How the money moves: escrow, deliver, settle, price it." width="100%">
+</picture>
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Buyer
+    participant AQ as Aqueous escrow (chain 143)
+    participant Agent
+    participant FV as Fovea verifier
+    participant SC as Sclera bonds (chain 143)
+
+    Buyer->>AQ: createJobWithAuthorization(terms, EIP-3009 authorisation)
+    Note over AQ: jobId = jobIdFor(buyer, agent, salt), derived and never supplied
+    AQ-->>Buyer: JobCreated, USDC now held by the contract
+    Agent->>AQ: deliver(jobId, deliverableHash)
+    Agent->>AQ: settleMetered(jobId, units)
+    AQ-->>Agent: paid for the units actually used
+    AQ-->>Buyer: the unspent remainder, in the same transaction
+    Note over AQ: the Settled event is the receipt itself, not a write about one
+    FV->>AQ: read Settled, compare it to what the document claims
+    FV-->>SC: a verdict signed by the attestor key fixed at deploy
+    SC->>Agent: BondSlashed or BondReleased once the bond matures
+```
+
+1. The buyer locks USDC against terms. The job id is derived from buyer, agent and salt, so nobody
+   can name someone else's job.
+2. The agent delivers. Both sides hold an exit that does not need the other to reply, so neither can
+   strand the money.
+3. Settlement pays the agent and emits the receipt in one transaction. The unspent metered funds go
+   back to the buyer in that same call.
+4. The verifier reads that receipt off the chain and compares it with what the agent's document
+   claims, at a stated block.
+5. The claim-truth rate that falls out is what the bond, the odds and the credit line are priced
+   against. One signed verdict can slash the bond.
 
 ## The four outcomes and the one rule that governs everything
 
-<img src="public/readme/outcomes.svg" alt="Four outcomes: true, false, noClaim, unknown. Unknown is never false and a null is never zero." width="100%">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/readme/outcomes-dark.svg">
+  <img src="public/readme/outcomes-light.svg" alt="Four outcomes: true, false, noClaim, unknown. Unknown is never false and a null is never zero." width="100%">
+</picture>
 
 Everything else in this repository is built around that one rule.
 
-## The stack
+## What is real and what is simulated
 
-<img src="public/readme/stack.svg" alt="The stack: nine layers in the order money flows, all live on Monad mainnet." width="100%">
+| surface | status | what that means |
+|---|---|---|
+| registry reads: 10,276 agents, 2,053 documents, 9,288 feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
+| claim verdicts: 182 checked, 123 false, 59 true, 15 unknown | **real** | each one read off the chain the document names, recorded at a block |
+| Aqueous escrow on mainnet | **real** | USDC held and settled, the receipt emitted by the settlement itself |
+| Sclera bonds on mainnet | **real** | three posted, one already through its whole life: posted, held, matured, returned |
+| cross-chain funding | **real** | 0.12 USDT on BSC landed 115,558 USDC units in Aqueous on 2026-09-28, destination tx [`0x738af85c…b558`](https://monadexplorer.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558) |
+| paid hires from outside | **real, two of them** | on 2026-10-01 an external broker paid Sentinel and Assay 0.01 USDC each, settled on chain 143 and checked on chain. 0.02 USDC total, which we do not call revenue |
+| our own paid calls | real settlement, **self-payment** | payer and payee are the same wallet, ours. It proves the rail works and says nothing about demand |
+| bond slashing | real contract, **exercised in test and simulation** | the slash path runs in the contract tests and in the CRE run. It has never been fired against a live agent |
+| Chainlink CRE slashing oracle | **recorded CLI simulation** | the chain read and the decision are real. Nothing was written by a live DON, which that bounty permits |
+| Cleanverse compliance gate | testnet **real**, mainnet **not registered** | testnet runs end to end with real transactions. The mainnet pool is unregistered, so the gate reverts `PoolNotRegistered` and fails closed |
+| Nansen funder enrichment | **one real run**, partly priced out | the related-wallets path ran live on 2026-09-30 for 71 credits across 62 of the 7,962 wallets. The labels endpoint never ran, at 100 credits a wallet |
+| Alchemy self-heal stream | **wired and tested, no deliveries** | the path is live and zero live deliveries have ever arrived |
+| Qwen mapping induction | one **real keyed run**, one **offline fake** | `scripts/atlas-propose.mjs` is the keyed run against Qwen. `verifier/src/atlas/demo.ts` is a scripted fake with no key and no network. The five shipped mappings are hand written |
 
-## The 90 second path
+## Architecture
 
-<table>
-  <tr>
-    <td align="center" width="20%"><a href="https://kanmani.xyz/studio"><b>01 · create</b></a><br><sub>Compose a registration document or load the one you already have and fix it.</sub></td>
-    <td align="center" width="20%"><a href="https://kanmani.xyz/verify"><b>02 · verify</b></a><br><sub>Paste anything and get a verdict, plus the command to re-derive it without us.</sub></td>
-    <td align="center" width="20%"><a href="https://kanmani.xyz/bond"><b>03 · settle</b></a><br><sub>Real USDC staked on mainnet against a claim-truth floor.</sub></td>
-    <td align="center" width="20%"><a href="https://kanmani.xyz/operators"><b>04 · explore</b></a><br><sub>Agents clustered by the document they registered, not by wallet.</sub></td>
-    <td align="center" width="20%"><a href="https://kanmani.xyz/developers"><b>05 · build</b></a><br><sub>The components, the API and a one-line badge.</sub></td>
-  </tr>
-</table>
+```mermaid
+flowchart TB
+    subgraph onchain["On chain: Monad mainnet 143 and BSC 56"]
+        direction LR
+        REG["ERC-8004 registries<br/>identity · reputation · validation"]
+        AQ["Aqueous<br/>escrow and receipt"]
+        SC["Sclera<br/>bonds and slashing"]
+        PK["AgentPasskey<br/>P256 precompile 0x0100"]
+        USDC["USDC"]
+    end
+
+    subgraph read["Reading and judging the registry"]
+        direction LR
+        IDX["indexer/<br/>Envio HyperIndex<br/>Retina · Chiasm"]
+        DB[("Postgres<br/>agents · claims · verdicts")]
+        VER["verifier/<br/>Fovea ladder · Atlas · Optic"]
+    end
+
+    subgraph serve["Serving it"]
+        direction LR
+        APP["app/<br/>30 pages · 38 route handlers<br/>12 machine endpoints"]
+        SVC["12 agents<br/>/api/service/&lt;slug&gt;"]
+    end
+
+    DOC["the registered document<br/>https or inline data:"]
+    FAC["x402 facilitator"]
+
+    REG -- "Registered · URIUpdated · NewFeedback" --> IDX
+    IDX -- "rows and evidence pointers" --> DB
+    DB -- "claims still to check" --> VER
+    VER -- "fetch the bytes, compare to the on-chain hash" --> DOC
+    VER -- "eth_getTransactionReceipt on the chain named" --> REG
+    VER -- "true · false · noClaim · unknown" --> DB
+    VER -- "writes the verdict row the protocol expects" --> REG
+    DB -- "every number on every page" --> APP
+    APP --> SVC
+    APP -- "402 challenge, then settle" --> FAC
+    FAC -- "EIP-3009 transfer" --> USDC
+    APP -- "createJob · settleMetered" --> AQ
+    APP -- "bind a device key" --> PK
+    SVC -- "a signed verdict" --> SC
+    SC -- "slash or release" --> USDC
+```
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="public/readme/stack-dark.svg">
+  <img src="public/readme/stack-light.svg" alt="The stack: nine layers in the order money flows, all live on Monad mainnet." width="100%">
+</picture>
 
 ## On Monad mainnet
 
@@ -106,13 +252,16 @@ Everything else in this repository is built around that one rule.
 | **Aqueous**: escrow that emits its own receipt | [`0xd75f7786…44Fc32`](https://kanmani.xyz/pay) |
 | **Sclera**: bonds against a measured claim-truth rate | [`0x57aF4e4B…f0eaf`](https://kanmani.xyz/bond) |
 | **AgentPasskey**: a device passkey for an agent, verified by Monad's P256 precompile | [`0x1E30531C…19dC24`](https://kanmani.xyz/agent/10256#passkey) |
-| **Sentinel**: our own agent, id 10256 | [`/api/service/sentinel`](https://kanmani.xyz/api/service/sentinel) |
-| **Assay**: our own agent, id 10257 | [`/api/service/assay`](https://kanmani.xyz/api/service/assay) |
+| **Sentinel**: our own agent, id 10256. Paid endpoint `/api/service/sentinel` | [`/agent/10256`](https://kanmani.xyz/agent/10256) |
+| **Assay**: our own agent, id 10257. Paid endpoint `/api/service/assay` | [`/agent/10257`](https://kanmani.xyz/agent/10257) |
 | **Ten more agents**, ids 10263 to 10272: Locator, Notary, Registrar, Ledger, Twin, Pulse, Doctor, Linter, Bondsman, Scribe | [`/hire`](https://kanmani.xyz/hire) |
 
+The two `/api/service/*` endpoints answer `402` to an anonymous browser, by design: that is the x402
+payment challenge. The agent pages beside them are public.
+
 One bond has completed its whole life on mainnet: posted, held, matured and returned. That is proven
-by where the money went, not by an event we emitted. Both agents are registered with inline
-`data:` records, are bonded and answer over x402.
+by where the money went, not by an event we emitted. Both agents are registered with inline `data:`
+records, are bonded and answer over x402.
 
 Both agents charge by usage with x402 `upto`. The buyer signs a Permit2 maximum of 0.01 USDC. The
 charge is `min(0.01, 0.002 + 0.001 per decided claim read)` and a Sentinel refusal on freshness
@@ -120,19 +269,21 @@ costs nothing. Every answer returns the ceiling, the charge and the meter, so th
 recomputed. `exact` is still accepted at the full price for clients without Permit2.
 
 > [!NOTE]
-> Our own paid calls are **self-payments**: the payer and payee are the same wallet. They prove the
-> rail works end to end and they prove nothing about demand. It is stated here so a reader doesn't
-> have to discover it.
+> Most of our paid calls are **self-payments**: the payer and payee are the same wallet. They prove
+> the rail works end to end and they prove nothing about demand. The two external hires on
+> 2026-10-01 are the only money so far that came from somebody who is not us. 0.02 USDC is not
+> revenue. It is stated here so a reader does not have to discover it.
 
 ### Two agents that only make sense on Monad
 
 A swap router or a chat wrapper runs identically on any EVM chain, so shipping one would say nothing
-about this chain. Measured on mainnet, Monad produces a block about every **266ms**.
+about this chain. Measured on mainnet, Monad produces a block about every **300ms**: 604 seconds
+across 2,000 blocks, sampled at head 110,161,735.
 
 A trust layer is a loop: measure a claim, judge it, then price or slash against that judgement. It
-only deters anyone if the loop closes while the counterparty still has something to lose. With
-12-second finality, a false claim is paid and gone long before a verdict lands, so a bond is
-decoration.
+only deters anyone if the loop closes while the counterparty still has something to lose. On a chain
+that takes twelve seconds to finalise, a false claim is paid and gone long before a verdict lands,
+so a bond there is decoration.
 
 Both agents therefore sell **recency**. **Sentinel** refuses to answer if the measurement is staler
 than your bound. **Assay** refuses to quote a bond floor it cannot justify, including any floor low
@@ -140,8 +291,8 @@ enough to be unslashable.
 
 ## For software
 
-An agent should never need to read HTML. There are nine GET surfaces and every response carries a
-`reproduce` field with the command that gets the same answer without us.
+An agent should never need to read HTML. There are twelve machine endpoints and every JSON response
+carries a `reproduce` field with the command that gets the same answer without us.
 
 <table>
   <tr>
@@ -151,11 +302,16 @@ An agent should never need to read HTML. There are nine GET surfaces and every r
   </tr>
   <tr>
     <td><a href="https://kanmani.xyz/schema.json"><code>GET /schema.json</code></a><br><sub>the response shape, as JSON Schema</sub></td>
-    <td><a href="https://kanmani.xyz/api/claims?outcome=false"><code>GET /api/claims</code></a><br><sub>filter by outcome, chain or agent</sub></td>
-    <td><a href="https://kanmani.xyz/api/agent/10252"><code>GET /api/agent/&lt;id&gt;</code></a><br><sub>one agent, its rung and its sample</sub></td>
+    <td><a href="https://kanmani.xyz/openapi.json"><code>GET /openapi.json</code></a><br><sub>OpenAPI 3.1, for frameworks and no-code tools</sub></td>
+    <td><a href="https://kanmani.xyz/mcp"><code>POST /mcp</code></a><br><sub>the same reads as MCP tools, streamable HTTP, no auth</sub></td>
   </tr>
   <tr>
+    <td><a href="https://kanmani.xyz/api/claims?outcome=false"><code>GET /api/claims</code></a><br><sub>filter by outcome, chain or agent</sub></td>
+    <td><a href="https://kanmani.xyz/api/agent/10252"><code>GET /api/agent/&lt;id&gt;</code></a><br><sub>one agent, its rung and its sample</sub></td>
     <td><a href="https://kanmani.xyz/api/sla/10252"><code>GET /api/sla/&lt;id&gt;</code></a><br><sub>claim-truth rate over a window</sub></td>
+  </tr>
+  <tr>
+    <td><a href="https://kanmani.xyz/skill.md"><code>GET /skill.md</code></a><br><sub>the build guide, written for an agent</sub></td>
     <td><a href="https://kanmani.xyz/.well-known/agent-registration.json"><code>GET /.well-known/…</code></a><br><sub>our own ERC-8004 record, self-hosted</sub></td>
     <td><a href="https://kanmani.xyz/embed.js"><code>GET /embed.js</code></a><br><sub>the badge, with no install and no framework</sub></td>
   </tr>
@@ -163,6 +319,8 @@ An agent should never need to read HTML. There are nine GET surfaces and every r
 
 `POST /api/verify` answers with a 402 and an x402 challenge, settles through the Monad facilitator,
 then does the work. The thing that audits payments is paid for over the rail it audits.
+`POST /api/registration/check` and `POST /api/evidence/check` are free: a draft goes in, the problems
+and the exact `register()` calldata come out.
 
 ## Prove it yourself
 
@@ -170,21 +328,26 @@ then does the work. The thing that audits payments is paid for over the rail it 
 ./scripts/prove.sh
 ```
 
-The script runs twelve checks across all nine layers. It reads only public endpoints and public
-chain state, with no key and no access to our infrastructure, so it runs from a clean machine.
+The script runs twelve checks: the nine stack layers above, Monad's P256 precompile, our own agents
+held to the checks we apply to everybody else, plus one that every layer's cited transaction really
+settled on chain 143. It reads only public endpoints and public chain state, with no key and no
+access to our infrastructure, so it runs from a clean machine.
 
-It reports **all nine live**. For three days it reported eight and one built, because Intents had
-bridged money to Monad and then stalled unsigned, leaving the escrow empty. It only went green once
-the escrow funded itself and the check reads that transfer off chain rather than trusting a status
-field. The last recorded run is in [docs/25-PROOF.md](docs/25-PROOF.md).
+It reports every one of them live. For three days it reported Intents as built rather than live,
+because the bridge had moved money to Monad and then stalled unsigned, leaving the escrow empty. It
+only went green once the escrow funded itself. The check reads that transfer off chain rather than
+trusting a status field. The last recorded run is in [docs/25-PROOF.md](docs/25-PROOF.md).
 
 <details>
 <summary><b>Check each number by hand</b>: these are the commands, not a description of them</summary>
 <br>
 
 ```bash
-# the population, from the registry's own counter slot, because totalSupply() reverts
-cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 1 --rpc-url https://rpc.monad.xyz
+# the population, from the registry's own ERC-7201 namespaced counter slot, because
+# totalSupply() reverts. Slot 1 holds nothing: this is the slot indexer/src/handlers/Retina.ts reads.
+cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
+  0xa040f782729de4970518741823ec1276cbcd41a0c7493f62d173341566a04e00 \
+  --rpc-url https://rpc.monad.xyz
 
 # the claim figures quoted above, from the endpoint that actually carries them
 curl -s https://kanmani.xyz/feed.json | jq '.data.summary'
@@ -198,21 +361,35 @@ curl -s -X POST https://kanmani.xyz/api/verify -d '{"id":"<claim id>"}'
 # our own agent's record, read off chain rather than from this file
 cast call 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 'tokenURI(uint256)(string)' 10256 \
   --rpc-url https://rpc.monad.xyz
+
+# the first money from outside: 0.01 USDC each, status 1, payer not ours
+cast receipt 0x7ea89118e0ea54c7a88833df61ff4b0b41dee063fcd98ffcbc160073bfc54eed --rpc-url https://rpc.monad.xyz
+cast receipt 0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2 --rpc-url https://rpc.monad.xyz
 ```
+
+The counter slot moves with every registration, so a read today returns a little more than the
+10,276 this file states.
 
 </details>
 
 ## Running it
 
+Secrets come from `.env.local`, never from the command line. Nothing here needs a key to run its
+tests: the reads that do want one degrade to a public endpoint and the database-backed tests skip.
+
 ```bash
+npm ci && npm test                             # the app and the verifier, 625 pass
+cd contracts && forge test                     # the contracts, 124 pass
+cd verifier  && npm test                       # the verifier on its own, 198 pass
 cd indexer   && npm run codegen && npm start   # the index
-cd verifier  && npm test                       # the verifier, 186 of 203
-cd contracts && forge test --fork-url https://rpc.monad.xyz && FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol   # the contracts, 143 of 145
-npm run dev                                    # the site, 317 of 320
+npm run dev                                    # and the site itself
 ```
 
-646 tests pass across the three suites. The skipped tests are deliberate, mostly fork tests that
-need an archive node.
+749 tests pass across the three suites, 427 in the app, 198 in the verifier and 124 in the
+contracts. 47 are skipped and every one of them is deliberate: they need something the default run
+does not have. `forge test --fork-url https://rpc.monad.xyz` picks up the fork tests and
+`FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` picks up the precompile ones,
+which the default profile cannot run. The database-backed tests skip without `ENVIO_PG_PASSWORD`.
 
 <details>
 <summary><b>What is in this repository</b></summary>
@@ -222,29 +399,56 @@ need an archive node.
 |---|---|
 | `indexer/` | Envio HyperIndex over all three ERC-8004 registries, on Monad and BSC |
 | `verifier/` | the judge: resolve a document, compare its bytes to the on-chain commitment, read the cited transaction |
-| `contracts/` | Aqueous (escrow) and Sclera (bonds), both deployed and verified |
+| `contracts/` | Aqueous (escrow) and Sclera (bonds), both deployed and verified, plus AgentPasskey and the Cleanverse compliance gate |
 | `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
 | `docs/` | the [docs index](docs/README.md) lists all of them. [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [17-CONTRACT-AUDIT](docs/17-CONTRACT-AUDIT.md) and [18-BUGS-FIXED](docs/18-BUGS-FIXED.md) are the security review, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
 | `public/brand/` | the [media package](public/brand/README.md) |
-| `public/readme/` | the diagrams in this file, drawn by [`scripts/build-readme-art.py`](scripts/build-readme-art.py) |
+| `public/readme/` | the pictures in this file, drawn per theme by [`scripts/build-readme-art.py`](scripts/build-readme-art.py). The screenshots come from [`scripts/build-readme-shots.py`](scripts/build-readme-shots.py) |
 
 </details>
 
 ## Security
 
 This build holds and moves real funds and it fetches URLs that strangers put on chain, so it is
-reviewed accordingly. [17-CONTRACT-AUDIT.md](docs/17-CONTRACT-AUDIT.md) is the running security
-review, with every finding stated as an exploit and a proof. [18-BUGS-FIXED.md](docs/18-BUGS-FIXED.md)
-is the plain log of what broke and what now stops it. A full-surface pass on 2026-09-27 across the
-contracts, the API, the verifier, the indexer and the oracle is written up there as findings 11
-onward. Each fix carries a test that fails against the old code. Items deferred rather than fixed
-are named with the reason.
+reviewed accordingly. [SECURITY.md](SECURITY.md) is the policy: how to report something, what is in
+scope and the standing risk table with every accepted risk named.
+
+[17-CONTRACT-AUDIT.md](docs/17-CONTRACT-AUDIT.md) is the running security review, with every finding
+stated as an exploit and a proof. [18-BUGS-FIXED.md](docs/18-BUGS-FIXED.md) is the plain log of what
+broke and what now stops it. A full-surface pass on 2026-09-27 across the contracts, the API, the
+verifier, the indexer and the oracle is written up there as findings 11 onward. Each fix carries a
+test that fails against the old code. Items deferred rather than fixed are named with the reason.
+
+## Roadmap
+
+Shipped, each one checkable with a command in this file:
+
+- [x] Envio index over all three ERC-8004 registries, on Monad and BSC
+- [x] The verification ladder: five rungs, four outcomes, every verdict re-derivable by hand
+- [x] Aqueous escrow on mainnet, with the receipt emitted by the settlement
+- [x] Sclera bonds on mainnet, one bond through its whole life
+- [x] x402 `exact` and `upto`, metered per call, unspent funds returned in the same transaction
+- [x] AgentPasskey against Monad's P256 precompile, so a device key is the account
+- [x] Cross-chain funding: USDT on BSC fills a Monad escrow with no bridge step for the buyer
+- [x] Twelve agents, each answering over HTTP and over A2A
+- [x] MCP, OpenAPI 3.1, `skill.md` and a drop-in `AGENTS.md`
+- [x] The first paid hires from outside, two jobs on 2026-10-01
+
+Not done yet:
+
+- [ ] Demand that is not ours: paid hires from more than one external operator
+- [ ] Cleanverse mainnet registration, which needs production credentials we do not hold
+- [ ] The CRE slashing oracle on the DON rather than run from the CLI
+- [ ] Endpoints for every chain a claim might name, so "not found" can become "searched and absent"
+- [ ] More chains behind Chiasm
+- [ ] Nansen label enrichment, which the free plan prices out at 100 credits a wallet
 
 ## Licence
 
-`components/kit.tsx` and `app/embed.js` are **MIT**, because a component meant to render inside
-someone else's product cannot be read-only. Everything else is SAND-1.0. See
-[docs/24-KIT-LICENCE.md](docs/24-KIT-LICENCE.md).
+`components/kit.tsx` and `app/embed.js/route.ts` are **MIT** (`SPDX: MIT`), because a component meant
+to render inside someone else's product cannot be read-only. Everything else is source-available
+with no derivatives (`SPDX: LicenseRef-zkasuran-SAND-1.0`). See
+[docs/24-KIT-LICENCE.md](docs/24-KIT-LICENCE.md) and [LICENSE](LICENSE).
 
 ## AI disclosure
 

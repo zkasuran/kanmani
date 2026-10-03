@@ -20,16 +20,16 @@
 </style>
 
 <defs>
-  <radialGradient id="g0" cx="0.1" cy="-0.1" r=".75"><stop offset="0" stop-color="#836ef9" stop-opacity="0.26"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></radialGradient><radialGradient id="g1" cx="0.95" cy="0.4" r=".75"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.1"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  <radialGradient id="g0" cx="0.1" cy="-0.1" r=".75"><stop offset="0" stop-color="#836ef9" stop-opacity="0.260"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></radialGradient><radialGradient id="g1" cx="0.95" cy="0.4" r=".75"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.100"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
   <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
     <path d="M48 0H0V48" fill="none" stroke="#1d2836" stroke-width="1"/>
   </pattern>
   <radialGradient id="gridmask-g" cx=".5" cy="0" r=".9">
-    <stop offset=".2" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    <stop offset=".2" stop-color="#fff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
   </radialGradient>
   <mask id="gridmask"><rect width="1280" height="700" fill="url(#gridmask-g)"/></mask>
   <linearGradient id="edge" x1="0" x2="1">
-    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset=".5" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
   </linearGradient>
   <clipPath id="frame"><rect width="1280" height="700" rx="24"/></clipPath>
 </defs>

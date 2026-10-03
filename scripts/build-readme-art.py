@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-The README's moving pictures, written as plain SVG.
+The README's moving pictures, written as plain SVG, once per GitHub theme.
 
 GitHub renders an SVG in an <img> with its inline <style> and CSS animations intact, but runs no
 script and loads no external font. So every file here is self-contained: system font stacks, no
@@ -10,12 +10,18 @@ script and loads no external font. So every file here is self-contained: system 
 Every animation *starts* from a keyframe and falls back to the element's own attributes, so a viewer
 that ignores CSS animation still sees the complete, correct picture rather than a blank one.
 
+A `prefers-color-scheme` block inside an <img>-loaded SVG resolves against the reader's operating
+system rather than the GitHub page, so it cannot be trusted to follow the theme. Each picture is
+therefore rendered twice, as `<name>-dark.svg` and `<name>-light.svg`. The README picks between them
+with a <picture> element. Both palettes are the site's own tokens from app/globals.css, so the
+art cannot drift away from the product it illustrates.
+
 The figures are the same ones the README table states and the site serves from /feed.json. They are
 drawn here, not typed into a painting, so changing one is an edit to this file and a re-run:
 
     python3 scripts/build-readme-art.py
 
-Output: public/readme/*.svg
+Output: public/readme/*-dark.svg, public/readme/*-light.svg
 """
 from __future__ import annotations
 
@@ -26,26 +32,34 @@ from xml.sax.saxutils import escape
 
 OUT = Path(__file__).resolve().parent.parent / "public" / "readme"
 
-# ---- the site's dark palette (app/globals.css) ------------------------------------------------
-INK = "#05070a"
-PANEL = "#0b0f16"
-PANEL2 = "#111720"
-LINE = "#1d2836"
-LINE_B = "#2b3a4d"
-TEXT = "#dce5f0"
-MUTED = "#7f8ea3"
-FAINT = "#5d6d85"
-BRAND = "#836ef9"
-BRAND_DIM = "#4b3f8f"
-ACCENT = "#22d3ee"
-TRUE = "#34d399"
-TRUE_BG = "#06281f"
-FALSE = "#f87171"
-FALSE_BG = "#2c1014"
-UNKNOWN = "#94a3b8"
-UNKNOWN_BG = "#171f2b"
-NOCLAIM = "#64748b"
-NOCLAIM_BG = "#121820"
+# ---- the site's two palettes (app/globals.css, :root and :root[data-theme="light"]) -----------
+#
+# The last six keys are not CSS tokens. They are the few places the drawings need a colour the
+# stylesheet never names: the lit top edge of a panel (a darkening one on paper), how hard the
+# background bloom is pushed (the stylesheet's --field-strength, 22% against 9%) plus three fills
+# that sit behind an accent stroke.
+PALETTES = {
+    "dark": dict(
+        INK="#05070a", PANEL="#0b0f16", PANEL2="#111720", LINE="#1d2836", LINE_B="#2b3a4d",
+        TEXT="#dce5f0", MUTED="#7f8ea3", FAINT="#5d6d85",
+        BRAND="#836ef9", BRAND_DIM="#4b3f8f", ACCENT="#22d3ee",
+        TRUE="#34d399", TRUE_BG="#06281f", FALSE="#f87171", FALSE_BG="#2c1014",
+        UNKNOWN="#94a3b8", UNKNOWN_BG="#171f2b", NOCLAIM="#64748b", NOCLAIM_BG="#121820",
+        EDGE="#ffffff", EDGE_A=0.16, GLOW=1.0, GRID_A=1.0,
+        NODE_BG="#0b2a33", BLOCK_LIT="#3a3170", CHIP_LIVE_BG="#1b1638",
+        CELL_DEAD="#111720", CELL_DEAD_LINE="#2b3a4d",
+    ),
+    "light": dict(
+        INK="#fbfcfe", PANEL="#ffffff", PANEL2="#f1f5f9", LINE="#e2e8f0", LINE_B="#cbd5e1",
+        TEXT="#0f172a", MUTED="#475569", FAINT="#64748b",
+        BRAND="#6d28d9", BRAND_DIM="#c4b5fd", ACCENT="#0891b2",
+        TRUE="#047857", TRUE_BG="#ecfdf5", FALSE="#b91c1c", FALSE_BG="#fef2f2",
+        UNKNOWN="#475569", UNKNOWN_BG="#f1f5f9", NOCLAIM="#64748b", NOCLAIM_BG="#f8fafc",
+        EDGE="#0f172a", EDGE_A=0.08, GLOW=0.41, GRID_A=1.6,
+        NODE_BG="#cffafe", BLOCK_LIT="#ddd6fe", CHIP_LIVE_BG="#f5f3ff",
+        CELL_DEAD="#cbd5e1", CELL_DEAD_LINE="#94a3b8",
+    ),
+}
 
 SANS = "'Space Grotesk','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
 BODY = "'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif"
@@ -71,18 +85,28 @@ REDUCED = """
 """
 
 
+def use_theme(name: str) -> None:
+    """Point the module's colour names at one palette. Every drawing reads them when it runs."""
+    globals().update(PALETTES[name])
+
+
+use_theme("dark")
+
+
 def t(s: str) -> str:
     return escape(s)
 
 
-def backdrop(w: int, h: int, glow=((0.12, -0.1, BRAND, 0.30), (1.0, 0.1, ACCENT, 0.12))) -> str:
+def backdrop(w: int, h: int, glow=None) -> str:
     """The site's field: ink, a violet bloom, a cyan one, a hairline grid and a lit top edge."""
+    if glow is None:
+        glow = ((0.12, -0.1, BRAND, 0.30), (1.0, 0.1, ACCENT, 0.12))
     grads = []
     fills = []
     for i, (cx, cy, c, a) in enumerate(glow):
         grads.append(
             f'<radialGradient id="g{i}" cx="{cx}" cy="{cy}" r=".75">'
-            f'<stop offset="0" stop-color="{c}" stop-opacity="{a}"/>'
+            f'<stop offset="0" stop-color="{c}" stop-opacity="{a * GLOW:.3f}"/>'
             f'<stop offset="1" stop-color="{c}" stop-opacity="0"/></radialGradient>'
         )
         fills.append(f'<rect width="{w}" height="{h}" rx="24" fill="url(#g{i})"/>')
@@ -93,11 +117,11 @@ def backdrop(w: int, h: int, glow=((0.12, -0.1, BRAND, 0.30), (1.0, 0.1, ACCENT,
     <path d="M48 0H0V48" fill="none" stroke="{LINE}" stroke-width="1"/>
   </pattern>
   <radialGradient id="gridmask-g" cx=".5" cy="0" r=".9">
-    <stop offset=".2" stop-color="#fff" stop-opacity=".55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    <stop offset=".2" stop-color="#fff" stop-opacity="{min(0.55 * GRID_A, 1):.2f}"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
   </radialGradient>
   <mask id="gridmask"><rect width="{w}" height="{h}" fill="url(#gridmask-g)"/></mask>
   <linearGradient id="edge" x1="0" x2="1">
-    <stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".16"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    <stop offset="0" stop-color="{EDGE}" stop-opacity="0"/><stop offset=".5" stop-color="{EDGE}" stop-opacity="{EDGE_A}"/><stop offset="1" stop-color="{EDGE}" stop-opacity="0"/>
   </linearGradient>
   <clipPath id="frame"><rect width="{w}" height="{h}" rx="24"/></clipPath>
 </defs>
@@ -196,7 +220,9 @@ def aperture(x: float, y: float, size: float) -> str:
 </svg>"""
 
 
-APERTURE_CSS = f"""
+def aperture_css() -> str:
+    """Built on call rather than at import, because it names a dozen palette colours."""
+    return f"""
 .ap *{{transform-box:view-box;transform-origin:200px 200px}}
 .ap .tk,.ap .bk{{transform-origin:0 0}}
 .rg{{fill:none;stroke:{LINE_B};stroke-width:1}}
@@ -206,7 +232,7 @@ APERTURE_CSS = f"""
 .sp-rev{{animation:spin 60s linear infinite reverse}}
 .sp-orbit{{animation:spin 48s linear infinite}}
 .bk{{fill:{PANEL2};stroke:{LINE_B};animation:bt 4s {EASE_IO} infinite}}
-.bk-l{{fill:#3a3170;stroke:{BRAND}}}
+.bk-l{{fill:{BLOCK_LIT};stroke:{BRAND}}}
 @keyframes bt{{0%,70%,100%{{opacity:.55}}80%{{opacity:1}}}}
 .sw{{animation:spin 8s linear infinite}}
 .wr{{stroke:{LINE_B};stroke-dasharray:3 5}}
@@ -225,7 +251,7 @@ APERTURE_CSS = f"""
 @keyframes po{{0%,48%{{transform:translateX(0) scale(.4);opacity:0}}52%{{transform:translateX(6px);opacity:1}}78%{{transform:translateX(96px);opacity:1}}84%,100%{{transform:translateX(96px);opacity:0}}}}
 .gl{{animation:gl 8s {EASE_IO} 2s infinite}}
 @keyframes gl{{0%,30%,70%,100%{{opacity:.65;transform:scale(1)}}42%{{opacity:1;transform:scale(1.08)}}}}
-.nd{{fill:#0b2a33;stroke:{ACCENT};stroke-width:1.5;animation:nl 1s cubic-bezier(.34,1.56,.64,1) 1.1s backwards,nb 8s {EASE_IO} 2s infinite}}
+.nd{{fill:{NODE_BG};stroke:{ACCENT};stroke-width:1.5;animation:nl 1s cubic-bezier(.34,1.56,.64,1) 1.1s backwards,nb 8s {EASE_IO} 2s infinite}}
 .cr{{animation:nl 1s cubic-bezier(.34,1.56,.64,1) 1.2s backwards}}
 @keyframes nl{{from{{transform:scale(0)}}}}
 @keyframes nb{{0%,34%,56%,100%{{transform:scale(1)}}40%{{transform:scale(1.18)}}}}
@@ -236,7 +262,7 @@ APERTURE_CSS = f"""
 
 def hero() -> str:
     w, h = 1280, 580
-    chips = [("10,258", "agents measured"), ("1 job", "settled in real USDC"), ("537", "tests passing")]
+    chips = [("10,276", "agents measured"), ("1 job", "settled in real USDC"), ("749", "tests passing")]
     chip_svg = []
     cx = 72
     for i, (v, k) in enumerate(chips):
@@ -253,7 +279,7 @@ def hero() -> str:
         f'<text x="72" y="{250 + i * 64}" class="sans in" style="--d:{0.25 + i * 0.1:.2f}s" font-size="58" font-weight="600" letter-spacing="-1.8" fill="{TEXT}">{t(s)}</text>'
         for i, s in enumerate(lines)
     )
-    css = MARK_CSS + APERTURE_CSS + f"""
+    css = MARK_CSS + aperture_css() + f"""
 .live{{animation:lv 2.4s {EASE_IO} infinite}}
 @keyframes lv{{0%,100%{{opacity:1}}50%{{opacity:.35}}}}
 """
@@ -347,9 +373,10 @@ def band(x0, y0a, y0b, x1, y1a, y1b) -> str:
 
 def findings() -> str:
     w, h = 1280, 660
-    # Measured 2026-09-30 from fovea.verdict_latest (the /claims page shows the live split). The art is
-    # a snapshot, so it carries its date instead of pretending to be current.
-    C = dict(claims=182, true=59, false=123, elsewhere=113, nowhere=10, agents="10,273", when="2026-09-30")
+    # Measured 2026-10-03 from fovea.verdict_latest, read back off the live surfaces that carry the
+    # same rows: /feed.json `summary` for 182 / 59 / 123 and the homepage split for 113 / 10. The art
+    # is a snapshot, so it carries its date instead of pretending to be current.
+    C = dict(claims=182, true=59, false=123, elsewhere=113, nowhere=10, agents="10,276", when="2026-10-03")
     k = 300 / C["claims"]  # px per claim, so the tallest column stays the same height as it grows
     top = 200
     c1, c2, c3 = 300, 640, 1000
@@ -433,7 +460,7 @@ def findings() -> str:
 # ============================================================================== cluster
 def cluster() -> str:
     w, h = 1280, 330
-    agents, members, owners = 10258, 8093, 7962
+    agents, members, owners = 10276, 8093, 7962
     lit = round(members / agents * 100)  # 79 of every 100
     cols, rows, cell, gap = 20, 5, 22, 7
     gx, gy = 640, 92
@@ -449,7 +476,7 @@ def cluster() -> str:
         )
     css = f"""
 .c{{fill:{BRAND_DIM};fill-opacity:.55;stroke:{BRAND};stroke-opacity:.5;transform-box:fill-box;transform-origin:center;animation:ci .6s {EASE_OUT} backwards}}
-.c.on{{fill:{PANEL2};fill-opacity:1;stroke:{LINE_B};stroke-opacity:1;animation:ci .6s {EASE_OUT} backwards,dim 5s {EASE_IO} infinite}}
+.c.on{{fill:{CELL_DEAD};fill-opacity:1;stroke:{CELL_DEAD_LINE};stroke-opacity:1;animation:ci .6s {EASE_OUT} backwards,dim 5s {EASE_IO} infinite}}
 @keyframes ci{{from{{opacity:0;transform:scale(.4)}}}}
 @keyframes dim{{0%,100%{{opacity:1}}50%{{opacity:.55}}}}
 """
@@ -462,7 +489,7 @@ def cluster() -> str:
 <text x="72" y="278" class="body in" style="--d:.3s" font-size="14.5" fill="{MUTED}">reports no difference between those and the live ones. That filter is the product.</text>
 {''.join(cells)}
 <g class="in" style="--d:1s">
-  <rect x="{gx}" y="256" width="12" height="12" rx="3" fill="{PANEL2}" stroke="{LINE_B}"/>
+  <rect x="{gx}" y="256" width="12" height="12" rx="3" fill="{CELL_DEAD}" stroke="{CELL_DEAD_LINE}"/>
   <text x="{gx + 20}" y="266" class="mono" font-size="12" fill="{MUTED}"><tspan fill="{TEXT}">{lit}</tspan> in every 100 agents · the one dead document</text>
   <rect x="{gx + 390}" y="256" width="12" height="12" rx="3" fill="{BRAND_DIM}" stroke="{BRAND}" stroke-opacity=".5"/>
   <text x="{gx + 410}" y="266" class="mono" font-size="12" fill="{MUTED}">everyone else</text>
@@ -500,7 +527,7 @@ def stack() -> str:
         lines = "".join(f'<tspan x="{x + 22}" dy="{0 if j == 0 else 19}">{t(l)}</tspan>' for j, l in enumerate(wrap(text, 44)))
         chip = (
             f'<rect x="{x + cw - chip_w - 18}" y="{y + 18}" width="{chip_w}" height="22" rx="11" '
-            f'fill="{"#1b1638" if live else PANEL2}" stroke="{BRAND if live else LINE_B}" stroke-opacity="{".6" if live else "1"}"/>'
+            f'fill="{CHIP_LIVE_BG if live else PANEL2}" stroke="{BRAND if live else LINE_B}" stroke-opacity="{".6" if live else "1"}"/>'
             + (f'<circle cx="{x + cw - chip_w - 4}" cy="{y + 29}" r="3" fill="{BRAND}" class="dot"/>' if live else "")
             + f'<text x="{x + cw - 18 - (10 if live else chip_w / 2)}" y="{y + 33}" text-anchor="{"end" if live else "middle"}" class="mono" font-size="10.5" letter-spacing="1.2" fill="{BRAND if live else MUTED}">{status.upper()}</text>'
         )
@@ -530,19 +557,21 @@ def stack() -> str:
 
 
 # ============================================================================== outcomes
-OUTCOMES = [
-    ("true", TRUE, TRUE_BG, "The cited transaction is on the chain the document names."),
-    ("false", FALSE, FALSE_BG, "We read that chain successfully and the transaction is not there."),
-    ("noClaim", NOCLAIM, NOCLAIM_BG, "The document parsed and asserts no payment. Nothing to resolve."),
-    ("unknown", UNKNOWN, UNKNOWN_BG, "We could not look or could not read what we fetched. Never an accusation."),
-]
+def outcome_cards() -> list[tuple[str, str, str, str]]:
+    """A function, not a constant, because each row names two palette colours."""
+    return [
+        ("true", TRUE, TRUE_BG, "The cited transaction is on the chain the document names."),
+        ("false", FALSE, FALSE_BG, "We read that chain successfully and the transaction is not there."),
+        ("noClaim", NOCLAIM, NOCLAIM_BG, "The document parsed and asserts no payment. Nothing to resolve."),
+        ("unknown", UNKNOWN, UNKNOWN_BG, "We could not look or could not read what we fetched. Never an accusation."),
+    ]
 
 
 def outcomes() -> str:
     w, h = 1280, 330
     cw, gx = 270, 18
     cards = []
-    for i, (name, fg, bg, text) in enumerate(OUTCOMES):
+    for i, (name, fg, bg, text) in enumerate(outcome_cards()):
         x = 72 + i * (cw + gx)
         y = 120
         lines = "".join(f'<tspan x="{x + 22}" dy="{0 if j == 0 else 19}">{t(l)}</tspan>' for j, l in enumerate(wrap(text, 32)))
@@ -564,17 +593,21 @@ def outcomes() -> str:
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
-    files = {
-        "hero.svg": hero(),
-        "flow.svg": flow(),
-        "findings.svg": findings(),
-        "cluster.svg": cluster(),
-        "stack.svg": stack(),
-        "outcomes.svg": outcomes(),
+    drawings = {
+        "hero": hero,
+        "flow": flow,
+        "findings": findings,
+        "cluster": cluster,
+        "stack": stack,
+        "outcomes": outcomes,
     }
-    for name, content in files.items():
-        (OUT / name).write_text(content, encoding="utf-8")
-        print(f"public/readme/{name}  {len(content.encode()) / 1024:.1f} KB")
+    for theme in PALETTES:
+        use_theme(theme)
+        for name, draw in drawings.items():
+            path = OUT / f"{name}-{theme}.svg"
+            content = draw()
+            path.write_text(content, encoding="utf-8")
+            print(f"public/readme/{path.name}  {len(content.encode()) / 1024:.1f} KB")
 
 
 if __name__ == "__main__":
