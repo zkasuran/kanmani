@@ -1,0 +1,91 @@
+# The release gate, in CI.
+#
+# This workflow installs the toolchain and then runs ./verify.sh. That is all it does. Nothing is
+# checked here that is not in the script, so a green tick on a pull request means exactly what a
+# green `./verify.sh` on a laptop means. A check that lives only in CI is a check nobody can
+# reproduce, and a check that lives only on a laptop is a check that stops running.
+#
+# Everything here is offline against a clean checkout. The checks that read the deployed site are in
+# canary.yml, because a live check cannot gate a pull request: the thing it would test has not
+# shipped yet.
+name: verify
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+# A new push supersedes the run already in flight for the same ref. Saves minutes and stops a stale
+# red tick sitting on top of a fixed branch.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out the full history
+        uses: actions/checkout@v5
+        with:
+          # The secret scan reads every commit on every ref, so a shallow clone would scan almost
+          # nothing and still report clean.
+          fetch-depth: 0
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.22.2"
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            verifier/package-lock.json
+            indexer/package-lock.json
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install gitleaks
+        run: |
+          set -euo pipefail
+          version=8.30.1
+          curl -fsSL "https://github.com/gitleaks/gitleaks/releases/download/v${version}/gitleaks_${version}_linux_x64.tar.gz" \
+            | tar -xz -C /usr/local/bin gitleaks
+          gitleaks version
+
+      # `npm ci` rather than `npm install`, so the lockfile decides and a drifted manifest fails here
+      # instead of resolving to something nobody committed.
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          npm ci
+          (cd verifier && npm ci)
+          (cd indexer && npm ci)
+          (cd cre/kanmani-oracle/slashing && npm ci)
+
+      - name: Run the gate
+        env:
+          # The contract fork suites run against a real archive node when one is configured. Without
+          # the secret they report a visible SKIP rather than passing quietly.
+          MONAD_RPC: ${{ secrets.MONAD_RPC }}
+        run: ./verify.sh
+
+      # Kept so a failed build can be read without re-running it locally.
+      - name: Upload the build output on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-build-log
+          path: |
+            .next/trace
+            .next/build-manifest.json
+          if-no-files-found: ignore
+          retention-days: 7

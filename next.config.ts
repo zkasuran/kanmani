@@ -7,6 +7,9 @@ const config: NextConfig = {
   // is a collision; and a root CLAUDE.md would ship to the public repo alongside our own
   // conventions without anyone deciding it should.
   agentRules: false,
+  // `x-powered-by: Next.js` names the framework and its rough version band on every response, which
+  // is free reconnaissance for anyone scanning for a known framework bug. Nothing needs it.
+  poweredByHeader: false,
   // Every page reads the live index, so nothing here may be captured at build time. `next build`
   // confirms that rather than this comment asserting it: every route reports as dynamic and the
   // only static one is /_not-found.
@@ -30,7 +33,11 @@ const config: NextConfig = {
     const security = [
       { key: "x-content-type-options", value: "nosniff" },
       { key: "referrer-policy", value: "strict-origin-when-cross-origin" },
-      { key: "x-frame-options", value: "SAMEORIGIN" },
+      // DENY, not SAMEORIGIN. Nothing here is ever framed: the badge in app/embed.js/route.ts
+      // injects a shadow-DOM span into the host page rather than an iframe, and the repo contains
+      // no iframe at all. So same-origin framing buys nothing and leaves a clickjacking surface.
+      // The matching `frame-ancestors 'none'` is in the per-request CSP in proxy.ts.
+      { key: "x-frame-options", value: "DENY" },
       { key: "permissions-policy", value: "camera=(), microphone=(), geolocation=(), payment=()" },
     ];
     return [

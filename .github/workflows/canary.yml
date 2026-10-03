@@ -1,0 +1,122 @@
+# The live canary.
+#
+# verify.yml gates the code. This watches the deployed site, anonymously, on a schedule. The two are
+# deliberately separate: a live check cannot gate a pull request, because the thing it tests has not
+# shipped yet, and a build check cannot tell you the site went down an hour after it shipped.
+#
+# Every request here is one a stranger could make. No key, no secret, no access to our
+# infrastructure. That is the point: it proves the published surface works for somebody who does not
+# trust this repository, which is the same claim scripts/prove.sh makes by hand.
+#
+# Half-hourly through the judging window. A judge who opens the site at any hour gets what the last
+# run saw, and if something broke there is a timestamped run that caught it.
+name: canary
+
+on:
+  schedule:
+    # Every 30 minutes. Cron on GitHub is best effort and can run late under load, which is fine for
+    # a canary and is why nothing depends on the exact minute.
+    - cron: "*/30 * * * *"
+  workflow_dispatch:
+    inputs:
+      site:
+        description: "Site to check, for a one-off run against a preview deploy"
+        required: false
+        default: "https://kanmani.xyz"
+
+concurrency:
+  group: canary
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    env:
+      SITE: ${{ github.event.inputs.site || 'https://kanmani.xyz' }}
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22.22.2"
+
+      # `cast` reads chain state directly where a check must not go through our own API. prove.sh
+      # prints a visible SKIP for those layers if it is missing, so this keeps the proof complete.
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      # The anonymous routes, before anything heavier. If the site is down this is where it shows,
+      # and the step names the status it got rather than just failing.
+      - name: Anonymous route check
+        run: |
+          set -euo pipefail
+          fail=0
+          for path in / /agents /verify /status /claims /method /developers /blog /mcp /compliance; do
+            code=$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 25 "$SITE$path" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "ok    $code  $path"
+            else
+              echo "FAIL  $code  $path"
+              fail=1
+            fi
+          done
+          for path in /feed.json /schema.json /llms.txt /agents.md /sitemap.xml /openapi.json /skill.md /api/claims; do
+            code=$(curl -fsS -o /dev/null -w '%{http_code}' --max-time 25 "$SITE$path" || echo "000")
+            if [ "$code" = "200" ]; then
+              echo "ok    $code  $path"
+            else
+              echo "FAIL  $code  $path"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ]
+
+      # The headers are a shipped security property, so the canary asserts them rather than assuming
+      # a deploy kept them. A missing CSP is as much an outage as a 500.
+      - name: Security headers are still served
+        run: |
+          set -euo pipefail
+          h=$(curl -fsS -D - -o /dev/null --max-time 25 "$SITE/" | tr 'A-Z' 'a-z')
+          fail=0
+          for needle in "content-security-policy" "strict-transport-security" "x-content-type-options: nosniff" "referrer-policy" "x-frame-options: deny" "permissions-policy"; do
+            if printf '%s' "$h" | grep -q "$needle"; then
+              echo "ok    $needle"
+            else
+              echo "FAIL  missing $needle"
+              fail=1
+            fi
+          done
+          # The framework banner must stay off.
+          if printf '%s' "$h" | grep -q "x-powered-by"; then
+            echo "FAIL  x-powered-by is being served"
+            fail=1
+          else
+            echo "ok    no x-powered-by"
+          fi
+          # frame-ancestors must be none, not self.
+          if printf '%s' "$h" | grep -q "frame-ancestors 'none'"; then
+            echo "ok    frame-ancestors 'none'"
+          else
+            echo "FAIL  frame-ancestors is not 'none'"
+            fail=1
+          fi
+          [ "$fail" -eq 0 ]
+
+      - name: Prove the live layers
+        run: ./scripts/prove.sh
+
+      - name: Published build-kit endpoints
+        run: ./scripts/check-build-kit.sh
+
+      - name: End to end against the deployed site
+        run: node scripts/e2e/run.mjs "$SITE"

@@ -27,6 +27,10 @@ import { NextResponse, type NextRequest } from "next/server";
  *
  * `style-src` keeps `'unsafe-inline'`. Tailwind and React write inline style attributes. A style
  * cannot run code, so the residual risk there is layout defacement rather than key theft.
+ *
+ * `frame-ancestors 'none'` refuses framing outright, matching `x-frame-options: DENY` in
+ * next.config.ts. The trust badge reaches a host page as a shadow-DOM span written by embed.js, not
+ * as an iframe, so nothing legitimate frames this site.
  */
 export function contentSecurityPolicy(nonce: string, dev = false): string {
   return [
@@ -38,7 +42,7 @@ export function contentSecurityPolicy(nonce: string, dev = false): string {
     "font-src 'self' data:",
     "object-src 'none'",
     "base-uri 'self'",
-    "frame-ancestors 'self'",
+    "frame-ancestors 'none'",
     "form-action 'self'",
     "upgrade-insecure-requests",
   ].join("; ");

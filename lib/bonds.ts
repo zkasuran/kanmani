@@ -20,7 +20,7 @@
 
 import { createPublicClient, http } from "viem";
 
-import { viemChain } from "@/lib/chains.ts";
+import { viemChain } from "./chains.ts";
 import RAW from "../shared/erc8004-chains.json" with { type: "json" };
 
 const SCLERA = (RAW as { ourContracts: { sclera: { address: string; chainId: number } } }).ourContracts.sclera;

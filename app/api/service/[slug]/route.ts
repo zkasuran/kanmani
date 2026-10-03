@@ -1,4 +1,5 @@
 import { json, problem, SITE } from "@/lib/api.ts";
+import { readBodyJson } from "@/lib/body.ts";
 import { AGENTS, assay, type AgentSlug, MONAD_BLOCK_MS, sentinel } from "@/lib/agents.ts";
 import { chargeFor } from "@/lib/metering.ts";
 import { EXTRAS, extraBySlug, extraCharge, isInputError } from "@/lib/agent-extras.ts";
@@ -169,11 +170,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ slug: string }
   const s = spec(slug);
   if (!s) return problem(404, "No such agent", `Known agents: ${KNOWN()}.`);
   let body: Record<string, unknown>;
-  try {
-    body = (await req.json()) as Record<string, unknown>;
-  } catch {
-    return problem(400, "Body is not JSON", `Send ${s.input}`);
+  // Bounded before anything parses it. This route is reachable with no payment and no auth (a free
+  // agent runs its work straight away), so the body ceiling is the first thing the request meets.
+  const read = await readBodyJson(req);
+  if (!read.ok) {
+    return problem(read.status, read.title, read.status === 413 ? read.detail : `Send ${s.input}`);
   }
+  body = (read.value ?? {}) as Record<string, unknown>;
   // A2A JSON-RPC (message/send) lands here too: brokers and readiness probes speak it. The
   // registration record declares this endpoint as a2a. Same work, same payment rules underneath.
   if (body && body.jsonrpc === "2.0") return a2a(s, body, req.headers);
@@ -332,7 +335,7 @@ async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): 
 
 const X402_EXT = "https://github.com/google-a2a/a2a-x402/v0.1";
 
-async function a2a(s: Spec, body: Record<string, unknown>, headers: Headers): Promise<Response> {
+async function a2a(s: Spec, body: Record<string, unknown>, _headers: Headers): Promise<Response> {
   const id = (body.id as string | number | null | undefined) ?? null;
   const reply = (result: unknown) => json({ jsonrpc: "2.0", id, result }, { headers: { "x-a2a-extensions": X402_EXT } });
   const fail = (code: number, message: string) => json({ jsonrpc: "2.0", id, error: { code, message } });

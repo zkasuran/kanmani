@@ -3,6 +3,11 @@ src = "src"
 out = "out"
 libs = ["lib"]
 solc = "0.8.24"
+# The one library here is forge-std, used by the test suites only and never compiled into deployed
+# bytecode. `lib/` is gitignored, so the pin lives in ./install-forge-std.sh: v1.16.2 at revision
+# bf647bd6046f2f7da30d0c2bf435e5c76a780c1b. Run that script rather than a bare `forge install`,
+# which pulls whatever the latest tag happens to be and makes the build unreproducible. verify.sh
+# runs it before `forge test`.
 # Monad supports the Ethereum precompiles as of the Fusaka fork, but transient storage and
 # other Cancun opcodes are not confirmed on chain 143, so target Shanghai rather than assume.
 # Nothing in Aqueous needs them.
@@ -10,7 +15,12 @@ evm_version = "shanghai"
 optimizer = true
 optimizer_runs = 20000
 # A fund-holding contract gets every warning treated as a problem to look at.
-# every warning gets looked at rather than suppressed
+#
+# `deny_warnings` is deliberately NOT set. The remaining warnings are block-timestamp on the deadline
+# and claim-window comparisons, which doc 17 records as an accepted risk taken on purpose, plus an
+# unchecked-transfer and a typecast in test code. Turning them into errors would mean editing the
+# source of contracts that are already deployed and immutable, which buys nothing and risks the one
+# thing that cannot be fixed later. Every warning is read on each build instead.
 
 [rpc_endpoints]
 monad = "${MONAD_RPC}"

@@ -8,14 +8,12 @@ import {
   parseSigningPayload,
   parseExecutionList,
   submitFundingSignature,
-  AQUEOUS_MONAD,
   ShortfallError,
   IntentsError,
   IntentsConfigError,
   type FetchLike,
   type IntentsConfig,
 } from "./intents.ts";
-import { USDC_MONAD } from "./x402.ts";
 
 /**
  * The /api/fund/* orchestration layer, driven through the same injected-fetch seam the forward client

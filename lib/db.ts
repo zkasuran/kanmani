@@ -28,8 +28,8 @@ import pg from "pg";
 declare global {
   // Next's dev server re-evaluates modules on every edit. Without this the pool leaks a new
   // set of connections per edit until Postgres refuses them, which reads as "the database is
-  // down" about ninety seconds into a styling session.
-  // eslint-disable-next-line no-var
+  // down" about ninety seconds into a styling session. `var` is what a global augmentation
+  // takes: `let` and `const` do not attach to globalThis.
   var __corneaPool: pg.Pool | undefined;
 }
 
