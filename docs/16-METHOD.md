@@ -9,7 +9,7 @@ page is wrong.
 the ladder decides. This explains where each **number** comes from. Between them nothing published
 should require taking our word for it.
 
-**Last full re-run: 2026-09-21, index at block 106700000.**
+**Last full re-run: 2026-10-02, index at block 109750000.**
 
 ---
 
@@ -21,7 +21,7 @@ project at all.** They are the sections that carry the claims about money.
 
 The index queries need the indexer running locally, because Envio HyperIndex is self-hosted here.
 Sections 2 through 5 are those. Bringing it up is `cd indexer && pnpm install && pnpm dev` plus the
-sync time, which is the honest cost of reproducing a population census over 10,253 agents.
+sync time, which is the honest cost of reproducing a population census over 10,276 agents.
 
 ```bash
 export R=https://rpc.monad.xyz                                # chain 143, Monad mainnet
@@ -56,7 +56,7 @@ another Postgres already on the machine. There is no default password.
 
 ## 1. The population, from the registry's own counter slot
 
-**Published as: 10,253 agents.**
+**Published as: 10,276 agents.**
 
 `totalSupply()` reverts on this registry, so the token interface cannot answer how many agents
 exist. The count lives in a storage slot:
@@ -67,9 +67,9 @@ cast call $ID "totalSupply()(uint256)" --rpc-url $R    # reverts, empty revert d
 cast storage $ID \
   0xa040f782729de4970518741823ec1276cbcd41a0c7493f62d173341566a04e00 \
   --rpc-url $R
-# 0x000000000000000000000000000000000000000000000000000000000000280d
+# 0x0000000000000000000000000000000000000000000000000000000000002824
 
-cast to-dec 0x280d    # 10253
+cast to-dec 0x2824    # 10276
 ```
 
 The slot is not self-evidently the right slot, so do not take it on faith. Ids are dense from zero,
@@ -80,23 +80,24 @@ while id `N` does not.
 cast call $ID "ownerOf(uint256)(address)" 0 --rpc-url $R
 # 0x89E9E1ab11dD1B138b1dcE6d6A4a0926aaFD5029
 
-cast call $ID "ownerOf(uint256)(address)" 10252 --rpc-url $R
-# 0xDB6c6340342e71A63cD11Ebac2185204b7777777
+cast call $ID "ownerOf(uint256)(address)" 10275 --rpc-url $R
+# 0x42478Ed9A429eC320d243469Fa5d6595BCc8daa5
 
-cast call $ID "ownerOf(uint256)(address)" 10253 --rpc-url $R
-# reverts: 0x7e273289…280d, which is ERC721NonexistentToken(10253)
+cast call $ID "ownerOf(uint256)(address)" 10276 --rpc-url $R
+# reverts: 0x7e273289…2824, which is ERC721NonexistentToken(10276)
 ```
 
 Both halves agree. A wrong slot would not produce a boundary that lands exactly where the counter
 says.
 
-### Why you may read 10,253 where an older document says 10,252
+### Why you may read 10,276 where an older document says 10,252
 
 **This number grows and one of the increments is ours.** The population census ran when the slot
 read `10252`, so it covers ids `0` through `10251`. We then registered Optic as id `10252` in
 [`0x07f7211e…`](https://monadexplorer.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
-at block 106470711, which is why the slot reads `10253` today and why the distinct-document count
-moved from 2,012 to 2,013.
+at block 106470711, which took the slot from `10252` to `10253` and the distinct-document count from
+2,012 to 2,013 at that moment. The slot reads `10276` today and the distinct-document count 2,053, the
+rest of the growth being other people registering after us.
 
 So `03-POPULATION.md` says 10,252 and means it: that was the registry at census time and rerunning
 the census against a moving registry would change every derived percentage in the document. The
@@ -108,10 +109,11 @@ never see it go down.
 
 ## 2. The population, from the index
 
-**Published as: 10,253 agents, 2,013 distinct registration documents, 9,188 feedbacks, 1,192 of them
+**Published as: 10,276 agents, 2,053 distinct registration documents, 9,288 feedbacks, 1,292 of them
 carrying an evidence document, 1 validation.**
 
-This is `POPULATION_SQL` in `lib/queries.ts`, unedited:
+This is `POPULATION_SQL` from `lib/queries.ts`, with the chain id inlined and the `updatedAt` column
+dropped for brevity:
 
 ```sql
 SELECT
@@ -127,7 +129,7 @@ FROM (SELECT * FROM "IndexState" WHERE "chainId" = 143 LIMIT 1) s;
 ```
  agents_indexed | distinct_records | feedbacks | feedbacks_with_uri | validations | counterSlotCount |  atBlock
 ----------------+------------------+-----------+--------------------+-------------+------------------+-----------
-          10253 |             2013 |      9188 |               1192 |           1 |            10253 | 106700000
+          10276 |             2053 |      9288 |               1292 |           1 |            10276 | 109750000
 ```
 
 **`agents_indexed` and `counterSlotCount` are published side by side on purpose.** One is derived
@@ -137,15 +139,15 @@ so the page must be able to say which of the two is happening. `counterSlotCount
 `indexer/schema.graphql` because a failed slot read has to publish as unknown rather than as a zero
 that would be a fabricated population.
 
-**1,192 of 9,188 is the number that governs the whole thesis.** Only 13.0% of Monad's ERC-8004
-feedback carries an evidence document at all. The other 87% is a score with nothing behind it, which
+**1,292 of 9,288 is the number that governs the whole thesis.** Only 13.9% of Monad's ERC-8004
+feedback carries an evidence document at all. The other 86% is a score with nothing behind it, which
 is a rung below `declared` and therefore never appears in any ratio about evidence.
 
 ---
 
 ## 3. The measurement
 
-**Published as: 85 payment claims, 12 resolve, 73 do not, 1,095 assert no payment, 12 unknown.**
+**Published as: 182 payment claims, 59 resolve, 123 do not, 1,095 assert no payment, 15 unknown.**
 
 `MEASUREMENT_SQL`, against the `fovea.verdict_latest` view:
 
@@ -155,31 +157,32 @@ SELECT count(*)                                                     AS verdicts,
   count(*) FILTER (WHERE outcome = 'true')                          AS resolve,
   count(*) FILTER (WHERE outcome = 'false')                         AS do_not_resolve,
   count(*) FILTER (WHERE outcome = 'noClaim')                       AS no_claim,
-  count(*) FILTER (WHERE outcome = 'unknown' AND rung = 'declared')   AS unk_unreachable,
-  count(*) FILTER (WHERE outcome = 'unknown' AND rung = 'resolvable') AS unk_bytes_moved,
-  count(*) FILTER (WHERE outcome = 'unknown' AND rung = 'intact')     AS unk_unparsed
+  count(*) FILTER (WHERE outcome = 'unknown' AND rung = 'declared')   AS unknown_unreachable,
+  count(*) FILTER (WHERE outcome = 'unknown' AND rung = 'resolvable') AS unknown_bytes_moved,
+  count(*) FILTER (WHERE outcome = 'unknown' AND rung = 'intact')     AS unknown_unparsed
 FROM fovea.verdict_latest;
 ```
 
 ```
- verdicts | payment_claims | resolve | do_not_resolve | no_claim | unk_unreachable | unk_bytes_moved | unk_unparsed
-----------+----------------+---------+----------------+----------+-----------------+-----------------+--------------
-     1192 |             85 |      12 |             73 |     1095 |               2 |              10 |            0
+ verdicts | payment_claims | resolve | do_not_resolve | no_claim | unknown_unreachable | unknown_bytes_moved | unknown_unparsed
+----------+----------------+---------+----------------+----------+---------------------+---------------------+------------------
+     1292 |            182 |      59 |            123 |     1095 |                   2 |                  10 |                3
 ```
 
-Check the arithmetic yourself: 85 + 1095 + 2 + 10 + 0 = 1192, which is every document carrying a
+Check the arithmetic yourself: 182 + 1095 + 2 + 10 + 3 = 1292, which is every document carrying a
 URI from section 2. Nothing is dropped between the two.
 
-**Read the denominator correctly.** The finding is about **85 documents that assert a payment**. It
-is not about 1,192 documents, not about 9,188 feedbacks and not about 10,253 agents. Any wider
+**Read the denominator correctly.** The finding is about **182 documents that assert a payment**. It
+is not about 1,292 documents, not about 9,288 feedbacks and not about 10,276 agents. Any wider
 phrasing is an overclaim and it is one I made myself before the full corpus was measured. The
 correction is in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md).
 
-**The 12 unknowns are split by how far the ladder got, because the two causes are different.** Ten
+**The 15 unknowns are split by how far the ladder got, because the three causes are different.** Ten
 stopped at `resolvable`: the URL still answers, the bytes no longer match the hash committed on
 chain, so reading a claim out of them would attribute it to an author who committed to something
-else. Two stopped at `declared`: `ipfs://` documents no gateway would serve. Zero are unparsed,
-meaning every document shape on this chain is in the published atlas.
+else. Two stopped at `declared`: `ipfs://` documents no gateway would serve. Three stopped at
+`intact`: the bytes match the on-chain hash but no published mapping reads the shape yet, so this is
+a coverage gap the atlas owns rather than hides.
 
 **`unknown` is never counted as `false` and never rendered as `0`.** Collapsing them would let
 somebody else's outage publish as our accusation, at scale, with their name attached.
@@ -188,7 +191,7 @@ somebody else's outage publish as our accusation, at scale, with their name atta
 
 ## 4. Which chain the claims name
 
-**Published as: every one of the 85 claims names Monad.**
+**Published as: every one of the 182 claims names Monad.**
 
 ```sql
 SELECT coalesce(declared_network, '(none stated)') AS network,
@@ -202,24 +205,26 @@ GROUP BY 1 ORDER BY 2 + 3 DESC;
 ```
  network | resolve | do_not_resolve
 ---------+---------+----------------
- monad   |      12 |             73
+ monad   |      59 |            123
 ```
 
-One row. **This killed the hypothesis the project was designed around.** The build expected
-documents citing one chain while the payment sat on another, which is why `locate` reads seven
-chains rather than one. It does not happen here. The failure is simpler: the transaction is not
-anywhere, including on the chain the author named.
+One row. Every claim names Monad. **The transaction usually is not on Monad, it is on another
+chain.** Of the 123 that do not resolve on the named chain, 113 cite a transaction that is a real
+mined transaction somewhere else, optimism, arbitrum, base and ethereum among them, while 10 are
+found on no chain we read. That is the hypothesis the project was designed around and it is
+confirmed rather than killed, which is why `locate` reads seven chains rather than one.
 
-The multi-chain reader stays and the chain list stays published on `/method`, for a reason that is
-about falsifiability rather than about coverage. **A "not found" means nothing without the list of
-places it was looked for.** A chain with no endpoint configured returns null rather than a client
-pointed at a default, because a silent fallback would make an unconfigured chain look checked.
+The multi-chain reader earns its place twice. It is what surfaces the 113, so it pays for itself on
+coverage. It is also what makes the 10 reportable at all, because **a "not found" means nothing
+without the list of places it was looked for.** A chain with no endpoint configured returns null
+rather than a client pointed at a default, because a silent fallback would make an unconfigured chain
+look checked, so the 10 are reported as not found where we looked rather than as fabricated.
 
 ---
 
 ## 5. Parse coverage, in the open
 
-**Published as: six mappings, zero unparsed.**
+**Published as: six mappings, three unparsed.**
 
 ```sql
 SELECT coalesce(mapping, '(no mapping reached)') AS mapping, outcome, count(*)
@@ -230,35 +235,36 @@ FROM fovea.verdict_latest GROUP BY 1, 2 ORDER BY 3 DESC;
              mapping              | outcome | count
 ----------------------------------+---------+-------
  elo-record.v1                    | noClaim |  1026
+ execution-market.v1              | false   |   110
  plain-text-comment.v1            | noClaim |    66
- execution-market.v1              | false   |    60
+ execution-market.v1              | true    |    49
+ (no mapping reached)             | unknown |    15
  execution-market-transactions.v1 | false   |    13
- (no mapping reached)             | unknown |    12
  execution-market-transactions.v1 | true    |    10
  conversation-score.v1            | noClaim |     3
- execution-market.v1              | true    |     2
 ```
 
-**1,026 of the documents are chess ELO records.** That single row is why the denominator is 85 and
-not 1,192 and why sampling the head of a list gave the opposite impression: ordering by block
-descending showed mostly HTTP documents, while the population is 92% `data:` URIs that decode
+**1,026 of the documents are game ELO records, every one naming the game `melee`.** That single row is why the denominator is 182 and
+not 1,292 and why sampling the head of a list gave the opposite impression: ordering by block
+descending showed mostly HTTP documents, while the population is 85% `data:` URIs that decode
 locally and assert no payment at all.
 
-**Publishing the 12 as a coverage gap rather than folding them into `noClaim` is load bearing.** The
-first version of the atlas left 23 documents unparsed, all one shape: an older Execution Market
-layout with the hash under `transactions.payment_tx` instead of `proof_of_payment`. Adding that one
-mapping moved `true` from 2 to 12. **An incomplete parser does not merely produce unknowns, it
+**Publishing the 15 as a coverage gap rather than folding them into `noClaim` is load bearing.** The
+first atlas, measured 2026-09-19, left 23 documents unparsed, all one shape: an older Execution
+Market layout with the hash under `transactions.payment_tx` instead of `proof_of_payment`. Adding
+that one mapping moved `true` from 2 to 12 at the time. **An incomplete parser does not merely produce unknowns, it
 distorts the found-to-not-found ratio, which is the number the entire thesis rests on.** A softer
 label on those 23 would have hidden a sixfold error in our own headline.
 
-Every mapping is in `verifier/src/ladder/parse.ts` with the date it was induced, is rendered on
+Every mapping is in `verifier/src/ladder/parse.ts`, hand-written with the date in a field named
+`induced`, is rendered on
 `/method` and two mappings matching one document is refused rather than resolved by array order.
 
 ---
 
 ## 6. The registry health and the document 8,093 agents share
 
-**Published as: 8,640 agents point at a registration document whose host answered and said it is not there.**
+**Published as: 8,641 agents point at a registration document whose host answered and said it is not there.**
 
 Eight states rather than a boolean, as a SQL view so the page, the feed and the API cannot disagree:
 
@@ -273,18 +279,21 @@ WHERE r."chainId" = 143 GROUP BY 1 ORDER BY agents DESC;
 ```
    state    | records | agents |         probed_at
 ------------+---------+--------+----------------------------
- answered   |    1308 |   1358 | 2026-09-21 ...
- gone       |     542 |   8640 | 2026-09-21 ...
- onchain    |     129 |    137 | 2026-09-20 11:21:53.654+00
- unknown    |      17 |     18 | 2026-09-20 11:22:09.582+00
- malformed  |       9 |      9 | 2026-09-20 11:22:07.506+00
- nohost     |       7 |     10 | 2026-09-20 11:22:17.895+00
+ gone       |     543 |   8641 | 2026-10-03 03:39 ...
+ answered   |    1316 |   1366 | 2026-10-03 03:39 ...
+ onchain    |     143 |    151 | 2026-10-03 03:39 ...
+ unknown    |      35 |     36 | 2026-10-03 03:39 ...
+ nohost     |       7 |     10 | 2026-10-03 03:39 ...
+ malformed  |       9 |      9 | 2026-10-03 03:39 ...
  not probed |       1 |      1 |
 ```
 
-**A boolean could not have carried this.** 8,640 agents are `gone`, the host answered and the
-document is not there. 18 are `unknown`, mostly our own rate limiting rather than anyone's failure.
-Publishing the unknowns as dead would have been wrong about them.
+**A boolean could not have carried this.** 8,641 agents are `gone`, the host answered and the
+document is not there. 36 are `unknown`, mostly our own rate limiting rather than anyone's failure.
+Publishing the unknowns as dead would have been wrong about them. The probe pass ran later than the
+section-2 census, so its total is 10,277 against section 2's 10,276. That is one more registration
+arriving between two reads, which is the only direction this moves. Both reads print their own total,
+so a lost row could not hide in the difference.
 
 **We got the 402 classification wrong first. This is how it was caught.** An earlier pass read
 539 records as `paywalled`, meaning a host alive and asking for payment, because they answered HTTP
@@ -307,11 +316,12 @@ FROM "Agent" WHERE "chainId" = 143;
 ```
  total | no_document
 -------+-------------
- 10253 |          80
+ 10277 |          63
 ```
 
-8640 + 1358 + 137 + 18 + 10 + 9 + 1 = **10,173**, plus **80** agents holding no document at
-all, is **10,253** exactly. **Those 80 were falling out of a join silently.** No query failed and no
+8641 + 1366 + 151 + 36 + 10 + 9 + 1 = **10,214**, plus **63** agents holding no document at
+all, is **10,277** exactly. **Those no-document agents were falling out of a join silently, 80 of
+them when it was caught.** No query failed and no
 test went red; the buckets simply summed to less than the registry. A registration that says nothing
 about itself is a finding rather than a gap in a join, so the page now prints its own sum next to the
 total and this document shows the addition.
@@ -467,10 +477,15 @@ The shortest honest path from a feedback to a verdict, using only the chain plus
 node --experimental-strip-types verifier/src/cli/locate.ts monad <txHash>
 ```
 
-`locate` answers found, not found or unknown and an unknown says which chain it looked on and why
-it could not decide. `/verify` on the site imports the same `judge()` function this CLI does, so the
-page and the command line cannot give different answers. That is the reason the import exists rather
-than a reimplementation.
+`locate` answers found, not found or unknown and an unknown says which chain it looked on and why it
+could not decide. It is the same `locate` that [`/verify`](https://kanmani.xyz/verify) runs: the
+site's verdict goes through `judge()` in `verifier/src/ladder/verdict.ts`, which calls this exact
+`locate`, so the page and the command line cannot place a transaction differently. The site imports
+the verifier rather than reimplementing it.
+
+The CLI reads its endpoints from the environment, so source `.env.local` first
+(`set -a && . .env.local && set +a`). Without it Monad falls back to the public RPC and a hash on any
+other chain reads `unknown` for want of an endpoint rather than because the chain said no.
 
 ---
 
@@ -483,7 +498,7 @@ part of reading the site correctly.
 |---|---|---|
 | agents, distinct records | **grows** | the registry is open. Ours is one of the increments |
 | feedbacks, feedbacks with a URI | **grows** | anyone can write one |
-| the 85 / 12 / 73 split | **can move either way** | a repaired document flips `false` to `true`. That is the point |
+| the 182 / 59 / 123 split | **can move either way** | a repaired document flips `false` to `true`. That is the point |
 | the eight probe states | **moves on re-probe** | a host that was down can answer next week |
 
 **Verdicts are append only. There is no update path anywhere in the code.** A re-check writes a new
@@ -497,10 +512,12 @@ the site that no command in this document reproduces, that is a defect and it be
 [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md) with the evidence. Four entries are already there, including
 one where our own check was wrong rather than the chain.
 
-## 11. What this document cannot give you
+## 11. Two ways to check this
 
-The site itself is not deployed yet, so `kanmani.xyz` does not resolve and the URLs in section 0 and
-section 9 will not answer. Every chain command here works today against public infrastructure and
-every SQL command works against a local index. **The hosted surface is the gap and it is first in
-[`14-GAPS.md`](14-GAPS.md).** Until it is closed, reproduce the measurements from this document
-rather than from the site.
+The site is live at [`kanmani.xyz`](https://kanmani.xyz). Every URL in section 0 and section 9
+answers an anonymous request over valid TLS, so there are two independent ways to check any number
+here. You can read it off the live page, which is served from the same index these queries run
+against. You can also reproduce it from scratch: every chain command runs against public
+infrastructure with no account, every SQL command runs against a local index you bring up yourself.
+If the two ever disagree the commands win. That gap is then a defect for
+[`18-BUGS-FIXED.md`](18-BUGS-FIXED.md).
