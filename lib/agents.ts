@@ -108,6 +108,7 @@ export type SentinelAnswer = {
   /** Says which of the two refusals happened, so a caller never has to infer it. */
   note: string | null;
   reproduce: string;
+  rederive: Rederive | null;
 };
 
 export type AssayAnswer = {
@@ -120,7 +121,43 @@ export type AssayAnswer = {
   quotedAtBlock: number | null;
   refusalReason: string | null;
   reproduce: string;
+  rederive: Rederive | null;
 };
+
+/**
+ * Where the counts behind an answer can be fetched and checked, stated so a machine can do it.
+ *
+ * A broker's judge that hired these agents graded every number they returned as an unsupported
+ * claim: its own code had checked that a reply came back and nothing more, so it had no way to
+ * confirm the figures. That is the right instinct and the fix is to hand it the fact rather than
+ * ask it to trust us. `url` is a public endpoint pinned to the exact block window the answer was
+ * computed over, so it returns the same rows the answer used. `expect` names the fields of that
+ * response and the values they must hold. A judge fetches `url`, compares `data.<field>` against
+ * `expect` and the number is either confirmed or it is not.
+ *
+ * Null when there was no index head to pin a window to, because an unpinned URL would return
+ * whatever is current and could not confirm anything.
+ */
+export type Rederive = {
+  url: string;
+  window: { fromBlock: string; toBlock: string };
+  expect: { sampleSize: number; trueCount: number; falseCount: number; rateBps: number | null };
+  how: string;
+};
+
+function rederiveFor(
+  agentId: number,
+  head: number | null,
+  t: { sampleSize: number; trueCount: number; falseCount: number; rateBps: number | null } | null,
+): Rederive | null {
+  if (head === null || t === null) return null;
+  return {
+    url: `https://kanmani.xyz/api/sla/${agentId}?fromBlock=0&toBlock=${head}`,
+    window: { fromBlock: "0", toBlock: String(head) },
+    expect: { sampleSize: t.sampleSize, trueCount: t.trueCount, falseCount: t.falseCount, rateBps: t.rateBps },
+    how: "GET url and compare each data.<field> against expect. The response also carries the SQL that produced it under reproduce.",
+  };
+}
 
 /**
  * Sentinel. The freshness bound is the product, so it is enforced rather than reported: an answer
@@ -170,7 +207,10 @@ export async function sentinel(agentId: number, maxAgeBlocks: number): Promise<S
       : (t?.sampleSize ?? 0) === 0
         ? "Fresh, but nothing has been decided about this agent yet. That is not a failing grade."
         : null,
-    reproduce: `curl -s https://kanmani.xyz/api/agent/${agentId} | jq '{rung, checkedAtBlock}'`,
+    // An earlier version pointed at /api/agent with a jq filter for fields that response does not
+    // carry, so following it confirmed nothing. The SLA endpoint pinned to this window does.
+    reproduce: head === null ? `curl -s https://kanmani.xyz/api/sla/${agentId}` : `curl -s 'https://kanmani.xyz/api/sla/${agentId}?fromBlock=0&toBlock=${head}'`,
+    rederive: rederiveFor(agentId, head, t),
   };
 }
 
@@ -180,7 +220,9 @@ export async function assay(agentId: number): Promise<AssayAnswer> {
   const t = head === null ? null : (await claimTruthWindow(String(agentId), 0n, BigInt(head))).rows;
   const sampleSize = t?.sampleSize ?? 0;
   const rate = t?.rateBps === null || t === null ? null : t.rateBps / 10000;
-  const reproduce = `curl -s https://kanmani.xyz/api/sla/${agentId}`;
+  const reproduce =
+    head === null ? `curl -s https://kanmani.xyz/api/sla/${agentId}` : `curl -s 'https://kanmani.xyz/api/sla/${agentId}?fromBlock=0&toBlock=${head}'`;
+  const rederive = rederiveFor(agentId, head, t);
 
   if (sampleSize < 5 || rate === null) {
     return {
@@ -195,6 +237,7 @@ export async function assay(agentId: number): Promise<AssayAnswer> {
           ? "No decided claims. A bond priced off an empty sample cannot be slashed, so there is nothing honest to quote."
           : `Sample of ${sampleSize} is below the minSample of 5 the deployed contract enforces.`,
       reproduce,
+      rederive,
     };
   }
 
@@ -223,10 +266,11 @@ export async function assay(agentId: number): Promise<AssayAnswer> {
       quotedAtBlock: head,
       refusalReason: `Measured claim truth is ${(rate * 100).toFixed(1)}%. Any floor below that cannot slash and any floor above it slashes on the next measurement, so there is no floor worth posting until the rate improves.`,
       reproduce,
+      rederive,
     };
   }
   const premiumBps = Math.round((1 - rate) * 2000);
-  return { agentId, floorBps, premiumBps, sampleSize, rate, quotedAtBlock: head, refusalReason: null, reproduce };
+  return { agentId, floorBps, premiumBps, sampleSize, rate, quotedAtBlock: head, refusalReason: null, reproduce, rederive };
 }
 
 /** The ERC-8004 record for one agent, written inline so it cannot rot the way 8,093 hosted ones did. */

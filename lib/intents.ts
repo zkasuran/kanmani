@@ -139,7 +139,45 @@ export type BuiltStep = IntentsStep & {
 /** Thrown for a caller mistake that can be fixed, never for an API outcome. */
 export class IntentsConfigError extends Error {}
 /** Thrown when the API is unreachable or its answer cannot be trusted. We fail closed. */
-export class IntentsError extends Error {}
+/**
+ * Aurora answered, or we could not read it. `upstream` is set when Aurora itself refused the request
+ * with a 4xx and said why, for example "Amount is too low for bridge, try at least 303099". That
+ * reason is about the caller's input, so a route may show it. Everything else stays a generic 502.
+ */
+export class IntentsError extends Error {
+  readonly upstream?: { status: number; message: string; minAmount: string | null };
+  constructor(message: string, upstream?: { status: number; message: string; minAmount: string | null }) {
+    super(message);
+    this.upstream = upstream;
+  }
+}
+
+/**
+ * The error Aurora put in a non-2xx body, if it is one we can safely repeat to a caller.
+ *
+ * Only a 4xx is surfaced: that is Aurora judging the request. A 5xx is Aurora's own trouble and the
+ * caller gets nothing useful from its text. The message is reduced to printable ASCII and capped
+ * at 200 characters, so a broken upstream cannot push control characters, direction overrides or a
+ * wall of text into our response. Angle brackets survive as text: the page renders the reason as a
+ * React text node, which escapes them.
+ * A stated bridge minimum is pulled out as a number so the page can offer it rather than parse prose.
+ */
+async function httpError(res: { status: number; json: () => Promise<unknown> }): Promise<IntentsError> {
+  if (res.status < 400 || res.status >= 500) return new IntentsError(`http ${res.status}`);
+  let raw: unknown;
+  try {
+    raw = await res.json();
+  } catch {
+    return new IntentsError(`http ${res.status}`);
+  }
+  const e = (raw as { error?: unknown; message?: unknown } | null) ?? null;
+  const text = typeof e?.error === "string" ? e.error : typeof e?.message === "string" ? e.message : null;
+  if (!text) return new IntentsError(`http ${res.status}`);
+  const message = text.replace(/[^\x20-\x7E]/g, "").trim().slice(0, 200);
+  if (!message) return new IntentsError(`http ${res.status}`);
+  const min = message.match(/at least\s+(\d{1,30})\b/i);
+  return new IntentsError(`http ${res.status}: ${message}`, { status: res.status, message, minAmount: min ? min[1]! : null });
+}
 /** Thrown when the guaranteed delivery is below the amount baked into createJob. */
 export class ShortfallError extends Error {
   readonly minAmountOut: bigint;
@@ -428,7 +466,7 @@ export async function requestExecution(
     clearTimeout(timer);
   }
 
-  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  if (!res.ok) throw await httpError(res);
   let parsed: unknown;
   try {
     parsed = await res.json();
@@ -462,7 +500,7 @@ export async function getIntermediary(wallet: string, cfg: Pick<IntentsConfig, "
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  if (!res.ok) throw await httpError(res);
   const body = (await res.json()) as { result?: { evm?: unknown } };
   const evm = body?.result?.evm;
   if (typeof evm !== "string" || !ADDRESS_RE.test(evm)) throw new IntentsError("no intermediary evm address in response");
@@ -672,7 +710,7 @@ export async function getExecution(
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  if (!res.ok) throw await httpError(res);
   let body: unknown;
   try {
     body = await res.json();
@@ -878,7 +916,7 @@ export async function submitFundingSignature(
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  if (!res.ok) throw await httpError(res);
   let body: unknown;
   try {
     body = await res.json();
@@ -966,7 +1004,7 @@ export async function requestStepsExecution(
   } finally {
     clearTimeout(timer);
   }
-  if (!res.ok) throw new IntentsError(`http ${res.status}`);
+  if (!res.ok) throw await httpError(res);
   let parsed: unknown;
   try {
     parsed = await res.json();

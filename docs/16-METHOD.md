@@ -20,7 +20,7 @@ no key, no account, no allowlist. **Run section 1, 6, 7 and 8 right now without 
 project at all.** They are the sections that carry the claims about money.
 
 The index queries need the indexer running locally, because Envio HyperIndex is self-hosted here.
-Sections 2 through 5 are those. Bringing it up is `cd indexer && pnpm install && pnpm dev` plus the
+Sections 2 through 5 are those. Bringing it up is `cd indexer && npm ci && npm run dev` plus the
 sync time, which is the honest cost of reproducing a population census over <!-- n:agents -->10,278<!-- /n --> agents.
 
 ```bash

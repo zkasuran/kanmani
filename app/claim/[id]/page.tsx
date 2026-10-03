@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, TxLink, outcomeMeaning } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, OutcomeBadge, Panel, Row, TxLink, outcomeMeaning } from "@/components/ui.tsx";
 import { claim, verdictHistory, VERDICT_HISTORY_SQL } from "@/lib/queries.ts";
 import { searchedChains, searchedVia } from "@/lib/findtx.ts";
 import { resolveDeclared } from "@/lib/chains.ts";

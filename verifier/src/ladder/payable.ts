@@ -470,7 +470,7 @@ export type ProbeOptions = {
  * shared. Only the body handling differs.
  */
 function pinnedLookup(addresses: string[]): LookupFunction {
-  return ((hostname, options, callback) => {
+  return ((_hostname, options, callback) => {
     const cb = (typeof options === "function" ? options : callback) as (
       err: NodeJS.ErrnoException | null,
       address?: string | { address: string; family: number }[],

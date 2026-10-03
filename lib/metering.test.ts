@@ -6,10 +6,10 @@ import type { AssayAnswer, SentinelAnswer } from "./agents.ts";
 
 const sentinelAnswer = (o: Partial<SentinelAnswer>): SentinelAnswer => ({
   agentId: 1, verdict: "true", rung: null, measuredAtBlock: 1, ageBlocks: 1, ageSeconds: 1,
-  withinBound: true, sampleSize: 0, note: null, reproduce: "", ...o,
+  withinBound: true, sampleSize: 0, note: null, reproduce: "", rederive: null, ...o,
 });
 const assayAnswer = (o: Partial<AssayAnswer>): AssayAnswer => ({
-  agentId: 1, floorBps: null, premiumBps: null, sampleSize: 0, rate: null, quotedAtBlock: 1, refusalReason: null, reproduce: "", ...o,
+  agentId: 1, floorBps: null, premiumBps: null, sampleSize: 0, rate: null, quotedAtBlock: 1, refusalReason: null, reproduce: "", rederive: null, ...o,
 });
 
 test("sentinel refused on freshness costs nothing", () => {

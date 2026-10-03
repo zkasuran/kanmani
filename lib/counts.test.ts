@@ -5,8 +5,8 @@ import test from "node:test";
 import { SUITES, TESTS_PASSING, TESTS_SKIPPED } from "./counts.ts";
 
 test("the published total is the sum of the suites, not a typed figure", () => {
-  assert.equal(TESTS_PASSING, 461 + 208 + 124);
-  assert.equal(TESTS_SKIPPED, 12 + 27 + 9);
+  assert.equal(TESTS_PASSING, 467 + 208 + 124);
+  assert.equal(TESTS_SKIPPED, 15 + 27 + 9);
 });
 
 test("no page hardcodes a test count beside the constant", () => {

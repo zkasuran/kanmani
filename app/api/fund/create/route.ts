@@ -132,6 +132,13 @@ export async function POST(req: Request) {
     if (err instanceof IntentsConfigError) {
       return problem(400, "Bad funding request", err.message);
     }
+    if (err instanceof IntentsError && err.upstream) {
+      // Aurora judged the request itself, so the reason is about the caller's input and is shown.
+      return problem(422, "Aurora refused the execution", err.upstream.message, {
+        upstreamStatus: err.upstream.status,
+        ...(err.upstream.minAmount ? { minAmount: err.upstream.minAmount } : {}),
+      });
+    }
     if (err instanceof IntentsError) {
       return problem(502, "Aurora did not create the execution", "Intents Connect did not return a usable create response. Nothing was created.");
     }

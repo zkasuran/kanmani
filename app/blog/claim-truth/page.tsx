@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
+import { Mono, PageHeader, Panel } from "@/components/ui.tsx";
 
 /**
  * The thesis piece. Structural facts only (the ladder, owner-initiated validation, the mislabel

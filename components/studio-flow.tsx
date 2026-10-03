@@ -35,12 +35,10 @@ import {
   adopt,
   decodeDataUri,
   recordJsonPreserving,
-  agentUri,
   byteLength,
   consequences,
   identityRegistryFor,
   problems,
-  recordJson,
   registerCalldata,
   setAgentUriCalldata,
   type RegistrationDraft,
@@ -249,7 +247,9 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
       const onChain = text !== null;
       if (!onChain) {
         try {
-          const r = await fetch(u);
+          // Through our own server, not straight from the agent's host: the CSP allows this page to
+          // talk only to this origin and the chain RPCs. The server fetches through the SSRF guard.
+          const r = await fetch(`/api/agent/${agentId}/document`, { cache: "no-store" });
           text = r.ok ? await r.text() : null;
           if (!r.ok) {
             setNote({ kind: "error", text: `The document answered HTTP ${r.status}, so there is nothing to adopt. That is the finding, not a problem with this page.` });
@@ -419,7 +419,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
       session?.end();
       setBusy(null);
     }
-  }, [keys, calldata, uri, chainId, door, agentId]);
+  }, [keys, calldata, uri, chainId, door, agentId, draft, kind, hostedAt]);
 
   /**
    * Send from the logged-in browser wallet. The wallet shows the call and signs it; we never see a
@@ -469,7 +469,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     } finally {
       setBusy(null);
     }
-  }, [sender, chainId, uri, door, agentId, calldata]);
+  }, [sender, chainId, uri, door, agentId, calldata, draft, kind, hostedAt]);
 
   const copy = useCallback(async (text: string, what: string) => {
     try {

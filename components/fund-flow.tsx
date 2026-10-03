@@ -47,6 +47,39 @@ type Note = { kind: "error" | "info"; cause: string; fix?: string } | null;
 
 /* MARKER-FUNDFLOW */
 
+/** Base units to a decimal string, trailing zeros trimmed. `fromBaseUnits("303099", 6)` is "0.303099". */
+function fromBaseUnits(base: string, decimals: number): string {
+  const v = BigInt(base);
+  const d = BigInt(10) ** BigInt(decimals);
+  const frac = (v % d).toString().padStart(decimals, "0").replace(/0+$/, "");
+  return frac ? `${v / d}.${frac}` : `${v / d}`;
+}
+
+/**
+ * The address funding is for: the signed-in account, else whatever the browser wallet shares.
+ * Module-level and handed what it reads, so the callbacks that use it list exactly what they depend on.
+ */
+async function resolveWallet(sessionAddress: string | undefined): Promise<string> {
+  if (sessionAddress) return sessionAddress;
+  const w = walletProvider();
+  if (!w) throw new Error("Connect a browser wallet or sign in with a passkey first.");
+  const accts = (await w.request({ method: "eth_requestAccounts" })) as string[];
+  if (!accts?.[0]) throw new Error("The wallet did not share an address.");
+  return accts[0];
+}
+
+/** Sign with the session's account key when there is one, else ask the browser wallet. */
+async function signMessage(account: unknown, message: string, wallet: string): Promise<string> {
+  const acct = account as { signMessage?: (a: { message: string }) => Promise<`0x${string}`> } | undefined;
+  if (acct && typeof acct.signMessage === "function") {
+    return toIntentsSignature(await acct.signMessage({ message }));
+  }
+  const w = walletProvider();
+  if (!w) throw new Error("No signer available.");
+  const hex = (await w.request({ method: "personal_sign", params: [message, wallet] })) as `0x${string}`;
+  return toIntentsSignature(hex);
+}
+
 export function FundFlow({ sources }: { sources: readonly FundSource[] }) {
   const { session, keys } = useSession();
   const [state, setState] = useState<FundUiState>("form");
@@ -71,25 +104,33 @@ export function FundFlow({ sources }: { sources: readonly FundSource[] }) {
   }, []);
   useEffect(() => stopPoll, [stopPoll]);
 
-  async function resolveWallet(): Promise<string> {
-    if (session?.address) return session.address;
-    const w = walletProvider();
-    if (!w) throw new Error("Connect a browser wallet or sign in with a passkey first.");
-    const accts = (await w.request({ method: "eth_requestAccounts" })) as string[];
-    if (!accts?.[0]) throw new Error("The wallet did not share an address.");
-    return accts[0];
-  }
-
-  async function signMessage(message: string, wallet: string): Promise<string> {
-    const acct = keys?.account as { signMessage?: (a: { message: string }) => Promise<`0x${string}`> } | undefined;
-    if (acct && typeof acct.signMessage === "function") {
-      return toIntentsSignature(await acct.signMessage({ message }));
-    }
-    const w = walletProvider();
-    if (!w) throw new Error("No signer available.");
-    const hex = (await w.request({ method: "personal_sign", params: [message, wallet] })) as `0x${string}`;
-    return toIntentsSignature(hex);
-  }
+  const startPoll = useCallback((id: string, wallet: string) => {
+    stopPoll();
+    attemptsRef.current = 0;
+    const tick = async () => {
+      attemptsRef.current += 1;
+      if (attemptsRef.current > MAX_POLL_ATTEMPTS) {
+        stopPoll();
+        setNote({ kind: "info", cause: "Still pending after the poll window. Check back later; the execution runs on its own." });
+        return;
+      }
+      try {
+        const res = await fetch(`/api/fund/${id}?wallet=${wallet}`, { cache: "no-store" });
+        if (!res.ok) return; // a failed poll is retried next tick, never read as terminal
+        const body = (await res.json()) as { data?: StatusData };
+        const data = body.data;
+        if (!data?.status) return;
+        setStatus(data);
+        const next = mapAuroraState(data.status);
+        setState(next);
+        if (isTerminal(next)) stopPoll();
+      } catch {
+        // Transient; retried on the next tick.
+      }
+    };
+    void tick();
+    pollRef.current = setInterval(() => void tick(), nextPollDelay());
+  }, [stopPoll]);
 
   const onQuote = useCallback(async () => {
     setBusy("quote");
@@ -100,14 +141,27 @@ export function FundFlow({ sources }: { sources: readonly FundSource[] }) {
         setBusy(null);
         return;
       }
-      const wallet = await resolveWallet();
+      const wallet = await resolveWallet(session?.address);
       const originAmount = scaleAmount(amount.trim(), source.decimals).toString();
       const res = await fetch("/api/fund/quote", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ wallet, originAsset: source.assetId, amount: originAmount, agent: agent.trim() }),
       });
-      const body = (await res.json().catch(() => null)) as { data?: QuoteData } | null;
+      const body = (await res.json().catch(() => null)) as { data?: QuoteData; detail?: string; minAmount?: string } | null;
+      if (res.status === 422 && body?.detail) {
+        // Aurora refused the input itself, most often an amount under the bridge minimum. Say what it
+        // said and, when it named a minimum, the amount that would be accepted in this source's units.
+        setState("error");
+        setNote({
+          kind: "error",
+          cause: `Aurora refused this quote: ${body.detail}`,
+          fix: body.minAmount && /^\d+$/.test(body.minAmount)
+            ? `Enter at least ${fromBaseUnits(body.minAmount, source.decimals)} USDC from ${source.label}.`
+            : "Change the amount or the source chain and quote again.",
+        });
+        return;
+      }
       if (!res.ok || !body?.data || !/^\d+$/.test(body.data.minAmountOut)) {
         setState("error");
         setNote({ kind: "error", cause: "The quote did not come back with a usable number.", fix: "Try again, or pick another source chain." });
@@ -121,14 +175,14 @@ export function FundFlow({ sources }: { sources: readonly FundSource[] }) {
     } finally {
       setBusy(null);
     }
-  }, [agent, amount, source, session, keys]);
+  }, [agent, amount, source, session]);
 
   const onCreateAndSign = useCallback(async () => {
     if (!quote) return;
     setBusy("create");
     setNote(null);
     try {
-      const wallet = await resolveWallet();
+      const wallet = await resolveWallet(session?.address);
       const jobAmount = quote.minAmountOut; // the job is sized to the guaranteed delivery
       const res = await fetch("/api/fund/create", {
         method: "POST",
@@ -157,7 +211,7 @@ export function FundFlow({ sources }: { sources: readonly FundSource[] }) {
         return;
       }
       setBusy("sign");
-      const signature = await signMessage(message, data.wallet);
+      const signature = await signMessage(keys?.account, message, data.wallet);
       const sub = await fetch("/api/fund/submit", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -176,35 +230,7 @@ export function FundFlow({ sources }: { sources: readonly FundSource[] }) {
     } finally {
       setBusy(null);
     }
-  }, [quote, source, amount, agent, session, keys]);
-
-  function startPoll(id: string, wallet: string) {
-    stopPoll();
-    attemptsRef.current = 0;
-    const tick = async () => {
-      attemptsRef.current += 1;
-      if (attemptsRef.current > MAX_POLL_ATTEMPTS) {
-        stopPoll();
-        setNote({ kind: "info", cause: "Still pending after the poll window. Check back later; the execution runs on its own." });
-        return;
-      }
-      try {
-        const res = await fetch(`/api/fund/${id}?wallet=${wallet}`, { cache: "no-store" });
-        if (!res.ok) return; // a failed poll is retried next tick, never read as terminal
-        const body = (await res.json()) as { data?: StatusData };
-        const data = body.data;
-        if (!data?.status) return;
-        setStatus(data);
-        const next = mapAuroraState(data.status);
-        setState(next);
-        if (isTerminal(next)) stopPoll();
-      } catch {
-        // Transient; retried on the next tick.
-      }
-    };
-    void tick();
-    pollRef.current = setInterval(() => void tick(), nextPollDelay());
-  }
+  }, [quote, source, amount, agent, session, keys, startPoll]);
 
   const reset = useCallback(() => {
     stopPoll();

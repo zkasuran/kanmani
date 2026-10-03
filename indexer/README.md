@@ -89,11 +89,11 @@ export ENVIO_API_TOKEN=...        # Envio HyperSync token
 export ENVIO_HASURA=false         # the app queries Postgres, not Hasura
 export TUI_OFF=true               # no interactive terminal UI on a server
 
-pnpm install
-pnpm codegen                      # generates the typed handlers and the schema tables
+npm ci                            # npm is the one package manager here; package-lock.json is the lockfile
+npm run codegen                   # generates the typed handlers and the schema tables
 
 # local, with a Docker Postgres Envio brings up itself
-pnpm dev
+npm run dev
 
 # or native against an external Postgres, the way the box runs it
 node node_modules/envio/bin.mjs start

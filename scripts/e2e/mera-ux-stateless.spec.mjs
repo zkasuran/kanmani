@@ -26,11 +26,18 @@ const FLIP = process.env.FLIP === "1";
 const NO_CLEAR = process.env.NO_CLEAR === "1";
 const ADDR_RE = /0x[0-9a-fA-F]{40}/;
 
-/** The EIP-55 account address shown in the session card's `account` row. */
+/**
+ * The EIP-55 account address shown in the session card's `account` row.
+ *
+ * Read from its own test id. The card also shows the recipient the session is pinned to, above the
+ * account, so the first address in the card is the payee rather than the account. Matching the
+ * first 0x string returned the house wallet on every run and the suite reported a stateless account
+ * that never reproduced, when it did every time.
+ */
 async function readAddress(page) {
-  await page.getByText(/signing session open/i).waitFor({ timeout: 15_000 });
-  const text = await page.locator("section", { hasText: /signing session open/i }).first().innerText();
-  const m = text.match(ADDR_RE);
+  const el = page.getByTestId("session-account").first();
+  await el.waitFor({ timeout: 15_000 });
+  const m = (await el.innerText()).match(ADDR_RE);
   if (!m) throw new Error("no account address rendered in the session card");
   return m[0];
 }

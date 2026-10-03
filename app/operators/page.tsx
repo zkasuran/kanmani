@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Cta, Derivation, Num, Panel, Pct, StatTile } from "@/components/ui.tsx";
+import { Cta, Derivation, Num, Panel, Pct, StatTile } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { hosts, probedClusters, registryHealth, STATE_MEANING } from "@/lib/queries.ts";
 import { clusterFunders } from "@/lib/funders.ts";

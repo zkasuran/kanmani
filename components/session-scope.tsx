@@ -74,7 +74,7 @@ export function SessionScope({
           </span>
         </Field>
         <Field label="account">
-          <span className="break-all font-mono text-[13px] text-muted">{session.address}</span>
+          <span data-testid="session-account" className="break-all font-mono text-[13px] text-muted">{session.address}</span>
         </Field>
       </dl>
 

@@ -186,7 +186,7 @@ export default async function CompliancePage() {
         <Panel title="the use case: verified settlement" subtitle="The bounty asks for identity structurally coupled to asset movement, not an optional layer.">
           <p className="text-[13px] leading-relaxed text-muted">
             An autonomous agent cannot be paid for work until its wallet carries a verified identity. A
-            buyer hiring an agent has the same know-your-counterparty duty a bank has. The agent's
+            buyer hiring an agent has the same know-your-counterparty duty a bank has. The agent&rsquo;s
             wallet is the counterparty. Gating the payout on a CVI, inside a CVA, is that duty enforced
             by the settlement rail rather than by a policy document. Because the payout asset re-checks
             compliance at the source, a Travel Rule report can be pulled for the settlement itself.

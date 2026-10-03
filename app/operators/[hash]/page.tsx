@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Mono, Num, Panel, Pct, Row } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, Panel, Row } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { clusterMembers, clusterOwners, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { clusterFunder } from "@/lib/funders.ts";

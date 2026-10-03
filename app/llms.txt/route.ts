@@ -47,7 +47,7 @@ checks the second thing.
 - ${n(d.noClaim)} documents assert no payment at all. Mostly game ratings and plain-text comments. They cannot be wrong about a payment.
 - ${n(d.doNotResolve)} cite a transaction that is not on the chain they name.
 - ${n(d.resolve)} cite a transaction that is.
-- ${n(d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed)} could not be checked: ${n(d.unknownBytesMoved)} serve bytes that no longer match their own on-chain hash, ${n(d.unknownUnreachable)} would not answer.
+- ${n(d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed)} could not be checked: ${n(d.unknownBytesMoved)} serve bytes that no longer match their own on-chain hash, ${n(d.unknownUnparsed)} are shaped so no published mapping reads them, ${n(d.unknownUnreachable)} would not answer.
 
 A failure to look is recorded as unknown, never as false. That distinction is the reason this can
 be published at all: collapsing them would let somebody else's outage publish as our accusation.

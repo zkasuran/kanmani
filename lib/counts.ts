@@ -9,8 +9,8 @@
  * person does not have to guess where the number came from, which is the actual reason it went stale.
  */
 export const SUITES = {
-  /** The app's own tests: `node --test` over `lib/**\/*.test.ts`. 12 skip without a database. */
-  site: { pass: 461, total: 473 },
+  /** The app's own tests: `node --test` over `lib/**\/*.test.ts`. 15 skip without a database. */
+  site: { pass: 467, total: 482 },
   /** The verifier: `node --test` over `verifier/src/**\/*.test.ts`. 27 skip without a database. */
   verifier: { pass: 208, total: 235 },
   /**

@@ -15,7 +15,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-793%20passing-34d399?style=flat-square&labelColor=05070a" alt="793 tests passing">
+  <img src="https://img.shields.io/badge/tests-799%20passing-34d399?style=flat-square&labelColor=05070a" alt="799 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-policy%20%2B%20risk%20table-8b98a9?style=flat-square&labelColor=05070a" alt="Security policy"></a>
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
@@ -386,8 +386,8 @@ cd indexer   && npm run codegen && npm start   # the index
 npm run dev                                    # and the site itself
 ```
 
-<!-- n:testsPassing -->793<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->461<!-- /n --> in the app, <!-- n:testsVerifier -->208<!-- /n --> in the verifier and <!-- n:testsContracts -->124<!-- /n --> in the
-contracts. <!-- n:testsSkipped -->48<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
+<!-- n:testsPassing -->799<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->467<!-- /n --> in the app, <!-- n:testsVerifier -->208<!-- /n --> in the verifier and <!-- n:testsContracts -->124<!-- /n --> in the
+contracts. <!-- n:testsSkipped -->51<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
 does not have. `forge test --fork-url https://rpc.monad.xyz` picks up the fork tests and
 `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` picks up the precompile ones,
 which the default profile cannot run. The database-backed tests skip without `ENVIO_PG_PASSWORD`.

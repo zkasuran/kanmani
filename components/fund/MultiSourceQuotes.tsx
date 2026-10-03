@@ -55,10 +55,14 @@ export function MultiSourceQuotes({
             body: JSON.stringify({ wallet, agent, originAsset: s.assetId, amount: scaleAmount(amount.trim() || "0", s.decimals).toString() }),
           });
           const body = (await res.json().catch(() => null)) as { data?: { minAmountOut: string; networkFee: string | null; shortfall: boolean } } | null;
+          // A 422 is Aurora refusing the amount for this source, usually its bridge minimum.
           if (res.ok && body?.data && /^\d+$/.test(body.data.minAmountOut)) {
             next = { kind: "quoted", minAmountOut: body.data.minAmountOut, networkFee: body.data.networkFee, shortfall: body.data.shortfall };
           } else {
-            next = { kind: "none", reason: res.status === 503 ? "funding not configured" : "no live quote" };
+            next = {
+              kind: "none",
+              reason: res.status === 503 ? "funding not configured" : res.status === 422 ? "below this route's minimum" : "no live quote",
+            };
           }
         } catch {
           next = { kind: "none", reason: "no live quote" };

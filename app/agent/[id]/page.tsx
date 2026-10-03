@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile, TxLink } from "@/components/ui.tsx";
+import { Addr, Derivation, Mono, Num, OutcomeBadge, Panel, Row, RungLadder, StatTile } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, agentActions, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";

@@ -1,3 +1,4 @@
+import chainTable from "./shared/erc8004-chains.json" with { type: "json" };
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
@@ -32,13 +33,30 @@ import { NextResponse, type NextRequest } from "next/server";
  * next.config.ts. The trust badge reaches a host page as a shadow-DOM span written by embed.js, not
  * as an iframe, so nothing legitimate frames this site.
  */
+/**
+ * Every host the browser opens a connection to, by name. These are the public chain RPCs the studio
+ * and the session read through viem, taken from shared/erc8004-chains.json so a chain added there is
+ * not silently blocked here. Anything an agent declares (its registration document, its endpoints)
+ * is fetched by the server through the SSRF guard, never by the page, so no wildcard is needed.
+ * A script injection that got past the nonce could still read the page, but could not post what it
+ * read anywhere but these.
+ */
+export const CONNECT_HOSTS: readonly string[] = [
+  ...new Set(
+    (chainTable as { chains?: { publicRpc?: string | null }[] }).chains
+      ?.map((c) => c.publicRpc)
+      .filter((u): u is string => typeof u === "string" && u.startsWith("https://"))
+      .map((u) => new URL(u).origin) ?? [],
+  ),
+];
+
 export function contentSecurityPolicy(nonce: string, dev = false): string {
   return [
     "default-src 'self'",
     "img-src 'self' data: https:",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${dev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "connect-src 'self' https:",
+    `connect-src 'self' ${CONNECT_HOSTS.join(" ")}`,
     "font-src 'self' data:",
     "object-src 'none'",
     "base-uri 'self'",

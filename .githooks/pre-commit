@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Refuse a commit that stages a private or generated path. See guard.sh for the list and the reason.
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/guard.sh"
+
+refused="$(git diff --cached --name-only --diff-filter=ACMR | guard_refused)"
+if [ -n "$refused" ]; then
+  echo "REFUSED: private or generated paths are staged:" >&2
+  printf '         %s\n' $refused >&2
+  echo "         git restore --staged <path>   then commit again." >&2
+  exit 1
+fi

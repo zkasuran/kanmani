@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Refuse a push whose commits add a private or generated path. See guard.sh for the list.
+#
+# This reads the commits being pushed, not the staging area. At push time the index is usually
+# empty because the content is already committed, so a hook that read the index passed every push
+# without looking at it. git passes one line per ref on stdin: local ref, local sha, remote ref,
+# remote sha. Every path touched between what the remote has and what is being sent is checked.
+set -euo pipefail
+. "$(dirname "${BASH_SOURCE[0]}")/guard.sh"
+
+ZERO="0000000000000000000000000000000000000000"
+bad=""
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  # Deleting a remote branch sends nothing.
+  [ "$local_sha" = "$ZERO" ] && continue
+  if [ "$remote_sha" = "$ZERO" ]; then
+    # A new branch: check every commit on it that no remote branch already has.
+    range=$(git rev-list "$local_sha" --not --remotes)
+  else
+    range=$(git rev-list "$remote_sha..$local_sha")
+  fi
+  [ -z "$range" ] && continue
+  found="$(for c in $range; do git diff-tree --no-commit-id --name-only -r --diff-filter=ACMR --root "$c"; done | sort -u | guard_refused)"
+  [ -n "$found" ] && bad="$bad$found"$'\n'
+done
+
+if [ -n "$bad" ]; then
+  echo "REFUSED: the commits being pushed add private or generated paths:" >&2
+  printf '%s' "$bad" | sort -u | sed 's/^/         /' >&2
+  echo "         Rewrite those commits to drop the paths before pushing." >&2
+  exit 1
+fi

@@ -143,6 +143,7 @@ export default async function Validate() {
               <th className="pb-2">verdict</th>
               <th className="pb-2">written?</th>
               <th className="pb-2">response</th>
+              <th className="pb-2">why</th>
             </tr>
           </thead>
           <tbody>
@@ -162,6 +163,7 @@ export default async function Validate() {
                   {w}
                 </td>
                 <td className="py-2 font-mono text-[12px] text-muted">{r}</td>
+                <td className="py-2 text-[13px] text-muted">{why}</td>
               </tr>
             ))}
           </tbody>

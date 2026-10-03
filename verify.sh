@@ -295,6 +295,10 @@ const want = [
 ];
 let bad = [];
 for (const [file, body, needle, label] of want) if (!body.includes(needle)) bad.push(`${file} is missing ${label}`);
+// connect-src names its hosts. A bare https: there would let an injected script post to anywhere.
+const cs = (proxy.match(/connect-src[^\n]*/) ?? [""])[0];
+if (/\shttps:(?![\/])/.test(cs)) bad.push("proxy.ts allows connect-src to any https host");
+if (!proxy.includes("CONNECT_HOSTS")) bad.push("proxy.ts no longer builds connect-src from the chain registry");
 // An inline script without a nonce would be refused by our own policy, so it must not appear.
 if (/dangerouslySetInnerHTML/.test(fs.readFileSync("app/global-error.tsx", "utf8"))) {
   bad.push("app/global-error.tsx carries an inline script, which the nonce CSP will refuse");
@@ -330,19 +334,13 @@ node scripts/check-links.mjs README.md docs SECURITY.md DATA-SOURCES.md
 
 banner "documentation voice"
 
-# The voice gate lives in the surrounding workspace rather than in this repo, so it is present on the
-# author's machine and absent in a fresh clone and in CI. Point VOICE_GATE at it to run it.
-VOICE_GATE="${VOICE_GATE:-../../bin/voice-gate.mjs}"
-if [ -f "$VOICE_GATE" ]; then
-  # Every tracked markdown file, gated. Text quoted byte for byte (the MIT and OFL grants) carries a
-  # voice-gate:off fence in the file itself, so the exception sits next to the quote it covers
-  # rather than in a list here. LICENSE is not markdown and is not in this set: its body is adapted
-  # standardised licence wording, and rewording a legal clause for a prose linter is the wrong trade.
-  mapfile -t prose < <(git ls-files '*.md' | sort -u)
-  node "$VOICE_GATE" "${prose[@]}"
-else
-  skip "no voice gate at $VOICE_GATE, so the prose check did not run. Set VOICE_GATE to its path."
-fi
+# scripts/voice-gate.mjs is in the repo, so a fresh clone and CI run the same prose check as the
+# author's machine. Every tracked markdown file, gated. Text quoted byte for byte (the MIT and OFL
+# grants) carries a voice-gate:off fence in the file itself, so the exception sits next to the quote
+# it covers. LICENSE is not markdown and is not in this set: its body is adapted standardised licence
+# wording, and rewording a legal clause for a prose linter is the wrong trade.
+mapfile -t prose < <(git ls-files '*.md' | sort -u)
+node scripts/voice-gate.mjs "${prose[@]}"
 
 # ------------------------------------------------------------------ 11. numbers
 

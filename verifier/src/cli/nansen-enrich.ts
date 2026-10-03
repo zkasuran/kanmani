@@ -50,7 +50,7 @@ import { enrichWallet, fetchRelatedWallets, firstFunder, NANSEN_BASE, type Nanse
 
 /** Hands the socket the exact address the guard approved, so DNS cannot change under us. */
 function pinnedLookup(addresses: string[]): LookupFunction {
-  return ((hostname, options, callback) => {
+  return ((_hostname, options, callback) => {
     const cb = (typeof options === "function" ? options : callback) as (
       err: NodeJS.ErrnoException | null,
       address?: string | { address: string; family: number }[],

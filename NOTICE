@@ -54,6 +54,16 @@ Apache-2.0 requires that its own notice be preserved and that modifications be m
 none of these packages: they are installed from the registry at the version the lockfile pins and
 imported unchanged.
 
+Three of these sit under young scopes, which is the shape a lookalike package takes. Their
+publishers were checked from both ends on 2026-10-03:
+
+- `@x402/core` and `@x402/evm` are maintained on npm by two `coinbase.com` accounts. The x402 project
+  README (`github.com/coinbase/x402`, now under `github.com/x402-foundation/x402`) installs exactly
+  these names. The package manifest in that repository declares `@x402/core` under Apache-2.0.
+- `@category-labs/mera` is maintained on npm by `security@category.xyz` and links
+  `github.com/category-labs/mera`, whose `library/package.json` declares that same name under
+  MIT or Apache-2.0.
+
 ### Verifier
 
 `verifier/` depends on `pg` 8.23.0 and `viem` 2.57.2, both MIT, read from

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Addr, Derivation, Mono, Num, OutcomeBadge, PageHeader, Panel } from "@/components/ui.tsx";
+import { Addr, Mono, Num, PageHeader, Panel } from "@/components/ui.tsx";
 import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, claims, probedCluster, type AgentRow, type ClusterWithProbe } from "@/lib/queries.ts";
 

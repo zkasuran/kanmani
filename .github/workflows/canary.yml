@@ -129,16 +129,8 @@ jobs:
       - name: Install the browser suites
         run: npm ci
 
-      # Gated on the suites that pass against production today. Six are held out, each for a reason
-      # recorded where it can be acted on rather than hidden by a permanently red run:
-      #   fund, health    /fund calls the Aurora routes, which answer 503 until AURORA_INTENTS_API_KEY
-      #                   is set on the box. A configuration gap, not a code fault.
-      #   nav             three hover-intent paths open the wrong submenu on a diagonal move.
-      #   mera-prf-crossdevice, mera-ux-stateless, pay-measure
-      #                   need a passkey PRF that Chromium's virtual authenticator does not reproduce
-      #                   against a remote origin. They run by hand against a local build.
-      # Add a suite back to this list in the same commit that makes it pass against production.
+      # Every suite runs. A suite that needs something this deployment cannot give exits as a SKIP
+      # with the reason (the cross-device passkey suite, because Chrome's virtual authenticator
+      # exports no PRF seed), and the runner counts a SKIP as neither a pass nor a failure.
       - name: End to end against the deployed site
-        env:
-          E2E_ONLY: "bond,fund-multisource,fund-recovery,login,method,numbers,passkey,session-design.e2e,storage-audit.e2e,studio"
         run: node scripts/e2e/run.mjs "$SITE"

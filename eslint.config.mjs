@@ -31,51 +31,12 @@ const reactCompilerRules = {
 };
 
 /**
- * Cross-lane lint debt, enumerated on 2026-10-03.
- *
- * ESLint arrived during a parallel fix pass in which the page and component files below are owned by
- * other lanes and are being edited concurrently. Editing them from this lane would collide. So the
- * debt is listed file by file and rule by rule rather than switched off globally: every rule stays
- * at `error` for every other file in the repo and for all new code, and this block shrinks to
- * nothing as each owning lane clears its own files.
- *
- * All of it is dead code or JSX text, no behaviour:
- *   - unused imports and one unused callback parameter, 13 of them,
- *   - three unescaped quotes in JSX text,
- *   - four `exhaustive-deps` warnings in two fund and studio flows,
- *   - one `<img>` inside the OG image route, where next/image cannot be used because the route
- *     renders through Satori rather than the browser.
- *
- * Do not add to this list. A new file lands clean or it does not land.
+ * The one standing exception. The OG image is drawn by Satori on the server, which implements a
+ * subset of CSS and knows nothing about next/image, so `<img>` is the only element it can render.
+ * Every other rule is at full strength for every file.
  */
-const crossLaneDebt = [
+const exceptions = [
   {
-    files: [
-      // Square brackets are a glob character class, so a dynamic-route segment has to be escaped
-      // or the pattern silently matches nothing.
-      "app/agent/\\[id\\]/page.tsx",
-      "app/blog/claim-truth/page.tsx",
-      "app/bond/page.tsx",
-      "app/claim/\\[id\\]/page.tsx",
-      "app/compare/page.tsx",
-      "app/operators/page.tsx",
-      "app/operators/\\[hash\\]/page.tsx",
-      "app/validate/page.tsx",
-      "components/studio-flow.tsx",
-    ],
-    rules: { "@typescript-eslint/no-unused-vars": "off" },
-  },
-  {
-    files: ["app/compliance/page.tsx", "components/account-panel.tsx"],
-    rules: { "react/no-unescaped-entities": "off" },
-  },
-  {
-    files: ["components/fund-flow.tsx", "components/studio-flow.tsx"],
-    rules: { "react-hooks/exhaustive-deps": "off" },
-  },
-  {
-    // The OG image is rendered by Satori on the server, which implements a subset of CSS and knows
-    // nothing about next/image. `<img>` is the only element it can draw.
     files: ["app/og.png/route.tsx"],
     rules: { "@next/next/no-img-element": "off" },
   },
@@ -118,7 +79,7 @@ const config = [
   },
   // `LINT_REACT_COMPILER=1 npx eslint .` reports the family instead of skipping it.
   ...(process.env.LINT_REACT_COMPILER === "1" ? [] : [{ rules: reactCompilerRules }]),
-  ...crossLaneDebt,
+  ...exceptions,
 ];
 
 export default config;

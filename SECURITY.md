@@ -93,9 +93,9 @@ Attacker: a caller who wants the work without the payment.
 | Attacker and attack | Defence | File | Test |
 |---|---|---|---|
 | A published default admin secret on Hasura or Postgres once the endpoint is reachable | Both are required with `${VAR:?}` so the stack refuses to start without them. The console is off and the anonymous role is read-only, granted table by table | `deploy/docker-compose.yml:30`, `:61`, `deploy/track-hasura.sh` | **No automated test. Verified manually** (doc 17 Finding 3: the old secret returns access-denied, the new one returns 200, no credentials still returns 200) |
-| A secret committed on the public flip | Commit hooks refuse any `.env` at any depth, plus a value-scoped gitleaks allowlist and a full-history scan in the gate | `scripts/scan-secrets.sh`, `.gitleaks.toml` | `verify.sh` runs the full-history scan on every push. Last run: 0 findings across every ref |
+| A secret committed on the public flip | Tracked hooks refuse any `.env` at any depth except a sample file. pre-commit reads what is staged; pre-push reads every commit being pushed, so a commit made with `--no-verify` is still caught. A value-scoped gitleaks allowlist and a full-history scan in the gate sit behind them | `.githooks/`, `scripts/install-hooks.sh`, `scripts/scan-secrets.sh`, `.gitleaks.toml` | `verify.sh` runs the full-history scan on every push. Last run: 0 findings across every ref |
 | A secret read out of a process list | Keys are read from the environment, never passed in argv by application code. One ephemeral key is generated per run where a key is needed at all | `lib/*`, `scripts/*`, `verifier/src/cli/*` | No automated test. The Foundry deploy pattern `--private-key "$VAR"` does expose the value in the deploy host's own argv, which is a known limit below |
-| XSS, clickjacking or content injection in the UI | A per-request nonce CSP with `strict-dynamic`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'` and `frame-ancestors 'none'`, plus `nosniff`, a referrer policy, `x-frame-options: DENY` and a permissions policy | `proxy.ts` builds the CSP, `next.config.ts` sets the static headers | Header assertions in the end-to-end pass. `verify.sh` asserts the policy is built with `frame-ancestors 'none'` |
+| XSS, clickjacking or content injection in the UI | A per-request nonce CSP with `strict-dynamic`, `object-src 'none'`, `base-uri 'self'`, `form-action 'self'`, `frame-ancestors 'none'` and a `connect-src` that names its hosts (this origin plus the public chain RPCs from `shared/erc8004-chains.json`), so an injected script has nowhere to send what it reads. An agent's own document is fetched by the server through the SSRF guard (`app/api/agent/[id]/document`), never by the page, plus `nosniff`, a referrer policy, `x-frame-options: DENY` and a permissions policy | `proxy.ts` builds the CSP, `next.config.ts` sets the static headers | Header assertions in the end-to-end pass. `verify.sh` asserts the policy is built with `frame-ancestors 'none'` |
 | Framework fingerprinting from response headers | `poweredByHeader: false`, so `x-powered-by` is not sent | `next.config.ts:12` | Covered by the build |
 | One thrown render blanking a page, so a reader cannot tell a broken page from a claim with no answer | A route error boundary and a global error boundary, both saying plainly that the failure is ours and is not a verdict | `app/error.tsx`, `app/global-error.tsx` | No automated test. Both render through the normal build |
 | A stale number presented as a live measurement | Every page renders per request and `staleTimes.dynamic` is 0, so the client router cannot serve a cached render. `/status` reports the index's own freshness | `next.config.ts` | `lib/counts.ts` tests and the live end-to-end numbers check |
@@ -138,9 +138,9 @@ Honest list. Each was confirmed still true against the code as it stands.
 - The Foundry deploy pattern passes a key as `--private-key "$VAR"`, which puts the value in the
   deploy host's own process list at run time. No key value is committed. A keystore through
   `cast wallet import` would close this if argv strictness is wanted.
-- `git` hooks live in `.git/hooks`, which is not cloned, so a fresh clone has no commit guard until
-  the scaffold is re-run. The published history is already clean, so this affects future local
-  commits rather than the flip.
+- The hooks are tracked in `.githooks/`, but git only runs them once a clone has run
+  `./scripts/install-hooks.sh`. A clone that skips it has no local guard. The full-history secret
+  scan in `verify.sh`, which CI runs on every push, is the backstop that does not depend on it.
 
 ## What is simulated
 

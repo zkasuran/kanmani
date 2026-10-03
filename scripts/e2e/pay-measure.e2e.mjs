@@ -9,10 +9,20 @@
  *
  *   node scripts/e2e/pay-measure.e2e.mjs [url]      default https://kanmani.xyz
  */
-import { launchPage, argUrl } from "./lib.mjs";
+import { launchPage, argUrl, skip } from "./lib.mjs";
 import { addPrfAuthenticator } from "./lib/passkey-authenticator.mjs";
 
 const url = argUrl();
+// The per-run line only renders after a settled testnet payment, and the new account can only pay
+// once the house mints it test USDC. A deployment with no minter key answers 503 there, so this
+// suite has nothing to measure and says so rather than reporting a failure that is configuration.
+const mint = await fetch(`${url}/api/testnet/mint`, {
+  method: "POST",
+  headers: { "content-type": "application/json" },
+  body: JSON.stringify({ address: "0x0000000000000000000000000000000000000001" }),
+}).catch(() => null);
+if (mint?.status === 503) skip("this deployment has no TESTNET_MINTER_KEY, so no testnet payment can settle to measure");
+
 const { browser, page } = await launchPage();
 await addPrfAuthenticator(page);
 
@@ -25,7 +35,7 @@ const check = (name, ok, detail = "") => {
 const started = Date.now();
 await page.goto(`${url}/pay?net=testnet`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /connect a new passkey/i }).click();
-await page.getByText(/signing session open/i).waitFor({ timeout: 15_000 });
+await page.getByTestId("session-account").first().waitFor({ timeout: 15_000 });
 await page.getByRole("button", { name: /pay .* and verify/i }).click();
 
 // The per-run line is "your run: N taps plus 1 passkey confirmation, X.X s".

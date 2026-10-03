@@ -342,8 +342,8 @@ export function AccountPanel() {
           <p className="mt-4 text-[12.5px] leading-relaxed text-muted">
             Two of these do non-account work from the same one passkey. Optic (kanmani.optic.v1) signs
             verification receipts and cannot move money. Vitreous (kanmani.vitreous.v1) encrypts, so
-            the server stays blind to what it stores. That is the "at least one PRF namespace does
-            non-account work" the bounty asks for, live rather than described.
+            the server stays blind to what it stores. That is the &ldquo;at least one PRF namespace does
+            non-account work&rdquo; the bounty asks for, live rather than described.
           </p>
 
           <ReceiptAttestation keys={outcome.keys} />
