@@ -445,10 +445,12 @@ Not done yet:
 
 ## Licence
 
-`components/kit.tsx` and `app/embed.js/route.ts` are **MIT** (`SPDX: MIT`), because a component meant
-to render inside someone else's product cannot be read-only. Everything else is source-available
-with no derivatives (`SPDX: LicenseRef-zkasuran-SAND-1.0`). See
-[docs/24-KIT-LICENCE.md](docs/24-KIT-LICENCE.md) and [LICENSE](LICENSE).
+Five files are **MIT** (`SPDX: MIT`): the component kit (`components/kit.tsx`, `app/embed.js/route.ts`),
+because a component meant to render inside someone else's product cannot be read-only. The other three are the
+AgentPasskey primitive (`contracts/src/AgentPasskey.sol` with its test and deploy script), because it is
+meant to be lifted into other contracts. Everything else is source-available with no derivatives
+(`SPDX: LicenseRef-zkasuran-SAND-1.0`). See [docs/24-KIT-LICENCE.md](docs/24-KIT-LICENCE.md),
+[LICENSE](LICENSE) and [NOTICE](NOTICE).
 
 ## AI disclosure
 

@@ -288,32 +288,12 @@ banner "documentation voice"
 # author's machine and absent in a fresh clone and in CI. Point VOICE_GATE at it to run it.
 VOICE_GATE="${VOICE_GATE:-../../bin/voice-gate.mjs}"
 if [ -f "$VOICE_GATE" ]; then
-  # Two kinds of file are held out of the gating set, and the list is enumerated rather than the
-  # check being switched off, so it is visible and so it shrinks.
-  #
-  # Permanent: files that quote a licence byte for byte. docs/24-KIT-LICENCE.md reproduces the MIT
-  # text in full, and docs/32-PRF-PRIMITIVES.md quotes a string straight out of the source. Rewording
-  # either to satisfy a prose linter would make the quote wrong, which is worse than the comma.
-  # LICENSE itself is held out for the same reason: its body is adapted standardised licence wording.
-  #
-  # Temporary: prose debt in files this lane does not own, carried while the documentation lanes
-  # rewrite them in parallel. Delete each line as its owner clears it, and delete this block when the
-  # list is empty.
-  VOICE_EXEMPT='^(LICENSE|docs/24-KIT-LICENCE\.md|docs/32-PRF-PRIMITIVES\.md|docs/17-CONTRACT-AUDIT\.md|cre/kanmani-oracle/slashing/README\.md)$'
-
-  mapfile -t prose < <(git ls-files 'docs/*.md' '*.md' | sort -u | grep -Ev "$VOICE_EXEMPT" || true)
-  mapfile -t held < <(git ls-files 'docs/*.md' '*.md' 'cre/**/*.md' | sort -u | grep -E "$VOICE_EXEMPT" || true)
-
-  if [ "${#prose[@]}" -gt 0 ]; then
-    node "$VOICE_GATE" "${prose[@]}"
-  fi
-
-  # The held-out files are still checked, and their findings still printed. They do not abort.
-  if [ "${#held[@]}" -gt 0 ]; then
-    echo ""
-    echo "· held out of the gate, reported only (see the list in verify.sh):"
-    node "$VOICE_GATE" "${held[@]}" 2>&1 | sed 's/^/      /' || true
-  fi
+  # Every tracked markdown file, gated. Text quoted byte for byte (the MIT and OFL grants) carries a
+  # voice-gate:off fence in the file itself, so the exception sits next to the quote it covers
+  # rather than in a list here. LICENSE is not markdown and is not in this set: its body is adapted
+  # standardised licence wording, and rewording a legal clause for a prose linter is the wrong trade.
+  mapfile -t prose < <(git ls-files '*.md' | sort -u)
+  node "$VOICE_GATE" "${prose[@]}"
 else
   skip "no voice gate at $VOICE_GATE, so the prose check did not run. Set VOICE_GATE to its path."
 fi

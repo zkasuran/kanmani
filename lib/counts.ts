@@ -9,15 +9,16 @@
  * person does not have to guess where the number came from, which is the actual reason it went stale.
  */
 export const SUITES = {
-  /** `npm test` in the repo root. */
-  site: { pass: 317, total: 320 },
-  /** `npm test` in `verifier/`. */
-  verifier: { pass: 186, total: 203 },
+  /** The app's own tests: `node --test` over `lib/**\/*.test.ts`. 12 skip without a database. */
+  site: { pass: 461, total: 473 },
+  /** The verifier: `node --test` over `verifier/src/**\/*.test.ts`. 27 skip without a database. */
+  verifier: { pass: 208, total: 235 },
   /**
-   * `forge test --fork-url https://rpc.monad.xyz` in `contracts/` (127 pass, 2 ffi skips, AgentPasskey
-   * skips itself) plus `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` (16).
+   * `forge test` in `contracts/`, default profile. 9 skip there: 6 fork tests that need an archive
+   * node, 2 that need ffi and the AgentPasskey suite, which needs the P256 precompile and runs under
+   * `FOUNDRY_PROFILE=p256` instead. `./verify.sh` runs all three tiers.
    */
-  contracts: { pass: 143, total: 145 },
+  contracts: { pass: 124, total: 133 },
 } as const;
 
 export const TESTS_PASSING = SUITES.site.pass + SUITES.verifier.pass + SUITES.contracts.pass;

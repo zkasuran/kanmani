@@ -15,8 +15,16 @@ It is the wrong posture for two files. The tension that this carve-out resolves 
 | [`app/embed.js/route.ts`](../app/embed.js/route.ts) | It is served to third-party pages by design. Embedding it needs no grant, because a script tag is a request to our server rather than a copy of our code, but the source is in this repository and a reader should not have to reason about that |
 
 **These two files are released under the MIT licence**, reproduced in full below. Everything else in the
-repository stays under SAND-1.0. The grant lives in the bytes of each file, as an
-`SPDX-License-Identifier: MIT` header on line 1 of both.
+repository stays under SAND-1.0, apart from the AgentPasskey files below. The grant lives in the bytes
+of each file, as an `SPDX-License-Identifier: MIT` header on line 1 of both.
+
+## The AgentPasskey primitive
+
+Three more files are MIT for the same reason: `contracts/src/AgentPasskey.sol`,
+`contracts/test/AgentPasskey.t.sol` and `contracts/script/DeployAgentPasskey.s.sol`. The contract is an
+on-chain passkey primitive meant to be copied into other contracts. The suite and deploy script are
+what make a copy trustworthy. So the repository carries five MIT files in total. [`LICENSE`](../LICENSE)
+names all five under "Files under MIT" and [`NOTICE`](../NOTICE) lists them with the reason for each.
 
 ## Why permissive rather than a narrower grant
 
@@ -33,7 +41,7 @@ who never mention us. A restrictive licence on a safety constraint works against
 ## What this does not license
 
 The measurement, the verdict data, the indexer, the verifier, the contracts, the site and every document
-outside those two files remain **SAND-1.0**. Reading, checking, benchmarking and publishing findings about
+outside those five files remain **SAND-1.0**. Reading, checking, benchmarking and publishing findings about
 them is expressly permitted; redistribution and derivative works are not. See
 [`LICENSE`](../LICENSE) and [`contracts/NOTICE`](../contracts/NOTICE).
 
