@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="580" viewBox="0 0 1280 580" role="img" aria-label="Kanmani: the settlement and trust layer for agent work on Monad. Trust stops being a badge. It becomes a price.">
+<title>Kanmani: the settlement and trust layer for agent work on Monad. Trust stops being a badge. It becomes a price.</title>
+<style>
+.sans{font-family:'Space Grotesk','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+.body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif}
+.mono{font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+.in{animation:in .9s cubic-bezier(.16,1,.3,1) backwards;animation-delay:var(--d,0s)}
+@keyframes in{from{opacity:0;transform:translateY(10px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.mk path,.mk circle{transform-box:fill-box;transform-origin:center}
+.mk-l{animation:mkl 1s cubic-bezier(.16,1,.3,1) .15s backwards}
+.mk-r{animation:mkr 1s cubic-bezier(.16,1,.3,1) .15s backwards}
+.mk-n{animation:mkn .8s cubic-bezier(.34,1.56,.64,1) .7s backwards}
+@keyframes mkl{from{opacity:0;transform:translateX(-6px)}}
+@keyframes mkr{from{opacity:0;transform:translateX(6px)}}
+@keyframes mkn{from{transform:scale(0)}}
+
+.ap *{transform-box:view-box;transform-origin:200px 200px}
+.ap .tk,.ap .bk{transform-origin:0 0}
+.rg{fill:none;stroke:#2b3a4d;stroke-width:1}
+.rg-d{stroke:#836ef9;stroke-dasharray:2 9;opacity:.6}
+.tk{stroke:#2b3a4d;stroke-width:1}.tk-m{stroke:#5d6d85;stroke-width:1.4}
+.sp-slow{animation:spin 90s linear infinite}
+.sp-rev{animation:spin 60s linear infinite reverse}
+.sp-orbit{animation:spin 48s linear infinite}
+.bk{fill:#111720;stroke:#2b3a4d;animation:bt 4s cubic-bezier(.65,0,.35,1) infinite}
+.bk-l{fill:#3a3170;stroke:#836ef9}
+@keyframes bt{0%,70%,100%{opacity:.55}80%{opacity:1}}
+.sw{animation:spin 8s linear infinite}
+.wr{stroke:#2b3a4d;stroke-dasharray:3 5}
+.bm{transform-origin:96px 200px;animation:bm 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+@keyframes bm{0%,8%{transform:scaleX(0);opacity:0}30%{transform:scaleX(.5);opacity:1}62%{transform:scaleX(1);opacity:1}80%,100%{transform:scaleX(1);opacity:0}}
+.rl{fill:none;stroke-width:9;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:260}
+.rl-l{animation:dr 1.6s cubic-bezier(.16,1,.3,1) .3s backwards,cl 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+.rl-r{animation:dr 1.6s cubic-bezier(.16,1,.3,1) .3s backwards,cr 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+@keyframes dr{from{stroke-dashoffset:260}}
+@keyframes cl{0%,25%,60%,100%{transform:none}38%,46%{transform:translateX(10px)}}
+@keyframes cr{0%,25%,60%,100%{transform:none}38%,46%{transform:translateX(-10px)}}
+.pk{fill:#dce5f0;opacity:0}
+.pk-in{animation:pi 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+.pk-out{fill:#22d3ee;animation:po 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+@keyframes pi{0%{transform:translateX(0);opacity:0}6%{opacity:1}34%{transform:translateX(96px);opacity:1}38%,100%{transform:translateX(96px);opacity:0}}
+@keyframes po{0%,48%{transform:translateX(0) scale(.4);opacity:0}52%{transform:translateX(6px);opacity:1}78%{transform:translateX(96px);opacity:1}84%,100%{transform:translateX(96px);opacity:0}}
+.gl{animation:gl 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+@keyframes gl{0%,30%,70%,100%{opacity:.65;transform:scale(1)}42%{opacity:1;transform:scale(1.08)}}
+.nd{fill:#0b2a33;stroke:#22d3ee;stroke-width:1.5;animation:nl 1s cubic-bezier(.34,1.56,.64,1) 1.1s backwards,nb 8s cubic-bezier(.65,0,.35,1) 2s infinite}
+.cr{animation:nl 1s cubic-bezier(.34,1.56,.64,1) 1.2s backwards}
+@keyframes nl{from{transform:scale(0)}}
+@keyframes nb{0%,34%,56%,100%{transform:scale(1)}40%{transform:scale(1.18)}}
+.pl{fill:none;stroke:#22d3ee;stroke-width:1.2;opacity:0;animation:pu 8s cubic-bezier(.25,1,.5,1) infinite}
+@keyframes pu{0%,38%{transform:scale(.7);opacity:0}40%{opacity:.85}66%,100%{transform:scale(4.4);opacity:0}}
+
+.live{animation:lv 2.4s cubic-bezier(.65,0,.35,1) infinite}
+@keyframes lv{0%,100%{opacity:1}50%{opacity:.35}}
+
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important}
+  .rm-hide{opacity:0!important}
+}
+</style>
+
+<defs>
+  <radialGradient id="g0" cx="0.12" cy="-0.1" r=".75"><stop offset="0" stop-color="#836ef9" stop-opacity="0.300"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></radialGradient><radialGradient id="g1" cx="1.0" cy="0.1" r=".75"><stop offset="0" stop-color="#22d3ee" stop-opacity="0.120"/><stop offset="1" stop-color="#22d3ee" stop-opacity="0"/></radialGradient>
+  <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+    <path d="M48 0H0V48" fill="none" stroke="#1d2836" stroke-width="1"/>
+  </pattern>
+  <radialGradient id="gridmask-g" cx=".5" cy="0" r=".9">
+    <stop offset=".2" stop-color="#fff" stop-opacity="0.55"/><stop offset="1" stop-color="#fff" stop-opacity="0"/>
+  </radialGradient>
+  <mask id="gridmask"><rect width="1280" height="580" fill="url(#gridmask-g)"/></mask>
+  <linearGradient id="edge" x1="0" x2="1">
+    <stop offset="0" stop-color="#ffffff" stop-opacity="0"/><stop offset=".5" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+  </linearGradient>
+  <clipPath id="frame"><rect width="1280" height="580" rx="24"/></clipPath>
+</defs>
+<rect width="1280" height="580" rx="24" fill="#05070a"/>
+<g clip-path="url(#frame)">
+  <rect width="1280" height="580" rx="24" fill="url(#g0)"/><rect width="1280" height="580" rx="24" fill="url(#g1)"/>
+  <rect width="1280" height="580" fill="url(#grid)" mask="url(#gridmask)"/>
+</g>
+<rect x=".5" y=".5" width="1279" height="579" rx="23.5" fill="none" stroke="#2b3a4d" stroke-opacity=".8"/>
+<rect x="120" y="0" width="1040" height="1" fill="url(#edge)"/>
+
+<g class="in">
+  <g transform="translate(66 58) scale(1.55)" class="mk">
+  <path class="mk-l" d="M13 7L4.5 16L13 25" fill="none" stroke="#836ef9" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path class="mk-r" d="M19 7L27.5 16L19 25" fill="none" stroke="#836ef9" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle class="mk-n" cx="16" cy="16" r="2.35" fill="#22d3ee"/>
+</g>
+  <text x="124" y="92" class="sans" font-size="30" font-weight="600" letter-spacing="-.6" fill="#dce5f0">kanmani</text>
+  <rect x="262" y="70" width="190" height="28" rx="14" fill="none" stroke="#2b3a4d"/>
+  <circle cx="280" cy="84" r="4" fill="#34d399" class="live"/>
+  <text x="293" y="88.5" class="mono" font-size="12" fill="#7f8ea3">monad mainnet · 143</text>
+</g>
+<text x="72" y="168" class="mono in" style="--d:.15s" font-size="13" letter-spacing="3" fill="#5d6d85">ERC-8004 · X402 · MONAD MAINNET · CHAIN 143</text>
+<text x="72" y="250" class="sans in" style="--d:0.25s" font-size="58" font-weight="600" letter-spacing="-1.8" fill="#dce5f0">The settlement and</text><text x="72" y="314" class="sans in" style="--d:0.35s" font-size="58" font-weight="600" letter-spacing="-1.8" fill="#dce5f0">trust layer for agent</text><text x="72" y="378" class="sans in" style="--d:0.45s" font-size="58" font-weight="600" letter-spacing="-1.8" fill="#dce5f0">work on Monad.</text>
+<defs>
+  <linearGradient id="shimmer" x1="0" x2="1" gradientUnits="objectBoundingBox">
+    <stop offset="0" stop-color="#836ef9"/><stop offset=".42" stop-color="#836ef9"/>
+    <stop offset=".5" stop-color="#22d3ee"/><stop offset=".58" stop-color="#836ef9"/><stop offset="1" stop-color="#836ef9"/>
+    <animateTransform attributeName="gradientTransform" type="translate" values="-1 0;1 0;1 0" keyTimes="0;.55;1" dur="5.5s" begin="1.4s" repeatCount="indefinite"/>
+  </linearGradient>
+</defs>
+<text x="72" y="444" class="body in" style="--d:.6s" font-size="25" fill="#dce5f0">Trust stops being a badge. <tspan fill="url(#shimmer)" font-weight="600">It becomes a price.</tspan></text>
+<g class="in" style="--d:1.05s"><rect x="72" y="484" width="233" height="38" rx="19" fill="#0b0f16" fill-opacity=".8" stroke="#2b3a4d"/><text x="92" y="508" class="sans" font-size="17" font-weight="600" fill="#dce5f0">10,276<tspan dx="9" class="body" font-size="13" font-weight="400" fill="#7f8ea3">agents measured</tspan></text></g><g class="in" style="--d:1.13s"><rect x="317.0" y="484" width="259" height="38" rx="19" fill="#0b0f16" fill-opacity=".8" stroke="#2b3a4d"/><text x="337.0" y="508" class="sans" font-size="17" font-weight="600" fill="#dce5f0">1 job<tspan dx="9" class="body" font-size="13" font-weight="400" fill="#7f8ea3">settled in real USDC</tspan></text></g><g class="in" style="--d:1.21s"><rect x="588.0" y="484" width="185" height="38" rx="19" fill="#0b0f16" fill-opacity=".8" stroke="#2b3a4d"/><text x="608.0" y="508" class="sans" font-size="17" font-weight="600" fill="#dce5f0">749<tspan dx="9" class="body" font-size="13" font-weight="400" fill="#7f8ea3">tests passing</tspan></text></g>
+<svg x="792" y="70" width="440" height="440" viewBox="0 0 400 400" overflow="visible" class="ap">
+<defs>
+  <radialGradient id="ap-core"><stop offset="0" stop-color="#22d3ee" stop-opacity=".55"/><stop offset=".45" stop-color="#836ef9" stop-opacity=".18"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></radialGradient>
+  <linearGradient id="ap-rail" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#836ef9" stop-opacity=".35"/><stop offset=".5" stop-color="#836ef9"/><stop offset="1" stop-color="#836ef9" stop-opacity=".35"/></linearGradient>
+  <linearGradient id="ap-sweep" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#22d3ee" stop-opacity="0"/><stop offset="1" stop-color="#22d3ee" stop-opacity=".32"/></linearGradient>
+  <linearGradient id="ap-beam" x1="0" x2="1"><stop offset="0" stop-color="#836ef9" stop-opacity="0"/><stop offset=".5" stop-color="#22d3ee" stop-opacity=".7"/><stop offset="1" stop-color="#836ef9" stop-opacity="0"/></linearGradient>
+  <filter id="ap-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>
+</defs>
+<circle cx="200" cy="200" r="186" class="rg" opacity=".45"/>
+<g class="sp sp-slow"><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(0 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(6 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(12 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(18 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(24 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(30 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(36 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(42 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(48 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(54 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(60 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(66 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(72 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(78 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(84 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(90 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(96 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(102 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(108 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(114 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(120 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(126 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(132 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(138 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(144 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(150 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(156 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(162 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(168 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(174 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(180 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(186 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(192 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(198 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(204 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(210 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(216 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(222 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(228 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(234 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(240 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(246 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(252 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(258 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(264 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(270 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(276 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(282 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(288 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(294 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(300 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(306 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(312 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(318 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(324 200 200)"/><line x1="200" y1="22" x2="200" y2="30" class="tk tk-m" transform="rotate(330 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(336 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(342 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(348 200 200)"/><line x1="200" y1="26" x2="200" y2="30" class="tk" transform="rotate(354 200 200)"/></g>
+<circle cx="200" cy="200" r="150" class="rg rg-d sp sp-rev"/>
+<g class="sp sp-orbit"><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk bk-l" transform="rotate(0 200 200)" style="animation-delay:0.000s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(30 200 200)" style="animation-delay:-0.333s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(60 200 200)" style="animation-delay:-0.666s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk bk-l" transform="rotate(90 200 200)" style="animation-delay:-0.999s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(120 200 200)" style="animation-delay:-1.332s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(150 200 200)" style="animation-delay:-1.665s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk bk-l" transform="rotate(180 200 200)" style="animation-delay:-1.998s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(210 200 200)" style="animation-delay:-2.331s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(240 200 200)" style="animation-delay:-2.664s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk bk-l" transform="rotate(270 200 200)" style="animation-delay:-2.997s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(300 200 200)" style="animation-delay:-3.330s"/><rect x="195" y="81" width="10" height="10" rx="2.5" class="bk" transform="rotate(330 200 200)" style="animation-delay:-3.663s"/></g>
+<circle cx="200" cy="200" r="119" class="rg"/>
+<g class="sw"><path d="M200 200 L200 82 A118 118 0 0 1 318 200 Z" fill="url(#ap-sweep)"/></g>
+<circle cx="200" cy="200" r="92" fill="url(#ap-core)" class="gl"/>
+<line x1="96" y1="200" x2="304" y2="200" class="wr"/>
+<rect x="96" y="199" width="208" height="2" fill="url(#ap-beam)" class="bm"/>
+<g filter="url(#ap-glow)" opacity=".55">
+  <path d="M168 110 L88 200 L168 290" class="rl" stroke="#836ef9"/>
+  <path d="M232 110 L312 200 L232 290" class="rl" stroke="#836ef9"/>
+</g>
+<path d="M168 110 L88 200 L168 290" class="rl rl-l" stroke="url(#ap-rail)"/>
+<path d="M232 110 L312 200 L232 290" class="rl rl-r" stroke="url(#ap-rail)"/>
+<circle cx="104" cy="200" r="5" class="pk pk-in rm-hide"/>
+<circle cx="200" cy="200" r="5" class="pk pk-out rm-hide"/>
+<circle cx="200" cy="200" r="22" class="pl rm-hide" style="animation-delay:2.00s"/><circle cx="200" cy="200" r="22" class="pl rm-hide" style="animation-delay:2.22s"/><circle cx="200" cy="200" r="22" class="pl rm-hide" style="animation-delay:2.44s"/>
+<circle cx="200" cy="200" r="30" fill="none" stroke="#22d3ee" stroke-opacity=".5"/>
+<circle cx="200" cy="200" r="15" class="nd"/>
+<circle cx="200" cy="200" r="5.5" fill="#22d3ee" class="cr"/>
+</svg>
+
+</svg>
