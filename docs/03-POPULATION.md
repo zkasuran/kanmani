@@ -1,6 +1,6 @@
-# 3. What the 10,276 agents actually are
+# 3. What the <!-- n:agents -->10,277<!-- /n --> agents actually are
 
-Monad mainnet's ERC-8004 Identity Registry held 10,276 agents when we read it. This document is the
+Monad mainnet's ERC-8004 Identity Registry held <!-- n:agents -->10,277<!-- /n --> agents when we read it. This document is the
 census: how many of those agents describe themselves with the same file, what those files do when
 you ask them, what the feedback attached to them actually says.
 
@@ -10,10 +10,10 @@ arithmetic rather than as a plausible-looking number. Section 9 reproduces all o
 
 | what | count |
 |---|---|
-| agents | 10,276 |
-| distinct registration documents | 2,053 |
-| feedbacks | 9,288 |
-| feedbacks carrying an evidence URI | 1,292 |
+| agents | <!-- n:agents -->10,277<!-- /n --> |
+| distinct registration documents | <!-- n:documents -->2,054<!-- /n --> |
+| feedbacks | <!-- n:feedbacks -->9,288<!-- /n --> |
+| feedbacks carrying an evidence URI | <!-- n:withPointer -->1,292<!-- /n --> |
 | validations, before we wrote one | 0 |
 
 Chain 143, Monad mainnet, RPC `https://rpc.monad.xyz`.
@@ -51,29 +51,29 @@ behind" rather than "these agents do not exist". A clean index publishes 10276 a
 
 ## 2. One row per document, not one row per agent
 
-10,276 agents resolve to **2,053 distinct registration documents**. The index stores one row per
+<!-- n:agents -->10,277<!-- /n --> agents resolve to **<!-- n:documents -->2,054<!-- /n --> distinct registration documents**. The index stores one row per
 document (`AgentRecord`), joined from the agent by a stable hash of the URI string, with
 `memberCount` for how many agents point at it plus `distinctOwners` for how many wallets registered
 those agents. This is not storage economy. It is the only reason the interesting facts are visible.
 
 | one row per agent | one row per document |
 |---|---|
-| 8,093 copies of the same URL string | one row saying 8,093 agents share it |
+| <!-- n:oneDocAgents -->8,093<!-- /n --> copies of the same URL string | one row saying <!-- n:oneDocAgents -->8,093<!-- /n --> agents share it |
 | the cluster is invisible until you group after the fact | the cluster is the row |
-| a probe pass fetches one dead URL 8,093 times | one fetch, answer attached to all 8,093 |
+| a probe pass fetches one dead URL <!-- n:oneDocAgents -->8,093<!-- /n --> times | one fetch, answer attached to all <!-- n:oneDocAgents -->8,093<!-- /n --> |
 
 The probe cost matters because the documents belong to other people. Fetching one expired Vercel
-deployment 8,093 times to learn the same thing once is not a slow pass, it is a small denial of
+deployment <!-- n:oneDocAgents -->8,093<!-- /n --> times to learn the same thing once is not a slow pass, it is a small denial of
 service aimed at somebody whose uptime we are about to publish a number about. So the queue is per
 host, serial, with a gap between hits, concurrency across hosts rather than within one.
 
-## 3. The cluster: 8,093 agents, 7,962 wallets, one 404
+## 3. The cluster: <!-- n:oneDocAgents -->8,093<!-- /n --> agents, <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, one 404
 
 | field | value |
 |---|---|
 | document | `https://eve-8004.vercel.app/metadata/b.json` |
-| agents pointing at it | 8,093 |
-| distinct wallets that registered them | 7,962 |
+| agents pointing at it | <!-- n:oneDocAgents -->8,093<!-- /n --> |
+| distinct wallets that registered them | <!-- n:oneDocWallets -->7,962<!-- /n --> |
 | share of the registry | 78.76% |
 | HTTP status | 404 |
 | body | `DEPLOYMENT_NOT_FOUND` |
@@ -86,18 +86,18 @@ curl -sS -i https://eve-8004.vercel.app/metadata/b.json    # HTTP/2 404, DEPLOYM
 that were correct on the day they were written now point at nothing. That is an accident of hosting,
 not misconduct, so no number in this document is an accusation.
 
-The part worth knowing is what those 8,093 agents look like to everyone else. The registrations are
+The part worth knowing is what those <!-- n:oneDocAgents -->8,093<!-- /n --> agents look like to everyone else. The registrations are
 still on chain, the ids still resolve, `tokenURI` still returns a well-formed https URL. Every
-registry explorer will list all 8,093 with no visible defect, because nothing on chain is broken.
+registry explorer will list all <!-- n:oneDocAgents -->8,093<!-- /n --> with no visible defect, because nothing on chain is broken.
 **An agent can look perfectly healthy in a registry explorer while the only document describing it
 has been gone for months.** You find that out by asking the URL, which the chain cannot do for you.
 
-### 8,093 agents but 7,962 wallets
+### <!-- n:oneDocAgents -->8,093<!-- /n --> agents but <!-- n:oneDocWallets -->7,962<!-- /n --> wallets
 
 | reading | value |
 |---|---|
-| registrations against this document | 8,093 |
-| wallets that made at least one of them | 7,962 |
+| registrations against this document | <!-- n:oneDocAgents -->8,093<!-- /n --> |
+| wallets that made at least one of them | <!-- n:oneDocWallets -->7,962<!-- /n --> |
 | registrations beyond the first from a wallet already in the set | 131 |
 
 The two differ by 131, so at most 131 wallets registered more than one agent against this document.
@@ -111,13 +111,13 @@ would answer "who holds these agents today" while the published claim is about w
 
 ## 4. Eight states, because a boolean publishes a rate limit as a deletion
 
-Every one of the 2,053 documents was asked once. The probe stores what happened
+Every one of the <!-- n:documents -->2,054<!-- /n --> documents was asked once. The probe stores what happened
 (`fovea.record_probe`). A separate view (`fovea.record_state`) decides what that means, so a better
 definition reclassifies old probes without re-fetching anybody's server.
 
 | state | documents | agents | % of registry | what it means |
 |---|---|---|---|---|
-| `gone` | 543 | 8,641 | 84.08% | the host answered and said the document is not there, including 402s that are a suspended account rather than a real payment challenge |
+| `gone` | 543 | <!-- n:goneAgents -->8,641<!-- /n --> | 84.08% | the host answered and said the document is not there, including 402s that are a suspended account rather than a real payment challenge |
 | `answered` | 1,316 | 1,366 | 13.29% | fetched and read |
 | `onchain` | 143 | 151 | 1.47% | the document is inside `tokenURI`. No host to ask |
 | `unknown` | 35 | 36 | 0.35% | we could not find out. Ours, not theirs |
@@ -130,8 +130,8 @@ definition reclassifies old probes without re-fetching anybody's server.
 | **total** | **2,054** | **10,277** | | |
 
 Percentages are rounded to two places, so the column does not total exactly 100. `refused` and
-`paywalled` read zero as a measurement rather than an omission. The big cluster is 8,093 of the 8,641
-`gone` agents, one dead Vercel document behind 7,962 wallets.
+`paywalled` read zero as a measurement rather than an omission. The big cluster is <!-- n:oneDocAgents -->8,093<!-- /n --> of the <!-- n:goneAgents -->8,641<!-- /n -->
+`gone` agents, one dead Vercel document behind <!-- n:oneDocWallets -->7,962<!-- /n --> wallets.
 
 The probe pass read one registration more than the census at the top of this page, so its total is
 10,277 against that page's 10,276. That is the registry growing between two reads, which is the only
@@ -196,29 +196,29 @@ At the full probe pass, 1,862 of the distinct documents were http or https. Thre
 | every other host combined | 91 |
 
 Ranking by documents and ranking by agents give different answers, which is why the site ranks by
-agents. `eve-8004.vercel.app` holds one document behind 8,093 agents. `agent-arcade-steel.vercel.app`
+agents. `eve-8004.vercel.app` holds one document behind <!-- n:oneDocAgents -->8,093<!-- /n --> agents. `agent-arcade-steel.vercel.app`
 holds 762 documents. One host with two URLs behind thousands of agents matters more to a buyer than
 one host with 762 URLs behind 762 agents, so the ordering follows dependence rather than row count.
 
 The operators behind those 762 registrations did not choose each other. Most do not know the others
 exist. They share a DNS name, a certificate, a hosting account, an expiry date. When any of those
-lapse, every registration behind that host stops describing anything at once, the way 8,093 of them
+lapse, every registration behind that host stops describing anything at once, the way <!-- n:oneDocAgents -->8,093<!-- /n --> of them
 already have. The failure is joint, the ownership is not, so nobody can fix it for everyone. The 143
 documents written directly into `tokenURI` are the only ones that cannot acquire this problem later.
 
 ## 7. The feedback population and the sampling trap
 
-The Reputation Registry holds **9,288 feedbacks**. Only **1,292** carry an evidence URI at all. A
+The Reputation Registry holds **<!-- n:feedbacks -->9,288<!-- /n --> feedbacks**. Only **<!-- n:withPointer -->1,292<!-- /n -->** carry an evidence URI at all. A
 feedback with no URI is not suspicious. There is nothing attached that anyone can verify, so it can
 be neither confirmed nor contradicted.
 
 | feedbacks | count | share |
 |---|---|---|
-| total | 9,288 | 100% |
-| carrying a URI | 1,292 | 13.91% |
+| total | <!-- n:feedbacks -->9,288<!-- /n --> | 100% |
+| carrying a URI | <!-- n:withPointer -->1,292<!-- /n --> | 13.91% |
 | carrying nothing to check | 7,996 | 86.09% |
 
-| scheme, of the 1,292 | count | share | network calls to read them |
+| scheme, of the <!-- n:withPointer -->1,292<!-- /n --> | count | share | network calls to read them |
 |---|---|---|---|
 | `data:` | 1,095 | 84.75% | 0 |
 | `https://execution.market/...` | 182 | 14.09% | 182 |
@@ -265,9 +265,9 @@ The mappings live in `verifier/src/ladder/parse.ts`, each hand-written from real
 tagged with the date in a code field named `induced`. Exactly one must match a document. Two matching is refused rather than resolved by
 declaration order, because a verdict that depends on array position is not a verdict.
 
-| outcome, over all 1,292 | count | meaning |
+| outcome, over all <!-- n:withPointer -->1,292<!-- /n --> | count | meaning |
 |---|---|---|
-| `noClaim` | 1,095 | read fine, asserts no payment |
+| `noClaim` | <!-- n:noClaim -->1,095<!-- /n --> | read fine, asserts no payment |
 | `false` | 123 | cites a transaction that is not on the chain the document names |
 | `true` | 59 | the cited transaction is on the chain the document names |
 | `unknown` | 15 | we could not look or could not read what we fetched |
@@ -277,7 +277,7 @@ split into 10 serving bytes that no longer match their own on-chain hash, 3 in a
 mapping reads plus 2 that would not answer (HTTP 429). The 10 hash mismatches are the
 `grokandmon.com` documents, which an earlier pass read as agent cards before their bytes moved.
 
-**182 of 9,288 feedbacks assert a payment.** That is 1.96%. Every one comes from a single publisher.
+**182 of <!-- n:feedbacks -->9,288<!-- /n --> feedbacks assert a payment.** That is 1.96%. Every one comes from a single publisher.
 Every one names `monad`.
 
 So the honest description of this registry is not a commerce record with some noise in it. **It is a
@@ -288,7 +288,7 @@ of ERC-8004 does not describe.
 That changed what this project says. It was built expecting documents citing one chain while the
 payment sat on another. Not what is happening: all 182 name the same chain, 123 cite a transaction
 not on it. `noClaim` is first-class for the same reason. A document that never asserted a payment cannot
-be wrong about one, so counting it as unparsed would inflate our own coverage gap by 1,095 rows.
+be wrong about one, so counting it as unparsed would inflate our own coverage gap by <!-- n:noClaim -->1,095<!-- /n --> rows.
 
 ## 9. Reproducing every number here
 
@@ -367,7 +367,7 @@ FROM fovea.verdict_latest GROUP BY 1, 2 ORDER BY count DESC;
 | not claimed | why |
 |---|---|
 | that any operator behaved badly | an expired preview deployment is an accident |
-| that the 8,093 agents are fake | real registrations by 7,962 real wallets. Only the document they name is gone |
+| that the <!-- n:oneDocAgents -->8,093<!-- /n --> agents are fake | real registrations by <!-- n:oneDocWallets -->7,962<!-- /n --> real wallets. Only the document they name is gone |
 | that a `gone` document means a dead agent | the agent may work fine. Its self-description is what is missing |
 | that the 545 monadmogs agents are fraudulent | their host is a suspended Vercel account, not a payment surface. The document is gone, nothing more |
 | that the 36 `unknown` agents failed anything | we failed to find out. A rate limit, a timeout, a server error or our own size cap, never their uptime |

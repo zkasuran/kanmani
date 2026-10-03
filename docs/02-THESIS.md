@@ -73,7 +73,7 @@ four outcomes with no shortcut between them.
 
 ## 3. The measurement
 
-The denominator matters more than the headline. Retina indexes 10,276 agents on Monad mainnet,
+The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,277<!-- /n --> agents on Monad mainnet,
 matching the registry's own counter slot exactly. `totalSupply()` reverts on the Identity Registry,
 so the slot is the only source of population truth:
 
@@ -83,7 +83,7 @@ cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
   --rpc-url https://rpc.monad.xyz    # 10276
 ```
 
-Those agents carry 9,288 feedbacks. Of those, 1,292 carry a URI. The other 7,996 point at nothing,
+Those agents carry <!-- n:feedbacks -->9,288<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,292<!-- /n --> carry a URI. The other 7,996 point at nothing,
 so there is nothing to fetch and nothing to check. The `/` page prints the SQL behind every one of
 these numbers. It is the same query the site runs:
 
@@ -94,11 +94,11 @@ SELECT
   (SELECT count(*) FROM "Feedback" WHERE "chainId" = $1 AND "feedbackUri" <> '') AS feedbacks_with_uri
 ```
 
-Those 1,292 documents were each walked down the ladder. Four outcomes, no fifth:
+Those <!-- n:withPointer -->1,292<!-- /n --> documents were each walked down the ladder. Four outcomes, no fifth:
 
 | outcome | count | meaning |
 |---|---|---|
-| `noClaim` | 1,095 | read fine, asserts no payment, so there is nothing to be right or wrong about |
+| `noClaim` | <!-- n:noClaim -->1,095<!-- /n --> | read fine, asserts no payment, so there is nothing to be right or wrong about |
 | `false` | 123 | we read the chain the document names and the transaction is not on it |
 | `true` | 59 | the cited transaction is on the chain the document names, at a block we record |
 | `unknown` | 15 | we could not look or could not read what we fetched |
@@ -110,13 +110,13 @@ curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=1' | jq '.data.tota
 # outcome=true -> 59, outcome=noClaim -> 1095, outcome=unknown -> 15
 ```
 
-**The denominator for the headline is 182, not 9,288 and not 1,292.** 182 is `true` plus `false`: the
+**The denominator for the headline is 182, not <!-- n:feedbacks -->9,288<!-- /n --> and not <!-- n:withPointer -->1,292<!-- /n -->.** 182 is `true` plus `false`: the
 documents that assert a payment and that we read all the way to a chain. 123 of 182 is 68%. 123 of
-9,288 would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
-framing is honest on its own, which is why the 182 and the 1,292 sit next to each other on the front
+<!-- n:feedbacks -->9,288<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
+framing is honest on its own, which is why the 182 and the <!-- n:withPointer -->1,292<!-- /n --> sit next to each other on the front
 page.
 
-1,095 documents assert no payment because most ERC-8004 feedback on Monad is not about payment.
+<!-- n:noClaim -->1,095<!-- /n --> documents assert no payment because most ERC-8004 feedback on Monad is not about payment.
 1,026 of them are a game ELO record, all naming the same game, `melee`. 66 are `data:text/plain` prose somebody typed. 3 are a
 conversation score. None contains a transaction hash, a network name or any payment field. They are
 not a coverage gap. Counting them as one would inflate our own failure number with documents working
@@ -249,11 +249,11 @@ record will show both readings.
 
 ## 7. Why this matters to somebody spending money
 
-An agent looking for another agent to pay has a registry with 10,276 entries and no way to tell a
+An agent looking for another agent to pay has a registry with <!-- n:agents -->10,277<!-- /n --> entries and no way to tell a
 working counterparty from a registration that has been dead for months. Measure it the cheapest
-possible way. All 2,053 distinct registration documents, probed once each: 8,641 agents point at a
-document whose host answers and says it is not there. That is 84.1% of the registry. 8,093 of those
-agents, across 7,962 distinct wallets, point at one single URL:
+possible way. All <!-- n:documents -->2,054<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,641<!-- /n --> agents point at a
+document whose host answers and says it is not there. That is 84.1% of the registry. <!-- n:oneDocAgents -->8,093<!-- /n --> of those
+agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> distinct wallets, point at one single URL:
 
 ```bash
 curl -sS -o /dev/null -w '%{http_code}\n' https://eve-8004.vercel.app/metadata/b.json
@@ -281,7 +281,7 @@ measuring what happens to hosted records. A `data:` URI cannot 404.
 ## Reproducing all of it
 
 ```bash
-cd verifier && npm test                                         # 198 pass, 27 skip without a database
+cd verifier && npm test                                         # database tests skip without one
 node --experimental-strip-types verifier/src/cli/locate.ts monad <txHash>
 ```
 

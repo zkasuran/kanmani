@@ -141,8 +141,8 @@ body          {"isValid":false,"invalidReason":"insufficient_funds",
 
 ## 5. Tests and proving the checks can fail
 
-`npm test` at the repo root runs 625 passing tests, 38 skipped, 0 failing: 427 in the app suite and
-198 in the verifier suite, with the skips waiting on a database or an archive node. The Mera UX
+`npm test` at the repo root runs <!-- n:testsRootPassing -->669<!-- /n --> passing tests, 0 failing: <!-- n:testsApp -->461<!-- /n --> in the app suite and
+<!-- n:testsVerifier -->208<!-- /n --> in the verifier suite, with the skips waiting on a database or an archive node. The Mera UX
 surface adds 33 tests, all offline, with no browser and no network: 10 in `lib/session.test.ts`, 13
 in `lib/pay.test.ts`, 4 in `lib/pay-net.test.ts` and 6 in `lib/pay-run.test.ts`. The
 session signs a real Mera signature and the test recovers the signer to prove it is the account key

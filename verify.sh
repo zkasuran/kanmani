@@ -149,12 +149,19 @@ fi
 
 banner "tests"
 
-echo "· app and verifier"
-npm test
+# The two TypeScript suites run separately rather than through `npm test`, so each one's counts can
+# be read and held against lib/counts.ts. That file is what the site and the docs publish, and before
+# this step it was typed by hand and nothing ever checked it against a run.
+TESTLOG="$(mktemp -d)"
+trap 'rc=$?; rm -rf "$TESTLOG"; if [ "$rc" -ne 0 ]; then echo ""; echo "FAIL  step $STEP failed (exit $rc). Nothing below it ran."; fi' EXIT
 
-if [ "$RUN_BUILD" -eq 0 ] && [ "$RUN_FORGE" -eq 0 ]; then
-  : # nothing extra
-fi
+suite() { # name, glob
+  echo "· $1"
+  node --test --experimental-strip-types "$2" | tee "$TESTLOG/$1.tap" | grep -E '^# (tests|pass|fail|skipped) '
+  [ "${PIPESTATUS[0]}" -eq 0 ]
+}
+suite app 'lib/**/*.test.ts'
+suite verifier 'verifier/src/**/*.test.ts'
 
 if [ "$RUN_FORGE" -eq 0 ]; then
   skip "--no-forge was passed, so the contract suites did not run."
@@ -164,7 +171,8 @@ else
   echo "· contracts, restoring the pinned forge-std first"
   ./contracts/install-forge-std.sh
   echo "· contracts, default profile"
-  (cd contracts && forge test)
+  (cd contracts && forge test) | tee "$TESTLOG/contracts.out" | grep -E "test suites|Suite result: FAILED" || true
+  [ "${PIPESTATUS[0]}" -eq 0 ]
   # The P256 precompile (EIP-7951) only exists in revm from the osaka spec, so the passkey suite is
   # skipped by the default profile and has to be run under its own.
   echo "· contracts, p256 profile (AgentPasskey)"
@@ -181,6 +189,44 @@ else
     skip "neither MONAD_RPC nor MONAD_RPC_URL is set, so the contract fork suites did not run."
   fi
 fi
+
+# The published counts must be the measured ones. Totals are compared always. Pass counts are
+# compared only when no database is configured, because a database turns its skips into passes and
+# the published figure is defined as the default run without one.
+echo "· the published counts in lib/counts.ts"
+TESTLOG="$TESTLOG" HAVE_DB="${ENVIO_PG_PASSWORD:-${FOVEA_DATABASE_URL:-}}" node -e '
+const fs = require("node:fs");
+const dir = process.env.TESTLOG;
+const src = fs.readFileSync("lib/counts.ts", "utf8");
+const pub = (name) => {
+  const m = src.match(new RegExp(name + ":\\s*\\{\\s*pass:\\s*(\\d+),\\s*total:\\s*(\\d+)"));
+  return { pass: +m[1], total: +m[2] };
+};
+const tap = (f) => {
+  const t = fs.readFileSync(`${dir}/${f}.tap`, "utf8");
+  const g = (k) => +(t.match(new RegExp(`^# ${k} (\\d+)`, "m")) ?? [0, NaN])[1];
+  return { pass: g("pass"), total: g("tests") };
+};
+const measured = { site: tap("app"), verifier: tap("verifier") };
+if (fs.existsSync(`${dir}/contracts.out`)) {
+  const m = fs.readFileSync(`${dir}/contracts.out`, "utf8").match(/(\d+) tests passed, \d+ failed, \d+ skipped \((\d+) total tests\)/);
+  if (m) measured.contracts = { pass: +m[1], total: +m[2] };
+}
+const bad = [];
+for (const [name, got] of Object.entries(measured)) {
+  const p = pub(name);
+  if (got.total !== p.total) bad.push(`${name}: ran ${got.total} tests, lib/counts.ts says ${p.total}`);
+  if (!process.env.HAVE_DB && got.pass !== p.pass) bad.push(`${name}: ${got.pass} passed, lib/counts.ts says ${p.pass}`);
+}
+if (bad.length) {
+  console.error("FAIL  lib/counts.ts no longer matches the suites:");
+  for (const b of bad) console.error("      " + b);
+  console.error("      Update SUITES in lib/counts.ts, then run node scripts/refresh-numbers.mjs.");
+  process.exit(1);
+}
+const shown = Object.entries(measured).map(([n, v]) => `${n} ${v.pass}/${v.total}`).join(", ");
+console.log(`ok    lib/counts.ts matches the run: ${shown}`);
+'
 
 # ------------------------------------------------------------------ 6. supply chain
 
@@ -302,23 +348,17 @@ fi
 
 banner "numbers"
 
-# PLACEHOLDER, owned by the numbers lane.
-#
-# `scripts/refresh-numbers.mjs` fills the committed docs from the live index, and `--check` is the
-# half that belongs in a gate: it fails when a number written in a doc no longer matches what the
-# index reports, so a stale count cannot survive a release. The script does not exist yet, so this
-# step is guarded on it and reports a visible SKIP. When the script lands, nothing here changes: the
-# guard finds it and the step starts gating.
-NUMBERS_SCRIPT="scripts/refresh-numbers.mjs"
-if [ -f "$NUMBERS_SCRIPT" ]; then
-  node "$NUMBERS_SCRIPT" --check
-else
-  skip "$NUMBERS_SCRIPT does not exist yet, so the committed doc numbers were not checked against the live index."
-fi
+# Every current figure in the docs is a marker filled from docs/numbers.json, and the test counts in
+# that snapshot come from lib/counts.ts, which step 5 just held against a real run. This step fails if
+# any marked figure, the README badge or the snapshot's test counts disagree. Offline, so it can gate
+# a pull request. Whether the snapshot still matches the live site is the canary's job
+# (`--check --live`), since a live read cannot gate a change that has not shipped.
+node scripts/refresh-numbers.mjs --check
 
 # ------------------------------------------------------------------ verdict
 
 trap - EXIT
+rm -rf "$TESTLOG"
 
 echo ""
 echo "─────────────────────────────────────────────────────────────────────"

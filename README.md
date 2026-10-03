@@ -15,7 +15,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-749%20passing-34d399?style=flat-square&labelColor=05070a" alt="749 tests passing">
+  <img src="https://img.shields.io/badge/tests-793%20passing-34d399?style=flat-square&labelColor=05070a" alt="793 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-policy%20%2B%20risk%20table-8b98a9?style=flat-square&labelColor=05070a" alt="Security policy"></a>
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
@@ -25,7 +25,7 @@
 <br>
 
 When you hire an agent, the money sits in escrow until the work lands. The settlement itself emits
-the receipt, so the evidence cannot disagree with the payment. We read **all 10,276 agents** in
+the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,277<!-- /n --> agents** in
 Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the 182
 claims name a transaction that is not there. The track record this produces is correct by
 construction and the agent can then stake its own money on it.
@@ -68,7 +68,7 @@ No wallet and no key for the first four.
 |---|---|---|
 | 1 | [kanmani.xyz/verify](https://kanmani.xyz/verify) | paste any registration document and get a verdict, with the `cast` command that re-derives it without us |
 | 2 | [/claims?outcome=false](https://kanmani.xyz/claims?outcome=false) | the 123 claims whose transaction is not on the chain they name, each one clickable to its evidence |
-| 3 | [/operators](https://kanmani.xyz/operators) | the registry grouped by registration document, the 8,093-agent cluster among them |
+| 3 | [/operators](https://kanmani.xyz/operators) | the registry grouped by registration document, the <!-- n:oneDocAgents -->8,093<!-- /n -->-agent cluster among them |
 | 4 | [/agent/10256](https://kanmani.xyz/agent/10256) | our own agent held to the same checks: its rung, its bond and its claim sample |
 | 5 | [/pay](https://kanmani.xyz/pay) | a real escrow on mainnet. It spends USDC, so it asks before it moves anything |
 
@@ -79,15 +79,15 @@ No wallet and no key for the first four.
   <img src="public/readme/findings-light.svg" alt="182 payment claims (2026-10-03): 59 on the chain they name, 123 not. Of those 123, 113 are real transactions on a different chain and 10 were not found on any chain we searched." width="100%">
 </picture>
 
-Monad's ERC-8004 registry holds **10,276 agents** behind 2,053 distinct registration documents. We
-read every one of them and checked every payment claim against the chain it names. Of 9,288
-feedbacks, 1,292 carry an evidence pointer at all. 182 of those make a payment claim and 123 of them
+Monad's ERC-8004 registry holds **<!-- n:agents -->10,277<!-- /n --> agents** behind <!-- n:documents -->2,054<!-- /n --> distinct registration documents. We
+read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,288<!-- /n -->
+feedbacks, <!-- n:withPointer -->1,292<!-- /n --> carry an evidence pointer at all. 182 of those make a payment claim and 123 of them
 are wrong about where the money went. That is 123 out of 9,288, just over 1%, so the story here is
 rot rather than mass fraud.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/readme/cluster-dark.svg">
-  <img src="public/readme/cluster-light.svg" alt="8,093 of 10,276 agents, across 7,962 wallets, share one registration document that no longer answers." width="100%">
+  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,277<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
 </picture>
 
 None of this is fraud and the project never says it is. A registry has no mechanism to keep a true
@@ -107,19 +107,19 @@ verdict store on every load, so it moves as the hourly sweep checks new document
 
 | finding | number |
 |---|---:|
-| agents in the registry | 10,276 |
-| distinct registration documents behind them | 2,053 |
-| feedbacks, of which 1,292 carry an evidence pointer | 9,288 |
+| agents in the registry | <!-- n:agents -->10,277<!-- /n --> |
+| distinct registration documents behind them | <!-- n:documents -->2,054<!-- /n --> |
+| feedbacks, of which <!-- n:withPointer -->1,292<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,288<!-- /n --> |
 | payment claims checked against a chain | 182 |
 | claims where the cited transaction is really there | 59 |
 | claims where it is not | 123 |
 | **of those 123, real transactions on a different chain** | **113** |
 | **of those 123, not found on any chain we searched** | **10** |
-| documents that assert no payment, so they cannot be wrong about one | 1,095 |
+| documents that assert no payment, so they cannot be wrong about one | <!-- n:noClaim -->1,095<!-- /n --> |
 | claims we could not check: 10 hash mismatch, 3 no mapping, 2 whose document would not answer because it was rate limited | 15 |
-| agents pointing at a document that returns a deletion | 8,641 |
-| agents pointing at one expired preview deployment | 8,093 |
-| wallets behind that single dead document | 7,962 |
+| agents pointing at a document that returns a deletion | <!-- n:goneAgents -->8,641<!-- /n --> |
+| agents pointing at one expired preview deployment | <!-- n:oneDocAgents -->8,093<!-- /n --> |
+| wallets behind that single dead document | <!-- n:oneDocWallets -->7,962<!-- /n --> |
 | of 62 sampled wallets there, first funded by one address (Nansen) | 60 |
 
 The 113 split by the chain the transaction was actually on: arbitrum 75, ethereum 16, optimism 10,
@@ -180,7 +180,7 @@ Everything else in this repository is built around that one rule.
 
 | surface | status | what that means |
 |---|---|---|
-| registry reads: 10,276 agents, 2,053 documents, 9,288 feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
+| registry reads: <!-- n:agents -->10,277<!-- /n --> agents, <!-- n:documents -->2,054<!-- /n --> documents, <!-- n:feedbacks -->9,288<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
 | claim verdicts: 182 checked, 123 false, 59 true, 15 unknown | **real** | each one read off the chain the document names, recorded at a block |
 | Aqueous escrow on mainnet | **real** | USDC held and settled, the receipt emitted by the settlement itself |
 | Sclera bonds on mainnet | **real** | three posted, one already through its whole life: posted, held, matured, returned |
@@ -190,7 +190,7 @@ Everything else in this repository is built around that one rule.
 | bond slashing | real contract, **exercised in test and simulation** | the slash path runs in the contract tests and in the CRE run. It has never been fired against a live agent |
 | Chainlink CRE slashing oracle | **recorded CLI simulation** | the chain read and the decision are real. Nothing was written by a live DON, which that bounty permits |
 | Cleanverse compliance gate | testnet **real**, mainnet **not registered** | testnet runs end to end with real transactions. The mainnet pool is unregistered, so the gate reverts `PoolNotRegistered` and fails closed |
-| Nansen funder enrichment | **one real run**, partly priced out | the related-wallets path ran live on 2026-09-30 for 71 credits across 62 of the 7,962 wallets. The labels endpoint never ran, at 100 credits a wallet |
+| Nansen funder enrichment | **one real run**, partly priced out | the related-wallets path ran live on 2026-09-30 for 71 credits across 62 of the <!-- n:oneDocWallets -->7,962<!-- /n --> wallets. The labels endpoint never ran, at 100 credits a wallet |
 | Alchemy self-heal stream | **wired and tested, no deliveries** | the path is live and zero live deliveries have ever arrived |
 | Qwen mapping induction | one **real keyed run**, one **offline fake** | `scripts/atlas-propose.mjs` is the keyed run against Qwen. `verifier/src/atlas/demo.ts` is a scripted fake with no key and no network. The five shipped mappings are hand written |
 
@@ -368,7 +368,7 @@ cast receipt 0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2 
 ```
 
 The counter slot moves with every registration, so a read today returns a little more than the
-10,276 this file states.
+<!-- n:agents -->10,277<!-- /n --> this file states.
 
 </details>
 
@@ -378,15 +378,16 @@ Secrets come from `.env.local`, never from the command line. Nothing here needs 
 tests: the reads that do want one degrade to a public endpoint and the database-backed tests skip.
 
 ```bash
-npm ci && npm test                             # the app and the verifier, 625 pass
-cd contracts && forge test                     # the contracts, 124 pass
-cd verifier  && npm test                       # the verifier on its own, 198 pass
+./verify.sh                                    # the whole release gate, ALL GREEN or the first failure
+npm ci && npm test                             # the app and the verifier
+cd contracts && forge test                     # the contracts
+cd verifier  && npm test                       # the verifier on its own
 cd indexer   && npm run codegen && npm start   # the index
 npm run dev                                    # and the site itself
 ```
 
-749 tests pass across the three suites, 427 in the app, 198 in the verifier and 124 in the
-contracts. 47 are skipped and every one of them is deliberate: they need something the default run
+<!-- n:testsPassing -->793<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->461<!-- /n --> in the app, <!-- n:testsVerifier -->208<!-- /n --> in the verifier and <!-- n:testsContracts -->124<!-- /n --> in the
+contracts. <!-- n:testsSkipped -->48<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
 does not have. `forge test --fork-url https://rpc.monad.xyz` picks up the fork tests and
 `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` picks up the precompile ones,
 which the default profile cannot run. The database-backed tests skip without `ENVIO_PG_PASSWORD`.

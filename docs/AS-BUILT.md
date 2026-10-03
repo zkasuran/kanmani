@@ -14,15 +14,17 @@ CLI that produces them. [`16-METHOD.md`](16-METHOD.md) reproduces every publishe
 hand. Claims about tests carry the command that runs them.
 
 ```bash
-node --test --experimental-strip-types 'lib/**/*.test.ts'   # 438 tests, 427 pass, 11 skip. the site
-cd verifier && npm test               # 225 tests, 198 pass, 27 skip without a database
-cd contracts && forge test            # 133 tests, 124 pass, 9 skip (6 fork, 2 P256, 1 other)
+./verify.sh                           # every check below in order, ALL GREEN or the first failure
+node --test --experimental-strip-types 'lib/**/*.test.ts'   # the site
+cd verifier && npm test               # the verifier, database tests skip without one
+cd contracts && forge test            # the contracts, fork and P256 tests skip on this profile
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**749 tests pass across the three suites.** That is the number quoted on the site. Counted rather than
-carried forward: 427 of 438 in the site suite, 198 of 225 in the verifier, 124 of 133 in contracts. The
-differences are 47 deliberate skips, mostly fork tests that need an archive node.
+**<!-- n:testsPassing -->793<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: <!-- n:testsApp -->461<!-- /n --> of <!-- n:testsAppTotal -->473<!-- /n --> in the site suite, <!-- n:testsVerifier -->208<!-- /n --> of <!-- n:testsVerifierTotal -->235<!-- /n --> in the verifier, <!-- n:testsContracts -->124<!-- /n --> of <!-- n:testsContractsTotal -->133<!-- /n --> in contracts. The
+differences are <!-- n:testsSkipped -->48<!-- /n --> deliberate skips: database tests without a database and contract tests that need an
+archive node, ffi or the P256 profile. `scripts/refresh-numbers.mjs` keeps these figures in step with `lib/counts.ts`.
 
 ---
 
@@ -44,9 +46,9 @@ described as live would be the exact failure this project exists to attack.
 
 ### Retina, the index
 
-Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **10,276 agents** at
-census time, matching the registry's own counter slot exactly, **2,053 distinct registration
-documents** and **9,288 feedbacks**.
+Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **<!-- n:agents -->10,277<!-- /n --> agents** at
+census time, matching the registry's own counter slot exactly, **<!-- n:documents -->2,054<!-- /n --> distinct registration
+documents** and **<!-- n:feedbacks -->9,288<!-- /n --> feedbacks**.
 
 The slot can only ever grow, so a later read shows the same figure or higher, never lower. We are
 inside that count: we registered ourselves as agent 10252 along the way.
@@ -63,12 +65,12 @@ incremented both, which made them provably equal and destroyed the only interest
 
 ### Fovea, the verdict ladder
 
-Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **1,292** documents carrying
+Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **<!-- n:withPointer -->1,292<!-- /n -->** documents carrying
 a URI have been taken through it. Four outcomes. `unknown` is never `false`.
 
 | outcome | count |
 |---|---|
-| `noClaim` | 1,095 |
+| `noClaim` | <!-- n:noClaim -->1,095<!-- /n --> |
 | `false` | 123 |
 | `true` | 59 |
 | `unknown` | 15 |
@@ -82,13 +84,13 @@ document somebody repairs reads as `false` to `true` with both timestamps.
 
 ### The registration probe
 
-All **2,053** distinct documents asked once each, deduplicated by record hash so one dead URL is
-fetched once rather than 8,093 times. Per host, serial, with a gap, because a handful of hosts carry
+All **<!-- n:documents -->2,054<!-- /n -->** distinct documents asked once each, deduplicated by record hash so one dead URL is
+fetched once rather than <!-- n:oneDocAgents -->8,093<!-- /n --> times. Per host, serial, with a gap, because a handful of hosts carry
 most of them.
 
 Eight states rather than a boolean, as a SQL view so page, feed and API cannot disagree. The
-headline: **8,641 agents point at a document whose host answered and said it is not there**. 8,093
-of those share one URL across 7,962 wallets.
+headline: **<!-- n:goneAgents -->8,641<!-- /n --> agents point at a document whose host answered and said it is not there**. <!-- n:oneDocAgents -->8,093<!-- /n -->
+of those share one URL across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets.
 
 ### Aqueous, the escrow
 
@@ -135,9 +137,9 @@ decrypts. A stranger holding the ciphertext gets an authentication failure. A fo
 ### Optic: the first row in the Validation Registry
 
 Registered as **agent 10252** with the record written into `tokenURI` rather than hosted, because
-we had just measured that 8,093 agents point at one document that returns a deletion.
+we had just measured that <!-- n:oneDocAgents -->8,093<!-- /n --> agents point at one document that returns a deletion.
 
-The registry held **zero** rows against the Reputation Registry's 9,288 feedbacks. It holds one
+The registry held **zero** rows against the Reputation Registry's <!-- n:feedbacks -->9,288<!-- /n --> feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index
 that follows the contract went from 0 to 1.
 
@@ -182,7 +184,7 @@ nothing compared, so one could be half-added and still look integrated.
 ### Chiasm, the cross-chain merge, with data in it
 
 **BNB Smart Chain was backfilled on 2026-09-23** and the index now holds two chains: **362,682
-agents on BSC against 10,276 on Monad**, a separate population rather than a mirror. BSC grows daily,
+agents on BSC against <!-- n:agents -->10,277<!-- /n --> on Monad**, a separate population rather than a mirror. BSC grows daily,
 so that figure is a 2026-10-03 read of `/chains`.
 
 Chiasm merges the two on the content hash of the registration document, which is the only key that
@@ -200,7 +202,7 @@ the ones with no host to ask, because a self-contained document is the only kind
 
 The resync was the honest cost. Envio refused to start when the chain was added, rather than
 destroying data and named the three options. The reset then rebuilt Monad to exactly its previous
-figures, 10,256 agents and 9,188 feedbacks on that day (since grown to 10,276 and 9,288), while
+figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,277<!-- /n --> and <!-- n:feedbacks -->9,288<!-- /n -->), while
 **`fovea.verdict` kept all 2,384 rows** because it lives outside the schema Envio drops. That
 separation was designed for this and this is the first time it was load-bearing.
 
@@ -681,7 +683,7 @@ The most useful entries, because each is a place the build was wrong and the dat
 chain while the payment sat on another. Every one of the 182 payment claims names `monad`. The
 failure is simpler than the one designed for, so the site says the simpler thing.
 
-**The denominator moved from 9,288 to 182.** Most ERC-8004 feedback on Monad is not a payment claim.
+**The denominator moved from <!-- n:feedbacks -->9,288<!-- /n --> to 182.** Most ERC-8004 feedback on Monad is not a payment claim.
 1,026 documents are chess ELO records. Sampling recent-first had given the opposite impression,
 because the head of a list is never a random sample.
 
@@ -720,7 +722,7 @@ Shipped 2026-09-25 and live on Monad mainnet.
 | Sentinel | 10256 | A pre-hire verdict stamped with the block it was measured at, refused if staler than the caller's bound | 10,000 atomic USDC, floor 8000bps |
 | Assay | 10257 | The bond an agent should post: a floor in bps plus a premium, from its measured claim-truth rate | 10,000 atomic USDC, floor 8000bps |
 
-The registry has 10,276 agents and most are not worth hiring, so adding another generic one would have
+The registry has <!-- n:agents -->10,277<!-- /n --> agents and most are not worth hiring, so adding another generic one would have
 been noise. A swap router or a chat wrapper also runs identically on any EVM chain, which is why neither
 is here: shipping one would demonstrate nothing about Monad beyond that it executes bytecode.
 
@@ -811,7 +813,7 @@ Two numbers on the site were contradicted by our own database: `/chains` said 35
 a real 357,444 and `/studio` said 2,012 distinct documents against 2,016. Neither was a calculation
 error. They were true on the day somebody typed them into a sentence, which is the same mechanism this
 project publishes findings about in other people's records. Both populations have grown since: the
-distinct-document count is 2,053 today.
+distinct-document count is <!-- n:documents -->2,054<!-- /n --> today.
 
 Every population figure now comes from a query, including one a client component had been asserting
 inline. `agentsByChain()` was added because no per-chain count existed, which is the root cause: the

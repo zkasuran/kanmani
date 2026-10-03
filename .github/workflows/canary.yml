@@ -112,6 +112,12 @@ jobs:
           fi
           [ "$fail" -eq 0 ]
 
+      # The docs quote the live index through markers filled from docs/numbers.json. This fails when
+      # the registry has moved past the committed snapshot, which is the signal to re-run
+      # `node scripts/refresh-numbers.mjs` and commit.
+      - name: The documented numbers still match the live site
+        run: node scripts/refresh-numbers.mjs --check --live
+
       - name: Prove the live layers
         run: ./scripts/prove.sh
 

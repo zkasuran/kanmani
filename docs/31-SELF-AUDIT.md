@@ -24,7 +24,7 @@ What each column checks:
 
 - **document**: the registry's agentURI is the registration-v1 document we intend, byte for byte.
 - **spec**: every consequence our registration check reports is met (free tools take no payment by design).
-- **unique**: no other agent shares the document. 8,093 Monad agents share one dead one.
+- **unique**: no other agent shares the document. <!-- n:oneDocAgents -->8,093<!-- /n --> Monad agents share one dead one.
 - **indexed**: our index holds its name and endpoint and its x402 flag matches what it charges.
 - **card**: its A2A card answers and names the ERC-8004 agent (for Kanmani: the well-known file lists all 13).
 - **doctor**: our Doctor agent finds the endpoint hireable over A2A (for Kanmani: MCP).

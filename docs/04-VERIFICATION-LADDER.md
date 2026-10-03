@@ -136,7 +136,7 @@ specific, nameable harm.
 |---|---|---|
 | `true` | the described payment is on the chain the document names | none, this is the only positive |
 | `false` | we read that chain successfully and it is not there | |
-| `noClaim` | the document asserts no payment, so there is nothing to be right or wrong about | folded into `false`, it accuses 1,095 documents of a claim they never made |
+| `noClaim` | the document asserts no payment, so there is nothing to be right or wrong about | folded into `false`, it accuses <!-- n:noClaim -->1,095<!-- /n --> documents of a claim they never made |
 | `unknown` | we could not look or could not read | folded into `false`, an outage manufactures accusations at scale, automatically |
 
 ### The exact reason strings
@@ -164,7 +164,7 @@ psql "$FOVEA_DATABASE_URL" -c \
 | `noClaim` | `conversation rating, no payment asserted, so there is no payment claim to check` | 3 |
 | `unknown` | `evidence document could not be read: HTTP <n>` | 2 |
 
-Nine distinct strings over 1,292 claims. Two of them are `true`: one from `locate` finding the cited
+Nine distinct strings over <!-- n:withPointer -->1,292<!-- /n --> claims. Two of them are `true`: one from `locate` finding the cited
 transaction, one from `settledCheck` watching the transfer reach the named recipient. Every one of them describes what was observed. None of them
 describes what anyone intended. That is enforced by a test, not by a review habit:
 
@@ -341,7 +341,7 @@ over the live corpus left 23 documents unplaced and the keys said where to look.
 
 ### `noClaim` is a result, not a coverage gap
 
-1,095 of 1,292 documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
+<!-- n:noClaim -->1,095<!-- /n --> of <!-- n:withPointer -->1,292<!-- /n --> documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
 at all.** A document that never asserted a payment cannot be wrong about one, so counting it as
 unparsed would inflate our own published gap number with documents that are perfectly well formed.
 
