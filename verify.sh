@@ -170,12 +170,15 @@ else
   echo "· contracts, p256 profile (AgentPasskey)"
   (cd contracts && FOUNDRY_PROFILE=p256 forge test --match-path 'test/AgentPasskey.t.sol')
   # The fork suites need a real archive node. They are part of the gate when an RPC is configured
-  # and a visible skip when it is not, rather than silently absent either way.
-  if [ -n "${MONAD_RPC:-}" ]; then
-    echo "· contracts, fork suites against MONAD_RPC"
-    (cd contracts && forge test --match-path 'test/*Fork.t.sol' --fork-url "$MONAD_RPC")
+  # and a visible skip when it is not, rather than silently absent either way. `MONAD_RPC` is the
+  # name contracts/foundry.toml uses; `MONAD_RPC_URL` is the name the app's own env uses, so either
+  # is accepted and nobody has to set the same URL twice.
+  FORK_RPC="${MONAD_RPC:-${MONAD_RPC_URL:-}}"
+  if [ -n "$FORK_RPC" ]; then
+    echo "· contracts, fork suites against a live archive node"
+    (cd contracts && forge test --match-path 'test/*Fork.t.sol' --fork-url "$FORK_RPC")
   else
-    skip "MONAD_RPC is not set, so the contract fork suites did not run."
+    skip "neither MONAD_RPC nor MONAD_RPC_URL is set, so the contract fork suites did not run."
   fi
 fi
 
