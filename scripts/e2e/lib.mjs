@@ -95,16 +95,26 @@ export function checks(name) {
  */
 export function collectPageErrors(page) {
   const errors = [];
+  /**
+   * Refusals the page asked for and handles. /fund quotes every source chain on load and Aurora
+   * refuses some of them (422, its reason shown in the row) or the server has no key (503). The
+   * browser still logs each as "Failed to load resource", which is not a page fault. Each such
+   * response cancels exactly one of those console lines, so an unrelated failed load still counts.
+   */
+  let handled = 0;
+  page.on("response", (res) => {
+    if (/\/api\/fund\/quote$/.test(new URL(res.url()).pathname) && (res.status() === 422 || res.status() === 503)) handled++;
+  });
   page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(`console: ${msg.text()}`);
+    if (msg.type() !== "error") return;
+    const t = msg.text();
+    if (handled > 0 && /^Failed to load resource: the server responded with a status of (422|503)/.test(t)) {
+      handled--;
+      return;
+    }
+    errors.push(`console: ${t}`);
   });
   page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
-  page.on("response", (res) => {
-    // A CSP violation is reported by the browser as a blocked request; the report-to endpoint is not
-    // wired, so the signal we can read is a console error, already captured above. This stays as a
-    // hook for a suite that wants to assert specific blocked hosts.
-    void res;
-  });
   return errors;
 }
 

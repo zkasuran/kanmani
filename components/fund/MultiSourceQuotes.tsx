@@ -54,14 +54,25 @@ export function MultiSourceQuotes({
             headers: { "content-type": "application/json" },
             body: JSON.stringify({ wallet, agent, originAsset: s.assetId, amount: scaleAmount(amount.trim() || "0", s.decimals).toString() }),
           });
-          const body = (await res.json().catch(() => null)) as { data?: { minAmountOut: string; networkFee: string | null; shortfall: boolean } } | null;
-          // A 422 is Aurora refusing the amount for this source, usually its bridge minimum.
+          const body = (await res.json().catch(() => null)) as {
+            data?: { minAmountOut: string; networkFee: string | null; shortfall: boolean };
+            minAmount?: string;
+          } | null;
+          // A 422 is Aurora refusing this source. With a minimum named it is the amount, otherwise the
+          // route itself is not being quoted right now.
           if (res.ok && body?.data && /^\d+$/.test(body.data.minAmountOut)) {
             next = { kind: "quoted", minAmountOut: body.data.minAmountOut, networkFee: body.data.networkFee, shortfall: body.data.shortfall };
           } else {
             next = {
               kind: "none",
-              reason: res.status === 503 ? "funding not configured" : res.status === 422 ? "below this route's minimum" : "no live quote",
+              reason:
+                res.status === 503
+                  ? "funding not configured"
+                  : res.status === 422
+                    ? body?.minAmount
+                      ? "below this route's minimum"
+                      : "Aurora is not quoting this route now"
+                    : "no live quote",
             };
           }
         } catch {
