@@ -1,7 +1,9 @@
 # 10. The API
 
-**Base URL `https://kanmani.xyz`.** No API key, no account, no token, no signup. One endpoint costs
-money. The rest are free, for a reason stated in the 402 body rather than left for you to work out.
+**Base URL `https://kanmani.xyz`.** No API key, no account, no token, no signup. Three things cost
+money: `POST /api/verify`, its testnet sibling `POST /api/testnet/verify` and the hireable agents
+under `/api/service/<slug>`. Everything else is free, for a reason stated in the 402 body rather than
+left for you to work out.
 
 Three properties hold across everything:
 
@@ -94,7 +96,7 @@ at. `null` says the question was asked and had no answer.
 | `"hashMatches": null` | the comparison was not made, usually because the document could not be fetched |
 | `"foundOnChain": null` | we did not find it (or never got as far as looking) |
 | `"checkedAtBlock": null` | the head could not be read at that moment |
-| `"registration": null` | this agent declared no `tokenURI`. 80 agents on Monad are in this state |
+| `"registration": null` | this agent declared no `tokenURI`. Declaring none is a state an agent can be in |
 | `"declaredNetwork": null` | the document named no network |
 | `"outcome": "unknown"` | a check ran and could not conclude. **This is not `false`** |
 
@@ -129,7 +131,8 @@ so the JSON and the HTML cannot drift. Free.
 | `rung` | `declared` \| `resolvable` \| `intact` \| `parsed` \| `true` | none | validated |
 | `mapping` | string | none | not validated. See below |
 | `network` | string | none | not validated. Matches `declaredNetwork` exactly. Every payment claim on Monad names `monad` |
-| `limit` | integer | 100 | capped at 1000 |
+| `agent` | integer | none | the on-chain agent id. Validated `^\d{1,12}$`, so a non-numeric value is a 400 |
+| `limit` | integer | 100 | floored at 1, capped at 1000 |
 | `offset` | integer | 0 | floored at 0 |
 
 **An unrecognised `outcome` or `rung` is refused with the list of accepted values.** It is not
@@ -145,8 +148,8 @@ unrecognised value is still applied as an equality filter rather than dropped, s
 mappings in the atlas today:
 
 ```
-execution-market.v1               the only shape on Monad that asserts a payment
-execution-market-transactions.v1  older shape, same publisher, hash under transactions.payment_tx
+execution-market.v1               the current shape that asserts a payment. 159 claims
+execution-market-transactions.v1  older shape, same publisher, hash under transactions.payment_tx. 23 claims
 elo-record.v1                     game rating, asserts no payment. 1,026 documents
 conversation-score.v1             conversation rating, asserts no payment. 3 documents
 agent-card.v1                     capability description, asserts no payment
@@ -159,7 +162,7 @@ curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=2'
 
 ```json
 {
-  "total": 73, "limit": 2, "offset": 0,
+  "total": 123, "limit": 2, "offset": 0,
   "next": "https://kanmani.xyz/api/claims?outcome=false&limit=2&offset=2",
   "items": [
     { "id": "143_10182_0x1030…13C7_2", "url": "https://kanmani.xyz/claim/143_10182_0x1030…13C7_2",
@@ -187,9 +190,10 @@ Ordering is block number descending then id, which is stable. `next` is `null` o
 carries every filter you sent, so paging never quietly changes the query underneath you.
 
 Only feedbacks carrying a document are returned. A feedback with an empty `feedbackUri` has nothing
-to verify: 1,192 of Monad's 9,188 feedbacks carry a pointer.
+to verify: 1,292 of Monad's 9,288 feedbacks carry a pointer.
 
-Errors: `400` for an unknown `outcome` or `rung`. Nothing else is refused.
+Errors: `400` for an unknown `outcome`, an unknown `rung` or a non-numeric `agent`. Nothing else is
+refused.
 
 ### `GET /api/agent/{id}`
 
@@ -205,11 +209,19 @@ curl -sS 'https://kanmani.xyz/api/agent/10252'
   "agentId": 10252, "name": "Kanmani",
   "owner": "0xDB6c6340342e71A63cD11Ebac2185204b7777777",
   "agentWallet": "0xDB6c6340342e71A63cD11Ebac2185204b7777777",
-  "registeredAtBlock": 106470711, "transferCount": 1, "metadataUpdateCount": 0,
-  "declaresX402": true, "endpoints": ["https://kanmani.xyz/api/verify"],
+  "registeredAtBlock": 106470711, "transferCount": 0, "metadataUpdateCount": 2,
+  "declaresX402": true,
+  "endpoints": ["https://kanmani.xyz/mcp", "https://kanmani.xyz/api/verify", "https://kanmani.xyz/openapi.json", "https://kanmani.xyz"],
+  "bond": {
+    "state": "released", "amountAtomic": "0", "token": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+    "minTruthRateBps": 8000, "minSampleSize": 5,
+    "postedAtBlock": "107460188", "maturesAtBlock": "107676188", "matured": true,
+    "contract": "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf"
+  },
+  "passkey": { "state": "none", "contract": "0x1E30531CD3ea6DE2958DB363418a5382C419dC24" },
   "registration": {
     "uri": "data:application/json;base64,…", "uriHash": "…",
-    "state": "onchain", "reason": null, "askedAt": "2026-09-20T18:20:11.004Z",
+    "state": "onchain", "reason": "1489 bytes read from data", "askedAt": "2026-10-01T03:35:12.997Z",
     "sharedWithAgents": 0, "sharedAcrossWallets": 1
   },
   "claims": {
@@ -222,16 +234,28 @@ curl -sS 'https://kanmani.xyz/api/agent/10252'
 
 `reproduce` here is a `cast call` against the Identity Registry for that agent's `tokenURI`.
 
+`bond` is the truth bond this operator posted, if any: its `state`, the staked `amountAtomic` in the
+bond token, the `minTruthRateBps` and `minSampleSize` it is judged against, the blocks it was
+`postedAtBlock` and `maturesAtBlock`, whether it has `matured` and the `contract` holding it. It is
+`null` when no bond was posted or when the chain could not be read, which are not the same thing: an
+unreachable chain returns `null` with no other bond fields, so a consumer must not read `null` as
+unbonded. It is read live from the chain rather than from the index, because a window matures when a
+block passes and emits no event.
+
+`passkey` is the device passkey bound to this agent, verified by Monad's P256 precompile when it
+signs. `state` is `bound`, `none` or `unknown`, where `unknown` means the chain could not be read.
+
 `declaresX402` is the operator's own assertion, read out of their registration document. It is
 labelled that way so a consumer never reads it as ours. We did not test that their endpoint answers
 402.
 
 `registration.state` is one of `onchain`, `answered`, `gone`, `paywalled`, `refused`, `nohost`,
 `malformed`, `unknown`. It is `null` when nothing has probed that document yet. Never-looked is a
-state. It is not `gone`. Across Monad's 2,012 distinct registration documents: 1,308 answered, 129
-written into `tokenURI`, 9 never a usable pointer, 7 with no host left, 17 we could not read, 0 with
-a real x402 payment challenge. 542 records covering 8,640 agents answer with a deletion, one document
-behind 8,093 of them.
+state. It is not `gone`. Monad has 2,053 distinct registration documents behind 10,276 agents. 8,641
+of those agents point at a document that answers with a deletion, one document behind 8,093 of
+them. The live count in each `record_state` bucket moves with every probe run, so it is published on
+[`/status`](https://kanmani.xyz/status) rather than frozen here. The buckets themselves are defined in
+`lib/queries.ts`.
 
 `sharedWithAgents` is how many **other** agents point at the same document, so `0` means nobody
 else does. `sharedAcrossWallets` is how many distinct wallets registered it. Monad's largest
@@ -250,7 +274,7 @@ That detail is not padding. Our index is not the registry, so a 404 here is a st
 ### `GET /feed.json`
 
 The whole checked population plus its distribution, in one request. Free. One parameter: `limit`,
-default 2000, capped at 5000. Out-of-range values are clamped rather than refused.
+default 2000, floored at 1 and capped at 5000. Out-of-range values are clamped rather than refused.
 
 ```bash
 curl -sS 'https://kanmani.xyz/feed.json?limit=5'
@@ -259,13 +283,13 @@ curl -sS 'https://kanmani.xyz/feed.json?limit=5'
 ```json
 {
   "summary": {
-    "paymentClaims": 85, "resolve": 12, "doNotResolve": 73, "assertNoPayment": 1095,
-    "couldNotCheck": { "total": 12, "documentWouldNotAnswer": 2,
-                       "bytesNoLongerMatchTheirCommitment": 10, "noMappingReadTheShape": 0 },
+    "paymentClaims": 182, "resolve": 59, "doNotResolve": 123, "assertNoPayment": 1095,
+    "couldNotCheck": { "total": 15, "documentWouldNotAnswer": 2,
+                       "bytesNoLongerMatchTheirCommitment": 10, "noMappingReadTheShape": 3 },
     "claimsWithAUriAndNoVerdict": 0
   },
   "note": "unknown is never false. A claim we could not check is not a claim we judged. If you aggregate these rows, carry the unknowns through rather than dropping them.",
-  "returned": 5, "totalCheckable": 1192, "items": []
+  "returned": 5, "totalCheckable": 1292, "items": []
 }
 ```
 
@@ -347,8 +371,9 @@ any claim naming it `unknown`. We did not look.
 | 400 | body is not JSON | `"Body is not JSON"`, detail names the two accepted shapes |
 | 400 | neither `uri` nor `id` | `"Nothing to check"` |
 | 404 | `id` is not in this index | `"No such claim"` |
-| 402 | unpaid request (or a rejected payment) | the full x402 challenge, not problem+json |
-| 500 | the check itself threw | `"The check did not complete"`, with `"charged": false` |
+| 402 | unpaid request, a rejected payment or an authorization already in flight | the full x402 challenge, not problem+json |
+| 402 | the payment verified but settlement did not confirm | problem+json `"Payment did not settle"`, `charged: false`, `retryable: true`. Retry the same authorization |
+| 500 | the check itself threw | `"The check did not complete"`, with `"charged": false` and `"retryable": true` |
 | 503 | the facilitator could not be reached | `"We could not check your payment"`, `"retryable": true` |
 
 A refused document is not an error. Pointing at something private, oversized or unreachable returns
@@ -373,6 +398,64 @@ posts to it, so it answers with something readable rather than a 405. `OPTIONS /
 The last two JSON files carry no envelope. They describe rather than measure, so there is nothing
 to timestamp. Our own registration record asserts no payment claim, because we have not been paid
 through it. A document that claims nothing cannot be wrong about it.
+
+The eight machine surfaces this table omits (`/openapi.json`, `/skill.md`, `/build/AGENTS.md`,
+`/.well-known/agent-card.json`, `/mcp`, `/embed.js`, `/og.png` and the static `/self-audit.json`) are
+catalogued in [35-MACHINE-SURFACES](35-MACHINE-SURFACES.md).
+
+### Every handler, in one table
+
+Twenty-six route handlers ship under `app/api`, plus twelve machine endpoints outside it. Four of
+them have a full section in this document: `/api/claims`, `/api/agent/{id}`, `/api/verify` and
+`/api/vault`. This table is all twenty-six, so nothing is reachable on the live site without a line
+here saying what it is. Reproduce the list with `find app -name route.ts`.
+
+| endpoint | methods | what it is | in full |
+|---|---|---|---|
+| `/api/claims` | GET | the claim feed, filtered | above |
+| `/api/agent/{id}` | GET | one agent, including what is not known about it | above |
+| `/api/verify` | GET, POST, OPTIONS | check a document. Paid, 0.01 USDC over x402 | above |
+| `/api/vault` | GET, PUT | AES-256-GCM ciphertext the server cannot read | above |
+| `/api/registration/check` | GET, POST, OPTIONS | **free.** Validate an ERC-8004 registration draft and get the exact `register()` calldata | [34](34-EVIDENCE-CHECK.md) |
+| `/api/evidence/check` | GET, POST, OPTIONS | **free.** Run a document through the real judge before publishing it | [34](34-EVIDENCE-CHECK.md) |
+| `/api/account/{address}` | GET | every agent an address owns with live bond state, plus its MON and USDC balances. Public state only, no login | |
+| `/api/sla/{agentId}` | GET | an agent's claim-truth rate over a block window, which is what a slashing oracle reads. `rateBps` is `null` on an empty sample rather than 0 | [26](26-CRE-SIMULATION.md) |
+| `/api/usage` | GET | who uses Kanmani without tracking anyone. `?days=` 1 to 60, default 7. Counts, software names and public chain events only, beside a `notMeasured` list | |
+| `/api/pay-runs` | GET, POST | time to first transaction, as runs each tied to a real settlement. A `real` block and a `ci` block, kept apart | [38](38-PAY-RUNS.md) |
+| `/api/compliance/{address}` | GET | the on-chain CVI status of a wallet on both Monad chains | [36](36-COMPLIANCE.md) |
+| `/api/testnet/mint` | POST | the sponsored tUSDC mint. Idempotent per address, rate limited per IP, capped per day | [37](37-TESTNET.md) |
+| `/api/testnet/verify` | GET, POST, OPTIONS | the paid check, settled in tUSDC on Monad testnet | [37](37-TESTNET.md) |
+| `/api/receipt` | GET | an index pointing at the two receipt endpoints that do the work | [39](39-RECEIPTS.md) |
+| `/api/receipt/verify` | GET, POST | check a verification receipt's signature. Holds no key, verifies any receipt | [39](39-RECEIPTS.md) |
+| `/api/receipt/action` | GET, POST | publish and read who authorised a change to an agent's document | [39](39-RECEIPTS.md) |
+| `/api/service/{slug}` | GET, POST, OPTIONS | the twelve hireable agents. GET is the free 402 carrying the price, POST does the work | [30](30-AGENTS.md) |
+| `/api/service/{slug}/agent-card.json` | GET | the A2A card that agent's ERC-8004 registration points at | [30](30-AGENTS.md) |
+| `/api/service/{slug}/registration.json` | GET | the ERC-8004 document that agent should carry. `onChainMatches` byte-compares the live `agentURI` | [30](30-AGENTS.md) |
+| `/api/fund/quote` | POST | a dry cross-chain funding quote. 503 without an Intents Connect key | [22](22-AURORA.md) |
+| `/api/fund/create` | POST | create the execution and return its signing payload. 409 on a shortfall | [22](22-AURORA.md) |
+| `/api/fund/{id}` | GET | one execution's live status. `?wallet=` is required | [22](22-AURORA.md) |
+| `/api/fund/submit` | POST | relay the signed execution signature to Aurora | [22](22-AURORA.md) |
+| `/api/fund/recover` | POST | one-click recovery of funds left at the intermediary. `refund` or `withdraw` | [22](22-AURORA.md) |
+| `/api/fund/intermediary` | GET | a wallet's intermediary account with its live Monad USDC balance. Keyless | [22](22-AURORA.md) |
+| `/api/webhooks/alchemy` | GET, POST, OPTIONS | the signed Alchemy delivery that triggers a re-verify. GET describes it | [40](40-ALCHEMY.md) |
+
+Three rules hold across all of them, including the ones with their own doc.
+
+- **The envelope is everywhere.** Each of these returns `version`, `chain`, `checkedAt`,
+  `checkedAtBlock` and `reproduce` beside its `data`. The machine surfaces that describe rather than
+  measure are the exception.
+- **A null is an answer.** `/api/account` returns `null` balances when the RPC could not be read and
+  never `0`. `/api/fund/intermediary` does the same with the intermediary balance.
+  `/api/sla` returns a `null` rate on an empty sample, because `0` reads as "every claim was false"
+  and would slash an agent nobody has rated yet.
+- **A missing key is a 503, never a skipped check.** `/api/fund/*` without `AURORA_INTENTS_API_KEY`,
+  `/api/testnet/mint` without `TESTNET_MINTER_KEY` and `/api/webhooks/alchemy` without
+  `ALCHEMY_WEBHOOK_SIGNING_KEY` all refuse every request rather than running without the thing that
+  makes them safe.
+
+`/openapi.json` carries eight of these as importable tool definitions. It is a subset on purpose
+rather than a generated mirror. `lib/openapi.test.ts` asserts every path in it maps to a route
+file, so it describes nothing that is gone.
 
 ---
 
@@ -486,9 +569,10 @@ check a signature against chain state.
 
 ### 5. The facilitator
 
-`https://x402-facilitator.molandak.org`, overridable with `X402_FACILITATOR`. It serves `exact` and
-`upto` on `eip155:143` plus `exact` on `eip155:10143`, all at x402Version 2, signer
-`0x7f6a2850669202519f0FE8aa912451238820Db86`. Two calls, both POST, 20 second timeout:
+`https://x402-facilitator.molandak.org`, overridable with `X402_FACILITATOR`. Its `/supported` lists
+`exact`, `upto` and `batch-settlement` on both `eip155:143` and `eip155:10143`, all at x402Version 2,
+with signer `0x7f6a2850669202519f0FE8aa912451238820Db86`. This endpoint settles `exact` on
+`eip155:143`. Two calls, both POST, 20 second timeout:
 
 ```
 POST /verify  { x402Version: 2, paymentPayload, paymentRequirements }
@@ -507,12 +591,14 @@ payer still holds a valid authorization they can spend elsewhere:
 HTTP 500
 { "title": "The check did not complete",
   "charged": false,
+  "retryable": true,
   "note": "Your payment was verified and deliberately not settled, because we did not deliver. The authorization is still yours to spend." }
 ```
 
-Settlement is recorded whether or not it succeeded, because a broadcast we then failed to read is a
-real state and pretending otherwise is how a payment gets taken twice. A `200` with
-`payment.settled: false` carries the facilitator's reason in `payment.reason`.
+A settlement that verifies but does not confirm does not hand back the paid result. The response is
+`402 "Payment did not settle"`, `charged: false`, with the facilitator's reason in `detail` and the
+authorization released so a genuine payer can retry the same signed message. A paid `200` therefore
+always carries `payment.settled: true`.
 
 ### 7. The receipt header
 
@@ -622,7 +708,7 @@ That is the paid path. Use it when you think a document has changed.
 | 200 | answered, including `outcome: "unknown"` | charged, if you paid |
 | 400 | the request is wrong. Names what | untouched |
 | 401 | vault write with no signature | n/a |
-| 402 | pay (or the facilitator rejected your payment) | untouched |
+| 402 | pay (the facilitator rejected your payment or settlement did not confirm) | untouched |
 | 403 | vault write whose signature recovered a different address | n/a |
 | 404 | not in this index. Not the same as not existing on chain | untouched |
 | 500 | the check threw after your payment verified | **verified, deliberately not settled** |
@@ -738,6 +824,9 @@ Success returns `stored`, the lowercased address, the context, the ciphertext le
 | 400 | `Bad envelope` | `sealed` is not `{v:1, context, nonce, ct}` with string fields |
 | 401 | `Unsigned write` | no `signature`. Carries a `sign` field spelling out the message |
 | 403 | `Signature does not match this address` | recovered a different address. Nothing was written |
+| 413 | `Body too large` | the request body is over 65,536 bytes |
+| 413 | `Envelope too large` | `context` is over 128 or `ct` over 32,768 characters |
+| 429 | `Too many vault entries for this address` | this address already holds 100 contexts and the write is a new one |
 
 The 403 carries a `check` field naming the likely client bug rather than leaving you to guess at
 ours. The primary key is `(address, context)`, so a second write to the same context replaces the
@@ -747,6 +836,12 @@ Every blob is bound to its purpose: the `context` string goes in as AES-GCM addi
 authenticated data, so a job brief cannot be opened as agent memory even though both use the same
 content key. The three contexts in use are `kanmani.vault.job-brief.v1`,
 `kanmani.vault.agent-memory.v1` and `kanmani.vault.deliverable.v1`.
+
+A body is capped at 65,536 bytes, `ct` at 32,768 characters and `context` at 128 characters. One
+address may hold at most 100 distinct contexts, so a new context over that is refused with 429 while
+updates to the contexts it already holds still work. A signature proves control of an address, not
+that addresses are scarce: anyone can make a keypair and sign their own blobs, so the ceiling is per
+address rather than global.
 
 Stored: address, context, version, nonce, ciphertext, signature, timestamp. Not stored: any
 credential id, any PRF salt, any session, any cookie. A dump of that table is a pile of blobs plus
@@ -763,22 +858,35 @@ should yours. Same for `null`, which means nothing has checked yet. It is not ze
 Free, no payment, no key:
 
 ```
-GET https://kanmani.xyz/api/claims?outcome=false&limit=100
-GET https://kanmani.xyz/api/agent/<agentId>
-GET https://kanmani.xyz/api/vault?address=0x…
-GET https://kanmani.xyz/feed.json
-GET https://kanmani.xyz/schema.json
-GET https://kanmani.xyz/llms.txt
-GET https://kanmani.xyz/agents.md
+POST https://kanmani.xyz/api/registration/check
+POST https://kanmani.xyz/api/evidence/check
+GET  https://kanmani.xyz/api/claims?outcome=false&limit=100
+GET  https://kanmani.xyz/api/agent/<agentId>
+GET  https://kanmani.xyz/api/account/<address>
+GET  https://kanmani.xyz/api/vault?address=0x…
+GET  https://kanmani.xyz/feed.json
+GET  https://kanmani.xyz/schema.json
+GET  https://kanmani.xyz/openapi.json
+GET  https://kanmani.xyz/llms.txt
+GET  https://kanmani.xyz/agents.md
+GET  https://kanmani.xyz/skill.md
+POST https://kanmani.xyz/mcp
 ```
 
-Paid: `POST /api/verify`, 0.01 USDC over x402.
+The two `check` endpoints are the ones to start with if you are building an agent rather than reading
+about one. See [34-EVIDENCE-CHECK](34-EVIDENCE-CHECK.md). `/mcp` is the same surface as MCP tools,
+see [33-MCP](33-MCP.md). The full endpoint catalogue is below.
 
-**Rate limits.** There is no rate limiting implemented on the free endpoints today. No token
+Paid: `POST /api/verify`, 0.01 USDC over x402. `POST /api/testnet/verify` is the same work settled in
+tUSDC on Monad testnet ([37-TESTNET](37-TESTNET.md)). The hireable agents under
+`/api/service/<slug>` are priced separately ([30-AGENTS](30-AGENTS.md)).
+
+**Rate limits.** There is no rate limiting on the free read endpoints documented above. No token
 bucket, no quota, no `retry-after`. That is a statement about what is built rather than a promise
 about the future. If a limit is added it goes into `/agents.md` before it is enforced. The response
 will carry `retry-after`. Paid verification is one document per payment with no burst allowance to
-discover by hitting a wall.
+discover by hitting a wall. One endpoint does ship a limiter: `POST /api/testnet/mint` is capped per
+IP and per day, because a sponsored mint is a spend.
 
 **What we do with what you send.** A `POST /api/verify` fetches the URI you give us. We record the
 verdict, the URI and the time, because the site is an append-only record of checks. **We do not
@@ -793,7 +901,7 @@ What happens to a URI you hand us, because it shapes what comes back:
 | redirects | followed by hand, re-screened every hop, 3 maximum |
 | size cap | 64 KB, enforced on arriving bytes. `Content-Length` is never consulted |
 | timeout | 8 seconds per request |
-| `data:` URIs | decoded in process with no network call. 1,095 of Monad's 1,192 documents are these |
+| `data:` URIs | decoded in process with no network call. Most of Monad's 1,292 checkable documents are these |
 | `ipfs://` | through `https://ipfs.io/ipfs/`, so still a guarded fetch. The CID is validated segment by segment |
 
 A refusal comes back as `outcome: "unknown"` with the reason. Never a hang. Never `false`.
@@ -828,9 +936,10 @@ there.
 **`www-authenticate` is exposed but never set.** The 402 challenge lives in the response body.
 There is no `WWW-Authenticate` header to read.
 
-**`limit` has a ceiling but no floor.** A negative `limit` on `/api/claims` is not clamped and
-reaches the database as a negative `LIMIT`, which Postgres refuses, so it surfaces as a framework
-500 rather than a problem+json 400. Send a positive integer. `offset` is floored at 0 correctly.
+**`limit` is clamped at both ends.** `/api/claims` floors `limit` at 1 and caps it at 1,000, so a
+negative or zero value is treated as 1 rather than reaching the database as a negative `LIMIT`.
+`/feed.json` does the same with a cap of 5,000. `offset` is floored at 0. All of them are clamped
+silently rather than refused.
 
 **The free preview window is 1,000 rows.** A hash older than that window takes the paid path
 instead of the free one, with no signal that it did.

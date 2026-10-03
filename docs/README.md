@@ -35,12 +35,26 @@ names.
 | [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md) | what Qwen 3.8 Max does in the atlas induction loop |
 | [28-X402-UPTO](28-X402-UPTO.md) | the x402 upto scheme on Monad, signing a maximum and settling less |
 | [29-AGENT-PASSKEY](29-AGENT-PASSKEY.md) | a device passkey for an agent, verified by Monad's P256 precompile |
+| [32-PRF-PRIMITIVES](32-PRF-PRIMITIVES.md) | the four keys derived from one passkey ceremony, HKDF-SHA256 and AES-256-GCM, audited against the source |
+| [36-COMPLIANCE](36-COMPLIANCE.md) | the `/compliance` page and the on-chain CVI read behind it |
+| [37-TESTNET](37-TESTNET.md) | the sponsored mint and the paid check settled in TestUSDC on Monad testnet |
+| [38-PAY-RUNS](38-PAY-RUNS.md) | time to first transaction, recorded as runs each tied to a real settlement |
+| [40-ALCHEMY](40-ALCHEMY.md) | the signed webhook that re-verifies a repaired document on its own |
+
+## Developer surfaces
+
+| doc | what it covers |
+|---|---|
+| [33-MCP](33-MCP.md) | Kanmani as an MCP server: the five tools, the transport and how to connect |
+| [34-EVIDENCE-CHECK](34-EVIDENCE-CHECK.md) | the two free checks that run before anything reaches the chain |
+| [35-MACHINE-SURFACES](35-MACHINE-SURFACES.md) | every GET surface served for software, including `/openapi.json` and `/skill.md` |
+| [39-RECEIPTS](39-RECEIPTS.md) | the receipt endpoints, including why one of them verifies receipts that are not ours |
 
 ## The agents
 
 | doc | what it covers |
 |---|---|
-| [30-AGENTS](30-AGENTS.md) | the agents Kanmani operates |
+| [30-AGENTS](30-AGENTS.md) | the twelve agents Kanmani runs as paid services, each with its slug, price ceiling and ERC-8004 id |
 | [31-SELF-AUDIT](31-SELF-AUDIT.md) | every agent Kanmani operates, checked by Kanmani |
 
 ## Security review
@@ -56,3 +70,4 @@ names.
 |---|---|
 | [10-API](10-API.md) | the public API surface |
 | [24-KIT-LICENCE](24-KIT-LICENCE.md) | the licence carve-out for the component layer |
+| [41-BLOG](41-BLOG.md) | the five posts under `/blog` and which doc each one companions |
