@@ -45,6 +45,24 @@ export async function guardedRequest(
   const url = screened.url;
   const resolved = await resolvePublic(url.hostname.replace(/^\[|\]$/g, ""));
   if (!resolved.ok) return { ok: false, reason: resolved.reason, ms: Date.now() - t0 };
+  return probeOnce(url, resolved.addresses, opts);
+}
+
+/**
+ * One HTTP exchange against an already-screened set of addresses.
+ *
+ * Exported for the same reason `fetchOnce` is: the byte cap, the truncation flag, the timeout and
+ * reporting a redirect instead of following it are all transport behaviour, and testing them
+ * through `guardedRequest` would mean pointing it at loopback, which the screen correctly refuses.
+ * Rather than weaken the screen for tests, the transport gets its own seam. Production callers go
+ * through `guardedRequest`; nothing else should call this directly.
+ */
+export function probeOnce(
+  url: URL,
+  addresses: string[],
+  opts: { method?: "GET" | "POST"; body?: string; headers?: Record<string, string>; maxBytes?: number; timeoutMs?: number } = {},
+): Promise<ProbeResult> {
+  const t0 = Date.now();
   const maxBytes = opts.maxBytes ?? 256 * 1024;
   const mod = url.protocol === "https:" ? https : http;
   return new Promise<ProbeResult>((resolve) => {
@@ -59,7 +77,7 @@ export async function guardedRequest(
       url,
       {
         method: opts.method ?? "GET",
-        lookup: pinned(resolved.addresses),
+        lookup: pinned(addresses),
         timeout: opts.timeoutMs ?? 8000,
         headers: {
           "user-agent": "kanmani-doctor/1 (+https://kanmani.xyz/hire)",
@@ -78,7 +96,20 @@ export async function guardedRequest(
             res.destroy();
             return;
           }
-          chunks.push(c.subarray(0, maxBytes - n));
+          // Keep only what fits, and say so. An earlier version added the whole chunk length to the
+          // counter and only set `truncated` on a LATER chunk, so a body that overshot the cap
+          // inside its first chunk came back as a silent prefix with `truncated: false`. A caller
+          // then had a fragment of a document and no way to know it was a fragment, which on this
+          // project is the worst failure shape there is.
+          const room = maxBytes - n;
+          if (c.length > room) {
+            chunks.push(c.subarray(0, room));
+            n = maxBytes;
+            truncated = true;
+            res.destroy();
+            return;
+          }
+          chunks.push(c);
           n += c.length;
         });
         const end = () =>

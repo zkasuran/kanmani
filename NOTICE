@@ -1,0 +1,103 @@
+# NOTICE
+
+This file is the carve-out list the root `LICENSE` points at. It records three things: which files
+in this repository are not under `LicenseRef-zkasuran-SAND-1.0`, which third-party components the
+app depends on and under what terms, then what is published versus restored.
+
+Every licence named below was read from the component's own bytes in `node_modules/<pkg>/` or from
+its published package, not from memory. Where a licence could not be read, the entry says so.
+
+## Files in this repository that are not SAND-1.0
+
+Five files carry `SPDX-License-Identifier: MIT` on line 1. That header is the operative grant:
+
+| File | Licence | Why it is carved out |
+|---|---|---|
+| `components/kit.tsx` | MIT | Renders inside somebody else's product. What it publishes is a display constraint, not an asset. |
+| `app/embed.js/route.ts` | MIT | The drop-in badge, served into a host page. Same reason. |
+| `contracts/src/AgentPasskey.sol` | MIT | An on-chain primitive meant to be lifted into other contracts. |
+| `contracts/test/AgentPasskey.t.sol` | MIT | The suite that proves the primitive, useless to a copier without it. |
+| `contracts/script/DeployAgentPasskey.s.sol` | MIT | The deploy script for the same primitive. |
+
+The reasoning is set out in `docs/24-KIT-LICENCE.md` and the list is repeated in `LICENSE` under
+"Files under MIT". Every other file the licensor authored is SAND-1.0.
+
+## Third-party components
+
+None of these are redistributed in this repository. `node_modules/`, `contracts/lib/` and the build
+output are all gitignored, so a clone carries manifests and lockfiles and restores the dependencies
+rather than receiving copies of them. They are named here because the app is served to the public and
+their terms travel with what is served.
+
+### Runtime dependencies of the app
+
+| Component | Version | Licence | Read from |
+|---|---|---|---|
+| `next` | 16.3.8 | MIT | `node_modules/next/license.md` |
+| `react` | 19.2.8 | MIT | `node_modules/react/LICENSE` |
+| `react-dom` | 19.2.8 | MIT | `node_modules/react-dom/LICENSE` |
+| `viem` | 2.56.3 | MIT | `node_modules/viem/LICENSE` |
+| `zod` | 4.5.4 | MIT | `node_modules/zod/LICENSE` |
+| `pg` | 8.23.0 | MIT | `node_modules/pg/LICENSE` |
+| `@scure/base` | 2.2.0 | MIT | `node_modules/@scure/base/LICENSE` |
+| `@modelcontextprotocol/sdk` | 1.31.0 | MIT | `node_modules/@modelcontextprotocol/sdk/LICENSE` |
+| `@category-labs/mera` | 0.2.0 | MIT or Apache-2.0, at our choice | `node_modules/@category-labs/mera/LICENSE-MIT` and `LICENSE-APACHE` |
+| `@x402/core` | 2.27.0 | Apache-2.0 | declared `license` field in `node_modules/@x402/core/package.json`; the package ships no licence file |
+| `@x402/evm` | 2.27.0 | Apache-2.0 | declared `license` field in `node_modules/@x402/evm/package.json`; the package ships no licence file |
+
+The MIT grant each of these carries is the standard one. In the words of `node_modules/viem/LICENSE`:
+
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
+> associated documentation files (the "Software"), to deal in the Software without restriction
+
+Apache-2.0 requires that its own notice be preserved and that modifications be marked. We modify
+none of these packages: they are installed from the registry at the version the lockfile pins and
+imported unchanged.
+
+### Verifier
+
+`verifier/` depends on `pg` 8.23.0 and `viem` 2.57.2, both MIT, read from
+`verifier/node_modules/<pkg>/LICENSE`.
+
+### Indexer, the one component that is not permissive
+
+| Component | Version | Licence |
+|---|---|---|
+| `envio` | 3.10.0 | Commercial EULA, not an OSI-recognised open source licence |
+
+`indexer/package.json` pins `envio` 3.10.0, whose `package.json` declares
+`SEE LICENSE IN licenses/README.md`. That file states plainly that "Envio and its products do not use
+a recognized open source license by the OSI", that self-hosting is permitted, then that "forking and
+modifying code is not allowed". The operative grant in `licenses/LICENSE.md` reads:
+
+> Company grants User a non-exclusive, non-transferable, limited license to access and use the SaaS
+> for business or personal purposes in accordance with this Agreement.
+
+and its restrictions forbid modifying, redistributing or reverse engineering it.
+
+How that lines up with how it is used here: the indexer is run self-hosted against an RPC URL, which
+is the use the licence permits. `envio` is not modified, not redistributed and not re-served. It is
+installed from the registry at the pinned version. No envio code is compiled into the contracts or
+bundled into the served app: it is a separate backfill process.
+
+### Contracts
+
+`contracts/lib/forge-std` is the only Foundry dependency, MIT or Apache-2.0, used by the test suites
+only. It is gitignored and restored at the pinned revision by `scripts/install-forge-std.sh`. No
+third-party code is compiled into the deployed bytecode. `contracts/NOTICE` carries the detail for
+the Solidity side.
+
+### Fonts
+
+Inter, JetBrains Mono and Space Grotesk are pulled by `next/font/google` and self-hosted into the
+build output, so they are served to every visitor. Their grants are recorded in `DATA-SOURCES.md`.
+
+## Provenance
+
+- Every published file is the licensor's own work under SAND-1.0, except the five MIT files named
+  above and the fonts named in `DATA-SOURCES.md`.
+- No third-party binary is wrapped or vendored. `binary_wrap: 0`.
+- Third-party dependencies are restored from the committed lockfiles (`package-lock.json`,
+  `verifier/package-lock.json`, `indexer/package-lock.json`) and from the pinned forge-std revision,
+  rather than redistributed in the repository bytes.
+- The deployed contract bytecode contains no third-party code.

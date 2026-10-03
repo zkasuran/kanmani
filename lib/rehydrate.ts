@@ -58,6 +58,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { keccak256, toHex } from "viem";
 import { envelope, json, problem, SITE } from "./api.ts";
+import { readBodyText } from "./body.ts";
 import { check, type CheckResult } from "./check.ts";
 import { CHAIN_ID, q, q1 } from "./db.ts";
 import type { Outcome, Rung } from "./queries.ts";
@@ -810,13 +811,12 @@ export async function handleAlchemyWebhook(req: Request, deps: Deps = liveDeps()
     });
   }
 
-  // Raw text, before anything parses it. Alchemy signs the bytes it sent.
+  // Raw text, before anything parses it, and bounded before it is buffered. The signature is
+  // checked over these exact bytes, so the read has to hand back text rather than an object.
   let raw: string;
-  try {
-    raw = await req.text();
-  } catch (e) {
-    return problem(400, "Body could not be read", (e as Error).message ?? String(e));
-  }
+  const read = await readBodyText(req);
+  if (!read.ok) return problem(read.status, read.title, read.detail);
+  raw = read.text;
 
   const header = req.headers.get(SIGNATURE_HEADER);
   if (header === null || header.trim() === "") {

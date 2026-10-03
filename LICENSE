@@ -24,10 +24,10 @@ limits are on copying it and on changing it.
 
 ## Fetching it and running it
 
-The licensor publishes these files at stable hash-pinned URLs so a Telegraph
-validator node, or anyone else, can fetch them and run them. Fetching a copy and
-running it is a permitted use for any purpose, including running it as a scoring
-module on a public network and including running it inside a paid service.
+The licensor publishes this software as a public read-only dashboard, a set of
+machine-readable endpoints and a verifier anyone can fetch and run against the
+same chains. Fetching a copy and running it is a permitted use for any purpose,
+including running it inside a paid service.
 
 ## Reading it
 
@@ -118,9 +118,10 @@ claim.***
 ## Definitions
 
 The **licensor** is zkasuran. The **software** is the files in this repository
-that the licensor authored and makes available under these terms. Files authored by
-others are listed in `NOTICE` and are not covered here: they keep the licence their
-own author gave them.
+that the licensor authored and makes available under these terms, which is every
+file except the five named in "Files under MIT" above. Files authored by others are
+listed in `NOTICE` and are not covered here: they keep the licence their own author
+gave them.
 
 **You** refers to the individual or entity agreeing to these terms.
 
@@ -135,13 +136,27 @@ terms.
 
 **Use** means anything you do with the software requiring one of your licences.
 
-## Earlier releases stay MIT
+## Files under MIT
 
-Files published in this repository at commits up to and including
-`9250395a8131e4f7da51ab548d455c7270d4acd3` were released under the MIT licence.
-That grant is not withdrawn and could not be: a copy obtained under MIT stays
-under MIT for whoever obtained it. `LICENSE-HISTORY.md` states the exact scope and
-how to tell which files it covers.
+Five files are under the MIT licence rather than these terms. Each carries an
+`SPDX-License-Identifier: MIT` header on its first line. That header is the
+grant. They are:
+
+- `components/kit.tsx`
+- `app/embed.js/route.ts`
+- `contracts/src/AgentPasskey.sol`
+- `contracts/test/AgentPasskey.t.sol`
+- `contracts/script/DeployAgentPasskey.s.sol`
+
+The carve-out is deliberate and the reason is the same for both groups. The first
+two render inside somebody else's product. What they publish is a constraint
+on how a verdict may be displayed rather than an asset to withhold: an `unknown`
+must never be drawn as a `0` or in the colour used for `false`. A rule that cannot
+be copied is not a rule anyone will follow. The three `AgentPasskey` files are an
+on-chain primitive meant to be lifted into other contracts, so the same reasoning
+applies. `docs/24-KIT-LICENCE.md` explains it at length.
+
+Everything else in this repository is under these terms.
 
 ## Drafting note
 

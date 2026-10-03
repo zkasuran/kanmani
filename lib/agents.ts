@@ -32,8 +32,8 @@
  */
 
 import { createPublicClient, http } from "viem";
-import { viemChain } from "@/lib/chains.ts";
-import { claimTruthWindow, indexProgress } from "@/lib/queries.ts";
+import { viemChain } from "./chains.ts";
+import { claimTruthWindow, indexProgress } from "./queries.ts";
 
 /**
  * Where the index is and where the chain is, both read now.
