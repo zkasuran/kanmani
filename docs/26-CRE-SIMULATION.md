@@ -8,9 +8,18 @@ cre login                                   # browser flow, one time
 cre workflow simulate slashing -T staging-settings --non-interactive --trigger-index 0
 ```
 
-CLI simulation is the deliverable rather than a stand-in for one. Darby at Chainlink Labs confirmed it
+CLI simulation is the deliverable rather than a stand-in for one. Darb at Chainlink Labs confirmed it
 directly when asked: no testnet DON is available to hackathon participants and CLI simulation is what
 they look for when judging. That answer is why this is a simulation and not a deployment.
+
+The live product shows this run at https://kanmani.xyz/bond, in a CRE panel that reads
+`shared/cre-simulation.json`, the machine-readable twin of this file. The panel features the 10182
+measurement and the 10256 bond read side by side.
+
+The simulation runs the read, the decision and the report encoding for real. It does not settle:
+`cre workflow simulate` uses a MockForwarder that records a report and never calls `onReport`. The
+on-chain write stays gated behind a broadcast flag the judged configs leave off, so no bond is ever
+touched.
 
 ## What the workflow proves
 
@@ -22,6 +31,20 @@ The bounty asks for a blockchain integrated with an external API. Both halves ar
   fixture.
 * **The external half.** It then asks the Kanmani API for that agent's measured claim-truth rate over
   the bond's own window.
+
+## The run that measured a live agent (agent 10182, 2026-09-22)
+
+Agent 10182 has decided payment claims but no bond, so the workflow reported the measurement and
+refused a verdict. Observation mode, exactly as designed:
+
+    measured 1/42 claims true = 238bps (0 undecided, excluded from both sides)
+    OBSERVED agent=10182 rate=238bps sample=42 (no bond, no verdict)
+
+That is 1 claim true out of 42 = 238 bps, computed by the workflow from the counts it aggregated,
+never read back from the API. Those are the values as of the 2026-09-22 capture. The live endpoint
+reflects the agent's whole history, which grows, so re-running this today returns a larger sample and
+a higher rate (78 claims, 5 true, 641 bps on 2026-10-03), not the frozen 238 bps. The link at
+`https://kanmani.xyz/api/sla/10182` verifies the method and the endpoint, not the snapshot.
 
 ## The interesting part is that it refused
 
@@ -35,7 +58,7 @@ unslashable-bond defect audit Finding 9 closed inside the contract. The same ref
 deployed contract's `minSample` and in the Assay agent's quote, so all three agree.
 
 **No agent currently has both a bond and a decided sample.** 10256 and 10257 are bonded with empty
-samples and 10182 has 42 decided claims and no bond. Bonding 10182 is impossible on purpose: Finding 9
+samples and 10182 has a decided sample and no bond. Bonding 10182 is impossible on purpose: Finding 9
 made `postBond` revert unless the caller owns the agent and we do not own it. So the full
 measure-then-slash path cannot be demonstrated end to end without either faking a measurement or
 bonding somebody else's agent and both are the things this project exists to detect.

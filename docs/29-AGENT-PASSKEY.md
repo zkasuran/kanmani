@@ -64,4 +64,5 @@ tested in `lib/agent-passkey.test.ts` with a software authenticator.
 
 On any agent page, `kanmani.xyz/agent/<id>#passkey`: the owner binds (two prompts: create, then sign),
 anyone holding the passkey tests it on chain for free, the owner unbinds. `GET /api/agent/<id>` returns
-`passkey: { state: bound | none | unknown, qx, qy, boundAtBlock }`.
+a `passkey` object. Every state carries `state` (`bound`, `none` or `unknown`) and `contract`. A
+`bound` one adds `qx`, `qy`, `boundAtBlock` and `precompile: "0x0100"`.

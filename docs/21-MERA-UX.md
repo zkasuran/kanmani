@@ -7,6 +7,7 @@ is signed in the browser by a key the passkey derives, relayed by a facilitator 
 
 This document covers the flow, how the session is scoped and expired, the time to first transaction,
 and the evidence that the browser-signed authorization is real. `/pay` is the live surface.
+`/pay?net=testnet` is the free judge path on the same page.
 `lib/session.ts` and `lib/pay.ts` are the code.
 
 ---
@@ -19,12 +20,21 @@ and the evidence that the browser-signed authorization is real. `/pay` is the li
 | `lib/pay.ts` | builds the EIP-3009 authorization, signs it through the session, drives one payment |
 | `app/pay/page.tsx` | the page, its scope panel and the time-to-first-transaction panel |
 | `app/pay/pay-flow.tsx` | the client flow: connect, session countdown, pay, result |
-| `lib/session.test.ts` | 8 tests, all offline, against the pinned PRF vector |
-| `lib/pay.test.ts` | 11 tests, all offline, signature recovery checked by hand |
+| `lib/session.test.ts` | 10 tests, all offline, against the pinned PRF vector |
+| `lib/pay.test.ts` | 13 tests, all offline, signature recovery checked by hand |
+| `lib/pay-net.ts` | the mainnet and testnet pay configs in one place, mainnet pulled from `lib/x402` so it cannot drift |
+| `components/session-scope.tsx` | the live session panel: payee, cap, account, countdown, renew and end |
+| `components/pay-measure.tsx` | the live taps and seconds measurement, posted to `/api/pay-runs` |
+| `app/api/pay-runs/route.ts` | records a run in `fovea.pay_run`, a real mainnet run verified on chain before it joins the median |
+| `app/api/testnet/{mint,verify}/route.ts` | the free judge path: a sponsored tUSDC mint and a settle on Monad testnet |
+| `lib/pay-net.test.ts`, `lib/pay-run.test.ts` | 4 and 6 tests for the two-network config and the run metric |
 
 The whole path reuses the account key from `lib/iris` (namespace `kanmani.iris.v1`) and the x402 wire
-format from `lib/x402`. Neither is redefined. The payment payload, the price, the token and the
-network all come from `requirements()` in `lib/x402`, so there is one place the money constants live.
+format from `lib/x402`. Neither is redefined. On mainnet the payload, price, token and network all
+come from `requirements()` in `lib/x402`. `lib/pay-net.ts` is the one place that holds both the
+mainnet and testnet configs. It pulls every mainnet value straight from `lib/x402` so the live
+mainnet path cannot drift. A test asserts `requirementsFor("mainnet")` is byte-identical to
+`requirements()`.
 
 ---
 
@@ -72,12 +82,22 @@ user has walked away from.
 
 The criterion is taps and seconds from a cold landing to a confirmed Monad transaction.
 
+The page measures it rather than only describing it. A tap is one trusted primary `pointerdown`,
+counted in the capture phase so a synthetic click cannot inflate it. The OS passkey prompt fires no
+DOM event, so it is counted apart and reported as "N taps plus 1 passkey confirmation". The clock
+starts at first mount, which for a cold `/pay` load is the moment a judge sees the page. It stops at
+a confirmed settlement, never at a free "already checked" answer. A real mainnet run posts to
+`/api/pay-runs`, which verifies the cited transaction on chain before it joins the published median
+in `fovea.pay_run`. A testnet run is recorded as `ci`.
+
 1. Open `/pay`. Connect a passkey. One prompt.
 2. The session opens on the same tap. Nothing else to approve.
-3. Fund the shown account with the USDC the payment moves, then pay. It settles on Monad.
+3. On mainnet, fund the shown account with the USDC the payment moves, then pay. It settles on Monad.
+   On `/pay?net=testnet` the house mints the tUSDC, so there is nothing to fund.
 
-Gas is never on the user, because the facilitator pays it. The only funding a stranger cannot skip
-is the payment itself, which is 0.01 USDC for one verification.
+Gas is never on the user, because the facilitator pays it. On mainnet the one thing a stranger funds
+is the payment itself, 0.01 USDC for one verification. On the testnet judge path even that is on the
+house, so a brand-new passkey reaches a confirmed transaction with zero funding steps.
 
 ---
 
@@ -121,30 +141,37 @@ body          {"isValid":false,"invalidReason":"insufficient_funds",
 
 ## 5. Tests and proving the checks can fail
 
-`npm test` runs 149 passing tests, 3 skipped, 0 failing. 19 of those are new here: 8 in
-`lib/session.test.ts` and 11 in `lib/pay.test.ts`. They run with no browser and no network. The
+`npm test` at the repo root runs 625 passing tests, 38 skipped, 0 failing: 427 in the app suite and
+198 in the verifier suite, with the skips waiting on a database or an archive node. The Mera UX
+surface adds 33 tests, all offline, with no browser and no network: 10 in `lib/session.test.ts`, 13
+in `lib/pay.test.ts`, 4 in `lib/pay-net.test.ts` and 6 in `lib/pay-run.test.ts`. The
 session signs a real Mera signature and the test recovers the signer to prove it is the account key
 rather than trusting that it was.
 
 Four mutations, each applied on its own, run against the suite, then reverted:
 
-| Mutation | Tests that caught it |
+| Mutation | Result |
 | --- | --- |
-| the session signs after expiry (expiry check disabled) | 2 |
-| a server key signs instead of the session (signDigest bypassed) | 3 |
-| the wrong EIP-712 domain, chainId 1 instead of 143 | 4 |
-| the X-PAYMENT header built from an unsigned authorization | 1 |
+| the session signs after expiry (expiry check disabled) | caught |
+| a server key signs instead of the session (signDigest bypassed) | caught |
+| the wrong EIP-712 domain, chainId 1 instead of 143 | caught |
+| the X-PAYMENT header built from an unsigned authorization | caught |
 
-Each mutation produced at least one failure. The files were byte-identical to their backups
-afterwards and the suite went green again.
+Each mutation was caught by at least one test. The per-mutation failure counts from the original run
+are not restated, because the experiment predates the testnet domain-separation tests in
+`lib/pay.test.ts`, which cover a fifth case: settling a testnet signature under the mainnet domain.
+The files were byte-identical to their backups afterwards and the suite went green again.
 
 ---
 
 ## 6. The one thing not done and the command that does it
 
-The confirmed on-chain settlement needs the account funded with the USDC it pays. That is real money
-on mainnet, so it is the operator's call rather than something this build does on its own. Everything
-up to it is done and the `/verify` acceptance above proves the authorization the settle would use.
+A judge can already reach a confirmed on-chain settlement for free: `/pay?net=testnet` mints a little
+tUSDC to the new account on the house, then settles the payment on Monad testnet, so the whole flow
+costs the judge nothing and the transaction hash lands on the page. The one path still gated is a
+settlement on Monad MAINNET, which spends real USDC, so it is the operator's call rather than
+something this build does on its own. Everything up to it is done and the `/verify` acceptance above
+proves the authorization the mainnet settle would use.
 
 To run the final settle: open `/pay`, connect the passkey, copy the account address the page shows,
 fund it with 0.02 USDC (0.01 for the payment, the rest for a second try), then click pay.
@@ -167,7 +194,10 @@ is the deterministic stand-in used for a reproducible non-passkey run.
 
 The account layer, the derivation, the session, the signing and the `/verify` acceptance are real.
 The two facilitator responses in section 4 came back from the live facilitator in this build, not
-from a fixture. The one thing not yet run is a settled payment on mainnet, because it spends real
-USDC. That is stated plainly rather than implied. When it runs, the transaction hash appears on
-the page and links to the Monad explorer.
+from a fixture. A settled payment on Monad TESTNET is live and free on `/pay?net=testnet`, funded by
+the house. The one thing not yet run is a payment settled on MAINNET from the passkey-derived account,
+because it spends real USDC. Mainnet x402 settlements from our agents do exist and are recorded in
+[`28-X402-UPTO.md`](28-X402-UPTO.md). Those come from the house wallet rather than from a browser
+passkey. That is stated plainly rather than implied. On either network the transaction hash appears on
+the page and links to the explorer.
 

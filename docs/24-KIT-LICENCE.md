@@ -4,8 +4,8 @@
 posture for a hackathon entry, where the point is that the work can be read and checked but not forked
 into a competing submission.
 
-It is the wrong posture for two files. The tension was recorded in
-[`docs/14-GAPS.md`](14-GAPS.md) §6 before it was resolved here.
+It is the wrong posture for two files. The tension that this carve-out resolves is also noted in
+[`docs/14-GAPS.md`](14-GAPS.md) §6.
 
 ## The two files and how they differ
 
@@ -15,7 +15,8 @@ It is the wrong posture for two files. The tension was recorded in
 | [`app/embed.js/route.ts`](../app/embed.js/route.ts) | It is served to third-party pages by design. Embedding it needs no grant, because a script tag is a request to our server rather than a copy of our code, but the source is in this repository and a reader should not have to reason about that |
 
 **These two files are released under the MIT licence**, reproduced in full below. Everything else in the
-repository stays under SAND-1.0.
+repository stays under SAND-1.0. The grant lives in the bytes of each file, as an
+`SPDX-License-Identifier: MIT` header on line 1 of both.
 
 ## Why permissive rather than a narrower grant
 
@@ -44,6 +45,8 @@ reproduced at all.
 
 ## MIT License
 
+<!-- voice-gate:off  the MIT text below is quoted verbatim and must stay byte for byte -->
+
 Copyright (c) 2026 zkasuran
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and
@@ -60,3 +63,5 @@ LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE A
 EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+<!-- voice-gate:on -->

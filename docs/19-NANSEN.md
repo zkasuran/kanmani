@@ -2,13 +2,15 @@
 
 The operators page can say how many wallets registered the same document. 7,962 distinct wallets
 point at one deployment that returns 404. What it could not say, until this, is who those wallets
-are. Nansen turns an address into its known entity and behavioural labels, so the count becomes a
-distribution: exchange wallets, smart money, DeFi users and the ones Nansen holds nothing on. That
-last group is the honest one. It renders as `unknown`, never as a zero.
+are. The answer that shipped is a first-funder sample: 60 of 62 wallets drawn from that cluster were
+first funded by one address. Nansen's related-wallets endpoint produced it live at 1 credit a call.
+The operators page renders it as a sample of how the wallets were set up, not as a claim about intent.
 
-This is Nansen data driving a core feature rather than sitting in a sidebar. The feature is the
-operators page. The wallet count it already computes (`AgentRecord.distinctOwners`) is the thing
-Nansen turns into intelligence.
+The label distribution was the original design. Nansen turns an address into its known entity and
+behavioural labels, so the count becomes a distribution: exchange wallets, smart money, DeFi users
+and the ones Nansen holds nothing on. That last group is the honest one. It renders as `unknown`,
+never as a zero. Labels cost 100 credits a wallet and the account is on the free plan, so that path
+is built and unit tested but was never run. The client is described first below, then the live run.
 
 ## The endpoint
 
@@ -21,9 +23,9 @@ normalise `others` to `other` and fold a label with no category into `other` as 
 
 Read live from Nansen's docs on 2026-09-23:
 
-- `docs.nansen.ai/getting-started/authentication` for the host and the header.
-- `docs.nansen.ai/api/profiler/address-labels.md` for the labels request and response schema.
-- `docs.nansen.ai/getting-started/agentic-payments/x402-payments.md` for the payment path.
+- `https://docs.nansen.ai/getting-started/authentication` for the host and the header.
+- `https://docs.nansen.ai/api/profiler/address-labels.md` for the labels request and response schema.
+- `https://docs.nansen.ai/getting-started/agentic-payments/x402-payments.md` for the payment path.
 
 ## Data categories used
 
@@ -49,9 +51,9 @@ verifier itself runs on is the fit we wanted.
 One thing decided it. Nansen excludes the labels endpoint from x402: labels needs a Pro
 subscription, so it is the apikey path, header name lowercase `apikey`. The profiler endpoints that
 do accept x402, related-wallets among them at $0.01 a call, go over the payment path. So the client
-in `lib/nansen.ts` speaks both and picks per call. The labels enrichment that drives the operators
-page runs on apikey because that is the auth Nansen requires for it. The x402 payment path is
-built and exercised by `fetchRelatedWallets`.
+in `lib/nansen.ts` speaks both and picks per call. The first-funder sample that drives the operators
+page runs on apikey, 1 credit a call on the free plan. The x402 payment path is built and typed and
+related-wallets accepts it, but the live sample went over apikey because that is the free plan's auth.
 
 ## The pieces
 
@@ -91,10 +93,11 @@ a throwaway Postgres, all with no network. Three failure modes are proven catcha
 code and watching a test fail: a not-found answer turned into a label, the SSRF screen dropped, a
 Nansen error swallowed into a plausible answer. Each was restored.
 
-The live call is not verified, because there is no Nansen key in this environment. The path is built
-and typed against Nansen's documented request and response. It degrades safely: a failed call is
-recorded as `unknown`, never as a fabricated label. Do not read a label count on the operators page
-as live until the CLI has run against a real key.
+The two live paths differ. The labels endpoint was never run live: at 100 credits a wallet it is
+unaffordable on the free plan (see below), so the label distribution stays `unknown` and the operators
+page shows no label counts. The related-wallets path was run live on 2026-09-30 against a real key.
+That is where the first-funder sample on the operators page comes from. Either way a failed call is
+recorded as `unknown`, never as a fabricated label.
 
 ## 2026-09-30: switched to first funders and what they showed
 
@@ -103,19 +106,20 @@ then 10 a day), so labels could not cover even one wallet. `profiler/address/rel
 credit and its `First Funder` relation answers the question the operators page could not: are the
 7,962 wallets behind one dead document 7,962 operators or a few funders?
 
-Run: `node --experimental-strip-types verifier/src/cli/nansen-enrich.ts --funders --clusters 1 --per-cluster 55`
+Run: `node --experimental-strip-types verifier/src/cli/nansen-enrich.ts --funders --clusters 1 --per-cluster 62`
 (the sample is ordered by md5(address), wallets already answered are skipped, it stops before the credit
 balance falls under `--reserve`). Stored in `fovea.wallet_funder`, append only; rendered at
 `/operators#funders` by `lib/funders.ts`.
 
-Result, 71 credits spent: 62 random wallets from the 7,962-owner eve-8004 cluster were asked and all 62
-answered. **60 of 62 were first funded by one address, `0x97cd97cf…0996`, with 11 MON each.** The other
+Result: 62 random wallets from the 7,962-owner eve-8004 cluster were asked and all 62 answered, so 62
+billed calls here. The run spent 71 credits in total, the other 9 on sampled wallets across five other
+clusters. **60 of 62 were first funded by one address, `0x97cd97cf…0996`, with 11 MON each.** The other
 two came from one further funder. Six funding transactions were checked on Monad directly (from = funder,
 to = wallet, 11 MON). The page states this as a sample and describes set-up, not intent.
 
 ### The related-wallets request shape and what it costs
 
-Primary source, read 2026-10-01: `docs.nansen.ai/api/profiler/address-related-wallets.md`.
+Primary source, read 2026-10-01: `https://docs.nansen.ai/api/profiler/address-related-wallets.md`.
 
 - Method and path: `POST /api/v1/profiler/address/related-wallets`.
 - Body: `{ address, chain: "monad" }`. Nansen's current field name is `wallet_address`; `address` is a
@@ -127,10 +131,11 @@ Primary source, read 2026-10-01: `docs.nansen.ai/api/profiler/address-related-wa
   false "no shared funder".
 
 Credits. Related-wallets is a Basic endpoint at $0.01 a call over x402. On the free API-key plan it
-cost 1 credit a call (observed: 71 credits for 71 calls, confirmed by the `X-Nansen-Credits-Cost`
-response header). The labels endpoint costs 100 credits a wallet and is Pro-only and excluded from
+cost 1 credit a call (observed: the account's `credits_remaining` fell by 71 over the 71 calls). The
+labels endpoint costs 100 credits a wallet and is Pro-only and excluded from
 x402, which is why the build switched off it. The counterparties endpoint (the richer second category,
-below) costs 5 credits. Cite `docs.nansen.ai/getting-started/agentic-payments/x402-payments.md` for
+below) costs 5 credits. Cite
+`https://docs.nansen.ai/getting-started/agentic-payments/x402-payments.md` for
 the $0.01, the excluded-labels line and the `PAYMENT-SIGNATURE` header.
 
 ## Reproduce the 60-of-62 finding

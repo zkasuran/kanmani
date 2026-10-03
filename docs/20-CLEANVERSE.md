@@ -6,8 +6,14 @@ money cannot reach a worker whose wallet is not cleared. That is the whole ask o
 bounty, quoted: priority to projects where identity verification is structurally coupled to asset
 movement, not added as an optional layer.
 
-The code is `contracts/src/CleanverseGate.sol`, its tests are `contracts/test/CleanverseGate.t.sol`
-and `contracts/test/CleanverseGateFork.t.sol` and the off-chain read is `lib/cleanverse.ts`.
+The code is `contracts/src/CleanverseGate.sol`, its tests are `contracts/test/CleanverseGate.t.sol`,
+`contracts/test/CleanverseGateFork.t.sol` and `contracts/test/CleanverseCvaFork.t.sol`. The reads are
+`lib/cleanverse.ts` off chain and `lib/cleanverse-onchain.ts` on chain.
+
+The live surface is `/compliance` on https://kanmani.xyz, backed by `lib/cleanverse-onchain.ts`. It
+reads `cviStatus(worker)` from the gate on each load over a public RPC with no key, so a judge sees
+the three-state answer against the real validator rather than a static table. The off-chain client
+`lib/cleanverse.ts` is the API path used elsewhere.
 
 ---
 
@@ -15,8 +21,9 @@ and `contracts/test/CleanverseGateFork.t.sol` and the off-chain read is `lib/cle
 
 Cleanverse runs a compliance protocol with two primitives. A Cleanverse Verified Identity (CVI) is a
 non-transferable on-chain credential bound to a wallet after KYC. A Cleanverse Verified Asset (CVA) is
-a token that checks the recipient's CVI inside its own transfer, so a transfer to an uncleared wallet
-reverts. Access USDC (`aUSDC`) is the CVA stablecoin.
+a token that checks the CVI of both parties to a transfer inside its own transfer, so a transfer that
+touches an uncleared wallet reverts. Section 8 shows the sender is checked as well as the recipient.
+Access USDC (`aUSDC`) is the CVA stablecoin.
 
 The identity check is **on-chain**, not an API the app calls. Cleanverse publishes a Compliance
 Validator contract with a view function:
@@ -66,8 +73,8 @@ the check is not a configuration change, it is a rewrite of the one function tha
 is the difference between coupled and optional.
 
 The worker payout uses the CVA, so it is guarded twice: the gate refuses an uncleared worker with a
-clear reason before any balance leaves escrow and the CVA itself refuses the transfer if it somehow
-reached one. The gate check runs first so funds are never stranded mid-transfer.
+clear reason before any balance leaves escrow and the CVA itself refuses any transfer that touches an
+uncleared wallet on either side. The gate check runs first so funds are never stranded mid-transfer.
 
 The lifecycle:
 
@@ -91,10 +98,10 @@ safe. The validator can answer in three ways and the gate keeps them distinct:
   until the gate is registered.
 
 The read is a low-level staticcall so those three are handled explicitly rather than collapsed. A
-public view `cviStatus(worker)` returns the same three states without reverting, for a UI to read
-before a settlement is attempted. `lib/cleanverse.ts` holds the same rule off chain: a network error,
-a timeout or an unrecognised code is `"unknown"`, never `"unverified"` and only `data.code === 4`
-under a `"0000"` envelope is `"verified"`.
+public view `cviStatus(worker)` returns the same three states without reverting, for the `/compliance`
+page to read on load, before a settlement is attempted. `lib/cleanverse.ts` holds the same rule off
+chain: a network error, a timeout or an unrecognised code is `"unknown"`, never `"unverified"` and
+only `data.code === 4` under a `"0000"` envelope is `"verified"`.
 
 ---
 
@@ -119,8 +126,8 @@ cd contracts && PATH=$HOME/.foundry/bin:$PATH forge test --match-contract Cleanv
 # Against the real validator on Monad, forked:
 forge test --match-contract CleanverseGateForkTest --fork-url https://rpc.monad.xyz
 
-# The off-chain client:
-npm test    # runs lib/cleanverse.test.ts among the rest
+# The off-chain and on-chain clients (from the repo root):
+(cd .. && npm test)    # runs lib/cleanverse.test.ts and lib/cleanverse-onchain.test.ts among the rest
 
 # Simulate the deploy and read the gas, no broadcast, no funds:
 forge script script/DeployCleanverseGate.s.sol:DeployCleanverseGate \
@@ -128,7 +135,7 @@ forge script script/DeployCleanverseGate.s.sol:DeployCleanverseGate \
 ```
 
 The fork test asserts the real validator is live and that the gate fails closed against it while the
-pool is unregistered. The deploy simulation reported 1,846,462 gas and confirmed both dependencies
+pool is unregistered. The deploy simulation reported 1,880,933 gas and confirmed both dependencies
 have code on chain 143.
 
 ---
@@ -154,8 +161,9 @@ The validator and the gate agree in both directions: `complianceVerify(gate, wor
 **Two things this run found.**
 
 1. **A gate with no owner cannot be registered.** Register Compliance Pool checks an EIP-191 signature
-   against the pool's on-chain `owner()`. The first mainnet deploy (`0x06Ce09EA…c421`, 2026-09-30) had
-   no such function, because the gate deliberately has no admin. Registration answered `Invalid
+   against the pool's on-chain `owner()`. The first mainnet deploy
+   (`0x06Ce09EAe9Da00A894d342C7FC4D42fc7ED7c421`, 2026-09-30) had no such function, because the gate
+   deliberately has no admin. Registration answered `Invalid
    contract owner signature.` The gate now records its deployer as an immutable `owner`. No function
    reads it and it holds no power over any job, balance or rule. It exists for that one check. The
    ownerless deploy is superseded and holds nothing.
@@ -232,6 +240,7 @@ with no CVI. It is not in the signature databases, so treat it as `error 0xa6725
 observed verbatim. A transfer that clears compliance but holds no balance reverts `0xe450d38c`
 (`ERC20InsufficientBalance`) instead, so an `eth_call` cleanly separates a compliance block from an
 empty wallet.
+
 ### Verdict: Aqueous and the gate both need a CVI, so do the buyer and the worker
 
 Our escrow path moves aUSDC through four addresses, three of which hold no CVI today:

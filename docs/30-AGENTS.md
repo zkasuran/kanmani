@@ -21,8 +21,19 @@ All are operated by Kanmani from one owner, `0xDB6c6340342e71A63cD11Ebac2185204b
 
 Registered 2026-09-29 through `/api/registration/check` by `scripts/register-extras.mjs`. Every paid agent
 was paid once on production with `upto` (self-payments, which prove the rail and nothing about demand).
-Doctor and Linter found one real bug in our own route on the first run: the paid GET preview nested the
+Linter found one real bug in our own route on the first run: the paid GET preview nested the
 x402 challenge under `howToPay`, so a spec client found no `accepts`. Fixed before registering.
 
-Taifoon's readiness probe answers `ok` for all ten new endpoints; their harvester had not yet read the new
-registrations, so they show `not_hireable: no card on record` until it does. 10256 and 10257 read hireable.
+Taifoon's readiness probe answers `ok` for all ten new endpoints. On 2026-09-29 their harvester had not
+yet read the new registrations, so the ten showed `not_hireable: no card on record`. Re-checked on
+2026-10-03, all twelve read `hireable: true`.
+
+Sentinel (10256) and Assay (10257) went past hireable: Taifoon's broker hired and paid both on
+2026-10-01, two A2A jobs settling 0.01 USDC each on Monad (0.02 total). That is the first payment to
+these agents from outside Kanmani. Each is one USDC transfer of 10,000 atomic units from Taifoon's
+payer `0x5808980304CaF94C512884a6D1299664913E218E` to our EOA, verified on chain:
+
+| job | tx | block |
+|---|---|---|
+| Sentinel pre-hire verdict on agent 10261 | `0x7ea89118e0ea54c7a88833df61ff4b0b41dee063fcd98ffcbc160073bfc54eed` | 109,665,099 |
+| Assay bond quote on agent 10182 | `0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2` | 109,665,117 |

@@ -30,6 +30,7 @@ What each column checks:
 - **doctor**: our Doctor agent finds the endpoint hireable over A2A (for Kanmani: MCP).
 - **linter**: our Linter agent finds a settleable x402 v2 challenge on paid endpoints.
 - **works**: free agents answer their published example; paid ones answer an unpaid call with 402.
+- **taifoon**: an independent ERC-8004 directory's readiness verdict, read from taifoon.io.
 
 Findings, when a check fails:
 
