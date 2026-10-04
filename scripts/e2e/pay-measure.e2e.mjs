@@ -32,10 +32,16 @@ const check = (name, ok, detail = "") => {
   console.log(`  ${ok ? "ok  " : "FAIL"} ${name}${detail ? `  ${detail}` : ""}`);
 };
 
-const started = Date.now();
 await page.goto(`${url}/pay?net=testnet`, { waitUntil: "networkidle" });
+// The widget's clock starts when it mounts, so the wall clock starts once the page has loaded. Started
+// before the navigation, it also counted the network fetch of the page, which the widget never sees
+// and which over a real connection was several seconds.
+const started = Date.now();
 await page.getByRole("button", { name: /connect a new passkey/i }).click();
 await page.getByTestId("session-account").first().waitFor({ timeout: 15_000 });
+// On testnet the house mints tUSDC to the new account right after connect. Paying before that lands
+// fails for lack of balance, which is what this suite used to measure instead of a payment.
+await page.getByText(/can pay now with no funding step/i).waitFor({ timeout: 60_000 });
 await page.getByRole("button", { name: /pay .* and verify/i }).click();
 
 // The per-run line is "your run: N taps plus 1 passkey confirmation, X.X s".

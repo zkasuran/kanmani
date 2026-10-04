@@ -76,7 +76,10 @@ async function runTrack(browser, track, states, extra) {
   await installEip1193(page);
   await recordStates(page);
   await routeFund(page, { track });
-  const res = await page.goto(`${BASE}/fund`, { waitUntil: "domcontentloaded" });
+  // networkidle, not domcontentloaded: the inputs are React-controlled, so a fill that lands before
+  // hydration is reset when React takes over and the quote click then reads an empty form. On a fast
+  // local server the race was invisible; against production it failed every track.
+  const res = await page.goto(`${BASE}/fund`, { waitUntil: "networkidle" });
   if (!res || !(await page.$('[data-testid="fund-flow"]'))) {
     console.log(`SKIP - /fund has no interactive flow yet`);
     await context.close();

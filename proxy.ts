@@ -94,6 +94,17 @@ const fundBuckets = new Map<string, Bucket>();
 
 type Bucket = { count: number; resetAt: number };
 const buckets = new Map<string, Bucket>();
+/**
+ * Router prefetches get their own bucket, the same size as the general one.
+ *
+ * Next prefetches every link that scrolls into view, so a reader who does nothing but read a long
+ * page spends requests without asking for anything. Measured on the canary: a third of one client's
+ * traffic was prefetches, median 1 KB and 18 ms each, and counting them against the general limit is
+ * what tripped a 429 at 525 requests a minute. They are not exempt, because the header is client
+ * controlled: forging it buys a second allowance of the same size, never an unbounded one.
+ */
+const prefetchBuckets = new Map<string, Bucket>();
+const isPrefetch = (req: NextRequest) => req.headers.get("next-router-prefetch") !== null;
 
 function clientIp(req: NextRequest): string {
   const fwd = req.headers.get("x-forwarded-for");
@@ -110,16 +121,17 @@ export function proxy(req: NextRequest): NextResponse {
 
   const now = Date.now();
   const ip = clientIp(req);
-  let b = buckets.get(ip);
+  const pool = isPrefetch(req) ? prefetchBuckets : buckets;
+  let b = pool.get(ip);
   if (!b || now >= b.resetAt) {
     b = { count: 0, resetAt: now + WINDOW_MS };
-    buckets.set(ip, b);
+    pool.set(ip, b);
   }
   b.count++;
 
   // Opportunistic sweep so the map cannot grow without bound.
-  if (buckets.size > 20_000) {
-    for (const [k, v] of buckets) if (now >= v.resetAt) buckets.delete(k);
+  for (const m of [buckets, prefetchBuckets]) {
+    if (m.size > 20_000) for (const [k, v] of m) if (now >= v.resetAt) m.delete(k);
   }
 
   if (req.method === "POST" && BUILD_PATHS.test(req.nextUrl.pathname)) {
