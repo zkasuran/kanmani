@@ -1,0 +1,99 @@
+{
+  "recordedAt": "2026-10-04T11:38:51.242Z",
+  "model": "Qwen/Qwen3.8-Max",
+  "shapeKey": "chainId,meaning,settlement,tag1,tag2,type,value,valueDecimals,version",
+  "exampleUri": "https://gateway-mainnet-production.up.railway.app/reputation/0x0e85f01d3f69ae94d2c7223792ce152637482fe6959736899368a4854bd5a2cc",
+  "review": {
+    "acceptedOn": "2026-10-04",
+    "changed": {
+      "field": "recipientPath",
+      "from": "settlement.serviceId",
+      "to": "settlement.collection",
+      "why": "serviceId is the bytes32 label tab.demo. The settlement tx 0x863e9ae5 transfers 200000 USDC to settlement.collection 0x49472ef9ed99f30d4ead45ac9e1c16c31f70783a."
+    }
+  },
+  "result": {
+    "converged": true,
+    "mapping": {
+      "name": "tab-settlement-feedback.v1",
+      "induced": "2026-10-04",
+      "note": "Service-written feedback confirming a Settlement applied on chain. Payment fields live under `settlement`; payer is the agent, recipient is the serviceId label.",
+      "kind": "claim",
+      "proposal": {
+        "name": "tab-settlement-feedback.v1",
+        "note": "Service-written feedback confirming a Settlement applied on chain. Payment fields live under `settlement`; payer is the agent, recipient is the serviceId label.",
+        "matchKeys": [
+          "type",
+          "settlement.txHash",
+          "settlement.agent"
+        ],
+        "claim": {
+          "networkPath": "chainId",
+          "txHashPath": "settlement.txHash",
+          "recipientPath": "settlement.serviceId",
+          "payerPath": "settlement.agent",
+          "amountPath": "settlement.amount",
+          "tokenPath": "settlement.asset"
+        },
+        "predicted": {
+          "network": 143,
+          "txHash": "0x863e9ae50961b38e7bf12e7ae14e7384bc543725ea51c8acdd9dc8bf9f817497"
+        }
+      },
+      "inducedBy": "Qwen/Qwen3.8-Max"
+    },
+    "iterations": 1,
+    "toolCalls": 1,
+    "transcript": [
+      {
+        "at": 0,
+        "kind": "propose",
+        "by": "Qwen/Qwen3.8-Max",
+        "proposal": {
+          "name": "tab-settlement-feedback.v1",
+          "note": "Service-written feedback confirming a Settlement applied on chain. Payment fields live under `settlement`; payer is the agent, recipient is the serviceId label.",
+          "matchKeys": [
+            "type",
+            "settlement.txHash",
+            "settlement.agent"
+          ],
+          "claim": {
+            "networkPath": "chainId",
+            "txHashPath": "settlement.txHash",
+            "recipientPath": "settlement.serviceId",
+            "payerPath": "settlement.agent",
+            "amountPath": "settlement.amount",
+            "tokenPath": "settlement.asset"
+          },
+          "predicted": {
+            "network": 143,
+            "txHash": "0x863e9ae50961b38e7bf12e7ae14e7384bc543725ea51c8acdd9dc8bf9f817497"
+          }
+        }
+      },
+      {
+        "at": 0,
+        "kind": "tool",
+        "name": "try_mapping",
+        "outcome": {
+          "kind": "claim",
+          "mapping": "tab-settlement-feedback.v1",
+          "claim": {
+            "network": 143,
+            "txHash": "0x863e9ae50961b38e7bf12e7ae14e7384bc543725ea51c8acdd9dc8bf9f817497",
+            "recipient": "0x7461622e64656d6f000000000000000000000000000000000000000000000000",
+            "payer": "0x3a3b6079e418c81a9de08414bb07ea817939e7ce",
+            "amount": "200000",
+            "token": "0x754704bc059f8c67012fed69bc8a327a5aafb603"
+          }
+        }
+      },
+      {
+        "at": 0,
+        "kind": "decision",
+        "verdict": "accept",
+        "reason": "parser extracted what the plan predicted (claim)"
+      }
+    ]
+  }
+}

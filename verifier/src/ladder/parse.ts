@@ -188,10 +188,44 @@ export const plainTextComment: Mapping = {
   extract: () => ({ kind: "noClaim", mapping: "plain-text-comment.v1", note: "plain text" }),
 };
 
+/**
+ * A service's receipt for a tab settlement it applied on chain. The first mapping in this atlas that a
+ * model proposed rather than a person wrote.
+ *
+ * Induced by Qwen 3.8 Max on 2026-10-04 in one turn, round-tripped through this parser before it was
+ * accepted (the run is in verifier/src/atlas/inductions/tab-settlement-feedback.v1.2026-10-04.json).
+ * One field was changed in review. Qwen read the recipient as `settlement.serviceId`, which is the
+ * label "tab.demo" packed into bytes32, not an address anything can be paid at. The settlement
+ * transaction's own USDC Transfer pays `settlement.collection`, so that is the recipient here. A
+ * recipient has to be something a transfer can be checked against, and a label is not.
+ */
+export const tabSettlementFeedback: Mapping = {
+  name: "tab-settlement-feedback.v1",
+  induced: "2026-10-04",
+  note: "tab-settlement-feedback receipts. One per settlement applied on chain, hash under settlement.txHash",
+  matches: (d) => d.type === "tab-settlement-feedback" && isObj(d.settlement) && "txHash" in d.settlement,
+  extract(d) {
+    const st = d.settlement as Record<string, unknown>;
+    return {
+      kind: "claim",
+      mapping: this.name,
+      claim: {
+        network: d.chainId,
+        txHash: st.txHash,
+        recipient: st.collection,
+        payer: st.agent,
+        amount: st.amount,
+        token: st.asset,
+      },
+    };
+  },
+};
+
 /** The atlas. Order matters only in that a claim-bearing shape is tried before the generic ones. */
 export const ATLAS: readonly Mapping[] = [
   executionMarket,
   executionMarketTransactions,
+  tabSettlementFeedback,
   eloRecord,
   conversationScore,
   agentCard,

@@ -291,8 +291,7 @@ earlier. The mapping is real, it is tested and this corpus never exercises it.
 
 ## Parse and the atlas
 
-The atlas is five published mappings. Each carries a name, the date it was hand-written from real
-documents (the code field is named `induced`) and a note. A test enforces the date and the note, because a mapping can move a verdict.
+The atlas is six published mappings: five hand-written and one proposed by Qwen 3.8 Max, then reviewed. Each carries a name, the date it was added from real documents (the code field is named `induced`) and a note. A test enforces the date and the note, because a mapping can move a verdict.
 
 | mapping | induced | reads | rows in corpus |
 |---|---|---|---|
@@ -309,7 +308,7 @@ psql "$FOVEA_DATABASE_URL" -c \
      group by mapping, outcome order by 3 desc;"
 ```
 
-**These mappings are hand-written from real documents, then published.** A reader re-running the pipeline
+**These mappings are written against real documents, reviewed by a person, then published.** A reader re-running the pipeline
 executes them deterministically, with no model anywhere in the loop and gets the same numbers. A
 model's only job is to propose a mapping for a shape nobody has seen. The chain decides every
 verdict, so a wrong proposal costs a retry and can never produce a wrong `true`.

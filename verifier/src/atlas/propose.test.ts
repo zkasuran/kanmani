@@ -7,7 +7,13 @@ import pg from "pg";
 import { induceMapping } from "./induce.ts";
 import { compileMapping } from "./compile.ts";
 import { shapeKey, toProposalRow, ProposalStore } from "./propose.ts";
-import { ATLAS, parseDocument } from "../ladder/parse.ts";
+import { ATLAS, parseDocument, tabSettlementFeedback } from "../ladder/parse.ts";
+
+/**
+ * The atlas as it stood before tab-settlement-feedback.v1 was promoted on 2026-10-04. These tests
+ * describe the review loop for an unmapped shape, so they run against the atlas that did not yet read it.
+ */
+const ATLAS_BEFORE = ATLAS.filter((m) => m !== tabSettlementFeedback);
 import { connectionStringFrom } from "../store/store.ts";
 import type { ChatClient, ChatRequest, ChatResponse, MappingProposal } from "./model.ts";
 
@@ -97,7 +103,7 @@ test("shapeKey is the sorted top-level keys, so N claims of one shape collapse t
 });
 
 test("a converged run becomes a pending row that round-trips and carries its covered claims", async () => {
-  const r = await induceMapping({ client: new ScriptedModel([TAB_PROPOSAL]), document: TAB_BYTES, now: at });
+  const r = await induceMapping({ client: new ScriptedModel([TAB_PROPOSAL]), document: TAB_BYTES, atlas: ATLAS_BEFORE, now: at });
   assert.equal(r.converged, true);
   const row = toProposalRow({
     shapeKey: shapeKey(TAB_DOC),
@@ -124,7 +130,7 @@ test("a non-converged run is still written, with round_trip_ok false and a give-
     name: "tab-settlement-feedback.bad",
     claim: { ...TAB_PROPOSAL.claim!, txHashPath: "settlement.settledAt" },
   };
-  const r = await induceMapping({ client: new ScriptedModel([bad]), document: TAB_BYTES, maxTurns: 1, now: at });
+  const r = await induceMapping({ client: new ScriptedModel([bad]), document: TAB_BYTES, atlas: ATLAS_BEFORE, maxTurns: 1, now: at });
   assert.equal(r.converged, false);
   const row = toProposalRow({ shapeKey: shapeKey(TAB_DOC), feedbackIds: FEEDBACK_IDS, exampleUri: "u", model: "qwen3.8-max", result: r });
   assert.equal(row.converged, false);
@@ -141,20 +147,22 @@ test("the verdict pipeline imports nothing from the proposer or the review queue
     assert.ok(!/mapping_proposal/.test(src), `${name} must not reference mapping_proposal`);
     assert.ok(!/from ["'].*propose\.ts["']/.test(src), `${name} must not import the proposer`);
   }
-  // The shipped atlas is exactly five mappings; a proposal row cannot change that count.
-  assert.equal(ATLAS.length, 5);
+  // The shipped atlas is six mappings: five written by hand and one Qwen proposed that a person reviewed
+  // and added in code. A proposal row alone cannot change that count.
+  assert.equal(ATLAS.length, 6);
+  assert.equal(ATLAS.filter((m) => m.name === "tab-settlement-feedback.v1").length, 1);
 });
 
 test("the only way a proposal moves a verdict is adding its mapping to ATLAS in code", () => {
-  // Today the shape is unmapped: the hand atlas returns unparsed, which the ladder turns into
+  // Before promotion the shape was unmapped: the atlas returned unparsed, which the ladder turns into
   // unknown/intact (the noMappingReadTheShape count).
-  const before = parseDocument(TAB_BYTES, ATLAS);
+  const before = parseDocument(TAB_BYTES, ATLAS_BEFORE);
   assert.equal(before.kind, "unparsed");
 
   // Promotion is a code diff. Add the mapping to the atlas and the same document resolves to a real
   // claim with the money fields read out of the settlement object, never the top-level value trap.
   const compiled = compileMapping(TAB_PROPOSAL, "2026-10-01");
-  const after = parseDocument(TAB_BYTES, [...ATLAS, compiled]);
+  const after = parseDocument(TAB_BYTES, [...ATLAS_BEFORE, compiled]);
   assert.equal(after.kind, "claim");
   if (after.kind === "claim") {
     assert.equal(after.mapping, "tab-settlement-feedback.v1");

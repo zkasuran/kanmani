@@ -62,18 +62,29 @@ export function endpointFor(c: Chain, env: Record<string, string | undefined> = 
   return null;
 }
 
-type Fetcher = (url: string, init: { method: string; headers: Record<string, string>; body: string }) => Promise<{
+type Fetcher = (
+  url: string,
+  init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal },
+) => Promise<{
   ok: boolean;
+  status?: number;
   json: () => Promise<unknown>;
 }>;
 
-/** One `eth_getTransactionByHash`. Returns null on any failure, because a broken read is not a finding. */
-async function txOn(
-  url: string,
-  txHash: string,
-  fetchImpl: Fetcher,
-  timeoutMs: number,
-): Promise<{ blockNumber: number; from: string; to: string | null } | null> {
+/**
+ * One chain's answer. `absent` is a real answer: the provider replied and has no mined transaction
+ * with this hash. `failed` is not an answer at all, and must never be counted as having searched.
+ *
+ * Before this split both came back as `null`. When the Alchemy endpoints hit their monthly cap and
+ * answered every call with HTTP 429, Ethereum went on being listed under `searched`, so a reader was
+ * told a transaction was not on Ethereum when nobody had been able to look.
+ */
+type ChainAnswer =
+  | { kind: "found"; blockNumber: number; from: string; to: string | null }
+  | { kind: "absent" }
+  | { kind: "failed"; reason: string };
+
+async function txOn(url: string, txHash: string, fetchImpl: Fetcher, timeoutMs: number): Promise<ChainAnswer> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -81,15 +92,22 @@ async function txOn(
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "eth_getTransactionByHash", params: [txHash] }),
+      signal: controller.signal,
     });
-    if (!res.ok) return null;
-    const body = (await res.json()) as { result?: { blockNumber?: string; from?: string; to?: string | null } | null };
-    const r = body?.result;
+    if (!res.ok) return { kind: "failed", reason: res.status ? `HTTP ${res.status}` : "HTTP error" };
+    const body = (await res.json()) as {
+      result?: { blockNumber?: string; from?: string; to?: string | null } | null;
+      error?: { code?: number; message?: string };
+    };
+    // A JSON-RPC error is the provider refusing, often a rate or capacity limit sent with HTTP 200.
+    if (body?.error) return { kind: "failed", reason: `rpc error ${body.error.code ?? ""}`.trim() };
+    if (!body || !("result" in body)) return { kind: "failed", reason: "no result in the response" };
+    const r = body.result;
     // A pending transaction has a null blockNumber. Not mined is not found.
-    if (!r || !r.blockNumber || !r.from) return null;
-    return { blockNumber: Number(BigInt(r.blockNumber)), from: r.from, to: r.to ?? null };
-  } catch {
-    return null;
+    if (!r || !r.blockNumber || !r.from) return { kind: "absent" };
+    return { kind: "found", blockNumber: Number(BigInt(r.blockNumber)), from: r.from, to: r.to ?? null };
+  } catch (e) {
+    return { kind: "failed", reason: (e as Error).name === "AbortError" ? "timed out" : "request failed" };
   } finally {
     clearTimeout(timer);
   }
@@ -119,9 +137,8 @@ export async function findTransaction(
   const timeoutMs = opts.timeoutMs ?? 8000;
 
   const candidates = CHAINS.filter((c) => c.id !== declaredChainId);
-  const searched: number[] = [];
   const unreachable: SearchResult["unreachable"] = [];
-  const jobs: Promise<FoundAt | null>[] = [];
+  const asked: { c: (typeof CHAINS)[number]; answer: Promise<ChainAnswer> }[] = [];
 
   for (const c of candidates) {
     const url = endpointFor(c, env);
@@ -129,19 +146,27 @@ export async function findTransaction(
       unreachable.push({ chainId: c.id, key: c.key, needs: c.rpcEnv ?? "an endpoint" });
       continue;
     }
-    searched.push(c.id);
-    jobs.push(
-      txOn(url, txHash, fetchImpl, timeoutMs).then((t) =>
-        t ? { chainId: c.id, key: c.key, blockNumber: t.blockNumber, from: t.from, to: t.to } : null,
-      ),
-    );
+    asked.push({ c, answer: txOn(url, txHash, fetchImpl, timeoutMs) });
   }
 
-  const results = await Promise.all(jobs);
+  // A chain is only `searched` when its provider actually answered. One that failed is unreachable
+  // for this search, with the reason, so `explain` reports the result as inconclusive.
+  const searched: number[] = [];
+  let found: FoundAt | null = null;
+  for (const { c, answer } of asked) {
+    const a = await answer;
+    if (a.kind === "failed") {
+      unreachable.push({ chainId: c.id, key: c.key, needs: `${c.rpcEnv ?? "an endpoint"} (${a.reason})` });
+      continue;
+    }
+    searched.push(c.id);
+    if (a.kind === "found" && !found) found = { chainId: c.id, key: c.key, blockNumber: a.blockNumber, from: a.from, to: a.to };
+  }
+
   return {
     txHash,
     declaredChainId,
-    found: results.find((r) => r !== null) ?? null,
+    found,
     searched,
     unreachable,
     checkedAt: new Date().toISOString(),

@@ -256,7 +256,7 @@ that one mapping moved `true` from 2 to 12 at the time. **An incomplete parser d
 distorts the found-to-not-found ratio, which is the number the entire thesis rests on.** A softer
 label on those 23 would have hidden a sixfold error in our own headline.
 
-Every mapping is in `verifier/src/ladder/parse.ts`, hand-written with the date in a field named
+Every mapping is in `verifier/src/ladder/parse.ts`, written or reviewed by a person, with the date in a field named
 `induced`, is rendered on
 `/method` and two mappings matching one document is refused rather than resolved by array order.
 

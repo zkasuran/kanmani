@@ -15,7 +15,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-799%20passing-34d399?style=flat-square&labelColor=05070a" alt="799 tests passing">
+  <img src="https://img.shields.io/badge/tests-807%20passing-34d399?style=flat-square&labelColor=05070a" alt="807 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-policy%20%2B%20risk%20table-8b98a9?style=flat-square&labelColor=05070a" alt="Security policy"></a>
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
@@ -192,7 +192,7 @@ Everything else in this repository is built around that one rule.
 | Cleanverse compliance gate | testnet **real**, mainnet **not registered** | testnet runs end to end with real transactions. The mainnet pool is unregistered, so the gate reverts `PoolNotRegistered` and fails closed |
 | Nansen funder enrichment | **one real run**, partly priced out | the related-wallets path ran live on 2026-09-30 for 71 credits across 62 of the <!-- n:oneDocWallets -->7,962<!-- /n --> wallets. The labels endpoint never ran, at 100 credits a wallet |
 | Alchemy self-heal stream | **wired and tested, no deliveries** | the path is live and zero live deliveries have ever arrived |
-| Qwen mapping induction | one **real keyed run**, one **offline fake** | `scripts/atlas-propose.mjs` is the keyed run against Qwen. `verifier/src/atlas/demo.ts` is a scripted fake with no key and no network. The five shipped mappings are hand written |
+| Qwen mapping induction | **real keyed runs**, one **shipped** | on 2026-10-04 Qwen 3.8 Max proposed `tab-settlement-feedback.v1` in one turn. A person changed one field in review and it joined the atlas. The other five mappings are hand written. `verifier/src/atlas/demo.ts` is a scripted fake with no key and no network |
 
 ## Architecture
 
@@ -386,7 +386,7 @@ cd indexer   && npm run codegen && npm start   # the index
 npm run dev                                    # and the site itself
 ```
 
-<!-- n:testsPassing -->799<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->467<!-- /n --> in the app, <!-- n:testsVerifier -->208<!-- /n --> in the verifier and <!-- n:testsContracts -->124<!-- /n --> in the
+<!-- n:testsPassing -->807<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->469<!-- /n --> in the app, <!-- n:testsVerifier -->214<!-- /n --> in the verifier and <!-- n:testsContracts -->124<!-- /n --> in the
 contracts. <!-- n:testsSkipped -->51<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
 does not have. `forge test --fork-url https://rpc.monad.xyz` picks up the fork tests and
 `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` picks up the precompile ones,

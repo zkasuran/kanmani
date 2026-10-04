@@ -261,8 +261,7 @@ All 1,095 `data:` URIs were decoded. 1,029 are valid JSON in exactly two shapes.
 | execution.market transaction list (`execution-market-transactions.v1`) | 23 | yes |
 | no mapping reached the shape | 15 | not determined, these are the `unknown` rows |
 
-The mappings live in `verifier/src/ladder/parse.ts`, each hand-written from real documents and
-tagged with the date in a code field named `induced`. Exactly one must match a document. Two matching is refused rather than resolved by
+The mappings live in `verifier/src/ladder/parse.ts`, five hand-written from real documents and one proposed by Qwen 3.8 Max and reviewed, each tagged with the date in a code field named `induced`. Exactly one must match a document. Two matching is refused rather than resolved by
 declaration order, because a verdict that depends on array position is not a verdict.
 
 | outcome, over all <!-- n:withPointer -->1,292<!-- /n --> | count | meaning |

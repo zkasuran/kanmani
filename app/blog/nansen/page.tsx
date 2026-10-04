@@ -1,99 +1,125 @@
 import Link from "next/link";
-import { Mono, PageHeader, Panel, Row } from "@/components/ui.tsx";
-
-/**
- * The Nansen piece. The finding is in docs/19-NANSEN.md and rendered live on the operators page.
- * Stated as a sample with its method, never extrapolated to the whole cluster, per the house rule
- * that a sample size is quoted and a share is never inflated.
- */
+import { PageHeader } from "@/components/ui.tsx";
+import { Cmd, Code, Facts, H2, Note, Prose, Shot } from "@/components/blog.tsx";
 
 export const metadata = {
   title: "Sixty of sixty-two wallets share one funder",
   description:
-    "Thousands of ERC-8004 agents on Monad point at one dead document. Nansen's first-funder data traces a sample of that cluster back to a single wallet, which turns 'all registered' into something a buyer can use.",
+    "8,093 Monad agents across 7,962 wallets registered one document that now returns 404. Nansen's first-funder data traces 60 of 62 sampled wallets to a single address, which says the wallet count overstates how many operators there are.",
 };
-
-function P({ children }: { children: React.ReactNode }) {
-  return <p className="text-[14px] leading-relaxed text-[var(--color-text)]">{children}</p>;
-}
-
-const FUNDER = "0x97cd97cfe21799bacbf39d0a53469e5f82f30996";
 
 export default function Nansen() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="blog · nansen · 2026-10-01"
+        kicker="blog · nansen · updated 2026-10-04"
         title="Sixty of sixty-two wallets share one funder"
-        lead="Thousands of agents on Monad point at one deleted document. The registry calls them all registered. Nansen answers the question the registry cannot: where did the gas to create them come from."
+        lead="8,093 agents on Monad point at one deleted document, registered by 7,962 different wallets. A wallet count says how many. It cannot say whether that is thousands of operators or one. Nansen can."
       />
 
-      <Panel title="the question a cluster raises">
-        <div className="space-y-3">
-          <P>
-            Our operators view clusters agents by the document they registered. The largest cluster is almost
-            eight thousand wallets pointing at one Vercel deployment that returns 404. Grouping them is already
-            useful. The next question is the interesting one: are these independent operators who happened to
-            reuse a template or one hand behind many addresses.
-          </P>
-        </div>
-      </Panel>
+      <Prose>
+        <H2>The cluster</H2>
+        <p>
+          Our <Link href="/operators">operators page</Link> groups agents by the registration document they
+          point at, not by wallet. Grouped that way, the largest cluster in the registry is one URL on a Vercel
+          preview deployment that has since expired. Asking it today returns HTTP 404.
+        </p>
+      </Prose>
 
-      <Panel title="what Nansen adds and what it costs">
-        <div className="space-y-3">
-          <P>
-            Nansen&apos;s profiler answers who funded an address. We call{" "}
-            <Mono>profiler/address/related-wallets</Mono> with the Monad chain set, read the entry tagged first
-            funder and record it. It is a 1-credit call paid over x402, so the cost is legible and metered rather
-            than a flat subscription.
-          </P>
-          <div className="space-y-1 text-[13px]">
-            <Row label="endpoint">
-              <Mono className="text-muted">profiler/address/related-wallets · chain monad</Mono>
-            </Row>
-            <Row label="cost">
-              <Mono className="text-muted">1 credit per address, x402 metered</Mono>
-            </Row>
-            <Row label="first funder">
-              <Mono className="text-muted">{FUNDER}</Mono>
-            </Row>
-          </div>
-        </div>
-      </Panel>
+      <Shot
+        post="nansen"
+        name="cluster"
+        width={1229}
+        height={499}
+        href="/operators"
+        alt="8,093 agents across 7,962 distinct wallets registered the same document, which answered HTTP 404"
+        caption={
+          <>
+            The live operators page. Every one of those registrations is still on chain, still hash-perfect and
+            still listed by every tool that reads the registry. The only thing describing them has gone.
+          </>
+        }
+      />
 
-      <Panel title="the finding, stated as the sample it is">
-        <div className="space-y-3">
-          <P>
-            Of 62 wallets we sampled from the dead-document cluster, <strong>60 share one first funder</strong>,
-            the address above, each seeded with the same 11 MON, across six transactions anyone can open on
-            Monad. That is one hand funding the fan-out, not sixty independent operators.
-          </P>
-          <P>
-            We say 60 of 62 sampled, never 60 of eight thousand. The daily credit budget caps how many we can
-            check, so the honest claim is the sample and its size. A wallet we have not funded a lookup for
-            reads <Mono>unknown</Mono> rather than a guess. That rule is the same one the whole site runs on: a
-            number that was not measured is never rendered as if it were.
-          </P>
-        </div>
-      </Panel>
+      <Prose>
+        <p>
+          Grouping them is already useful. The next question is the one a buyer actually has: are these 7,962
+          independent operators who reused a template? Or one hand behind many addresses? The registry has no
+          way to answer that. Every wallet is a fresh address with nothing in common but the document.
+        </p>
 
-      <Panel title="into the core, not bolted on">
-        <div className="space-y-3">
-          <P>
-            The sample is not a side panel. Twin, our shared-document agent, carries the first-funder line in its
-            paid answer. Every operator cluster page shows the same, with tx links and{" "}
-            <Mono>unknown</Mono> where a cluster is unsampled. A daily timer spends the budget on the next
-            clusters and keeps a reserve, so the sample grows day over day rather than in one burst.
-          </P>
-          <P>
-            See it live on{" "}
-            <Link className="text-[var(--color-brand)] hover:underline" href="/operators">the operators page</Link>.
-            How we did it, with the request shapes and the credits used, is written up for a stranger to
-            reproduce on the{" "}
-            <Link className="text-[var(--color-brand)] hover:underline" href="/developers">developers page</Link>.
-          </P>
-        </div>
-      </Panel>
+        <H2>Who sent each wallet its first gas</H2>
+        <p>
+          A new wallet on Monad cannot register anything until something sends it MON for gas. Whoever sent it
+          that first MON is its first funder. That is one of the relations Nansen&apos;s profiler returns. We
+          call <Code>profiler/address/related-wallets</Code> on Monad for a sample of the cluster&apos;s wallets,
+          read the entry tagged First Funder and record it with the funding transaction.
+        </p>
+      </Prose>
+
+      <Facts
+        caption="The integration, stated so it can be checked and repeated."
+        rows={[
+          { k: "endpoint", v: <Code>profiler/address/related-wallets</Code>, src: "chain: monad, relation: First Funder" },
+          { k: "cost", v: "1 credit per wallet, paid per call over x402", src: "71 credits for the run below" },
+          { k: "sample", v: "62 of the 7,962 wallets", src: "ordered by md5(address), so a rerun asks the same wallets" },
+          { k: "not used", v: "address labels", src: "100 credits per wallet, not affordable at this scale" },
+        ]}
+      />
+
+      <Shot
+        post="nansen"
+        name="funders"
+        width={1229}
+        height={782}
+        href="/operators"
+        alt="Who funded those wallets, from Nansen: 60 of 62 sampled wallets first funded by 0x97cd…0996"
+        caption={
+          <>
+            The result on the operators page. 60 of the 62 sampled wallets were first funded by one address. The
+            same panel shows the smaller clusters, where a single funder is behind every wallet sampled.
+          </>
+        }
+      />
+
+      <Prose>
+        <p>
+          Every row carries a funding transaction, so none of this rests on trusting Nansen or us. Here is the
+          first one, opened on Monad:
+        </p>
+      </Prose>
+
+      <Cmd
+        cmd="cast tx 0x04d8d5f83e3785ec892ac9f7ef06908c73b0c864a45284ed709b2460134f069b --rpc-url https://rpc.monad.xyz"
+        out={`blockNumber  55949903
+from         0x97cD97CFE21799bacBf39D0a53469e5f82f30996
+to           0xfCADC1758a2a473A9DcbFA77747B66Cc1849016d
+value        11000000000000000000`}
+        note="11 MON from the shared funder to one of the cluster's wallets. The other funding transactions have the same shape."
+      />
+
+      <Note label="what this does and does not say">
+        A shared funder describes how the wallets were set up. It says nothing about anyone&apos;s intent: a deploy
+        script, a faucet or a team funding its own test wallets all look exactly like this. What it does say is
+        that 7,962 wallets is not 7,962 independent operators, so any reputation signal that counts wallets as
+        voices counts this one many times. We say 60 of 62 sampled, never 60 of 7,962. A wallet we have not
+        sampled reads <span className="unknown-value">unknown</span>, never counted either way.
+      </Note>
+
+      <Prose>
+        <H2>Where it is used</H2>
+        <p>
+          It is not a side panel. Twin, our shared-document agent, carries the first-funder line in its paid
+          answer, so a buyer asking about an agent in this cluster learns it shares one funder with thousands of
+          others. Every cluster page shows the same with its transaction links. A daily job spends the remaining
+          credit budget on the next clusters and keeps a reserve, so the sample grows rather than arriving in one
+          burst.
+        </p>
+        <p>
+          The request shapes and the credits spent are written up on the{" "}
+          <Link href="/developers">developers page</Link>, so anyone can repeat the run.
+        </p>
+      </Prose>
     </div>
   );
 }

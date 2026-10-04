@@ -249,3 +249,25 @@ test("execution-market: agent_rating is a worker rating its hirer, so no recipie
   const out = parseDocument(new TextEncoder().encode(JSON.stringify(doc)));
   assert.equal((out as { claim: { recipient?: unknown } }).claim.recipient, undefined);
 });
+
+/* ------------------------------------------------------- the first model-induced mapping */
+
+test("tab-settlement-feedback.v1 reads the settlement and pays the collection, not the service label", async () => {
+  const { readFileSync } = await import("node:fs");
+  const doc = new Uint8Array(readFileSync(new URL("./fixtures/tab-settlement-feedback.json", import.meta.url)));
+  const out = parseDocument(doc);
+  assert.equal(out.kind, "claim");
+  if (out.kind !== "claim") return;
+  assert.equal(out.mapping, "tab-settlement-feedback.v1");
+  assert.equal(out.claim.network, 143);
+  assert.equal(out.claim.txHash, "0x863e9ae50961b38e7bf12e7ae14e7384bc543725ea51c8acdd9dc8bf9f817497");
+  // Review changed this from Qwen's settlement.serviceId, the bytes32 label "tab.demo".
+  assert.equal(out.claim.recipient, "0x49472ef9ed99f30d4ead45ac9e1c16c31f70783a");
+  assert.equal(out.claim.amount, "200000");
+});
+
+test("a tab-settlement-feedback document with no settlement object is not claimed by it", () => {
+  const doc = new TextEncoder().encode(JSON.stringify({ type: "tab-settlement-feedback", version: 1, chainId: 143 }));
+  const out = parseDocument(doc);
+  assert.notEqual(out.kind === "claim" ? out.mapping : null, "tab-settlement-feedback.v1");
+});

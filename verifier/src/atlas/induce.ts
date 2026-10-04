@@ -117,11 +117,57 @@ function isUnambiguous(
   return withCandidate.mapping === compiled.name;
 }
 
+const PATH_KEYS = ["networkPath", "txHashPath", "recipientPath", "payerPath", "amountPath", "tokenPath"] as const;
+
+/**
+ * Tool arguments, checked field by field rather than cast.
+ *
+ * The first real run against Qwen 3.8 Max failed for six straight turns on a correct mapping. The
+ * model sent `claim` as a JSON-encoded string, `"{\"networkPath\": \"chainId\"}"`, which some
+ * OpenAI-compatible servers produce for a nested object in tool arguments. The old code cast the
+ * parsed arguments straight to `MappingProposal`, so `claim.networkPath` was read off a string, came
+ * back undefined, and every proposal compiled to an empty claim. The parser then told the model it was
+ * wrong, and it went on rewriting a right answer.
+ *
+ * A string `claim` is decoded once. Anything that is still not the declared shape is refused here
+ * rather than compiled, and every path must be a non-empty string.
+ */
+export function readProposal(raw: unknown): MappingProposal | null {
+  if (typeof raw !== "object" || raw === null || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  if (typeof r.name !== "string" || r.name.length === 0 || r.name.length > 120) return null;
+  const matchKeys = r.matchKeys;
+  if (!Array.isArray(matchKeys) || !matchKeys.every((k) => typeof k === "string" && k.length > 0)) return null;
+  let claim: unknown = r.claim;
+  if (typeof claim === "string") {
+    try {
+      claim = JSON.parse(claim);
+    } catch {
+      return null;
+    }
+  }
+  let paths: MappingProposal["claim"] = null;
+  if (claim !== null) {
+    if (typeof claim !== "object" || Array.isArray(claim)) return null;
+    const c = claim as Record<string, unknown>;
+    const out: Record<string, string> = {};
+    for (const k of PATH_KEYS) {
+      if (c[k] === undefined) continue;
+      if (typeof c[k] !== "string" || (c[k] as string).length === 0) return null;
+      out[k] = c[k] as string;
+    }
+    paths = out as NonNullable<MappingProposal["claim"]>;
+  }
+  const predicted = typeof r.predicted === "object" && r.predicted !== null ? (r.predicted as MappingProposal["predicted"]) : {};
+  return { name: r.name, note: typeof r.note === "string" ? r.note : "", matchKeys: matchKeys as string[], claim: paths, predicted };
+}
+
 function firstToolCall(message: ChatMessage): { id: string; proposal: MappingProposal } | null {
   const call = message.tool_calls?.find((c) => c.function.name === TOOL_NAME);
   if (!call) return null;
   try {
-    return { id: call.id, proposal: JSON.parse(call.function.arguments) as MappingProposal };
+    const proposal = readProposal(JSON.parse(call.function.arguments));
+    return proposal ? { id: call.id, proposal } : null;
   } catch {
     return null;
   }

@@ -75,12 +75,36 @@ test("only with every chain reachable may the wording become conclusive", async 
 test("a failing provider is not evidence of absence", async () => {
   const r = await findTransaction(HASH, 143, {
     env: { RPC_BASE: "https://base.example" },
-    fetchImpl: (async () => ({ ok: false, json: async () => ({}) })) as never,
+    fetchImpl: (async () => ({ ok: false, status: 429, json: async () => ({}) })) as never,
   });
-  // Searched but errored: found stays null and the chain is still listed as searched, which is honest
-  // about what was attempted rather than silently dropping it.
+  // A provider that errored did not look. It is unreachable for this search, with the reason, and is
+  // never listed as searched, so explain cannot report the transaction as absent from that chain.
   assert.equal(r.found, null);
+  assert.equal(r.searched.includes(8453), false);
+  assert.ok(r.unreachable.some((u) => u.chainId === 8453 && /429/.test(u.needs)));
+  assert.match(explain(r), /inconclusive|could not|not every/i);
+});
+
+test("a JSON-RPC error sent with HTTP 200, the way a capacity limit arrives, is a failure too", async () => {
+  const r = await findTransaction(HASH, 143, {
+    env: { RPC_BASE: "https://base.example" },
+    fetchImpl: (async () => ({
+      ok: true,
+      status: 200,
+      json: async () => ({ jsonrpc: "2.0", id: 1, error: { code: 429, message: "Monthly capacity limit exceeded" } }),
+    })) as never,
+  });
+  assert.equal(r.searched.includes(8453), false);
+  assert.ok(r.unreachable.some((u) => u.chainId === 8453));
+});
+
+test("a provider that answers with a null result did search, and found nothing", async () => {
+  const r = await findTransaction(HASH, 143, {
+    env: { RPC_BASE: "https://base.example" },
+    fetchImpl: (async () => ({ ok: true, status: 200, json: async () => ({ jsonrpc: "2.0", id: 1, result: null }) })) as never,
+  });
   assert.ok(r.searched.includes(8453));
+  assert.equal(r.found, null);
 });
 
 test("a malformed hash is refused rather than searched", async () => {

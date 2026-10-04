@@ -95,3 +95,23 @@ One shape, on one chain, from one run. The other unread shapes in the sample are
 nothing has been added to the shipped atlas on the strength of a single induction. The mapping is
 published here as a record of what the model proposed and what was verified, which is the standard the
 five hand-written mappings did not meet until now.
+
+## Update, 2026-10-04: the first model-proposed mapping shipped
+
+The three tab-settlement claims on Monad stayed `unknown` at the `intact` rung, because no mapping read
+their shape. A real keyed run against `Qwen/Qwen3.8-Max` (served by GMI Cloud) gave up after six turns.
+The transcript showed the first proposal was already right. Qwen sent `claim` as a JSON-encoded string,
+and the loop cast the arguments without checking them, so every proposal compiled to an empty mapping.
+`readProposal` in `verifier/src/atlas/induce.ts` now validates the arguments field by field and decodes a
+string `claim` once. `verifier/src/atlas/read-proposal.test.ts` pins that with the exact shape the run
+produced.
+
+A second real run converged in one turn and one parser call, in 16 seconds. Review changed one field.
+Qwen read the recipient as `settlement.serviceId`, which is the bytes32 label `tab.demo`. The settlement
+transaction `0x863e9ae5…f817497` transfers 200,000 USDC units to `settlement.collection`, so the shipped
+`tabSettlementFeedback` mapping in `verifier/src/ladder/parse.ts` uses that. Judged with live readers,
+the claim is `true`: the value reached `0x49472ef9…783a` at block 109,379,821.
+
+The run, the review note and the transcript are in
+`verifier/src/atlas/inductions/tab-settlement-feedback.v1.2026-10-04.json`. The atlas is now six mappings:
+five written by hand and one a model proposed and a person checked.

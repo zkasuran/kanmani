@@ -26,8 +26,8 @@ export const POSTS: Post[] = [
   },
   {
     slug: "cleanverse",
-    title: "A dollar that checks both sides before it moves",
-    hook: "Access USDC gates every transfer on an on-chain identity. We read the exact rule off the chain.",
+    title: "Money that cannot reach a wallet that is not cleared",
+    hook: "The escrow reads a Cleanverse identity on chain at the moment it pays. One real pass, one real refuse.",
     date: "2026-10-01",
   },
   {
@@ -44,8 +44,8 @@ export const POSTS: Post[] = [
   },
   {
     slug: "qwen",
-    title: "How Qwen 3.8 Max reads evidence nobody wrote a parser for",
-    hook: "Qwen maps unfamiliar evidence shapes. The real parser still gets the final say over every verdict.",
-    date: "2026-09-30",
+    title: "Qwen 3.8 Max wrote a parser we shipped",
+    hook: "It converged in one turn against our own parser. One field changed in review. Three unknown claims became checkable.",
+    date: "2026-10-04",
   },
 ];
