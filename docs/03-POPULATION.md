@@ -271,21 +271,18 @@ declaration order, because a verdict that depends on array position is not a ver
 | `true` | 59 | the cited transaction is on the chain the document names |
 | `unknown` | 15 | we could not look or could not read what we fetched |
 
-The 1,095 `noClaim` rows are exactly the `data:` population: 1,026 plus 66 plus 3. The 15 unknowns
-split into 10 serving bytes that no longer match their own on-chain hash, 3 in a shape no published
-mapping reads plus 2 that would not answer (HTTP 429). The 10 hash mismatches are the
+The 1,095 `noClaim` rows are exactly the `data:` population: 1,026 plus 66 plus 3. The 12 unknowns split into 10 serving bytes that no longer match their own on-chain hash plus 2 that would not answer (HTTP 429). Three more were in a shape no published mapping read until 2026-10-04, when a Qwen-proposed mapping was reviewed and shipped. All three now read `true`. The 10 hash mismatches are the
 `grokandmon.com` documents, which an earlier pass read as agent cards before their bytes moved.
 
-**182 of <!-- n:feedbacks -->9,288<!-- /n --> feedbacks assert a payment.** That is 1.96%. Every one comes from a single publisher.
-Every one names `monad`.
+**185 of <!-- n:feedbacks -->9,288<!-- /n --> feedbacks assert a payment.** That is 1.99%. 182 come from one publisher, execution.market. The other 3 are tab-settlement receipts from a settlement gateway. Every one names Monad.
 
 So the honest description of this registry is not a commerce record with some noise in it. **It is a
-game leaderboard with 182 payment claims attached.** 1,026 melee ratings against 182 payment claims
+game leaderboard with 185 payment claims attached.** 1,026 melee ratings against 185 payment claims
 is roughly 6 to 1. The registry is being used heavily for something the payment-verification reading
 of ERC-8004 does not describe.
 
 That changed what this project says. It was built expecting documents citing one chain while the
-payment sat on another. Not what is happening: all 182 name the same chain, 123 cite a transaction
+payment sat on another. Not what is happening: all 185 name the same chain, 123 cite a transaction
 not on it. `noClaim` is first-class for the same reason. A document that never asserted a payment cannot
 be wrong about one, so counting it as unparsed would inflate our own coverage gap by <!-- n:noClaim -->1,095<!-- /n --> rows.
 

@@ -47,7 +47,7 @@ export default function ClaimTruth() {
         <p>
           We ran the ladder over every Monad feedback that carries an evidence pointer, 1,292 of the 9,288
           feedbacks in the registry. Most do not assert a payment at all: they are game ratings and plain-text
-          comments, so there is nothing to be right or wrong about. Of the 182 that do assert one, two thirds
+          comments, so there is nothing to be right or wrong about. Of the 185 that do assert one, two thirds
           cite a transaction that is not on the chain they name.
         </p>
       </Prose>
@@ -58,7 +58,7 @@ export default function ClaimTruth() {
         width={1153}
         height={570}
         href="/claims"
-        alt="The claims page: 123 not on the chain they name, 59 on the chain they name, 15 could not check, 1,095 assert no payment"
+        alt="The claims page: 123 not on the chain they name, 62 on the chain they name, 12 could not check, 1,095 assert no payment"
         caption={
           <>
             The live <Link href="/claims">claims page</Link> on 2026-10-04. Red is a payment claim whose
@@ -134,10 +134,10 @@ export default function ClaimTruth() {
         rows={[
           { k: "agents in the registry", v: "10,278", src: "/status, the registry's own counter slot" },
           { k: "feedbacks", v: "9,288, of which 1,292 carry an evidence pointer", src: "/status" },
-          { k: "assert a payment", v: "182", src: "feed.json data.summary.paymentClaims" },
-          { k: "not on the chain they name", v: "123, just over two thirds of 182", src: "feed.json data.summary.doNotResolve" },
-          { k: "confirmed", v: "59", src: "feed.json data.summary.resolve" },
-          { k: "could not check", v: "15, never counted as false", src: "feed.json data.summary.couldNotCheck" },
+          { k: "assert a payment", v: "185", src: "feed.json data.summary.paymentClaims" },
+          { k: "not on the chain they name", v: "123, two thirds of 185", src: "feed.json data.summary.doNotResolve" },
+          { k: "confirmed", v: "62", src: "feed.json data.summary.resolve" },
+          { k: "could not check", v: "12, never counted as false", src: "feed.json data.summary.couldNotCheck" },
         ]}
       />
 

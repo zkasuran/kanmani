@@ -283,7 +283,7 @@ curl -sS 'https://kanmani.xyz/feed.json?limit=5'
 ```json
 {
   "summary": {
-    "paymentClaims": 182, "resolve": 59, "doNotResolve": 123, "assertNoPayment": 1095,
+    "paymentClaims": 185, "resolve": 62, "doNotResolve": 123, "assertNoPayment": 1095,
     "couldNotCheck": { "total": 15, "documentWouldNotAnswer": 2,
                        "bytesNoLongerMatchTheirCommitment": 10, "noMappingReadTheShape": 3 },
     "claimsWithAUriAndNoVerdict": 0

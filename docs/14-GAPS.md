@@ -499,9 +499,7 @@ its bytes, content addressing can. It is never written as an accusation.
 **Two `ipfs://` documents no gateway would serve.** The gateway answers HTTP 429. A working gateway
 would close these two and nothing else, so it is small and it is still open.
 
-**Three documents whose shape no published mapping reads.** The ladder stops at `intact` because there
-is no mapping for that record shape, so it will not guess a claim out of a document it cannot parse.
-Closing these means writing a mapping, which is the review queue `/method` publishes.
+**Closed 2026-10-04: three documents whose shape no published mapping read.** The ladder stopped at `intact` because no mapping read the record shape. It will not guess a claim out of a document it cannot parse. Qwen 3.8 Max proposed a mapping, one field changed in review and it shipped. All three now read `true`. See [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md).
 
 None of the three groups is counted as `false`. A failure to look is not evidence that a payment did
 not happen.
@@ -546,7 +544,7 @@ real time to understand.
   `validationRequest` reverts `Not authorized` for anyone who is not the agent's owner, so nobody can
   publish a verdict about somebody else unilaterally. The constraint explains the empty registry better
   than any theory about uptake and learning it cost a reverted transaction.
-* **Every one of the 182 claims names Monad.** The build expected documents citing one chain while the
+* **Every one of the 185 claims names Monad.** The build expected documents citing one chain while the
   payment sat elsewhere, which is why `locate` reads seven chains. That is not what happens. The
   multi-chain reader stays anyway, because a "not found" means nothing without the published list of
   places it was looked for.

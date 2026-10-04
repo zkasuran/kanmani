@@ -1,7 +1,7 @@
 {
   "claim-truth/distribution": {
     "url": "https://kanmani.xyz/claims",
-    "takenAt": "2026-10-04T12:00:54.024Z",
+    "takenAt": "2026-10-04T12:28:34.129Z",
     "width": 1153,
     "height": 570
   },
@@ -49,19 +49,19 @@
   },
   "claim-truth/false-chain": {
     "url": "https://kanmani.xyz/claim/143_10181_0x01F90369170C917A2c0E9d26D54c6A3A400984D3_1",
-    "takenAt": "2026-10-04T12:00:23.488Z",
+    "takenAt": "2026-10-04T12:28:08.201Z",
     "width": 582,
     "height": 484
   },
   "claim-truth/false-head": {
     "url": "https://kanmani.xyz/claim/143_10181_0x01F90369170C917A2c0E9d26D54c6A3A400984D3_1",
-    "takenAt": "2026-10-04T12:00:36.035Z",
+    "takenAt": "2026-10-04T12:28:19.906Z",
     "width": 1153,
     "height": 648
   },
   "qwen/after": {
     "url": "https://kanmani.xyz/claim/143_10255_0x49472EF9ED99f30d4eaD45Ac9E1C16c31f70783A_3",
-    "takenAt": "2026-10-04T12:01:08.845Z",
+    "takenAt": "2026-10-04T12:27:34.809Z",
     "width": 1058,
     "height": 760
   },

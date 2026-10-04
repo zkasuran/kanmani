@@ -80,7 +80,7 @@ Kanmani proof run
   PASS  the index answers and holds 1292 checkable claims
         checkedAtBlock 110160000
 2. Fovea  ·  verify the claim  ·  expected LIVE
-  PASS  verdicts exist: 182 payment claims, 59 resolve, 123 do not
+  PASS  verdicts exist: 185 payment claims, 62 resolve, 123 do not
         a false verdict means the chain was read and the transaction was absent, never that we failed to look
 3. Aqueous  ·  escrow the job  ·  expected LIVE
   PASS  escrow deployed, 10901 bytes at 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32

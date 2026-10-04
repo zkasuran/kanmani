@@ -1,7 +1,7 @@
 # 2. Hash integrity is not claim truth
 
 Every tool that reads an ERC-8004 evidence document checks that the bytes it served match the hash
-committed on chain. All 182 payment claims on Monad pass that check. 123 of them cite a transaction
+committed on chain. All 185 payment claims on Monad pass that check. 123 of them cite a transaction
 that is not on the chain the document names.
 
 Those two sentences do not contradict each other. They measure different things. This document is
@@ -62,7 +62,7 @@ does not go and look. Looking is one RPC call:
 cast receipt <txHash> --rpc-url https://rpc.monad.xyz
 ```
 
-For 123 of the 182 payment claims on Monad, that call comes back with nothing. No receipt. The
+For 123 of the 185 payment claims on Monad, that call comes back with nothing. No receipt. The
 document is hash-perfect and the event it describes is not on the chain it names.
 
 That is the whole gap. Integrity answers "are these the committed bytes". Nothing in the standard,
@@ -110,10 +110,10 @@ curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=1' | jq '.data.tota
 # outcome=true -> 59, outcome=noClaim -> 1095, outcome=unknown -> 15
 ```
 
-**The denominator for the headline is 182, not <!-- n:feedbacks -->9,288<!-- /n --> and not <!-- n:withPointer -->1,292<!-- /n -->.** 182 is `true` plus `false`: the
-documents that assert a payment and that we read all the way to a chain. 123 of 182 is 68%. 123 of
+**The denominator for the headline is 185, not <!-- n:feedbacks -->9,288<!-- /n --> and not <!-- n:withPointer -->1,292<!-- /n -->.** 185 is `true` plus `false`: the
+documents that assert a payment and that we read all the way to a chain. 123 of 185 is 66%. 123 of
 <!-- n:feedbacks -->9,288<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
-framing is honest on its own, which is why the 182 and the <!-- n:withPointer -->1,292<!-- /n --> sit next to each other on the front
+framing is honest on its own, which is why the 185 and the <!-- n:withPointer -->1,292<!-- /n --> sit next to each other on the front
 page.
 
 <!-- n:noClaim -->1,095<!-- /n --> documents assert no payment because most ERC-8004 feedback on Monad is not about payment.
@@ -141,7 +141,7 @@ resolves a declared chain against a covered list of seven rather than assuming M
 free to be about one chain while citing a transaction on another. Preferring the outer field would
 quietly rewrite what the author said.
 
-Then we ran it. Every single one of the 182 payment claims names `monad`. Not one names anything
+Then we ran it. Every single one of the 185 payment claims names Monad. Not one names anything
 else.
 
 ```sql
@@ -236,11 +236,8 @@ Here are the reason strings, verbatim from the source. Nothing else ever reaches
 Every one describes what was observed. None describes what anyone meant. The difference between an
 observation and an accusation is the reason this measurement can be published at all.
 
-The same restraint covers the 15 unknowns. 10 serve bytes that no longer match their own on-chain
-hash, which happens when an author edits a document for perfectly good reasons. 3 are a document
-shape no published mapping reads. 2 would not answer at all, HTTP 429. We do not know whether any
-of those 15 assert a payment, because the ladder stopped before it found out, so none of them is
-counted in the 182.
+The same restraint covers the 12 unknowns. 10 serve bytes that no longer match their own on-chain
+hash, which happens when an author edits a document for perfectly good reasons. 2 would not answer at all, HTTP 429. We do not know whether any of those 12 assert a payment, because the ladder stopped before it found out, so none of them is counted in the 185. There used to be 3 more, in a document shape no published mapping read. On 2026-10-04 Qwen 3.8 Max proposed a mapping for that shape, it was reviewed and shipped. All 3 checked out as `true`.
 
 A verdict is a measurement at a time, never a permanent label. Every row carries `checkedAt` plus
 the chain head it was checked against. The store is append only, so a re-check writes a new row

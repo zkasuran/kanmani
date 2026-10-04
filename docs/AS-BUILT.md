@@ -680,10 +680,10 @@ flip is scheduled for the day the submission window opens, 2026-10-02.
 The most useful entries, because each is a place the build was wrong and the data corrected it.
 
 **The thesis got narrower and more accurate.** This was designed expecting documents citing one
-chain while the payment sat on another. Every one of the 182 payment claims names `monad`. The
+chain while the payment sat on another. Every one of the 185 payment claims names Monad. The
 failure is simpler than the one designed for, so the site says the simpler thing.
 
-**The denominator moved from <!-- n:feedbacks -->9,288<!-- /n --> to 182.** Most ERC-8004 feedback on Monad is not a payment claim.
+**The denominator moved from <!-- n:feedbacks -->9,288<!-- /n --> to 185.** Most ERC-8004 feedback on Monad is not a payment claim.
 1,026 documents are chess ELO records. Sampling recent-first had given the opposite impression,
 because the head of a list is never a random sample.
 

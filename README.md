@@ -26,8 +26,7 @@
 
 When you hire an agent, the money sits in escrow until the work lands. The settlement itself emits
 the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,278<!-- /n --> agents** in
-Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the 182
-claims name a transaction that is not there. The track record this produces is correct by
+Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the 185 claims name a transaction that is not there. The track record this produces is correct by
 construction and the agent can then stake its own money on it.
 
 Why now: a trust layer is a loop, measure a claim, judge it, then price or slash against that
@@ -81,7 +80,7 @@ No wallet and no key for the first four.
 
 Monad's ERC-8004 registry holds **<!-- n:agents -->10,278<!-- /n --> agents** behind <!-- n:documents -->2,055<!-- /n --> distinct registration documents. We
 read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,288<!-- /n -->
-feedbacks, <!-- n:withPointer -->1,292<!-- /n --> carry an evidence pointer at all. 182 of those make a payment claim and 123 of them
+feedbacks, <!-- n:withPointer -->1,292<!-- /n --> carry an evidence pointer at all. 185 of those make a payment claim and 123 of them
 are wrong about where the money went. That is 123 out of 9,288, just over 1%, so the story here is
 rot rather than mass fraud.
 
@@ -110,7 +109,7 @@ verdict store on every load, so it moves as the hourly sweep checks new document
 | agents in the registry | <!-- n:agents -->10,278<!-- /n --> |
 | distinct registration documents behind them | <!-- n:documents -->2,055<!-- /n --> |
 | feedbacks, of which <!-- n:withPointer -->1,292<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,288<!-- /n --> |
-| payment claims checked against a chain | 182 |
+| payment claims checked against a chain | 185 |
 | claims where the cited transaction is really there | 59 |
 | claims where it is not | 123 |
 | **of those 123, real transactions on a different chain** | **113** |
@@ -181,7 +180,7 @@ Everything else in this repository is built around that one rule.
 | surface | status | what that means |
 |---|---|---|
 | registry reads: <!-- n:agents -->10,278<!-- /n --> agents, <!-- n:documents -->2,055<!-- /n --> documents, <!-- n:feedbacks -->9,288<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
-| claim verdicts: 182 checked, 123 false, 59 true, 15 unknown | **real** | each one read off the chain the document names, recorded at a block |
+| claim verdicts: 185 checked, 123 false, 62 true, 12 unknown | **real** | each one read off the chain the document names, recorded at a block |
 | Aqueous escrow on mainnet | **real** | USDC held and settled, the receipt emitted by the settlement itself |
 | Sclera bonds on mainnet | **real** | three posted, one already through its whole life: posted, held, matured, returned |
 | cross-chain funding | **real** | 0.12 USDT on BSC landed 115,558 USDC units in Aqueous on 2026-09-28, destination tx [`0x738af85c…b558`](https://monadexplorer.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558) |

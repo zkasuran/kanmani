@@ -135,7 +135,7 @@ Transfer 0x754704bc…b603 (USDC)
         height={760}
         href="/claim/143_10255_0x49472EF9ED99f30d4eaD45Ac9E1C16c31f70783A_3"
         alt="The same claim after the new mapping shipped"
-        caption="After. The same claim once the mapping shipped and the scheduled re-check reached it."
+        caption="After. The same claim once the mapping shipped and we re-ran the ladder over the three documents. The new verdict is appended. The old unknown row stays in its history."
       />
 
       <Prose>

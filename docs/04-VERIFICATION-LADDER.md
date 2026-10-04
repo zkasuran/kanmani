@@ -160,7 +160,7 @@ psql "$FOVEA_DATABASE_URL" -c \
 | `true` | `a successful transaction with this hash is on Monad at block <n>` | 34 |
 | `true` | `<n> atomic units of <addr> reached <addr> on Monad at block <n>, <n> blocks deep` | 25 |
 | `unknown` | `the bytes served now do not match the hash committed on chain, so this document cannot be checked against what its author committed to` | 10 |
-| `unknown` | `no published mapping reads this document shape: no mapping matches this shape` | 3 |
+| `unknown` | `no published mapping reads this document shape: no mapping matches this shape` | 0, was 3 until a mapping shipped on 2026-10-04 |
 | `noClaim` | `conversation rating, no payment asserted, so there is no payment claim to check` | 3 |
 | `unknown` | `evidence document could not be read: HTTP <n>` | 2 |
 
@@ -463,7 +463,7 @@ Two consequences follow and both are load-bearing:
    is append only for the same reason: a re-check writes a new row, so a fixed document shows as
    `false -> true` with both timestamps.
 
-On the live corpus, all seven chains are configured. Every one of the 182 payment claims names
+On the live corpus, all seven chains are configured. Every one of the 185 payment claims names
 `monad`, so the other six carried no traffic in this sweep. They are in the table anyway, because the
 table is what a `false` is relative to.
 

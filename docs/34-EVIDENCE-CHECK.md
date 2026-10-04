@@ -17,7 +17,7 @@ on [the MCP server](33-MCP.md), so the browser studio, a shell script and an age
 A registration lands on chain once. A bad `agentURI` is a second transaction to repoint and an
 `https://` document that later goes dead takes the agent's whole identity with it. An evidence
 document is worse: it is hashed and committed, so a mislabelled `network` field is permanent and reads
-as a false payment claim forever. 123 of the 182 payment claims on Monad cite a transaction that is
+as a false payment claim forever. 123 of the 185 payment claims on Monad cite a transaction that is
 not on the chain the document names. A free check before publishing is the cheapest place to catch
 that.
 
