@@ -12,6 +12,7 @@
  *                                                                         data: document is on chain and cannot change)
  *   ... --gap 300                                                         wait 300 ms between documents fetched over the network
  *   ... --recheck-reason 'the cited transaction moved %'                  re-check latest verdicts whose reason matches
+ *   ... --recheck-ids 143_10182_0x…_4,143_10180_0x…_2                     re-check exactly these claims
  *                                                                         (after a parser fix, so the correction is appended)
  *
  * It is the same ladder as everything else: `check()` in lib/check.ts runs it and rehydrate's
@@ -42,6 +43,7 @@ const MUTABLE_ONLY = process.argv.includes("--mutable-only");
 const GAP_MS = Math.min(Math.max(Number(arg("gap", "0")) || 0, 0), 10_000);
 const DRY = process.argv.includes("--dry");
 const RECHECK_REASON = arg("recheck-reason", null);
+const RECHECK_IDS = (arg("recheck-ids", "") || "").split(",").map((x) => x.trim()).filter(Boolean);
 
 // New claims first, oldest block first, so a backlog clears in the order it arrived.
 const targets = await q(
@@ -75,6 +77,20 @@ if (RECHECK_REASON !== null) {
       LIMIT $3`,
     [CHAIN_ID, RECHECK_REASON, LIMIT],
   );
+  targets.length = 0;
+  targets.push(...hit);
+}
+
+if (RECHECK_IDS.length > 0) {
+  const hit = await q(
+    `SELECT f.id, f."feedbackUri" AS uri, f."feedbackHash" AS hash, 'fix' AS why
+       FROM "Feedback" f WHERE f."chainId" = $1 AND f.id = ANY($2) ORDER BY f.id`,
+    [CHAIN_ID, RECHECK_IDS],
+  );
+  if (hit.length !== RECHECK_IDS.length) {
+    console.error(`--recheck-ids: ${RECHECK_IDS.length - hit.length} of ${RECHECK_IDS.length} ids are not indexed feedback on chain ${CHAIN_ID}`);
+    process.exit(1);
+  }
   targets.length = 0;
   targets.push(...hit);
 }

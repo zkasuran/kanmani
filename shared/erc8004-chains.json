@@ -176,6 +176,19 @@
       "rpcEnv": "RPC_POLYGON",
       "explorer": "https://polygonscan.com",
       "erc8004": null
+    },
+    {
+      "id": 42220,
+      "key": "celo",
+      "displayName": "Celo",
+      "aliases": [
+        "celo",
+        "celo mainnet",
+        "celo-mainnet"
+      ],
+      "rpcEnv": "RPC_CELO",
+      "explorer": "https://celoscan.io",
+      "erc8004": null
     }
   ],
   "$ourContracts": [

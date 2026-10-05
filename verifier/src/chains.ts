@@ -76,6 +76,15 @@ export const CHAINS: readonly Chain[] = [
     aliases: ["bsc", "bnb", "binance", "bnb smart chain", "binance smart chain", "bnb chain"],
     rpcEnv: "RPC_BSC",
   },
+  {
+    // Added 2026-10-05 after an outside agent (Mida's auditor) found two Monad claims whose cited
+    // transaction is a real USDC payment on Celo. Widening this list is a published change.
+    id: 42220,
+    key: "celo",
+    displayName: "Celo",
+    aliases: ["celo", "celo mainnet", "celo-mainnet"],
+    rpcEnv: "RPC_CELO",
+  },
 ] as const;
 
 export type ChainLookup =

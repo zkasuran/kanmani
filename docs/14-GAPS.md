@@ -397,7 +397,7 @@ The three targets are named because the whole population was measured, which is 
 here: I can name every payable agent on Monad because I checked all 10,276 and there are three.
 
 1. **Execution Market / Ultravioleta DAO**, reachable through the contact they publish in their own
-   `/.well-known/x402`. Their claims are all 123 that do not resolve on the named chain. 113 of those 123 are real transactions on a different chain rather than missing payments. A per-document
+   `/.well-known/x402`. Their claims are all 123 that do not resolve on the named chain. 115 of those 123 are real transactions on a different chain rather than missing payments. A per-document
    pass or fail costs them nothing and fixes their record.
 2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
 3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
@@ -545,7 +545,7 @@ real time to understand.
   publish a verdict about somebody else unilaterally. The constraint explains the empty registry better
   than any theory about uptake and learning it cost a reverted transaction.
 * **Every one of the <!-- n:claims -->187<!-- /n --> claims names Monad.** The build expected documents citing one chain while the
-  payment sat elsewhere, which is why `locate` reads seven chains. That is not what happens. The
+  payment sat elsewhere, which is why `locate` reads eight chains. That is not what happens. The
   multi-chain reader stays anyway, because a "not found" means nothing without the published list of
   places it was looked for.
 

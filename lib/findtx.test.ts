@@ -64,7 +64,7 @@ test("an unreachable chain makes a null INCONCLUSIVE, never a denial", async () 
 
 test("only with every chain reachable may the wording become conclusive", async () => {
   const env: Record<string, string> = {};
-  for (const v of ["RPC_ETHEREUM", "RPC_OPTIMISM", "RPC_BASE", "RPC_ARBITRUM", "RPC_POLYGON", "RPC_BSC", "RPC_MONAD"]) {
+  for (const v of ["RPC_ETHEREUM", "RPC_OPTIMISM", "RPC_BASE", "RPC_ARBITRUM", "RPC_POLYGON", "RPC_BSC", "RPC_MONAD", "RPC_CELO"]) {
     env[v] = `https://${v.toLowerCase()}.example`;
   }
   const r = await findTransaction(HASH, 143, { env, fetchImpl: fakeFetch({}) as never });

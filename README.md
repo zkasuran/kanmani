@@ -75,7 +75,7 @@ No wallet and no key for the first four.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/readme/findings-dark.svg">
-  <img src="public/readme/findings-light.svg" alt="182 payment claims (2026-10-03): 59 on the chain they name, 123 not. Of those 123, 113 are real transactions on a different chain and 10 were not found on any chain we searched." width="100%">
+  <img src="public/readme/findings-light.svg" alt="187 payment claims (2026-10-05): 64 on the chain they name, 123 not. Of those 123, 115 are real transactions on a different chain and 8 were not found on any chain we searched." width="100%">
 </picture>
 
 Monad's ERC-8004 registry holds **<!-- n:agents -->10,280<!-- /n --> agents** behind <!-- n:documents -->2,057<!-- /n --> distinct registration documents. We
