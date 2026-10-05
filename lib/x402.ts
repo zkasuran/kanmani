@@ -38,6 +38,7 @@
  * client for using last year's header name helps nobody.
  */
 import { facilitatorAddressFrom, signedMaximum, uptoRequirements, type UptoPayload, type UptoRequirements } from "./upto.ts";
+import { EXTRA_META } from "./agent-meta.ts";
 
 /** 0.01 USDC. Six decimals, read off the token rather than assumed. */
 export const PRICE_ATOMIC = "10000";
@@ -99,8 +100,12 @@ export function resourceInfo(url: string): ResourceInfo {
   const slug = url.split("/api/service/")[1]?.split(/[?#]/)[0] ?? "";
   return {
     url,
+    // A paid agent with no hand-written line describes itself with its own `sells`. Before this,
+    // every such agent fell through to the verifier's line, so Scribe's 402 advertised a document
+    // check rather than the Qwen reading it sells.
     description:
       DESCRIPTIONS[slug] ??
+      EXTRA_META.find((m) => m.slug === slug)?.sells ??
       "Fetch and check one evidence document: resolve it, compare its bytes against the hash committed on chain, read the cited transaction on the chain the document names.",
     mimeType: "application/json",
   };

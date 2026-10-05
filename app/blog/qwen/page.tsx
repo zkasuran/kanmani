@@ -139,6 +139,40 @@ Transfer 0x754704bc…b603 (USDC)
       />
 
       <Prose>
+        <H2>Two earlier runs: knowing what is not a payment</H2>
+        <p>
+          A verifier is also judged by what it does not count. Two earlier Qwen runs answered that side. Both found
+          that the shape claims no payment.
+        </p>
+        <p>
+          On Sep 28 Qwen read BNB Smart Chain evidence documents, which our atlas had never parsed. At the time BSC held
+          25,643 of them against Monad&apos;s 1,287. In 320 sampled documents it found an uptime report whose{" "}
+          <Code>value</Code> is 10000 at 2 decimals with the tag <Code>uptime</Code>. That is 100.00% uptime,
+          not an amount. A careless parser would have read each one as a payment and manufactured claims out
+          of uptime pings. We checked it by hand. Across the shape no field names a transaction, a payer or a
+          token, so the right answer is no claim.
+        </p>
+        <p>
+          On Sep 30 we ran Qwen as a paid agent. Scribe, ERC-8004 agent 10272, sells this same loop over x402
+          with the <Code>upto</Code> scheme: send it a document in an unmapped shape and it returns
+          Qwen&apos;s mapping only if it round-trips through our parser. It charges per model turn under a ceiling the buyer signs, so
+          a buyer pays for the turns used, not the ceiling. One turn classified a BSC rating document (a score
+          and two self-promotion tags) as no claim. It charged 4,000 of a 10,000 unit ceiling in USDC on Monad.
+          Payer and payee were both our wallet, so it proves the metered rail, not demand.
+        </p>
+      </Prose>
+
+      <Cmd
+        cmd={`cast receipt 0x87a7eb4e92d71e0357f0f1f9d1147050000e0f8d8d3a78241b1bf789cb6c76f8 --rpc-url https://rpc.monad.xyz`}
+        out={`status   1 (success)   block 109248917
+Transfer 0x754704bc…b603 (USDC)
+  from 0xdb6c6340…7777  (our wallet)
+  to   0xdb6c6340…7777  (our wallet)
+  4000 units`}
+        note="The Scribe charge: one model turn plus the base price, settled under the upto ceiling. Both run records are committed beside the mapping in verifier/src/atlas/inductions/."
+      />
+
+      <Prose>
         <H2>What Qwen was worth here</H2>
         <p>
           Without it, each new evidence shape costs a person reading a stranger&apos;s JSON and writing a

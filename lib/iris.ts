@@ -65,9 +65,10 @@ export const NAMESPACE = {
    * Signs a verdict that a contract on Monad recovers with `ecrecover`.
    *
    * secp256k1, because `ecrecover` is the only signature scheme the EVM verifies cheaply and Monad
-   * ships no ed25519 precompile we have confirmed. This is the attestor the Sclera bond contract
-   * pins as immutable: a verdict is authorised by recovering this address, not by trusting the
-   * caller, which matters because the CRE mock forwarder's `report` is permissionless.
+   * ships no ed25519 precompile we have confirmed. A contract can pin this address and authorise a
+   * verdict by recovering it rather than by trusting the caller. The deployed Sclera contract pins
+   * one fixed attestor at construction; this key is what a contract would pin to accept a verdict
+   * signed on the user's own device.
    *
    * It is still not the account wallet. It is a distinct key from the same one passkey ceremony
    * that owns nothing and signs only verdicts, so the "the thing that attests is not the thing that

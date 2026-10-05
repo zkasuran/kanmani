@@ -246,3 +246,15 @@ test("a Permit2 nonce is reserved once, like an EIP-3009 nonce", () => {
   }
   assert.equal(reservePaymentNonce(r.payload).ok, false);
 });
+
+test("resourceInfo: a paid agent without a hand-written line describes itself, not the verifier", async () => {
+  const { resourceInfo } = await import("./x402.ts");
+  const { EXTRA_META } = await import("./agent-meta.ts");
+  const verifierLine = resourceInfo("https://kanmani.xyz/api/verify").description;
+  const scribe = resourceInfo("https://kanmani.xyz/api/service/scribe").description;
+  assert.equal(scribe, EXTRA_META.find((m) => m.slug === "scribe")!.sells);
+  assert.notEqual(scribe, verifierLine);
+  for (const m of EXTRA_META) {
+    assert.notEqual(resourceInfo(`https://kanmani.xyz/api/service/${m.slug}`).description, verifierLine, m.slug);
+  }
+});

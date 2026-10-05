@@ -251,7 +251,7 @@ labelled that way so a consumer never reads it as ours. We did not test that the
 
 `registration.state` is one of `onchain`, `answered`, `gone`, `paywalled`, `refused`, `nohost`,
 `malformed`, `unknown`. It is `null` when nothing has probed that document yet. Never-looked is a
-state. It is not `gone`. Monad has <!-- n:documents -->2,055<!-- /n --> distinct registration documents behind <!-- n:agents -->10,278<!-- /n --> agents. <!-- n:goneAgents -->8,641<!-- /n -->
+state. It is not `gone`. Monad has <!-- n:documents -->2,057<!-- /n --> distinct registration documents behind <!-- n:agents -->10,280<!-- /n --> agents. <!-- n:goneAgents -->8,641<!-- /n -->
 of those agents point at a document that answers with a deletion, one document behind <!-- n:oneDocAgents -->8,093<!-- /n --> of
 them. The live count in each `record_state` bucket moves with every probe run, so it is published on
 [`/status`](https://kanmani.xyz/status) rather than frozen here. The buckets themselves are defined in

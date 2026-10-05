@@ -37,7 +37,7 @@ export default function MeraPrf() {
         rows={[
           { k: "kanmani.iris.v1", v: "secp256k1 account", src: "the address that pays and owns" },
           { k: "kanmani.optic.v1", v: "ed25519, published as a did:key", src: "signs verification receipts. Holds no funds and is not a wallet" },
-          { k: "kanmani.optic-onchain.v1", v: "secp256k1 attestor", src: "what the Sclera bond contract recovers with ecrecover as the verdict signer" },
+          { k: "kanmani.optic-onchain.v1", v: "secp256k1 attestor", src: "an address a contract can pin and recover with ecrecover. the deployed Sclera contract pins one fixed attestor, so this key is ready for a contract that pins it" },
           { k: "kanmani.vitreous.v1", v: "AES-256-GCM content key", src: "encrypts the one thing we do store, as ciphertext only" },
         ]}
       />

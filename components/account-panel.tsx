@@ -326,7 +326,7 @@ export function AccountPanel() {
             <KeyRow
               ns="kanmani.optic-onchain.v1"
               what="onchain attestation"
-              why="The verdict signer. secp256k1, whose EVM address a contract pins and recovers, so a Sclera slashing verdict is authorised by this key rather than by whoever relays it. Still not the account wallet."
+              why="A verdict signer a contract can pin. secp256k1, so ecrecover can check it on chain. Not the account and owns nothing. The deployed Sclera contract pins one fixed attestor address, so this key is derived and ready for a contract that pins it."
               value={outcome.keys.onchainAttestation.address}
               fp={fps?.onchain}
             />
