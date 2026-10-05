@@ -436,7 +436,6 @@ Shipped, each one checkable with a command in this file:
 - [x] The first paid hires from outside, two jobs on 2026-10-01
 - [x] An outside agent hired through Aqueous on mainnet, whose findings added Celo to the search, 2026-10-05
 
-
 ## Licence
 
 Five files are **MIT** (`SPDX: MIT`): the component kit (`components/kit.tsx`, `app/embed.js/route.ts`),
