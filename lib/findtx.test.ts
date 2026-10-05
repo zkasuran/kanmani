@@ -166,3 +166,10 @@ test("searchedVia renders one provider inline and a mixed set honestly", () => {
   ];
   assert.equal(searchedVia(mixed), "searched via Alchemy (ethereum, base) and polygon-rpc.com (polygon)");
 });
+
+test("providerOf names a QuickNode endpoint by provider and never echoes its key path", async () => {
+  const { providerOf } = await import("./findtx.ts");
+  const label = providerOf("https://some-name.base-mainnet.quiknode.pro/0123456789abcdef/");
+  assert.equal(label, "QuickNode");
+  assert.ok(!label.includes("0123456789abcdef"));
+});

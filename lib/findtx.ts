@@ -197,12 +197,15 @@ export function explain(r: SearchResult): string {
  *
  * This is the honesty valve on "searched via Alchemy". A chain still pointed at a public node reads as
  * its own host, so the label on every surface tracks what the search actually hits rather than a string
- * an operator forgot to update. An Alchemy multichain endpoint is `<network>.g.alchemy.com`.
+ * an operator forgot to update. An Alchemy multichain endpoint is `<network>.g.alchemy.com`, a QuickNode
+ * one is `<name>.<network>.quiknode.pro`. The path carries the key, so only the host is ever read.
  */
 export function providerOf(url: string): string {
   try {
     const host = new URL(url).host.toLowerCase();
-    return host.endsWith(".g.alchemy.com") ? "Alchemy" : host;
+    if (host.endsWith(".g.alchemy.com")) return "Alchemy";
+    if (host.endsWith(".quiknode.pro")) return "QuickNode";
+    return host;
   } catch {
     return url;
   }

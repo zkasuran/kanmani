@@ -253,7 +253,7 @@ does not prove a stranger paid us.
 ## 9. The Validation Registry authorization rule
 
 This one took a reverted transaction to learn. It explains a number we had measured and could not
-account for: the Reputation Registry held <!-- n:feedbacks -->9,290<!-- /n --> feedbacks while the Validation Registry held zero
+account for: the Reputation Registry held <!-- n:feedbacks -->9,291<!-- /n --> feedbacks while the Validation Registry held zero
 rows. **Only an agent's NFT owner can open a validation. They name the validator when they do.**
 
 Reproduce it with three simulated callers. Nothing is sent, nothing is signed, no key is needed.

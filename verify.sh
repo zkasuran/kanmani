@@ -354,9 +354,10 @@ banner "numbers"
 node scripts/refresh-numbers.mjs --check
 # The README art is drawn from the same snapshot. Redraw it and fail if anything moved, so the hero
 # image can never show a count the badge and the docs no longer show.
+ART_BEFORE="$(cat public/readme/*.svg | sha256sum)"
 python3 scripts/build-readme-art.py > /dev/null
-if ! git diff --quiet -- public/readme; then
-  echo "FAIL  public/readme is stale against docs/numbers.json. It has just been redrawn: commit it."
+if [ "$(cat public/readme/*.svg | sha256sum)" != "$ART_BEFORE" ]; then
+  echo "FAIL  public/readme was stale against docs/numbers.json. It has just been redrawn: commit it."
   exit 1
 fi
 echo "ok    README art matches docs/numbers.json"

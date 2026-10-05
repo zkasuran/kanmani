@@ -50,7 +50,7 @@
 </defs>
 <g class="in" style="--d:0s"><rect x="72" y="61" width="22" height="1.5" fill="#6d28d9"/><text x="104" y="66" class="mono" font-size="12.5" letter-spacing="2.6" fill="#6d28d9">THE MEASUREMENT</text></g>
 <text x="72" y="116" class="sans in" style="--d:.1s" font-size="34" font-weight="600" letter-spacing="-1" fill="#0f172a">Every payment claim on Monad, checked against the chain it names.</text>
-<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="#475569">All 10,280 agents read. Every document here is hash-perfect, so every integrity check calls it verified. Integrity is not truth.</text>
+<text x="72" y="148" class="body in" style="--d:.2s" font-size="16" fill="#475569">All 10,281 agents read. Every document here is hash-perfect, so every integrity check calls it verified. Integrity is not truth.</text>
 
 <g class="bd" style="animation-delay:.4s">
   <path d="M312 200 C476.0 200 476.0 186 640 186 L640 288.67379679144386 C476.0 288.67379679144386 476.0 302.67379679144386 312 302.67379679144386 Z" fill="url(#b-true)"/>
@@ -71,7 +71,7 @@
   <text x="278" y="356.0" text-anchor="end" class="sans" font-size="76" font-weight="700" letter-spacing="-3" fill="#0f172a">187</text>
   <text x="276" y="386.0" text-anchor="end" class="body" font-size="14.5" fill="#475569">payment claims</text>
   <text x="276" y="406.0" text-anchor="end" class="body" font-size="14.5" fill="#475569">that exist at all</text>
-  <text x="276" y="436.0" text-anchor="end" class="mono" font-size="11.5" letter-spacing="1.2" fill="#64748b">OF 10,280 AGENTS · 2026-10-05</text>
+  <text x="276" y="436.0" text-anchor="end" class="mono" font-size="11.5" letter-spacing="1.2" fill="#64748b">OF 10,281 AGENTS · 2026-10-05</text>
 </g>
 <g class="in" style="--d:1s">
   <text x="670" y="222" class="sans" font-size="40" font-weight="700" letter-spacing="-1.5" fill="#047857">64</text>
