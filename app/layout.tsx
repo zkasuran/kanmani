@@ -119,11 +119,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <span className="font-display text-base font-semibold tracking-tight text-[var(--color-text)]">
                 kanmani
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-[var(--color-line)] px-2 py-0.5 text-[10.5px] text-faint group-hover:border-[var(--brand-line)] group-hover:text-muted">
-                <span className="live-dot h-1.5 w-1.5 rounded-full bg-[var(--color-true)]" />
-                <span className="hidden xs:inline">monad mainnet · 143</span>
-                <span className="xs:hidden">143</span>
-              </span>
             </Link>
             <Nav />
             <ThemeToggle />
