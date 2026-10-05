@@ -12,8 +12,8 @@ arithmetic rather than as a plausible-looking number. Section 9 reproduces all o
 |---|---|
 | agents | <!-- n:agents -->10,278<!-- /n --> |
 | distinct registration documents | <!-- n:documents -->2,055<!-- /n --> |
-| feedbacks | <!-- n:feedbacks -->9,288<!-- /n --> |
-| feedbacks carrying an evidence URI | <!-- n:withPointer -->1,292<!-- /n --> |
+| feedbacks | <!-- n:feedbacks -->9,290<!-- /n --> |
+| feedbacks carrying an evidence URI | <!-- n:withPointer -->1,294<!-- /n --> |
 | validations, before we wrote one | 0 |
 
 Chain 143, Monad mainnet, RPC `https://rpc.monad.xyz`.
@@ -208,17 +208,17 @@ documents written directly into `tokenURI` are the only ones that cannot acquire
 
 ## 7. The feedback population and the sampling trap
 
-The Reputation Registry holds **<!-- n:feedbacks -->9,288<!-- /n --> feedbacks**. Only **<!-- n:withPointer -->1,292<!-- /n -->** carry an evidence URI at all. A
+The Reputation Registry holds **<!-- n:feedbacks -->9,290<!-- /n --> feedbacks**. Only **<!-- n:withPointer -->1,294<!-- /n -->** carry an evidence URI at all. A
 feedback with no URI is not suspicious. There is nothing attached that anyone can verify, so it can
 be neither confirmed nor contradicted.
 
 | feedbacks | count | share |
 |---|---|---|
-| total | <!-- n:feedbacks -->9,288<!-- /n --> | 100% |
-| carrying a URI | <!-- n:withPointer -->1,292<!-- /n --> | 13.91% |
+| total | <!-- n:feedbacks -->9,290<!-- /n --> | 100% |
+| carrying a URI | <!-- n:withPointer -->1,294<!-- /n --> | 13.91% |
 | carrying nothing to check | 7,996 | 86.09% |
 
-| scheme, of the <!-- n:withPointer -->1,292<!-- /n --> | count | share | network calls to read them |
+| scheme, of the <!-- n:withPointer -->1,294<!-- /n --> | count | share | network calls to read them |
 |---|---|---|---|
 | `data:` | 1,095 | 84.75% | 0 |
 | `https://execution.market/...` | 182 | 14.09% | 182 |
@@ -264,7 +264,7 @@ All 1,095 `data:` URIs were decoded. 1,029 are valid JSON in exactly two shapes.
 The mappings live in `verifier/src/ladder/parse.ts`, five hand-written from real documents and one proposed by Qwen 3.8 Max and reviewed, each tagged with the date in a code field named `induced`. Exactly one must match a document. Two matching is refused rather than resolved by
 declaration order, because a verdict that depends on array position is not a verdict.
 
-| outcome, over all <!-- n:withPointer -->1,292<!-- /n --> | count | meaning |
+| outcome, over all <!-- n:withPointer -->1,294<!-- /n --> | count | meaning |
 |---|---|---|
 | `noClaim` | <!-- n:noClaim -->1,095<!-- /n --> | read fine, asserts no payment |
 | `false` | 123 | cites a transaction that is not on the chain the document names |
@@ -274,15 +274,15 @@ declaration order, because a verdict that depends on array position is not a ver
 The 1,095 `noClaim` rows are exactly the `data:` population: 1,026 plus 66 plus 3. The 12 unknowns split into 10 serving bytes that no longer match their own on-chain hash plus 2 that would not answer (HTTP 429). Three more were in a shape no published mapping read until 2026-10-04, when a Qwen-proposed mapping was reviewed and shipped. All three now read `true`. The 10 hash mismatches are the
 `grokandmon.com` documents, which an earlier pass read as agent cards before their bytes moved.
 
-**185 of <!-- n:feedbacks -->9,288<!-- /n --> feedbacks assert a payment.** That is 1.99%. 182 come from one publisher, execution.market. The other 3 are tab-settlement receipts from a settlement gateway. Every one names Monad.
+**<!-- n:claims -->187<!-- /n --> of <!-- n:feedbacks -->9,290<!-- /n --> feedbacks assert a payment.** That is 1.99%. 182 come from one publisher, execution.market. The other 3 are tab-settlement receipts from a settlement gateway. Every one names Monad.
 
 So the honest description of this registry is not a commerce record with some noise in it. **It is a
-game leaderboard with 185 payment claims attached.** 1,026 melee ratings against 185 payment claims
+game leaderboard with <!-- n:claims -->187<!-- /n --> payment claims attached.** 1,026 melee ratings against <!-- n:claims -->187<!-- /n --> payment claims
 is roughly 6 to 1. The registry is being used heavily for something the payment-verification reading
 of ERC-8004 does not describe.
 
 That changed what this project says. It was built expecting documents citing one chain while the
-payment sat on another. Not what is happening: all 185 name the same chain, 123 cite a transaction
+payment sat on another. Not what is happening: all <!-- n:claims -->187<!-- /n --> name the same chain, 123 cite a transaction
 not on it. `noClaim` is first-class for the same reason. A document that never asserted a payment cannot
 be wrong about one, so counting it as unparsed would inflate our own coverage gap by <!-- n:noClaim -->1,095<!-- /n --> rows.
 

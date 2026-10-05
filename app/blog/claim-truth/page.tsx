@@ -45,8 +45,8 @@ export default function ClaimTruth() {
       <Prose>
         <H2>What reading all of them found</H2>
         <p>
-          We ran the ladder over every Monad feedback that carries an evidence pointer, 1,292 of the 9,288
-          feedbacks in the registry. Most do not assert a payment at all: they are game ratings and plain-text
+          On 2026-10-04 we ran the ladder over every Monad feedback that carries an evidence pointer, 1,292 of
+          the 9,288 feedbacks in the registry. Most do not assert a payment at all: they are game ratings and plain-text
           comments, so there is nothing to be right or wrong about. Of the 185 that do assert one, two thirds
           cite a transaction that is not on the chain they name.
         </p>
@@ -130,7 +130,7 @@ export default function ClaimTruth() {
       />
 
       <Facts
-        caption="Every figure on this page, with where it is read from. Each is live except where a date says otherwise."
+        caption="The figures on 2026-10-04, when this was written, with where each is read from. The live versions move as agents register and documents change: open the source to see today's."
         rows={[
           { k: "agents in the registry", v: "10,278", src: "/status, the registry's own counter slot" },
           { k: "feedbacks", v: "9,288, of which 1,292 carry an evidence pointer", src: "/status" },

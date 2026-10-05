@@ -109,7 +109,7 @@ never see it go down.
 
 ## 2. The population, from the index
 
-**Published as: <!-- n:agents -->10,278<!-- /n --> agents, <!-- n:documents -->2,055<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,288<!-- /n --> feedbacks, <!-- n:withPointer -->1,292<!-- /n --> of them
+**Published as: <!-- n:agents -->10,278<!-- /n --> agents, <!-- n:documents -->2,055<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,290<!-- /n --> feedbacks, <!-- n:withPointer -->1,294<!-- /n --> of them
 carrying an evidence document, 1 validation.**
 
 This is `POPULATION_SQL` from `lib/queries.ts`, with the chain id inlined and the `updatedAt` column
@@ -139,7 +139,7 @@ so the page must be able to say which of the two is happening. `counterSlotCount
 `indexer/schema.graphql` because a failed slot read has to publish as unknown rather than as a zero
 that would be a fabricated population.
 
-**<!-- n:withPointer -->1,292<!-- /n --> of <!-- n:feedbacks -->9,288<!-- /n --> is the number that governs the whole thesis.** Only 13.9% of Monad's ERC-8004
+**<!-- n:withPointer -->1,294<!-- /n --> of <!-- n:feedbacks -->9,290<!-- /n --> is the number that governs the whole thesis.** Only 13.9% of Monad's ERC-8004
 feedback carries an evidence document at all. The other 86% is a score with nothing behind it, which
 is a rung below `declared` and therefore never appears in any ratio about evidence.
 
@@ -147,7 +147,7 @@ is a rung below `declared` and therefore never appears in any ratio about eviden
 
 ## 3. The measurement
 
-**Published as: 185 payment claims, 62 resolve, 123 do not, <!-- n:noClaim -->1,095<!-- /n --> assert no payment, 12 unknown.**
+**Published as: <!-- n:claims -->187<!-- /n --> payment claims, <!-- n:claimsTrue -->64<!-- /n --> resolve, 123 do not, <!-- n:noClaim -->1,095<!-- /n --> assert no payment, 12 unknown.**
 
 `MEASUREMENT_SQL`, against the `fovea.verdict_latest` view:
 
@@ -163,17 +163,19 @@ SELECT count(*)                                                     AS verdicts,
 FROM fovea.verdict_latest;
 ```
 
+Read on 2026-10-04, after the tab-settlement mapping shipped. Run the query for today's figures:
+
 ```
  verdicts | payment_claims | resolve | do_not_resolve | no_claim | unknown_unreachable | unknown_bytes_moved | unknown_unparsed
 ----------+----------------+---------+----------------+----------+---------------------+---------------------+------------------
           1292 |            185 |      62 |            123 |     1095 |                   2 |                  10 |                0
 ```
 
-Check the arithmetic yourself: 185 + 1095 + 2 + 10 + 0 = 1292, which is every document carrying a
+Check the arithmetic on that reading yourself: 185 + 1095 + 2 + 10 + 0 = 1292, which is every document carrying a
 URI from section 2. Nothing is dropped between the two.
 
-**Read the denominator correctly.** The finding is about **185 documents that assert a payment**. It
-is not about <!-- n:withPointer -->1,292<!-- /n --> documents, not about <!-- n:feedbacks -->9,288<!-- /n --> feedbacks and not about <!-- n:agents -->10,278<!-- /n --> agents. Any wider
+**Read the denominator correctly.** The finding is about **<!-- n:claims -->187<!-- /n --> documents that assert a payment**. It
+is not about <!-- n:withPointer -->1,294<!-- /n --> documents, not about <!-- n:feedbacks -->9,290<!-- /n --> feedbacks and not about <!-- n:agents -->10,278<!-- /n --> agents. Any wider
 phrasing is an overclaim and it is one I made myself before the full corpus was measured. The
 correction is in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md).
 
@@ -189,7 +191,7 @@ somebody else's outage publish as our accusation, at scale, with their name atta
 
 ## 4. Which chain the claims name
 
-**Published as: every one of the 185 claims names Monad.**
+**Published as: every one of the <!-- n:claims -->187<!-- /n --> claims names Monad.**
 
 ```sql
 SELECT coalesce(declared_network, '(none stated)') AS network,
@@ -242,8 +244,8 @@ FROM fovea.verdict_latest GROUP BY 1, 2 ORDER BY 3 DESC;
  conversation-score.v1            | noClaim |     3
 ```
 
-**1,026 of the documents are game ELO records, every one naming the game `melee`.** That single row is why the denominator is 185 and
-not <!-- n:withPointer -->1,292<!-- /n --> and why sampling the head of a list gave the opposite impression: ordering by block
+**1,026 of the documents are game ELO records, every one naming the game `melee`.** That single row is why the denominator is <!-- n:claims -->187<!-- /n --> and
+not <!-- n:withPointer -->1,294<!-- /n --> and why sampling the head of a list gave the opposite impression: ordering by block
 descending showed mostly HTTP documents, while the population is 85% `data:` URIs that decode
 locally and assert no payment at all.
 
@@ -496,7 +498,7 @@ part of reading the site correctly.
 |---|---|---|
 | agents, distinct records | **grows** | the registry is open. Ours is one of the increments |
 | feedbacks, feedbacks with a URI | **grows** | anyone can write one |
-| the 185 / 62 / 123 split | **can move either way** | a repaired document flips `false` to `true`. That is the point |
+| the <!-- n:claims -->187<!-- /n --> / <!-- n:claimsTrue -->64<!-- /n --> / 123 split | **can move either way** | a repaired document flips `false` to `true`. That is the point |
 | the eight probe states | **moves on re-probe** | a host that was down can answer next week |
 
 **Verdicts are append only. There is no update path anywhere in the code.** A re-check writes a new

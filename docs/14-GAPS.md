@@ -544,7 +544,7 @@ real time to understand.
   `validationRequest` reverts `Not authorized` for anyone who is not the agent's owner, so nobody can
   publish a verdict about somebody else unilaterally. The constraint explains the empty registry better
   than any theory about uptake and learning it cost a reverted transaction.
-* **Every one of the 185 claims names Monad.** The build expected documents citing one chain while the
+* **Every one of the <!-- n:claims -->187<!-- /n --> claims names Monad.** The build expected documents citing one chain while the
   payment sat elsewhere, which is why `locate` reads seven chains. That is not what happens. The
   multi-chain reader stays anyway, because a "not found" means nothing without the published list of
   places it was looked for.

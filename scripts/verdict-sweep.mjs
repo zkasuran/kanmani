@@ -135,6 +135,27 @@ for (const t of targets) {
     } catch {
       // The cross-chain search is extra context. Failing it leaves the Monad verdict exactly as it was.
     }
+    // A transaction once found mined on another chain is still there: a mined block does not un-mine.
+    // So when this search came back empty, most often because a provider refused (the Alchemy chains
+    // answered 429 for days once the account hit its monthly cap), carry forward the earlier finding
+    // for the SAME cited hash rather than dropping it. Without this, every re-check during the outage
+    // rewrote 113 real transactions on Arbitrum, Ethereum, Optimism, Base and Polygon as found nowhere.
+    // The finding keeps its original block, so the row still says exactly where it was seen.
+    if (!row.foundChain) {
+      const prior = await q(
+        `SELECT found_chain, found_chain_id, found_block FROM fovea.verdict
+          WHERE feedback_id = $1 AND declared_tx = $2 AND found_chain IS NOT NULL
+          ORDER BY checked_at DESC LIMIT 1`,
+        [t.id, row.declaredTx],
+      ).catch(() => []);
+      if (prior[0]) {
+        row.foundChain = prior[0].found_chain;
+        row.foundChainId = prior[0].found_chain_id == null ? undefined : Number(prior[0].found_chain_id);
+        row.foundBlock = prior[0].found_block == null ? undefined : String(prior[0].found_block);
+        tally.elsewhere = (tally.elsewhere ?? 0) + 1;
+        tally.carried = (tally.carried ?? 0) + 1;
+      }
+    }
   }
   tally[row.outcome] = (tally[row.outcome] ?? 0) + 1;
   if (before.has(t.id) && before.get(t.id) !== row.outcome) {

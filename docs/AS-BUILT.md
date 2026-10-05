@@ -48,7 +48,7 @@ described as live would be the exact failure this project exists to attack.
 
 Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **<!-- n:agents -->10,278<!-- /n --> agents** at
 census time, matching the registry's own counter slot exactly, **<!-- n:documents -->2,055<!-- /n --> distinct registration
-documents** and **<!-- n:feedbacks -->9,288<!-- /n --> feedbacks**.
+documents** and **<!-- n:feedbacks -->9,290<!-- /n --> feedbacks**.
 
 The slot can only ever grow, so a later read shows the same figure or higher, never lower. We are
 inside that count: we registered ourselves as agent 10252 along the way.
@@ -65,7 +65,7 @@ incremented both, which made them provably equal and destroyed the only interest
 
 ### Fovea, the verdict ladder
 
-Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **<!-- n:withPointer -->1,292<!-- /n -->** documents carrying
+Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **<!-- n:withPointer -->1,294<!-- /n -->** documents carrying
 a URI have been taken through it. Four outcomes. `unknown` is never `false`.
 
 | outcome | count |
@@ -139,7 +139,7 @@ decrypts. A stranger holding the ciphertext gets an authentication failure. A fo
 Registered as **agent 10252** with the record written into `tokenURI` rather than hosted, because
 we had just measured that <!-- n:oneDocAgents -->8,093<!-- /n --> agents point at one document that returns a deletion.
 
-The registry held **zero** rows against the Reputation Registry's <!-- n:feedbacks -->9,288<!-- /n --> feedbacks. It holds one
+The registry held **zero** rows against the Reputation Registry's <!-- n:feedbacks -->9,290<!-- /n --> feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index
 that follows the contract went from 0 to 1.
 
@@ -202,7 +202,7 @@ the ones with no host to ask, because a self-contained document is the only kind
 
 The resync was the honest cost. Envio refused to start when the chain was added, rather than
 destroying data and named the three options. The reset then rebuilt Monad to exactly its previous
-figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,278<!-- /n --> and <!-- n:feedbacks -->9,288<!-- /n -->), while
+figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,278<!-- /n --> and <!-- n:feedbacks -->9,290<!-- /n -->), while
 **`fovea.verdict` kept all 2,384 rows** because it lives outside the schema Envio drops. That
 separation was designed for this and this is the first time it was load-bearing.
 
@@ -680,10 +680,10 @@ flip is scheduled for the day the submission window opens, 2026-10-02.
 The most useful entries, because each is a place the build was wrong and the data corrected it.
 
 **The thesis got narrower and more accurate.** This was designed expecting documents citing one
-chain while the payment sat on another. Every one of the 185 payment claims names Monad. The
+chain while the payment sat on another. Every one of the <!-- n:claims -->187<!-- /n --> payment claims names Monad. The
 failure is simpler than the one designed for, so the site says the simpler thing.
 
-**The denominator moved from <!-- n:feedbacks -->9,288<!-- /n --> to 185.** Most ERC-8004 feedback on Monad is not a payment claim.
+**The denominator moved from <!-- n:feedbacks -->9,290<!-- /n --> to <!-- n:claims -->187<!-- /n -->.** Most ERC-8004 feedback on Monad is not a payment claim.
 1,026 documents are chess ELO records. Sampling recent-first had given the opposite impression,
 because the head of a list is never a random sample.
 

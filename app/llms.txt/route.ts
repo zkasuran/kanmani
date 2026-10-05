@@ -1,4 +1,4 @@
-import { clusterShape, freshness, measurement, population, registryHealth } from "@/lib/queries.ts";
+import { clusterShape, freshness, measurement, mislabelled, population, registryHealth } from "@/lib/queries.ts";
 import { SITE } from "@/lib/api.ts";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +11,15 @@ export const dynamic = "force-dynamic";
  * at build time is the exact failure the rest of this site is about.
  */
 export async function GET() {
-  const [m, pop, shape, health, fresh] = await Promise.all([
+  const [m, pop, shape, health, fresh, misl] = await Promise.all([
     measurement(),
     population(),
     clusterShape(),
     registryHealth(),
     freshness(),
+    mislabelled(),
   ]);
+  const mis = misl.rows;
   const d = m.rows;
   const p = pop.rows;
   const s = shape.rows;
@@ -45,7 +47,7 @@ checks the second thing.
 ## The whole distribution, so the headline cannot be read out of context
 
 - ${n(d.noClaim)} documents assert no payment at all. Mostly game ratings and plain-text comments. They cannot be wrong about a payment.
-- ${n(d.doNotResolve)} cite a transaction that is not on the chain they name.
+- ${n(d.doNotResolve)} cite a transaction that is not on the chain they name. ${n(mis.elsewhere)} of those are mined on a different chain, the rest were not found on any chain we could read.
 - ${n(d.resolve)} cite a transaction that is.
 - ${n(d.unknownUnreachable + d.unknownBytesMoved + d.unknownUnparsed)} could not be checked: ${n(d.unknownBytesMoved)} serve bytes that no longer match their own on-chain hash, ${n(d.unknownUnparsed)} are shaped so no published mapping reads them, ${n(d.unknownUnreachable)} would not answer.
 

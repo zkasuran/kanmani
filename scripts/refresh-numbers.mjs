@@ -59,6 +59,7 @@ const KEYS = {
   claims: "documents that assert a payment (false plus true)",
   claimsFalse: "payment claims whose transaction is not on the chain named",
   claimsTrue: "payment claims whose transaction is there",
+  claimsElsewhere: "false claims whose transaction is mined on a different chain",
   noClaim: "documents that assert no payment",
   unknown: "documents that could not be checked",
   unknownHash: "unknown: bytes no longer match their on-chain hash",
@@ -145,6 +146,7 @@ async function live() {
     /- ([\d,]+) agents point at a document that returns a deletion\. ([\d,]+) of them share ONE document, registered by ([\d,]+) distinct wallets/,
     "the dead-cluster line",
   );
+  const [claimsElsewhere] = grab(llms, /([\d,]+) of those are mined on a different chain/, "the mislabelled-network line");
   const [withPointer, feedbacks] = grab(llms, /- ([\d,]+) of ([\d,]+) feedbacks carry an evidence pointer/, "the feedbacks line");
   return {
     atBlock: feed.checkedAtBlock === null ? null : Number(feed.checkedAtBlock),
@@ -159,6 +161,7 @@ async function live() {
       claims: s.paymentClaims,
       claimsFalse: s.doNotResolve,
       claimsTrue: s.resolve,
+      claimsElsewhere,
       noClaim: s.assertNoPayment,
       unknown: s.couldNotCheck.total,
       unknownHash: s.couldNotCheck.bytesNoLongerMatchTheirCommitment,

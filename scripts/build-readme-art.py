@@ -28,6 +28,15 @@ from __future__ import annotations
 import math
 from pathlib import Path
 from textwrap import wrap
+import json
+
+# Every figure the art draws comes from docs/numbers.json, the snapshot scripts/refresh-numbers.mjs
+# writes from the live site. The art used to type its numbers in, so the hero went on saying 749 tests
+# for days after the count had moved. Rebuild after a refresh and the pictures agree with the docs.
+_SNAP = json.loads((Path(__file__).resolve().parent.parent / "docs" / "numbers.json").read_text())
+N = _SNAP["values"]
+SNAP_DAY = _SNAP["measuredAt"][:10]
+fmt = lambda n: f"{n:,}"
 from xml.sax.saxutils import escape
 
 OUT = Path(__file__).resolve().parent.parent / "public" / "readme"
@@ -262,7 +271,7 @@ def aperture_css() -> str:
 
 def hero() -> str:
     w, h = 1280, 580
-    chips = [("10,276", "agents measured"), ("1 job", "settled in real USDC"), ("749", "tests passing")]
+    chips = [(fmt(N["agents"]), "agents measured"), ("1 job", "settled in real USDC"), (fmt(N["testsPassing"]), "tests passing")]
     chip_svg = []
     cx = 72
     for i, (v, k) in enumerate(chips):
@@ -376,7 +385,7 @@ def findings() -> str:
     # Measured 2026-10-03 from fovea.verdict_latest, read back off the live surfaces that carry the
     # same rows: /feed.json `summary` for 182 / 59 / 123 and the homepage split for 113 / 10. The art
     # is a snapshot, so it carries its date instead of pretending to be current.
-    C = dict(claims=182, true=59, false=123, elsewhere=113, nowhere=10, agents="10,276", when="2026-10-03")
+    C = dict(claims=N["claims"], true=N["claimsTrue"], false=N["claimsFalse"], elsewhere=N["claimsElsewhere"], nowhere=N["claimsFalse"] - N["claimsElsewhere"], agents=fmt(N["agents"]), when=SNAP_DAY)
     k = 300 / C["claims"]  # px per claim, so the tallest column stays the same height as it grows
     top = 200
     c1, c2, c3 = 300, 640, 1000
@@ -460,7 +469,7 @@ def findings() -> str:
 # ============================================================================== cluster
 def cluster() -> str:
     w, h = 1280, 330
-    agents, members, owners = 10276, 8093, 7962
+    agents, members, owners = N["agents"], N["oneDocAgents"], N["oneDocWallets"]
     lit = round(members / agents * 100)  # 79 of every 100
     cols, rows, cell, gap = 20, 5, 22, 7
     gx, gy = 640, 92
