@@ -336,7 +336,7 @@ export function selectAgents(logs: readonly WebhookLog[]): Selection {
 
 /* ------------------------------------------------------------------ idempotency */
 
-export type KeyedOn = "alchemy-id" | "body-sha256";
+export type KeyedOn = "alchemy-id" | "tenderly-id" | "body-sha256";
 
 /**
  * The key a retry is recognised by.
@@ -386,7 +386,7 @@ CREATE SCHEMA IF NOT EXISTS fovea;
 
 CREATE TABLE IF NOT EXISTS fovea.webhook_delivery (
   delivery_key      text        PRIMARY KEY,
-  keyed_on          text        NOT NULL CHECK (keyed_on IN ('alchemy-id','body-sha256')),
+  keyed_on          text        NOT NULL CHECK (keyed_on IN ('alchemy-id','tenderly-id','body-sha256')),
   webhook_id        text        NOT NULL,
   event_type        text        NOT NULL,
   status            text        NOT NULL CHECK (status IN ('running','done','ignored','failed')),
@@ -401,6 +401,11 @@ CREATE TABLE IF NOT EXISTS fovea.webhook_delivery (
 
 CREATE INDEX IF NOT EXISTS webhook_delivery_received
   ON fovea.webhook_delivery (received_at DESC);
+
+-- A table created before Tenderly existed carries the two-value check. Widen it in place.
+ALTER TABLE fovea.webhook_delivery DROP CONSTRAINT IF EXISTS webhook_delivery_keyed_on_check;
+ALTER TABLE fovea.webhook_delivery ADD CONSTRAINT webhook_delivery_keyed_on_check
+  CHECK (keyed_on IN ('alchemy-id','tenderly-id','body-sha256'));
 `;
 
 let schemaReady: Promise<void> | null = null;
@@ -846,6 +851,19 @@ export async function handleAlchemyWebhook(req: Request, deps: Deps = liveDeps()
   }
   const delivery = parsed.delivery;
   const { key, keyedOn } = deliveryKeyFor(delivery, raw);
+  return runDelivery(delivery, key, keyedOn, deps);
+}
+
+/**
+ * Everything after the signature and the parse, shared by every provider that delivers registry
+ * logs. One path, so an Alchemy delivery and a Tenderly delivery cannot be judged differently.
+ */
+export async function runDelivery(
+  delivery: AlchemyDelivery,
+  key: string,
+  keyedOn: KeyedOn,
+  deps: Deps,
+): Promise<Response> {
   const receivedAt = deps.now().toISOString();
 
   await deps.ensureSchema();
