@@ -5,8 +5,13 @@ import test from "node:test";
 import { SUITES, TESTS_PASSING, TESTS_SKIPPED } from "./counts.ts";
 
 test("the published total is the sum of the suites, not a typed figure", () => {
-  assert.equal(TESTS_PASSING, 470 + 214 + 124);
-  assert.equal(TESTS_SKIPPED, 15 + 27 + 9);
+  // Derived from SUITES, which scripts/update-counts.mjs writes from a real run, so no copy of the
+  // figure is typed here. verify.sh step 5 holds SUITES against the run itself.
+  assert.equal(TESTS_PASSING, SUITES.site.pass + SUITES.verifier.pass + SUITES.contracts.pass);
+  assert.equal(
+    TESTS_SKIPPED,
+    SUITES.site.total - SUITES.site.pass + SUITES.verifier.total - SUITES.verifier.pass + SUITES.contracts.total - SUITES.contracts.pass,
+  );
 });
 
 test("no page hardcodes a test count beside the constant", () => {

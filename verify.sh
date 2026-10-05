@@ -221,7 +221,7 @@ for (const [name, got] of Object.entries(measured)) {
 if (bad.length) {
   console.error("FAIL  lib/counts.ts no longer matches the suites:");
   for (const b of bad) console.error("      " + b);
-  console.error("      Update SUITES in lib/counts.ts, then run node scripts/refresh-numbers.mjs.");
+  console.error("      Run npm run counts. It updates lib/counts.ts, the docs, the badge and the README art together.");
   process.exit(1);
 }
 const shown = Object.entries(measured).map(([n, v]) => `${n} ${v.pass}/${v.total}`).join(", ");
@@ -352,6 +352,14 @@ banner "numbers"
 # a pull request. Whether the snapshot still matches the live site is the canary's job
 # (`--check --live`), since a live read cannot gate a change that has not shipped.
 node scripts/refresh-numbers.mjs --check
+# The README art is drawn from the same snapshot. Redraw it and fail if anything moved, so the hero
+# image can never show a count the badge and the docs no longer show.
+python3 scripts/build-readme-art.py > /dev/null
+if ! git diff --quiet -- public/readme; then
+  echo "FAIL  public/readme is stale against docs/numbers.json. It has just been redrawn: commit it."
+  exit 1
+fi
+echo "ok    README art matches docs/numbers.json"
 
 # ------------------------------------------------------------------ verdict
 

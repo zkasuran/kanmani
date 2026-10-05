@@ -5,8 +5,8 @@
  * re-derived. Splitting it per suite means the arithmetic is checkable and `lib/counts.test.ts`
  * asserts the sum, so a stale part can no longer hide inside a plausible whole.
  *
- * These still need re-running by hand when suites change. The command for each is here so the next
- * person does not have to guess where the number came from, which is the actual reason it went stale.
+ * Never edit these by hand. `npm run counts` runs the suites, writes the measured numbers here and
+ * refreshes every doc marker, the README badge and the README art from them, so they change together.
  */
 export const SUITES = {
   /** The app's own tests: `node --test` over `lib/**\/*.test.ts`. 15 skip without a database. */

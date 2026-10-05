@@ -14,7 +14,8 @@
     "lint": "eslint . --max-warnings=0",
     "lint:react-compiler": "LINT_REACT_COMPILER=1 eslint .",
     "e2e": "node scripts/e2e/run.mjs",
-    "test": "node --test --experimental-strip-types 'lib/**/*.test.ts' 'verifier/src/**/*.test.ts'"
+    "test": "node --test --experimental-strip-types 'lib/**/*.test.ts' 'verifier/src/**/*.test.ts'",
+    "counts": "node scripts/update-counts.mjs"
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",
