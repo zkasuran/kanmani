@@ -326,7 +326,7 @@ export function AccountPanel() {
             <KeyRow
               ns="kanmani.optic-onchain.v1"
               what="onchain attestation"
-              why="A verdict signer a contract can pin. secp256k1, so ecrecover can check it on chain. Not the account and owns nothing. The deployed Sclera contract pins one fixed attestor address, so this key is derived and ready for a contract that pins it."
+              why="A verdict signer a contract can pin. secp256k1, so ecrecover can check it on chain. Not the account and owns nothing. The deployed Sclera bond contract pins one of these as its only verdict authority: its attestor was derived from a passkey here."
               value={outcome.keys.onchainAttestation.address}
               fp={fps?.onchain}
             />
