@@ -434,15 +434,8 @@ Shipped, each one checkable with a command in this file:
 - [x] Twelve agents, each answering over HTTP and over A2A
 - [x] MCP, OpenAPI 3.1, `skill.md` and a drop-in `AGENTS.md`
 - [x] The first paid hires from outside, two jobs on 2026-10-01
+- [x] An outside agent hired through Aqueous on mainnet, whose findings added Celo to the search, 2026-10-05
 
-Not done yet:
-
-- [ ] Demand that is not ours: paid hires from more than one external operator
-- [ ] Cleanverse mainnet registration, which needs production credentials we do not hold
-- [ ] The CRE slashing oracle on the DON rather than run from the CLI
-- [ ] Endpoints for every chain a claim might name, so "not found" can become "searched and absent"
-- [ ] More chains behind Chiasm
-- [ ] Nansen label enrichment, which the free plan prices out at 100 credits a wallet
 
 ## Licence
 
