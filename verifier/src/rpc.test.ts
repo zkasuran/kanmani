@@ -152,3 +152,12 @@ test("the configured Monad fallback endpoint reports chain 143", { skip: liveSki
   const id = await client.getChainId();
   assert.equal(id, 143, "the fallback must be Monad mainnet, or the chain-id gate disables it by design");
 });
+
+test("every chain reads its own fallback variable, not only Monad", async () => {
+  const { fallbackEnvFor } = await import("./rpc.ts");
+  const { CHAINS } = await import("./chains.ts");
+  const base = CHAINS.find((c) => c.key === "base")!;
+  assert.equal(fallbackEnvFor(base), "RPC_BASE_FALLBACK");
+  const monad = CHAINS.find((c) => c.id === 143)!;
+  assert.equal(fallbackEnvFor(monad), "RPC_MONAD_FALLBACK");
+});

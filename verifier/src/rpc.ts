@@ -9,14 +9,13 @@
  * A silent fallback would make an unconfigured chain look checked, which is the difference between
  * "not found" and "not looked for".
  *
- * ## The Monad fallback reader (Alchemy, read only)
+ * ## The fallback reader (read only)
  *
- * Monad chain 143 may configure a second endpoint in `RPC_MONAD_FALLBACK`. `RPC_MONAD` stays primary
+ * Each chain may configure a second endpoint in `<rpcEnv>_FALLBACK`. The primary stays primary
  * and unchanged. The fallback fires only on a thrown provider error, never on a clean null: a "receipt
  * not found" is an answer, not a failure, so it must not route to a second provider that might answer
- * differently. The fallback self-gates on `eth_chainId`: if the endpoint is not chain 143 (Alchemy's
- * own docs disagree on whether it serves Monad mainnet or only testnet) it disables itself, so a
- * testnet endpoint can never answer a mainnet read. The fallback is read only, never a signer.
+ * differently. The fallback self-gates on `eth_chainId`: if the endpoint is not the chain it is configured for,
+ * it disables itself, so a testnet endpoint can never answer a mainnet read. The fallback is read only, never a signer.
  */
 import { createPublicClient, http } from "viem";
 import type { Chain } from "./chains.ts";
@@ -30,9 +29,14 @@ import type {
 const cache = new Map<number, ChainReader | null>();
 const settlementCache = new Map<number, SettlementReader | null>();
 
-/** Chain 143 is the only chain a fallback is composed for, and the chain id the fallback must report. */
-const MONAD_CHAIN_ID = 143;
-const MONAD_FALLBACK_ENV = "RPC_MONAD_FALLBACK";
+/**
+ * Any chain may carry a second endpoint in `<rpcEnv>_FALLBACK` (RPC_MONAD_FALLBACK, RPC_BASE_FALLBACK,
+ * ...). It was Monad only until 2026-10-06. The fallback must report that same chain's id, so a
+ * misconfigured endpoint disables itself rather than answering for the wrong chain.
+ */
+export function fallbackEnvFor(chain: Chain): string {
+  return `${chain.rpcEnv}_FALLBACK`;
+}
 
 type RpcClient = ReturnType<typeof createPublicClient>;
 
@@ -133,7 +137,7 @@ function makeFallbackRunner(
       return true;
     }
     state = "disabled";
-    onDisable?.(`Monad fallback RPC reports chain ${id}, not ${expected}, so it is disabled`);
+    onDisable?.(`fallback RPC reports chain ${id}, not ${expected}, so it is disabled`);
     return false;
   }
   return async function run<T>(primaryCall: () => Promise<T>, fallbackCall: () => Promise<T>): Promise<T> {
@@ -180,15 +184,15 @@ export function readerFor(chain: Chain, env: NodeJS.ProcessEnv = process.env): C
   const client = createPublicClient({ transport: http(url, { timeout: 10_000, retryCount: 1 }) });
   const primary = chainReaderOf(client);
 
-  const fallbackUrl = env[MONAD_FALLBACK_ENV];
+  const fallbackUrl = env[fallbackEnvFor(chain)];
   let reader = primary;
-  if (chain.id === MONAD_CHAIN_ID && fallbackUrl) {
+  if (fallbackUrl) {
     const fbClient = createPublicClient({ transport: http(fallbackUrl, { timeout: 10_000, retryCount: 1 }) });
     reader = readerWithFallback({
       primary,
       fallback: chainReaderOf(fbClient),
       fallbackChainId: () => fbClient.getChainId(),
-      expectedChainId: MONAD_CHAIN_ID,
+      expectedChainId: chain.id,
       onDisable: (r) => console.warn(`[rpc] ${r}`),
     });
   }
@@ -221,15 +225,15 @@ export function settlementReaderFor(chain: Chain, env: NodeJS.ProcessEnv = proce
   const client = createPublicClient({ transport: http(url, { timeout: 10_000, retryCount: 1 }) });
   const primary = settlementReaderOf(client);
 
-  const fallbackUrl = env[MONAD_FALLBACK_ENV];
+  const fallbackUrl = env[fallbackEnvFor(chain)];
   let reader = primary;
-  if (chain.id === MONAD_CHAIN_ID && fallbackUrl) {
+  if (fallbackUrl) {
     const fbClient = createPublicClient({ transport: http(fallbackUrl, { timeout: 10_000, retryCount: 1 }) });
     reader = settlementReaderWithFallback({
       primary,
       fallback: settlementReaderOf(fbClient),
       fallbackChainId: () => fbClient.getChainId(),
-      expectedChainId: MONAD_CHAIN_ID,
+      expectedChainId: chain.id,
       onDisable: (r) => console.warn(`[rpc] ${r}`),
     });
   }
