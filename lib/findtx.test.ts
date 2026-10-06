@@ -173,3 +173,42 @@ test("providerOf names a QuickNode endpoint by provider and never echoes its key
   assert.equal(label, "QuickNode");
   assert.ok(!label.includes("0123456789abcdef"));
 });
+
+const HASH2 = "0x" + "cd".repeat(32);
+function failingPrimary(found: Record<string, { blockNumber: string; from: string; to: string | null } | null>) {
+  const calls: string[] = [];
+  const f = async (url: string) => {
+    calls.push(url);
+    if (url.includes("primary")) return { ok: false, status: 429, json: async () => ({}) };
+    const key = Object.keys(found).find((k) => url.includes(k));
+    return { ok: true, json: async () => ({ jsonrpc: "2.0", id: 1, result: key ? found[key] : null }) };
+  };
+  return { f, calls };
+}
+
+test("a failing primary falls back to the second endpoint, and the chain counts as searched", async () => {
+  const { f } = failingPrimary({ "arb-fallback": { blockNumber: "0x10", from: "0x" + "11".repeat(20), to: null } });
+  const r = await findTransaction(HASH2, 143, {
+    env: { RPC_ARBITRUM: "https://primary-arb.example", RPC_ARBITRUM_FALLBACK: "https://arb-fallback.example" },
+    fetchImpl: f as never,
+  });
+  assert.equal(r.found?.key, "arbitrum");
+  assert.ok(!r.unreachable.some((u) => u.key === "arbitrum"));
+});
+
+test("a primary that answers absent is final: the fallback is not asked to second-guess it", async () => {
+  const calls: string[] = [];
+  const f = async (url: string) => {
+    calls.push(url);
+    return { ok: true, json: async () => ({ jsonrpc: "2.0", id: 1, result: null }) };
+  };
+  await findTransaction(HASH2, 143, {
+    env: { RPC_ARBITRUM: "https://ok-arb.example", RPC_ARBITRUM_FALLBACK: "https://arb-fallback.example" },
+    fetchImpl: f as never,
+  });
+  assert.ok(!calls.some((u) => u.includes("arb-fallback")));
+});
+
+test("providerOf names a Dwellir host without its key", () => {
+  assert.equal(providerOf("https://api-base-mainnet-archive.n.dwellir.com/abc-123/"), "Dwellir");
+});

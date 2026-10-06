@@ -62,6 +62,16 @@ export function endpointFor(c: Chain, env: Record<string, string | undefined> = 
   return null;
 }
 
+/**
+ * A second endpoint for the same chain, tried only when the first fails to answer. Set as
+ * `<rpcEnv>_FALLBACK`. A provider that answers "no such transaction" is an answer, so the fallback is
+ * never asked to second-guess it; it only covers an outage or a rate limit.
+ */
+export function fallbackFor(c: Chain, env: Record<string, string | undefined> = process.env): string | null {
+  const v = c.rpcEnv ? env[`${c.rpcEnv}_FALLBACK`] : undefined;
+  return v && v.startsWith("https://") ? v : null;
+}
+
 type Fetcher = (
   url: string,
   init: { method: string; headers: Record<string, string>; body: string; signal?: AbortSignal },
@@ -146,7 +156,11 @@ export async function findTransaction(
       unreachable.push({ chainId: c.id, key: c.key, needs: c.rpcEnv ?? "an endpoint" });
       continue;
     }
-    asked.push({ c, answer: txOn(url, txHash, fetchImpl, timeoutMs) });
+    const fallback = fallbackFor(c, env);
+    const answer = txOn(url, txHash, fetchImpl, timeoutMs).then((first) =>
+      first.kind === "failed" && fallback ? txOn(fallback, txHash, fetchImpl, timeoutMs) : first,
+    );
+    asked.push({ c, answer });
   }
 
   // A chain is only `searched` when its provider actually answered. One that failed is unreachable
@@ -205,6 +219,7 @@ export function providerOf(url: string): string {
     const host = new URL(url).host.toLowerCase();
     if (host.endsWith(".g.alchemy.com")) return "Alchemy";
     if (host.endsWith(".quiknode.pro")) return "QuickNode";
+    if (host.endsWith(".n.dwellir.com")) return "Dwellir";
     return host;
   } catch {
     return url;
