@@ -309,3 +309,36 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
     </div>
   );
 }
+
+/**
+ * The account entry in the desktop bar, with no dropdown. Signed out it is two direct links, log in and
+ * create account, each to its tab on /login. Signed in it is the short address, linking to /account,
+ * where everything for the account lives.
+ */
+export function AccountNav({ active }: { active: boolean }) {
+  const s = useSession();
+  const base = "nav-link inline-block rounded px-2.5 py-1.5 font-mono text-[12px] transition-colors";
+  if (!s.ready) return <span className={`${base} text-faint`} aria-hidden="true">account</span>;
+  if (s.session) {
+    return (
+      <Link
+        href="/account"
+        aria-current={active ? "page" : undefined}
+        title={`${displayAddress(s.session.address)} · ${s.session.method} · open your account`}
+        className={`${base} ${active ? "text-[var(--color-text)]" : "text-muted hover:text-[var(--color-text)]"}`}
+      >
+        <AccountLabel />
+      </Link>
+    );
+  }
+  return (
+    <span className="ml-1 flex items-center gap-1.5">
+      <Link href="/login" className={`${base} text-muted hover:text-[var(--color-text)]`}>
+        log in
+      </Link>
+      <Link href="/login?tab=create" className="cta px-3 py-1.5 text-[12px]">
+        create account
+      </Link>
+    </span>
+  );
+}

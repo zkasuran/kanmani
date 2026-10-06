@@ -23,14 +23,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { AccountLabel, AccountMenu } from "@/components/account.tsx";
+import { AccountMenu, AccountNav } from "@/components/account.tsx";
 
 type Item = { href: string; label: string; hint: string };
 type Group = { label: string; href: string; items: Item[]; /** Renders its own panel instead of items. */ account?: true };
 
 /**
- * The last entry, after the journey: `account`. Signed out its menu offers log in and create account,
- * each a link to its tab on /login. Signed in it shows the account, one click from the dashboard.
+ * The last entry, after the journey: the account, as direct links with no dropdown (AccountNav).
+ * Signed out: log in and create account. Signed in: the short address, linking to /account. This
+ * object is kept only so the active-state check and the mobile sheet share one definition.
  *
  * Its label turns into the short address, so the one place a reader looks for "am I logged in" is
  * the place that answers it. It shares the groups' hover logic, so moving to it from `developers`
@@ -364,14 +365,6 @@ export function Nav() {
    * Down opens and enters, Up enters at the end, Escape closes and hands focus back to the label.
    */
   const onLabelKey = (e: React.KeyboardEvent, g: Group) => {
-    if (g.account && e.key === "ArrowDown") {
-      // The account panel holds buttons and links rather than a fixed item list, so focus whatever
-      // is first in it once it has rendered.
-      e.preventDefault();
-      enter(g.label);
-      window.setTimeout(() => panelEl.current?.querySelector<HTMLElement>("button, a")?.focus(), 0);
-      return;
-    }
     if (g.items.length === 0) return;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") {
       e.preventDefault();
@@ -409,9 +402,9 @@ export function Nav() {
   return (
     <>
       <nav className="ml-auto hidden items-center gap-x-1 md:flex">
-        {[...GROUPS, LOGIN].map((g) => {
+        {GROUPS.map((g) => {
           const active = inGroup(g);
-          const hasPanel = g.items.length > 0 || g.account === true;
+          const hasPanel = g.items.length > 0;
           const shown = hover === g.label && hasPanel;
           return (
             <div
@@ -453,32 +446,9 @@ export function Nav() {
                   active ? "text-[var(--color-text)]" : "text-muted hover:text-[var(--color-text)]"
                 }`}
               >
-                {g.account ? <AccountLabel /> : g.label}
+                {g.label}
               </Link>
-              {shown && g.account ? (
-                <div
-                  role="menu"
-                  aria-label={g.label}
-                  ref={panelEl}
-                  className="menu-pop account-pop absolute right-0 top-full z-30 w-[21rem] max-w-[calc(100vw-2rem)] rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] p-3 shadow-[var(--shadow-2)]"
-                  onMouseEnter={() => enterPanel(g.label)}
-                  onMouseLeave={(e) => {
-                    pointer.current = { x: e.clientX, y: e.clientY };
-                    leavePanel(e);
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                      e.preventDefault();
-                      setHover(null);
-                      returning.current = true;
-                      labelRefs.current[g.label]?.focus();
-                      returning.current = false;
-                    }
-                  }}
-                >
-                  <AccountMenu onNavigate={() => setHover(null)} />
-                </div>
-              ) : shown ? (
+              {shown ? (
                 <div
                   role="menu"
                   aria-label={g.label}
@@ -533,6 +503,7 @@ export function Nav() {
             </div>
           );
         })}
+        <AccountNav active={inGroup(LOGIN)} />
       </nav>
 
       <button

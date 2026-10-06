@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 /**
- * The unified account: one `account` nav entry, /login with two tabs, one dashboard at /account.
+ * The unified account: log in and create account in the bar (the address once signed in), /login
+ * with two tabs, one dashboard at /account.
  *
  *   node scripts/e2e/account-unified.e2e.mjs [url]     default https://kanmani.xyz
  *
@@ -24,18 +25,18 @@ const check = (name, ok, detail = "") => {
 };
 const header = () => page.locator("header");
 
-// 1. Signed out: the nav entry reads "account" and its menu offers the two ways in, as links.
+// 1. Signed out: the bar shows log in and create account as direct links, with no dropdown.
 await page.goto(`${url}/`, { waitUntil: "networkidle" });
-const label = header().getByRole("link", { name: /^account$/ });
-check("nav shows one account entry when signed out", (await label.count()) === 1);
-check("there is no create menu in the nav", (await header().getByRole("link", { name: /^create$/ }).count()) === 0);
-await label.hover();
-// The menu opens on hover intent, after a short delay, so wait for it rather than racing it.
-await page.getByRole("menu").first().waitFor({ timeout: 5_000 });
-const menuLogin = page.getByRole("menu").getByRole("link", { name: /log in/i });
-const menuCreate = page.getByRole("menu").getByRole("link", { name: /create account/i });
-check("account menu offers log in and create account", (await menuLogin.count()) === 1 && (await menuCreate.count()) === 1);
-check("create account links to the create tab", (await menuCreate.getAttribute("href")) === "/login?tab=create");
+const bar = header().locator("nav").first();
+check("there is no create menu in the nav", (await bar.getByRole("link", { name: /^create$/ }).count()) === 0);
+const navLogin = bar.getByRole("link", { name: "log in", exact: true });
+const navCreate = bar.getByRole("link", { name: "create account", exact: true });
+check("the bar shows log in and create account when signed out", (await navLogin.count()) === 1 && (await navCreate.count()) === 1);
+check("log in links to /login", (await navLogin.getAttribute("href")) === "/login");
+check("create account links to the create tab", (await navCreate.getAttribute("href")) === "/login?tab=create");
+await navLogin.hover();
+await page.waitForTimeout(700);
+check("hovering the account links opens no dropdown", (await page.getByRole("menu").count()) === 0);
 
 // 2. /login: two tabs, the create tab reachable and labelled.
 await page.goto(`${url}/login`, { waitUntil: "networkidle" });
@@ -54,7 +55,9 @@ const stored = await page.evaluate(() => sessionStorage.getItem("kanmani.session
 const rec = stored ? JSON.parse(stored) : {};
 check("stored session has no kind", stored !== null && !("kind" in rec), stored ?? "nothing stored");
 const address = rec.address;
-check("nav label is now the short address", (await header().getByText(/0x[0-9a-fA-F]{4}…[0-9a-fA-F]{4}/).count()) > 0);
+const navAddr = header().locator("nav").first().getByRole("link", { name: /0x[0-9a-fA-F]{4}…[0-9a-fA-F]{4}/ });
+check("signed in, the bar shows the short address linking to /account", (await navAddr.count()) === 1 && (await navAddr.getAttribute("href")) === "/account");
+check("signed in, log in is gone from the bar", (await header().locator("nav").first().getByRole("link", { name: "log in", exact: true }).count()) === 0);
 
 // 4. The dashboard has its sections, and the agents section knows who is signed in.
 for (const id of ["payments", "agents", "keys"]) check(`section #${id} exists`, (await page.locator(`section#${id}`).count()) === 1);
