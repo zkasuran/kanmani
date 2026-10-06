@@ -311,9 +311,9 @@ export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 /**
- * The account entry in the desktop bar, with no dropdown. Signed out it is two direct links, log in and
- * create account, each to its tab on /login. Signed in it is the short address, linking to /account,
- * where everything for the account lives.
+ * The account entry in the desktop bar, with no dropdown. Signed out it is one button, `account`, to
+ * /login, where the log in and create account tabs both live. Signed in it is the short address,
+ * linking to /account, where everything for the account lives.
  */
 export function AccountNav({ active }: { active: boolean }) {
   const s = useSession();
@@ -331,14 +331,11 @@ export function AccountNav({ active }: { active: boolean }) {
       </Link>
     );
   }
+  // One button: logging in and creating an account are the same step for a wallet and one tab apart
+  // for a passkey, so /login offers both rather than the bar asking the reader to choose first.
   return (
-    <span className="ml-1 flex items-center gap-1.5">
-      <Link href="/login" className={`${base} text-muted hover:text-[var(--color-text)]`}>
-        log in
-      </Link>
-      <Link href="/login?tab=create" className="cta px-3 py-1.5 text-[12px]">
-        create account
-      </Link>
-    </span>
+    <Link href="/login" aria-current={active ? "page" : undefined} className="cta ml-1 px-3 py-1.5 text-[12px]">
+      account
+    </Link>
   );
 }

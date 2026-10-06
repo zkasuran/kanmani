@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * The unified account: log in and create account in the bar (the address once signed in), /login
+ * The unified account: one account button in the bar (the address once signed in), /login
  * with two tabs, one dashboard at /account.
  *
  *   node scripts/e2e/account-unified.e2e.mjs [url]     default https://kanmani.xyz
@@ -25,16 +25,15 @@ const check = (name, ok, detail = "") => {
 };
 const header = () => page.locator("header");
 
-// 1. Signed out: the bar shows log in and create account as direct links, with no dropdown.
+// 1. Signed out: the bar shows one account button to /login, with no dropdown.
 await page.goto(`${url}/`, { waitUntil: "networkidle" });
 const bar = header().locator("nav").first();
 check("there is no create menu in the nav", (await bar.getByRole("link", { name: /^create$/ }).count()) === 0);
-const navLogin = bar.getByRole("link", { name: "log in", exact: true });
-const navCreate = bar.getByRole("link", { name: "create account", exact: true });
-check("the bar shows log in and create account when signed out", (await navLogin.count()) === 1 && (await navCreate.count()) === 1);
-check("log in links to /login", (await navLogin.getAttribute("href")) === "/login");
-check("create account links to the create tab", (await navCreate.getAttribute("href")) === "/login?tab=create");
-await navLogin.hover();
+const navAccount = bar.getByRole("link", { name: "account", exact: true });
+check("signed out, the bar shows one account button", (await navAccount.count()) === 1);
+check("the account button links to /login", (await navAccount.getAttribute("href")) === "/login");
+check("no separate log in or create account links in the bar", (await bar.getByRole("link", { name: /^(log in|create account)$/ }).count()) === 0);
+await navAccount.hover();
 await page.waitForTimeout(700);
 check("hovering the account links opens no dropdown", (await page.getByRole("menu").count()) === 0);
 
@@ -57,7 +56,7 @@ check("stored session has no kind", stored !== null && !("kind" in rec), stored 
 const address = rec.address;
 const navAddr = header().locator("nav").first().getByRole("link", { name: /0x[0-9a-fA-F]{4}…[0-9a-fA-F]{4}/ });
 check("signed in, the bar shows the short address linking to /account", (await navAddr.count()) === 1 && (await navAddr.getAttribute("href")) === "/account");
-check("signed in, log in is gone from the bar", (await header().locator("nav").first().getByRole("link", { name: "log in", exact: true }).count()) === 0);
+check("signed in, the account button is replaced by the address", (await header().locator("nav").first().getByRole("link", { name: "account", exact: true }).count()) === 0);
 
 // 4. The dashboard has its sections, and the agents section knows who is signed in.
 for (const id of ["payments", "agents", "keys"]) check(`section #${id} exists`, (await page.locator(`section#${id}`).count()) === 1);
