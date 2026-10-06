@@ -411,8 +411,8 @@ export default async function AgentPage({ params }: Props) {
             is optional and every change so far predates the feature. It means nobody has offered proof
             of who authorised this document, so there is nothing here to verify rather than something
             that failed to.{" "}
-            <Link href="/studio" className="text-[var(--color-brand)] hover:underline">
-              Sign one in the studio →
+            <Link href="/account#agents" className="text-[var(--color-brand)] hover:underline">
+              Sign one from your account →
             </Link>
           </p>
         ) : (

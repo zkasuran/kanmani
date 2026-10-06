@@ -275,7 +275,7 @@ delivered to us" are different claims and only the first is currently true.
 
 ## 5. Onboarding: both doors are open, the skill.md import is not
 
-**Door A closed 2026-09-24.** `/studio` now loads an operator's **own** record rather than showing an
+**Door A closed 2026-09-24.** `/studio` (since 2026-10-06 the agents section of `/account`) now loads an operator's **own** record rather than showing an
 empty form: enter an agent id, press *load my record*, then the existing document is fetched, parsed and
 prefilled, with the consequence list retitled *"what your record currently does"* so the diagnosis is of
 the record they have rather than of a draft they typed.
@@ -515,8 +515,8 @@ Small, real and better written here than discovered by a reader.
   one that needs the P256 precompile profile. They skip rather than silently passing, but a reader
   should know the 124 is not the whole suite.
 * **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->242<!-- /n --> tests, <!-- n:testsVerifier -->215<!-- /n --> pass, <!-- n:testsVerifierSkipped -->27<!-- /n -->
-  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->500<!-- /n --> tests, <!-- n:testsApp -->485<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
-  **<!-- n:testsPassing -->824<!-- /n --> pass in total.**
+  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->501<!-- /n --> tests, <!-- n:testsApp -->486<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
+  **<!-- n:testsPassing -->825<!-- /n --> pass in total.**
 * **Census figures and live figures differ because the registry keeps growing.** Documents written at
   census time say 10,252 agents and 2,012 distinct records. The live index now reads 10,276 and 2,053,
   because registrations have continued since the census and one of them is ours, agent 10252. Section 1

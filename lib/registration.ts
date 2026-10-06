@@ -1,7 +1,7 @@
 /**
  * Composing an ERC-8004 registration document and the two calls that put it on chain.
  *
- * This is the module behind `/studio`. It is pure over strings and bytes: it builds a document,
+ * This is the module behind the agents section of `/account` (formerly `/studio`). It is pure over strings and bytes: it builds a document,
  * encodes it and returns the exact calldata an operator sends. **It never sends anything and it
  * never holds a key.** That separation is the whole design, for a reason that is not squeamishness:
  * this project publishes measurements about other people's registrations, so it must not be able to

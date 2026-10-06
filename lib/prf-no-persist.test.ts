@@ -52,7 +52,7 @@ async function forbiddenSecrets(): Promise<string[]> {
 
 test("the write path never serializes a derived key", async () => {
   const keys = await deriveKeys(PRF);
-  const record = sessionRecord(keys.account.address, "passkey", "user", NOW);
+  const record = sessionRecord(keys.account.address, "passkey", NOW);
 
   const { storage, writes } = recordingStorage();
   persistSession(storage, record);
@@ -72,7 +72,7 @@ test("the write path never serializes a derived key", async () => {
 
 test("what is written reads back as the public record and nothing more", async () => {
   const keys = await deriveKeys(PRF);
-  const record = sessionRecord(keys.account.address, "passkey", "user", NOW);
+  const record = sessionRecord(keys.account.address, "passkey", NOW);
   const { storage, writes } = recordingStorage();
   persistSession(storage, record);
 
@@ -84,7 +84,6 @@ test("what is written reads back as the public record and nothing more", async (
   assert.deepEqual(back, record);
   assert.deepEqual(Object.keys(JSON.parse(serializeSession(record))).sort(), [
     "address",
-    "kind",
     "method",
     "since",
     "v",
@@ -105,7 +104,7 @@ test("persisting null clears rather than writing anything", () => {
 
 test("the write path touches only the store it is handed, never a global one", async () => {
   const keys = await deriveKeys(PRF);
-  const record: StoredSession = sessionRecord(keys.account.address, "passkey", "user", NOW);
+  const record: StoredSession = sessionRecord(keys.account.address, "passkey", NOW);
 
   // Spy on every global store a future refactor might reach for. persistSession takes its store as an
   // argument, so a write to one of these would be a regression that this catches.

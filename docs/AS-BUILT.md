@@ -21,8 +21,8 @@ cd contracts && forge test            # the contracts, fork and P256 tests skip 
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**<!-- n:testsPassing -->824<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
-carried forward: <!-- n:testsApp -->485<!-- /n --> of <!-- n:testsAppTotal -->500<!-- /n --> in the site suite, <!-- n:testsVerifier -->215<!-- /n --> of <!-- n:testsVerifierTotal -->242<!-- /n --> in the verifier, <!-- n:testsContracts -->124<!-- /n --> of <!-- n:testsContractsTotal -->133<!-- /n --> in contracts. The
+**<!-- n:testsPassing -->825<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: <!-- n:testsApp -->486<!-- /n --> of <!-- n:testsAppTotal -->501<!-- /n --> in the site suite, <!-- n:testsVerifier -->215<!-- /n --> of <!-- n:testsVerifierTotal -->242<!-- /n --> in the verifier, <!-- n:testsContracts -->124<!-- /n --> of <!-- n:testsContractsTotal -->133<!-- /n --> in contracts. The
 differences are <!-- n:testsSkipped -->51<!-- /n --> deliberate skips: database tests without a database and contract tests that need an
 archive node, ffi or the P256 profile. `scripts/refresh-numbers.mjs` keeps these figures in step with `lib/counts.ts`.
 
@@ -46,8 +46,8 @@ described as live would be the exact failure this project exists to attack.
 
 ### Retina, the index
 
-Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **<!-- n:agents -->10,281<!-- /n --> agents** at
-census time, matching the registry's own counter slot exactly, **<!-- n:documents -->2,058<!-- /n --> distinct registration
+Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **<!-- n:agents -->10,309<!-- /n --> agents** at
+census time, matching the registry's own counter slot exactly, **<!-- n:documents -->2,063<!-- /n --> distinct registration
 documents** and **<!-- n:feedbacks -->9,291<!-- /n --> feedbacks**.
 
 The slot can only ever grow, so a later read shows the same figure or higher, never lower. We are
@@ -84,7 +84,7 @@ document somebody repairs reads as `false` to `true` with both timestamps.
 
 ### The registration probe
 
-All **<!-- n:documents -->2,058<!-- /n -->** distinct documents asked once each, deduplicated by record hash so one dead URL is
+All **<!-- n:documents -->2,063<!-- /n -->** distinct documents asked once each, deduplicated by record hash so one dead URL is
 fetched once rather than <!-- n:oneDocAgents -->8,093<!-- /n --> times. Per host, serial, with a gap, because a handful of hosts carry
 most of them.
 
@@ -184,7 +184,7 @@ nothing compared, so one could be half-added and still look integrated.
 ### Chiasm, the cross-chain merge, with data in it
 
 **BNB Smart Chain was backfilled on 2026-09-23** and the index now holds two chains: **362,682
-agents on BSC against <!-- n:agents -->10,281<!-- /n --> on Monad**, a separate population rather than a mirror. BSC grows daily,
+agents on BSC against <!-- n:agents -->10,309<!-- /n --> on Monad**, a separate population rather than a mirror. BSC grows daily,
 so that figure is a 2026-10-03 read of `/chains`.
 
 Chiasm merges the two on the content hash of the registration document, which is the only key that
@@ -202,7 +202,7 @@ the ones with no host to ask, because a self-contained document is the only kind
 
 The resync was the honest cost. Envio refused to start when the chain was added, rather than
 destroying data and named the three options. The reset then rebuilt Monad to exactly its previous
-figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,281<!-- /n --> and <!-- n:feedbacks -->9,291<!-- /n -->), while
+figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,309<!-- /n --> and <!-- n:feedbacks -->9,291<!-- /n -->), while
 **`fovea.verdict` kept all 2,384 rows** because it lives outside the schema Envio drops. That
 separation was designed for this and this is the first time it was load-bearing.
 
@@ -213,7 +213,7 @@ sudo -u postgres psql -d envio-dev -c 'select "chainCount", count(*) from public
 
 ### The studio, both onboarding doors
 
-`/studio` composes an ERC-8004 registration document and generates the transaction that puts it on
+The agents section of `/account` (`/account#agents`, formerly `/studio`, which now redirects there) composes an ERC-8004 registration document and generates the transaction that puts it on
 chain. Two doors, the shape the onboarding plan specified:
 
 * **Register a new agent.** A progressive form where every field shows its consequence live: an
@@ -254,7 +254,7 @@ because a registration document is not the place for a payment claim.
 
 ```bash
 node --test --experimental-strip-types 'lib/registration.test.ts'    # 24 pass
-curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/studio # 200
+curl -sS -o /dev/null -w '%{http_code}\n' https://kanmani.xyz/account # 200
 ```
 
 `register()` with no argument is deliberately not offered. It mints an agent whose URI is empty and
@@ -397,8 +397,8 @@ reimplementing the ladder, so the site and the command line cannot give differen
 carries the write-ups and `/compliance` reads the Cleanverse gate live.
 
 ```bash
-for p in / /agents /operators /claims /compare /verify /studio /pay /fund /account \
-         /method /chains /status /validate /developers /blog /bond /compliance /create /hire; do
+for p in / /agents /operators /claims /compare /verify /login /pay /fund /account \
+         /method /chains /status /validate /developers /blog /bond /compliance /hire; do
   printf '%s %s\n' "$p" "$(curl -sS -o /dev/null -w '%{http_code}' https://kanmani.xyz$p)"
 done
 ```
@@ -722,7 +722,7 @@ Shipped 2026-09-25 and live on Monad mainnet.
 | Sentinel | 10256 | A pre-hire verdict stamped with the block it was measured at, refused if staler than the caller's bound | 10,000 atomic USDC, floor 8000bps |
 | Assay | 10257 | The bond an agent should post: a floor in bps plus a premium, from its measured claim-truth rate | 10,000 atomic USDC, floor 8000bps |
 
-The registry has <!-- n:agents -->10,281<!-- /n --> agents and most are not worth hiring, so adding another generic one would have
+The registry has <!-- n:agents -->10,309<!-- /n --> agents and most are not worth hiring, so adding another generic one would have
 been noise. A swap router or a chat wrapper also runs identically on any EVM chain, which is why neither
 is here: shipping one would demonstrate nothing about Monad beyond that it executes bytecode.
 
@@ -813,7 +813,7 @@ Two numbers on the site were contradicted by our own database: `/chains` said 35
 a real 357,444 and `/studio` said 2,012 distinct documents against 2,016. Neither was a calculation
 error. They were true on the day somebody typed them into a sentence, which is the same mechanism this
 project publishes findings about in other people's records. Both populations have grown since: the
-distinct-document count is <!-- n:documents -->2,058<!-- /n --> today.
+distinct-document count is <!-- n:documents -->2,063<!-- /n --> today.
 
 Every population figure now comes from a query, including one a client component had been asserting
 inline. `agentsByChain()` was added because no per-chain count existed, which is the root cause: the
@@ -836,3 +836,14 @@ and four mentor replies went out dirty and the replies cannot be edited: `PATCH`
 both return 404 and an answered question returns 409. It has caught violations in its author's own work
 four times since, including 11 in the draft of the next dashboard update.
 
+### One account, 2026-10-06
+
+There used to be two kinds of account, agent and user, picked at sign-up and stored as a `kind` flag in
+the tab. Both were the same address proved the same way. The split only made people choose. Now there
+is one account: an address proved with a passkey or a wallet. What it can do follows from what it owns
+on chain. The nav has one `account` entry. Signed out, its menu links to the two tabs of `/login` (log in,
+create account). Signed in, `/account` is the dashboard: overview and balances, payments, the agents
+section (the old studio) and the four-keys passkey demo. `/create`, `/create/agent`, `/create/user` and
+`/studio` redirect with 308. A session stored before the change still reads with `kind` dropped. Any other
+unexpected field still rejects the record. `scripts/e2e/account-unified.e2e.mjs` runs the whole path
+with a real passkey ceremony, including clearing storage and logging back into the same address.

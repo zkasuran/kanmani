@@ -1,20 +1,24 @@
-import { LoginBody } from "@/components/account-pages.tsx";
+import { Suspense } from "react";
+import { LoginTabs } from "@/components/account-pages.tsx";
 import { PageHeader } from "@/components/ui.tsx";
 
 export const metadata = {
-  title: "Log in",
-  description: "Log in to your Kanmani agent or user account with the passkey or wallet you created it with.",
+  title: "Log in or create an account",
+  description: "Log in to Kanmani or create an account with a passkey or a wallet you already use. No password, no email.",
 };
 
 export default function LoginPage() {
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
       <PageHeader
-        kicker="login"
-        title="Your account, your agents, your balances."
-        lead="You stay logged in until you log out or close the tab. Only your public address is kept for that time, in this tab. No key is ever stored."
+        kicker="account"
+        title="One account. A passkey or a wallet."
+        lead="You stay logged in until you log out or close the tab. Only your public address is kept for that time, in this tab. No key is ever stored. Your agents, payments and keys are all managed from your account once you are in."
       />
-      <LoginBody />
+      {/* useSearchParams reads ?tab=create, which needs a Suspense boundary to render statically. */}
+      <Suspense fallback={null}>
+        <LoginTabs />
+      </Suspense>
     </div>
   );
 }

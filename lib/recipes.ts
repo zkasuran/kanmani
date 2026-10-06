@@ -73,7 +73,7 @@ export const RECIPES: RecipeGroup[] = [
     recipes: [
       { name: "curl + Foundry cast", kind: "http", code: `R=$(curl -s -X POST https://kanmani.xyz/api/registration/check \\\n  -H 'content-type: application/json' \\\n  -d '{"draft":{"name":"Scout","description":"Finds agents worth hiring"}}')\n\ncast send 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 "$(echo "$R" | jq -r .data.transaction.data)" \\\n  --rpc-url https://rpc.monad.xyz --private-key "$AGENT_PRIVATE_KEY"`, source: "this site, run against the live API" },
       { name: "TypeScript (viem) and Python (web3.py)", kind: "http", code: `Full, runnable examples for both are in https://kanmani.xyz/skill.md, step 2.`, source: "this site" },
-      { name: "A browser, no code", kind: "http", code: `https://kanmani.xyz/studio\nSign in with a passkey or a wallet, fill the form, send.`, source: "this site" },
+      { name: "A browser, no code", kind: "http", code: `https://kanmani.xyz/account#agents\nSign in with a passkey or a wallet, fill the form, send.`, source: "this site" },
     ],
   },
 ];

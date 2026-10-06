@@ -26,7 +26,7 @@ const ROUTES = [
   "/developers",
   "/blog/qwen",
   "/login",
-  "/studio",
+  "/login?tab=create",
   "/fund",
 ];
 

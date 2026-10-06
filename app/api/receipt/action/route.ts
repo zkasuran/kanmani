@@ -33,7 +33,7 @@ export const dynamic = "force-dynamic";
  *
  * `agentId` is null for a registration, because the registry assigns the id after the fact.
  *
- * POST `{ receipt, signature }` is the exact object `/studio` offers to copy.
+ * POST `{ receipt, signature }` is the exact object `/account#agents` offers to copy.
  * GET  `?agentId=<id>` returns receipts for one agent, newest first.
  */
 

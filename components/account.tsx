@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Sign-in and account views, shared by the nav menu, /create and /login.
+ * Sign-in and account views, shared by the nav menu, /login and the /account dashboard.
  *
  * Two methods on equal footing, passkey and wallet, for both creating an account and logging in.
  * The account view reads only public state (`/api/account/<address>`), so it shows the same facts a
@@ -13,7 +13,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession, walletAvailable } from "@/components/session.tsx";
 import { webAuthnAvailable } from "@/lib/passkey.ts";
-import { displayAddress, shortAddress, type AccountKind, type LoginMethod } from "@/lib/login.ts";
+import { displayAddress, shortAddress, type LoginMethod } from "@/lib/login.ts";
 
 type AccountData = {
   address: string;
@@ -26,13 +26,10 @@ type AccountData = {
 
 export function SignIn({
   create,
-  kind,
   compact = false,
   onDone,
 }: {
   create: boolean;
-  /** Required when creating. On login the kind follows from whether the address owns agents. */
-  kind?: AccountKind;
   compact?: boolean;
   onDone?: () => void;
 }) {
@@ -42,7 +39,7 @@ export function SignIn({
   useEffect(() => setAvail({ passkey: webAuthnAvailable(), wallet: walletAvailable() }), []);
 
   const go = async (m: LoginMethod) => {
-    if (await s.start(m, { create, kind })) onDone?.();
+    if (await s.start(m, { create })) onDone?.();
   };
 
   const methods: { m: LoginMethod; title: string; hint: string; missing: string }[] = [
@@ -142,7 +139,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
   const { data, failed } = useAccount(s.session?.address);
   const [copied, setCopied] = useState(false);
   if (!s.session) return null;
-  const { address, method, kind, since } = s.session;
+  const { address, method, since } = s.session;
 
   const copy = async () => {
     try {
@@ -165,7 +162,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
     <div className="account-view flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <span className="kicker">{kind} account · {method}</span>
+          <span className="kicker">kanmani account · {method}</span>
           <button
             type="button"
             onClick={copy}
@@ -228,7 +225,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
         {data && data.agentCount === 0 ? (
           <p className="mt-1.5 text-[12px] leading-snug text-muted">
             This address owns no registered agent on Monad.{" "}
-            <Link href="/studio" onClick={onNavigate} className="text-[var(--color-brand)] hover:underline">register one</Link>
+            <Link href="/account#agents" onClick={onNavigate} className="text-[var(--color-brand)] hover:underline">register one</Link>
           </p>
         ) : null}
         {agentsShown.length ? (
@@ -251,7 +248,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
           </ul>
         ) : null}
         {compact && data && data.agentCount > agentsShown.length ? (
-          <Link href="/login" onClick={onNavigate} className="mt-1 block font-mono text-[11px] text-muted hover:text-[var(--color-text)]">
+          <Link href="/account#agents" onClick={onNavigate} className="mt-1 block font-mono text-[11px] text-muted hover:text-[var(--color-text)]">
             all {data.agentCount} →
           </Link>
         ) : null}
@@ -259,12 +256,12 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
 
       <div className="flex flex-wrap gap-x-4 gap-y-1.5 border-t border-[var(--color-line)] pt-3 font-mono text-[12px]">
         {!compact ? null : (
-          <Link href="/login" onClick={onNavigate} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">manage</Link>
+          <Link href="/account" onClick={onNavigate} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">dashboard</Link>
         )}
-        <Link href="/studio" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">{kind === "agent" ? "register or repoint" : "register an agent"}</Link>
-        <Link href="/bond#post" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">bond</Link>
+        <Link href="/account#agents" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">agents</Link>
+        <Link href="/account#payments" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">payments</Link>
         {method === "passkey" ? (
-          <Link href="/account" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">keys</Link>
+          <Link href="/account#keys" onClick={onNavigate} className="text-muted hover:text-[var(--color-text)]">keys</Link>
         ) : null}
         <button type="button" onClick={logout} className="ml-auto text-muted hover:text-[var(--color-false)]">log out</button>
       </div>
@@ -274,13 +271,13 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
 
 /* ------------------------------------------------------------------ nav pieces */
 
-/** The nav label: `login` until signed in, then the short address with a live dot once logged in. */
+/** The nav label: `account` until signed in, then the short address with a live dot once logged in. */
 export function AccountLabel() {
   const s = useSession();
   // Until storage is read the label keeps its width with a neutral placeholder, so a logged-in reader
-  // never sees "login" flash before their address.
-  if (!s.ready) return <span className="account-label account-label--pending">login</span>;
-  if (!s.session) return <span className="account-label">login</span>;
+  // never sees "account" flash before their address.
+  if (!s.ready) return <span className="account-label account-label--pending">account</span>;
+  if (!s.session) return <span className="account-label">account</span>;
   return (
     <span className="account-label account-label--in" title={`${displayAddress(s.session.address)} · ${s.session.method}`}>
       <span className="live-dot h-1.5 w-1.5 rounded-full bg-[var(--color-true)]" aria-hidden="true" />
@@ -290,21 +287,25 @@ export function AccountLabel() {
   );
 }
 
-/** What the login entry opens: the two ways in until signed in, then the account itself. */
+/**
+ * What the account entry opens. Signed out: the two ways in, each a link to its own tab on /login,
+ * so creating and logging in happen on one dedicated page rather than inside a hover panel. Signed
+ * in: the account itself, with the dashboard one click away.
+ */
 export function AccountMenu({ onNavigate }: { onNavigate?: () => void }) {
   const s = useSession();
   if (!s.ready) return <p className="text-[12px] text-faint">…</p>;
   if (s.session) return <AccountSummary compact onNavigate={onNavigate} />;
   return (
-    <div className="flex flex-col gap-2.5">
-      {/* No onDone: after signing in the panel stays open and turns into the account itself. */}
-      <SignIn create={false} compact />
-      <p className="text-[11.5px] leading-snug text-muted">
-        new here? create an{" "}
-        <Link href="/create/agent" onClick={onNavigate} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">agent account</Link>{" "}
-        or a{" "}
-        <Link href="/create/user" onClick={onNavigate} className="text-[var(--color-text)] hover:text-[var(--color-brand)]">user account</Link>.
-      </p>
+    <div className="flex flex-col gap-1.5">
+      <Link href="/login" onClick={onNavigate} className="signin-method signin-method--compact block text-left">
+        <span className="font-mono text-[12.5px] text-[var(--color-text)]">log in →</span>
+        <span className="mt-1 block text-[11.5px] leading-snug text-muted">with the passkey or wallet you used before</span>
+      </Link>
+      <Link href="/login?tab=create" onClick={onNavigate} className="signin-method signin-method--compact block text-left">
+        <span className="font-mono text-[12.5px] text-[var(--color-text)]">create account →</span>
+        <span className="mt-1 block text-[11.5px] leading-snug text-muted">a passkey or a wallet you already use. No password, no email</span>
+      </Link>
     </div>
   );
 }

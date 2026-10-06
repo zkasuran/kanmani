@@ -196,13 +196,13 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
     }
     setBusy("connect");
     try {
-      const outcome: CeremonyOutcome = mode === "new" ? await createAccount("Kanmani studio") : await signIn();
+      const outcome: CeremonyOutcome = mode === "new" ? await createAccount("Kanmani") : await signIn();
       if (!outcome.ok) {
         setNote({ kind: "error", text: `${outcome.cause} ${outcome.fix}` });
         return;
       }
       setKeys(outcome.keys);
-      session.adopt(outcome, "agent");
+      session.adopt(outcome);
       setNote({
         kind: "info",
         text: "Signed in. The key lives in this tab only and reconstructs from the same passkey on any device.",

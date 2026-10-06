@@ -29,18 +29,19 @@ type Item = { href: string; label: string; hint: string };
 type Group = { label: string; href: string; items: Item[]; /** Renders its own panel instead of items. */ account?: true };
 
 /**
- * The last entry, after the journey: log in until logged in, then the account itself.
+ * The last entry, after the journey: `account`. Signed out its menu offers log in and create account,
+ * each a link to its tab on /login. Signed in it shows the account, one click from the dashboard.
  *
  * Its label turns into the short address, so the one place a reader looks for "am I logged in" is
  * the place that answers it. It shares the groups' hover logic, so moving to it from `developers`
  * behaves like moving between any two groups.
  */
-const LOGIN: Group = { label: "login", href: "/login", items: [], account: true };
+const LOGIN: Group = { label: "account", href: "/account", items: [], account: true };
 
 /**
  * The groups, in the order somebody actually moves through the product.
  *
- * Create an agent, verify a claim about one, settle money against it, explore the population, build on
+ * Verify a claim about an agent, settle money against it, explore the population, build on
  * it, then check how fresh any of it is. That sequence is the product's own argument, so the navigation
  * states it rather than making a reader infer it from an alphabetical list.
  *
@@ -52,14 +53,6 @@ const LOGIN: Group = { label: "login", href: "/login", items: [], account: true 
  * only has after they have believed something: how old is that number.
  */
 const GROUPS: Group[] = [
-  {
-    label: "create",
-    href: "/create",
-    items: [
-      { href: "/create/agent", label: "agent account", hint: "register and run agents, bond their record" },
-      { href: "/create/user", label: "user account", hint: "verify claims, pay for jobs, fund from any chain" },
-    ],
-  },
   {
     label: "verify",
     href: "/verify",
@@ -145,7 +138,9 @@ export function Nav() {
   }, [open]);
 
   const inGroup = (g: Group) =>
-    g.items.length === 0
+    g.account
+      ? path.startsWith("/account") || path.startsWith("/login")
+      : g.items.length === 0
       ? path.startsWith(g.href)
       : path === g.href || g.items.some((i) => path === i.href || path.startsWith(`${i.href}/`));
 
@@ -566,7 +561,7 @@ export function Nav() {
           <nav className="mx-auto flex max-w-[1180px] flex-col gap-4 px-5 py-4">
             {/* The account first on a phone: it is the one thing a reader opens the sheet to check. */}
             <div className="sheet-group sheet-account" style={{ ["--i" as string]: 0 }}>
-              <span className="kicker">login</span>
+              <span className="kicker">account</span>
               <div className="mt-2">
                 <AccountMenu onNavigate={() => setOpen(false)} />
               </div>

@@ -127,7 +127,7 @@ receipt = w3.eth.wait_for_transaction_receipt(h)
 agent_id = int(next(l for l in receipt.logs if l.address.lower() == r["transaction"]["to"].lower() and len(l.topics) == 4).topics[3].hex(), 16)
 \`\`\`
 
-No code at all: ${site}/studio does the same in a browser, from a passkey or a wallet.
+No code at all: ${site}/account#agents does the same in a browser, from a passkey or a wallet.
 
 ## Step 3: confirm it
 

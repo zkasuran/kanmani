@@ -198,7 +198,7 @@ export default async function Home() {
               buttons asked the reader to choose before they knew what the product was. Checking a claim
               is the thing anyone can do in ten seconds with no wallet, so it gets the second slot. */}
           <div className="hero__in mt-7 flex flex-wrap items-center gap-2.5" style={{ ["--d" as string]: "760ms" }}>
-            <Link href="/studio" className="cta">register an agent →</Link>
+            <Link href="/account#agents" className="cta">register an agent →</Link>
             <Link href="/verify" className="cta-ghost">check any claim free →</Link>
           </div>
           <p className="hero__in hero__more mt-4" style={{ ["--d" as string]: "820ms" }}>
@@ -455,8 +455,8 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
               <p className="mt-3 text-[13px] leading-relaxed text-muted">
                 That is the difference between a payment we cannot find and one wrong field. The second is
                 fixable in a single edit, which is what{" "}
-                <Link href="/studio" className="underline decoration-dotted hover:text-[var(--color-text)]">
-                  the studio
+                <Link href="/account#agents" className="underline decoration-dotted hover:text-[var(--color-text)]">
+                  the agents section of your account
                 </Link>{" "}
                 is for. Publishing them as one number was misleading and it was misleading in the
                 direction that blames the operator.

@@ -23,7 +23,6 @@ import {
   sessionRecord,
   walletLoginMessage,
   SESSION_KEY,
-  type AccountKind,
   type LoginMethod,
   type StoredSession,
 } from "@/lib/login.ts";
@@ -91,11 +90,11 @@ export type SessionState = {
   keys: IrisKeys | null;
   busy: LoginMethod | "unlock" | null;
   error: { cause: string; fix: string } | null;
-  start(method: LoginMethod, opts: { create: boolean; kind?: AccountKind }): Promise<boolean>;
+  start(method: LoginMethod, opts: { create: boolean }): Promise<boolean>;
   /** Rebuild passkey keys after a reload. Refuses a different passkey than the one logged in. */
   unlock(): Promise<IrisKeys | null>;
   /** For pages that run their own passkey ceremony, so the bar and the page never disagree. */
-  adopt(outcome: CeremonyOutcome, kind?: AccountKind): void;
+  adopt(outcome: CeremonyOutcome): void;
   logout(): void;
   clearError(): void;
 };
@@ -115,18 +114,6 @@ function write(s: StoredSession | null) {
     persistSession(window.sessionStorage, s);
   } catch {
     // Storage can be disabled. The session then lasts for this page only, which is still correct.
-  }
-}
-
-/** Whether this address owns any agent, so a login lands on the right kind of account. */
-async function ownsAgents(address: string): Promise<boolean> {
-  try {
-    const r = await fetch(`/api/account/${address}`, { cache: "no-store" });
-    if (!r.ok) return false;
-    const j = (await r.json()) as { data?: { agentCount?: number } };
-    return (j.data?.agentCount ?? 0) > 0;
-  } catch {
-    return false;
   }
 }
 
@@ -195,7 +182,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [session?.method, logout]);
 
   const start = useCallback<SessionState["start"]>(
-    async (method, { create, kind }) => {
+    async (method, { create }) => {
       setError(null);
       setBusy(method);
       try {
@@ -204,14 +191,12 @@ export function SessionProvider({ children }: { children: ReactNode }) {
             setError({ cause: "This browser has no WebAuthn, so a passkey cannot be used here.", fix: "Use a browser wallet instead or open the site in a current browser." });
             return false;
           }
-          const outcome = create ? await createAccount(kind === "agent" ? "Kanmani agent account" : "Kanmani") : await signIn();
+          const outcome = create ? await createAccount("Kanmani") : await signIn();
           if (!outcome.ok) {
             setError({ cause: outcome.cause, fix: outcome.fix });
             return false;
           }
-          const address = outcome.keys.account.address;
-          const k = kind ?? ((await ownsAgents(address)) ? "agent" : "user");
-          set(sessionRecord(address, "passkey", k, Date.now()), outcome.keys);
+          set(sessionRecord(outcome.keys.account.address, "passkey", Date.now()), outcome.keys);
           return true;
         }
 
@@ -229,7 +214,6 @@ export function SessionProvider({ children }: { children: ReactNode }) {
         const message = walletLoginMessage({
           host: window.location.host,
           address,
-          kind: kind ?? "user",
           created: create,
           nonce: nonce(),
           issuedAt: new Date().toISOString(),
@@ -247,8 +231,7 @@ export function SessionProvider({ children }: { children: ReactNode }) {
           setError({ cause: "The signature did not verify for that address.", fix: "Try again from the same account. If it repeats the wallet may not support message signing." });
           return false;
         }
-        const k = kind ?? ((await ownsAgents(address)) ? "agent" : "user");
-        set(sessionRecord(address, "wallet", k, Date.now()));
+        set(sessionRecord(address, "wallet", Date.now()));
         return true;
       } catch (e) {
         const code = (e as { code?: number }).code;
@@ -291,12 +274,11 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const adopt = useCallback<SessionState["adopt"]>(
-    (outcome, kind) => {
+    (outcome) => {
       if (!outcome.ok) return;
       const address = outcome.keys.account.address;
       const prev = sessionRef.current;
-      const k = kind ?? (prev && prev.address === address.toLowerCase() ? prev.kind : "user");
-      set(sessionRecord(address, "passkey", k, prev?.address === address.toLowerCase() ? prev.since : Date.now()), outcome.keys);
+      set(sessionRecord(address, "passkey", prev?.address === address.toLowerCase() ? prev.since : Date.now()), outcome.keys);
     },
     [set],
   );
