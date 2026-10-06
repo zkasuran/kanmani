@@ -1,5 +1,6 @@
 import { clusterShape, freshness, measurement, mislabelled, population, registryHealth } from "@/lib/queries.ts";
 import { SITE } from "@/lib/api.ts";
+import { settledJobs } from "@/lib/settled-jobs.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,14 @@ export const dynamic = "force-dynamic";
  * at build time is the exact failure the rest of this site is about.
  */
 export async function GET() {
-  const [m, pop, shape, health, fresh, misl] = await Promise.all([
+  const [m, pop, shape, health, fresh, misl, settled] = await Promise.all([
     measurement(),
     population(),
     clusterShape(),
     registryHealth(),
     freshness(),
     mislabelled(),
+    settledJobs(),
   ]);
   const mis = misl.rows;
   const d = m.rows;
@@ -53,6 +55,10 @@ checks the second thing.
 
 A failure to look is recorded as unknown, never as false. That distinction is the reason this can
 be published at all: collapsing them would let somebody else's outage publish as our accusation.
+
+## Settlement
+
+- ${settled === null ? "The number of escrow jobs settled could not be read just now." : `${n(settled.count)} escrow jobs settled in USDC on Monad mainnet, counted from the Aqueous contract's Settled events.`}
 
 ## The registry underneath
 

@@ -7,6 +7,7 @@ import { Aperture } from "@/components/aperture.tsx";
 import { clusterShape, measurement, mislabelled, population } from "@/lib/queries.ts";
 import { bondsFor, usdc } from "@/lib/bonds.ts";
 import { TESTS_PASSING } from "@/lib/counts.ts";
+import { jobsLabel, settledJobs } from "@/lib/settled-jobs.ts";
 
 /** Nothing on this page may be captured at build time. See next.config.ts. */
 export const dynamic = "force-dynamic";
@@ -148,7 +149,7 @@ const FLOW = [
 ];
 
 export default async function Home() {
-  const [pop, m, shape, bonds, mis] = await Promise.all([
+  const [pop, m, shape, bonds, mis, settled] = await Promise.all([
     population(),
     measurement(),
     clusterShape(),
@@ -157,8 +158,7 @@ export default async function Home() {
     bondsFor([10252, 10256, 10257]),
     // Where a false claim's transaction actually is. The single most important correction this project
     // has made to its own headline.
-    mislabelled(),
-  ]);
+    mislabelled(), settledJobs()]);
   const activeBonds = [...bonds.values()].filter((b) => b.state === "active");
   const staked =
     activeBonds.length === 0 ? null : String(activeBonds.reduce((n, b) => n + Number(b.amountAtomic), 0));
@@ -216,7 +216,11 @@ export default async function Home() {
               v={p.agentsIndexed === null ? <span className="unknown-value">unknown</span> : <CountUp value={p.agentsIndexed} durationMs={1600} />}
               note="the whole ERC-8004 population on Monad"
             />
-            <HeroFact k="settled in real USDC" v="1 job" note="buyer held zero MON throughout" />
+            <HeroFact
+              k="settled in real USDC"
+              v={settled === null ? <span className="unknown-value">unknown</span> : jobsLabel(settled.count)}
+              note="escrow jobs on Monad mainnet, counted from the chain"
+            />
             <HeroFact
               k="bond staked"
               v={staked === null ? <span className="unknown-value">unknown</span> : `${usdc(staked)} USDC`}

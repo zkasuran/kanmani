@@ -60,6 +60,7 @@ const KEYS = {
   claimsFalse: "payment claims whose transaction is not on the chain named",
   claimsTrue: "payment claims whose transaction is there",
   claimsElsewhere: "false claims whose transaction is mined on a different chain",
+  jobsSettled: "escrow jobs settled in USDC on Monad mainnet, counted from Settled events",
   noClaim: "documents that assert no payment",
   unknown: "documents that could not be checked",
   unknownHash: "unknown: bytes no longer match their on-chain hash",
@@ -147,6 +148,7 @@ async function live() {
     "the dead-cluster line",
   );
   const [claimsElsewhere] = grab(llms, /([\d,]+) of those are mined on a different chain/, "the mislabelled-network line");
+  const [jobsSettled] = grab(llms, /- ([\d,]+) escrow jobs settled in USDC on Monad mainnet/, "the settled-jobs line");
   const [withPointer, feedbacks] = grab(llms, /- ([\d,]+) of ([\d,]+) feedbacks carry an evidence pointer/, "the feedbacks line");
   return {
     atBlock: feed.checkedAtBlock === null ? null : Number(feed.checkedAtBlock),
@@ -162,6 +164,7 @@ async function live() {
       claimsFalse: s.doNotResolve,
       claimsTrue: s.resolve,
       claimsElsewhere,
+      jobsSettled,
       noClaim: s.assertNoPayment,
       unknown: s.couldNotCheck.total,
       unknownHash: s.couldNotCheck.bytesNoLongerMatchTheirCommitment,

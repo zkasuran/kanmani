@@ -21,8 +21,8 @@ cd contracts && forge test            # the contracts, fork and P256 tests skip 
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**<!-- n:testsPassing -->820<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
-carried forward: <!-- n:testsApp -->481<!-- /n --> of <!-- n:testsAppTotal -->496<!-- /n --> in the site suite, <!-- n:testsVerifier -->215<!-- /n --> of <!-- n:testsVerifierTotal -->242<!-- /n --> in the verifier, <!-- n:testsContracts -->124<!-- /n --> of <!-- n:testsContractsTotal -->133<!-- /n --> in contracts. The
+**<!-- n:testsPassing -->824<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: <!-- n:testsApp -->485<!-- /n --> of <!-- n:testsAppTotal -->500<!-- /n --> in the site suite, <!-- n:testsVerifier -->215<!-- /n --> of <!-- n:testsVerifierTotal -->242<!-- /n --> in the verifier, <!-- n:testsContracts -->124<!-- /n --> of <!-- n:testsContractsTotal -->133<!-- /n --> in contracts. The
 differences are <!-- n:testsSkipped -->51<!-- /n --> deliberate skips: database tests without a database and contract tests that need an
 archive node, ffi or the P256 profile. `scripts/refresh-numbers.mjs` keeps these figures in step with `lib/counts.ts`.
 

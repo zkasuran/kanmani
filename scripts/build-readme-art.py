@@ -271,7 +271,7 @@ def aperture_css() -> str:
 
 def hero() -> str:
     w, h = 1280, 580
-    chips = [(fmt(N["agents"]), "agents measured"), ("1 job", "settled in real USDC"), (fmt(N["testsPassing"]), "tests passing")]
+    chips = [(fmt(N["agents"]), "agents measured"), (f"{fmt(N['jobsSettled'])} job{'' if N['jobsSettled'] == 1 else 's'}", "settled in real USDC"), (fmt(N["testsPassing"]), "tests passing")]
     chip_svg = []
     cx = 72
     for i, (v, k) in enumerate(chips):
