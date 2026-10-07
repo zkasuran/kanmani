@@ -1,0 +1,174 @@
+{
+  "$note": [
+    "Every outreach Kanmani made to another project, one entry each. Public channels only: a GitHub issue",
+    "or PR anyone can open, plus results that are on chain or published by the other side. Status and reply",
+    "counts are NOT typed here: scripts/outreach-status.mjs reads them from GitHub and writes docs/TRACTION.md."
+  ],
+  "contacts": [
+    {
+      "project": "Taifoon (Jev grader and job broker)",
+      "repo": "taifoon-io/jev",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-09-29",
+      "offered": "Sentinel and Assay hireable over x402 on Monad.",
+      "outcome": "settled",
+      "result": "Their broker paid Sentinel and Assay 0.01 USDC each on Monad mainnet on 2026-10-01. They named both agents in a published article. A follow-up on 2026-10-06 offered one graded job through the Aqueous escrow, so payment follows the grade.",
+      "evidence": [
+        {
+          "label": "Sentinel payment",
+          "url": "https://monadvision.com/tx/0x7ea89118e0ea54c7a88833df61ff4b0b41dee063fcd98ffcbc160073bfc54eed"
+        },
+        {
+          "label": "Assay payment",
+          "url": "https://monadvision.com/tx/0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2"
+        },
+        {
+          "label": "Taifoon's article",
+          "url": "https://www.taifoon.io/blog/jev-grader-on-mainnet"
+        }
+      ],
+      "buyer": "outside"
+    },
+    {
+      "project": "Mida (encrypted agent context)",
+      "repo": null,
+      "kind": "direct",
+      "date": "2026-10-05",
+      "offered": "A paid job through Aqueous with Mida record ids as termsHash and deliverableHash.",
+      "outcome": "settled",
+      "result": "Mida's auditor agent re-checked the 10 claims our verifier found on no chain, for 0.50 USDC through Aqueous. Its findings showed 2 of them are real payments on Celo, so Celo was added to the search. We were the buyer.",
+      "evidence": [
+        {
+          "label": "funded",
+          "url": "https://monadvision.com/tx/0x10950f2e35f241ec01de5d6dbdef65756b0025f924605bad2ca68ddf6182f571"
+        },
+        {
+          "label": "delivered",
+          "url": "https://monadvision.com/tx/0x24a69e44eb6eab7fac8f321f8e4121b515e42a8240b8caf98cb8456c0944f49c"
+        },
+        {
+          "label": "settled",
+          "url": "https://monadvision.com/tx/0x89dc80d4d64c9f4334c486ffdc4429c530282b24eed6f1eeeaec5fc4abb01d8b"
+        },
+        {
+          "label": "Mida's write-up",
+          "url": "https://github.com/damli40/mida-context/blob/main/docs/evidence/kanmani-job-2026-10-05.md"
+        }
+      ],
+      "buyer": "us"
+    },
+    {
+      "project": "Envio (HyperIndex)",
+      "repo": "enviodev/hyperindex",
+      "number": 1659,
+      "kind": "issue",
+      "date": "2026-09-23",
+      "offered": "An ERC-8004 multichain indexer recipe for the HyperIndex templates.",
+      "outcome": "replied",
+      "result": "Envio replied inviting a PR with a minimal ERC-8004 template and closed the issue as completed. The PR is open. Letterlock's author also commented, offering two event handlers once the template lands.",
+      "evidence": [],
+      "buyer": null,
+      "pr": {
+        "repo": "enviodev/hyperindex",
+        "number": 1660
+      }
+    },
+    {
+      "project": "Ultravioleta DAO (describe SDK)",
+      "repo": "UltravioletaDAO/uvd-describe-sdk-typescript",
+      "number": 4,
+      "kind": "issue",
+      "date": "2026-09-23",
+      "offered": "A finding: hash integrity is not claim truth, 41 of 42 payment references on one agent do not resolve.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "The Agora",
+      "repo": "SakshiShah29/The-Agora",
+      "number": 3,
+      "kind": "issue",
+      "date": "2026-09-23",
+      "offered": "A finding: 8 metadata files behind 32 Monad agents are pinned to a mutable branch.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "Assay (signed receipts for AI responses)",
+      "repo": "trudransh/Assay",
+      "number": 4,
+      "kind": "issue",
+      "date": "2026-10-06",
+      "offered": "Pay their host per signed, anchored receipt through Aqueous.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "Prooflines Agent Trust",
+      "repo": "ColinkaMir/monad-agent-trust",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-06",
+      "offered": "Cross-link our claim-truth reading with their rating-provenance verdict or a paid job through Aqueous.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "MonadGuard",
+      "repo": "poteshniy/monadguard",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-06",
+      "offered": "Pay them through Aqueous to scan Kanmani's MCP server.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "Letterlock",
+      "repo": "edycutjong/letterlock",
+      "number": 2,
+      "kind": "issue",
+      "date": "2026-10-06",
+      "offered": "Seal an escrow delivery to the buyer's Letterlock address, one paid job.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "Leash (spend limits for agents)",
+      "repo": "iamrobertmoore/leash",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-07",
+      "offered": "A finding (21 of their agents point at unreadable documents) and a paid Sentinel check inside a leash.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "ADEXTO",
+      "repo": "0xcuy/adexto",
+      "number": 2,
+      "kind": "issue",
+      "date": "2026-10-07",
+      "offered": "Our claim-truth reading on their agent pages or a paid Sentinel check before a buyer agent buys.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    }
+  ]
+}

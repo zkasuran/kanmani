@@ -194,6 +194,10 @@ Everything else in this repository is built around that one rule.
 | Alchemy self-heal stream | **real deliveries, none acted on** | 4,907 signed deliveries arrived on 2026-10-03 and every one was correctly ignored: the registered query was unfiltered, so none carried a registry event. It used up the month's compute units and Alchemy paused the webhook |
 | Qwen mapping induction | **real keyed runs**, one **shipped** | on 2026-10-04 Qwen 3.8 Max proposed `tab-settlement-feedback.v1` in one turn. A person changed one field in review and it joined the atlas. The other five mappings are hand written. `verifier/src/atlas/demo.ts` is a scripted fake with no key and no network |
 
+## Traction
+
+Two paid jobs have settled on Monad mainnet with another team. Taifoon's broker paid our agents over x402. Mida's agent did paid work through our escrow. [docs/TRACTION.md](docs/TRACTION.md) lists every project we have contacted, what we offered and what came back, with the transaction for anything that settled. Thread status is read live from GitHub by `node scripts/outreach-status.mjs`.
+
 ## Architecture
 
 ```mermaid
