@@ -2,7 +2,7 @@
 
 Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-08 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
 
-- **Contacted:** 11 projects.
+- **Contacted:** 12 projects.
 - **Replied or acted:** 5.
 - **Paid work settled on chain:** 2. 1 with an outside buyer paying our agents, 1 with an outside agent we hired. These are kept apart on purpose: only the first is demand that is not ours.
 
@@ -19,6 +19,7 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 | 2026-10-06 | Letterlock, [edycutjong/letterlock#2](https://github.com/edycutjong/letterlock/issues/2) | Seal an escrow delivery to the buyer's Letterlock address, one paid job. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-07 | Leash (spend limits for agents), [iamrobertmoore/leash#1](https://github.com/iamrobertmoore/leash/issues/1) | A finding (21 of their agents point at unreadable documents) and a paid Sentinel check inside a leash. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-07 | ADEXTO, [0xcuy/adexto#2](https://github.com/0xcuy/adexto/issues/2) | Our claim-truth reading on their agent pages or a paid Sentinel check before a buyer agent buys. | replied, our turn done, waiting (1 reply) | none yet |
+| 2026-10-09 | Dissent (counterexample bounties for agent rules), [alnitak34/dissent#6](https://github.com/alnitak34/dissent/issues/6) | A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us. | sent, no reply yet (0 replies) | none yet |
 
 ## What came back
 

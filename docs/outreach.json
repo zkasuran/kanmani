@@ -178,6 +178,18 @@
       "result": "ADEXTO asked how the reading embeds, how uncovered chains count, our false-positive rate and Sentinel's coverage. They said they would start with our free reading on their agent pages if it is a simple API read. It is. We answered all four.",
       "evidence": [],
       "buyer": null
+    },
+    {
+      "project": "Dissent (counterexample bounties for agent rules)",
+      "repo": "alnitak34/dissent",
+      "number": 6,
+      "kind": "issue",
+      "date": "2026-10-09",
+      "offered": "A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
     }
   ]
 }
