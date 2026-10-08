@@ -105,8 +105,8 @@
       "kind": "issue",
       "date": "2026-10-06",
       "offered": "Pay their host per signed, anchored receipt through Aqueous.",
-      "outcome": "sent",
-      "result": null,
+      "outcome": "replied",
+      "result": "Assay accepted. Their host 10278 sells responses at 0.01 USDC each, with every response carrying a signed receipt that verifies on Monad against their ReceiptAnchor. We sent five real BSC evidence documents our atlas has never read as the first job. A 5-unit job through Aqueous will be funded once they confirm the sample.",
       "evidence": [],
       "buyer": null
     },
@@ -165,8 +165,8 @@
       "kind": "issue",
       "date": "2026-10-07",
       "offered": "Our claim-truth reading on their agent pages or a paid Sentinel check before a buyer agent buys.",
-      "outcome": "sent",
-      "result": null,
+      "outcome": "replied",
+      "result": "ADEXTO asked how the reading embeds, how uncovered chains count, our false-positive rate and Sentinel's coverage. They said they would start with our free reading on their agent pages if it is a simple API read. It is, and we answered all four.",
       "evidence": [],
       "buyer": null
     }
