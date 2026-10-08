@@ -1,0 +1,78 @@
+{
+  "terms": "docs/jobs/assay-1.terms.txt",
+  "expectedDeliverableHash": "0x9fb7735f813f6b90b75d834b9d3573e789033290a09a6550eb333befeead041b",
+  "units": 5,
+  "receipts": [
+    {
+      "feedbackId": "56_365555_0xc742AdA2872a042dD36D2E706907b4036968960C_11",
+      "receiptHash": "0xcb980484eb259ac953ee05ac7c6462cd2b4cf8575bba384fa7160551366544e4",
+      "httpStatus": 200,
+      "answer": null,
+      "tokensOut": 0,
+      "anchored": true,
+      "verifies": true,
+      "anchorTx": "0xfa91fd034441f3c636469881b285ce5b7fada4b924c36d46e2b2acf7bb4ce2d8",
+      "passes": true,
+      "finishReason": "length",
+      "usableAnswer": false,
+      "failedAttempts": 1
+    },
+    {
+      "feedbackId": "56_117823_0x7a71E31Cc5cFF88E6A2161e57E3a2d80A222f14b_1",
+      "receiptHash": "0x31f86fcd573102c3b3262a9e5228d34ad585ade25b5c455e2823b3c12d902658",
+      "httpStatus": 200,
+      "answer": null,
+      "tokensOut": 0,
+      "anchored": true,
+      "verifies": true,
+      "anchorTx": "0x76a2f7ab470fb92837855832372816860dd4f5f97e771810bdcb9d9a85bd3a5f",
+      "passes": true,
+      "finishReason": "length",
+      "usableAnswer": false,
+      "failedAttempts": 3
+    },
+    {
+      "feedbackId": "56_137_0xdC07F916E7A4f86ab1640ad5B3350025ddcBE80e_1",
+      "receiptHash": "0x58fdb1c7c61225fb18dcf8cc43cd2c3f552e70604b51225f62d77cfe37873ef9",
+      "httpStatus": 200,
+      "answer": "{\"claimsPayment\": false, \"why\": \"The document contains only a general comment and metadata, with no mention of a transaction or payment.\", \"fields\": {\"network\": null, \"txHash\": null, \"payer\": null, \"recipient\": null, \"amount\": null}}",
+      "tokensOut": 63,
+      "anchored": true,
+      "verifies": true,
+      "anchorTx": "0x7776591baf7f5d9b28eba214d3133920074e86074934e678af75433f40d01264",
+      "passes": true,
+      "finishReason": "stop",
+      "usableAnswer": true,
+      "failedAttempts": 7
+    },
+    {
+      "feedbackId": "56_153816_0xc7F5cdC8dd028E0b9aF2cA9d3891F135b23f4B92_2",
+      "receiptHash": "0x2dab3f19993e3bbe6f9028aa7af076d535546ed8c50ce250a120651112eea52d",
+      "httpStatus": 200,
+      "answer": null,
+      "tokensOut": 0,
+      "anchored": true,
+      "verifies": true,
+      "anchorTx": "0xfa91fd034441f3c636469881b285ce5b7fada4b924c36d46e2b2acf7bb4ce2d8",
+      "passes": true,
+      "finishReason": "length",
+      "usableAnswer": false,
+      "failedAttempts": 1
+    },
+    {
+      "feedbackId": "56_342419_0x5e6cBAb6C130C21f329209697e050773f72F92c1_1",
+      "receiptHash": "0x434dc03291fad4d6531af2f45e44c5a1305a1ac9e2436be7c6b3fb10322de12d",
+      "httpStatus": 200,
+      "answer": null,
+      "tokensOut": 25,
+      "anchored": true,
+      "verifies": true,
+      "anchorTx": "0x65f07ddb2b7cd4f1e8e459132116c8ced5eea327e621e24e84c595e6a485f3df",
+      "passes": true,
+      "finishReason": "length",
+      "usableAnswer": false,
+      "failedAttempts": 4
+    }
+  ],
+  "note": "All 5 receipts verify against ReceiptAnchor. 4 of 5 answers stopped at the 400-token cap the terms set, inside the model's reasoning, so they carry no final answer. The cap was the buyer's choice. Each unit is settled as the terms say."
+}

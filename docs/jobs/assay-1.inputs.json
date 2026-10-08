@@ -1,0 +1,87 @@
+[
+  {
+    "feedbackId": "56_365555_0xc742AdA2872a042dD36D2E706907b4036968960C_11",
+    "document": {
+      "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      "agentId": 365555,
+      "clientAddress": "eip155:56:0xc742AdA2872a042dD36D2E706907b4036968960C",
+      "createdAt": "2026-10-07T13:51:17Z",
+      "value": 36,
+      "valueDecimals": 0,
+      "tag1": "signal-accuracy",
+      "endpoint": "http://localhost:4003/signal",
+      "elitr": {
+        "analystId": "analyst-flow",
+        "signalId": "7c9d907a-1e99-4d2e-8d58-a998ca3e66ba",
+        "exactValue": 36,
+        "symbol": "TSLAB",
+        "returnBps": -12.318163032711826,
+        "correct": false
+      }
+    }
+  },
+  {
+    "feedbackId": "56_117823_0x7a71E31Cc5cFF88E6A2161e57E3a2d80A222f14b_1",
+    "document": {
+      "agentRegistry": "eip155:56:0x8004BAa17C55a88189AE136b182e5fdA19dE9b63",
+      "agentId": 117823,
+      "clientAddress": "eip155:56:0x7a71E31Cc5cFF88E6A2161e57E3a2d80A222f14b",
+      "createdAt": "2026-06-01T12:37:47.433Z",
+      "value": 100,
+      "valueDecimals": 0,
+      "tag1": "starred",
+      "tag2": "",
+      "comment": "Easy to use!",
+      "version": "3.0"
+    }
+  },
+  {
+    "feedbackId": "56_137_0xdC07F916E7A4f86ab1640ad5B3350025ddcBE80e_1",
+    "document": {
+      "comment": "Wow good",
+      "timestamp": 1770315571427,
+      "version": "2.0"
+    }
+  },
+  {
+    "feedbackId": "56_153816_0xc7F5cdC8dd028E0b9aF2cA9d3891F135b23f4B92_2",
+    "document": {
+      "agentRegistry": "eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432",
+      "agentId": 153816,
+      "createdAt": "2026-08-31T02:56:24.337Z",
+      "value": "698",
+      "valueDecimals": 0,
+      "tag1": "responseTime",
+      "tag2": "3d",
+      "endpoint": "https://api.bortagent.xyz/.well-known/agent-card.json",
+      "reasoning": "Median round trip of 698 ms across the 83 probe(s) that answered, of 83 over 3 day(s), measured by Kawal from one region. The median is chosen over the mean so one slow tail does not become the number.",
+      "method": {
+        "measuredBy": "Kawal",
+        "protocol": "a2a",
+        "probes": 83,
+        "answered": 83,
+        "windowDays": 3,
+        "medianMs": 698,
+        "vantage": "single region",
+        "knownDefects": [
+          "Single vantage point: an agent that geo-blocks or ASN-blocks the prober appears unreachable.",
+          "Cannot distinguish 'the agent is down' from 'unreachable from here'.",
+          "A probe counts as answered only on a completed MCP initialize handshake, for A2A an agent card plus a JSON-RPC envelope from the endpoint it names, or for OASF a served record naming the agent; HTTP 200 alone is not counted.",
+          "Probes are made on a daily schedule and additionally whenever the site is used, so the sample is denser when the site is busier."
+        ]
+      }
+    }
+  },
+  {
+    "feedbackId": "56_342419_0x5e6cBAb6C130C21f329209697e050773f72F92c1_1",
+    "document": {
+      "source": "winnow-mainnet-migration",
+      "chainId": 56,
+      "tokenId": 342419,
+      "measured": {
+        "liveness": 32
+      },
+      "note": "mainnet write-path proof"
+    }
+  }
+]

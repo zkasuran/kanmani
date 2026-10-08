@@ -1,0 +1,13 @@
+Kanmani x Assay, job 1
+Agreed on https://github.com/trudransh/Assay/issues/4
+
+Buyer: Kanmani (0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92)
+Agent: Assay reference host, ERC-8004 agent 10278, paid to 0xF3CbD8aaf1f2350bFd8a3220Ab4E83FDd8fa18d9
+Escrow: Aqueous 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32, Monad mainnet
+Metered: 5 units at 0.01 USDC, ceiling 0.05 USDC, deadline 72 hours from funding
+
+Work: 5 chat completions from https://34-45-1-81.sslip.io/mainnet/v1/chat/completions, model gemma-4-31b-it, max_tokens 400, temperature 0, each request carrying an X-Assay-Salt header the buyer keeps. Each prompt asks whether one BSC ERC-8004 feedback document claims a payment and which paths hold network, txHash, payer, recipient and amount. The five documents are the feedback ids in docs/jobs/assay-1.inputs.json.
+
+Deliverable: deliverableHash = the OpenZeppelin StandardMerkleTree root over exactly the 5 receipt hashes of this job (leaf = keccak256(keccak256(abi.encode(bytes32))), the rule ReceiptAnchor.leafOf uses).
+
+Settlement: one unit per receipt that passes ReceiptAnchor(0x049A73755cA3508ef3Daa4752A3406f6e00CfB13).verifyReceipt(10278, receiptHash, proof, root) and whose tokensOut does not exceed 400. Units that fail return to the buyer in the settling transaction.

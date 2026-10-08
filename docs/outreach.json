@@ -106,8 +106,17 @@
       "date": "2026-10-06",
       "offered": "Pay their host per signed, anchored receipt through Aqueous.",
       "outcome": "replied",
-      "result": "Assay accepted. Their host 10278 sells responses at 0.01 USDC each, with every response carrying a signed receipt that verifies on Monad against their ReceiptAnchor. We sent five real BSC evidence documents our atlas has never read as the first job. A 5-unit job through Aqueous will be funded once they confirm the sample.",
-      "evidence": [],
+      "result": "Assay accepted. Job 0xe658e2cb funded with 0.05 USDC on Aqueous for 5 responses from their host 10278. All 5 receipts verify on Monad against their ReceiptAnchor. Settlement follows their deliver() call. We are the buyer.",
+      "evidence": [
+        {
+          "label": "funded",
+          "url": "https://monadvision.com/tx/0xa343ddb41fcde5e15118140de4203ceb57dd94cac539614d1f3237f96050c8e0"
+        },
+        {
+          "label": "terms",
+          "url": "https://github.com/zkasuran/kanmani/blob/main/docs/jobs/assay-1.terms.txt"
+        }
+      ],
       "buyer": null
     },
     {
