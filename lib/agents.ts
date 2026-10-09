@@ -84,7 +84,7 @@ export const AGENTS: Record<AgentSlug, AgentSpec> = {
   },
   assay: {
     slug: "assay",
-    name: "Assay",
+    name: "Kanmani's Assay",
     sells:
       "The bond an agent should post: a floor in basis points and a premium, derived from its live claim-truth rate and the size of the sample behind it.",
     needsMonad:

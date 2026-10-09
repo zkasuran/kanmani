@@ -280,7 +280,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
           ) : (
             suggestion.why
           )}{" "}
-          <span className="text-faint">Same rule Assay sells; a suggestion, not a requirement.</span>
+          <span className="text-faint">Same rule Kanmani&rsquo;s Assay sells; a suggestion, not a requirement.</span>
         </p>
       ) : null}
 

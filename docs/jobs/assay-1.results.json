@@ -7,72 +7,65 @@
       "feedbackId": "56_365555_0xc742AdA2872a042dD36D2E706907b4036968960C_11",
       "receiptHash": "0xcb980484eb259ac953ee05ac7c6462cd2b4cf8575bba384fa7160551366544e4",
       "httpStatus": 200,
-      "answer": null,
+      "answer": "<thought>*   Input: An ERC-8004 feedback document (JSON).\n    *   Task: Determine if it claims a payment happened.\n    *   Output Format: JSON with specific keys (`claimsPayment`, `why`, `fields`).\n    *   `fields` keys: `network`, `txHash`, `payer`, `recipient`, `amount`.\n    *   `path`: Dotted path to the value in the document.\n\n    ```json\n    {\n      \"agentRegistry\": \"eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432\",\n      \"agentId\": 365555,\n      \"clientAddress\": \"eip155:56:0xc742AdA2872a042dD36D2E706907b4036968960C\",\n      \"createdAt\": \"2026-10-07T13:51:17Z\",\n      \"value\": 36,\n      \"valueDecimals\": 0,\n      \"tag1\": \"signal-accuracy\",\n      \"endpoint\": \"http://localhost:4003/signal\",\n      \"elitr\": {\n        \"analystId\": \"analyst-flow\",\n        \"signalId\": \"7c9d907a-1e99-4d2e-8d58-a998ca3e66ba\",\n        \"exactValue\": 36,\n        \"symbol\": \"TSLAB\",\n        \"returnBps\": -12.318163</thought>",
       "tokensOut": 0,
       "anchored": true,
       "verifies": true,
       "anchorTx": "0xfa91fd034441f3c636469881b285ce5b7fada4b924c36d46e2b2acf7bb4ce2d8",
-      "passes": true,
-      "finishReason": "length",
-      "usableAnswer": false,
-      "failedAttempts": 1
+      "passes": true
     },
     {
       "feedbackId": "56_117823_0x7a71E31Cc5cFF88E6A2161e57E3a2d80A222f14b_1",
       "receiptHash": "0x31f86fcd573102c3b3262a9e5228d34ad585ade25b5c455e2823b3c12d902658",
       "httpStatus": 200,
-      "answer": null,
+      "answer": "<thought>*   Input: An ERC-8004 feedback document (JSON).\n    *   Task: Determine if it claims a payment happened.*   Input: An ERC-8004 feedback document (JSON).\n    *   Task: Determine if it claims a payment happened.\n    *   Output Format: JSON with specific keys (`claimsPayment`, `why`, `fields`).\n    *   `fields` keys: `network`, `txHash`, `payer`, `recipient`, `amount`.\n    *   `path`: Dotted path into the document or `null`.\n\n    *   `agentRegistry`: \"eip155:56:0x8004BAa17C55a88189AE136b182e5fdA19dE9b63\"\n    *   `agentId`: 117823\n    *   `clientAddress`: \"eip155:56:0x7a71E31Cc5cFF88E6A2161e57E3a2d80A222f14b\"\n    *   `createdAt`: \"2026-06-01T12:37:47.433Z\"\n    *   `value`: 100\n    *   `valueDecimals`: 0\n    *   `tag1`: \"starred\"\n    *   `tag2`: \"\"\n    *   `comment`: \"Easy to use!\"\n    *   `version`: \"3.0\"\n\n    *   Does it claim a payment happened?\n    *   ERC-8004 is a standard for feedback/reviews.\n    *   The `value` field in a feedback document usually refers to a rating (e.g., 1-5 stars or a score), not a payment amount.\n    *   There is no transaction hash</thought>",
       "tokensOut": 0,
       "anchored": true,
       "verifies": true,
       "anchorTx": "0x76a2f7ab470fb92837855832372816860dd4f5f97e771810bdcb9d9a85bd3a5f",
-      "passes": true,
-      "finishReason": "length",
-      "usableAnswer": false,
-      "failedAttempts": 3
+      "passes": true
     },
     {
       "feedbackId": "56_137_0xdC07F916E7A4f86ab1640ad5B3350025ddcBE80e_1",
       "receiptHash": "0x58fdb1c7c61225fb18dcf8cc43cd2c3f552e70604b51225f62d77cfe37873ef9",
       "httpStatus": 200,
-      "answer": "{\"claimsPayment\": false, \"why\": \"The document contains only a general comment and metadata, with no mention of a transaction or payment.\", \"fields\": {\"network\": null, \"txHash\": null, \"payer\": null, \"recipient\": null, \"amount\": null}}",
+      "answer": "<thought>*   Input: An ERC-8004 feedback document (JSON).\n    *   Task: Determine if it claims a payment happened.\n    *   Output Format: JSON with specific keys (`claimsPayment`, `why`, `fields`).\n    *   `fields` keys: `network`, `txHash`, `payer`, `recipient`, `amount`.\n    *   `path`: Dotted path to the value in the document or `null`.\n\n    *   `{\"comment\":\"Wow good\",\"timestamp\":1770315571427,\"version\":\"2.0\"}`\n\n    *   Does it mention a transaction hash? No.\n    *   Does it mention a network? No.\n    *   Does it mention a payer or recipient? No.\n    *   Does it mention an amount? No.\n    *   The comment \"Wow good\" is general feedback, not a payment claim.\n\n    *   `claimsPayment`: `false`\n    *   `why`: \"The document contains only a general comment, timestamp, and version, with no payment-related information.\"\n    *   `fields`: All `null`.</thought>```json\n{\"claimsPayment\": false, \"why\": \"The document contains only a general comment and metadata, with no mention of a transaction or payment.\", \"fields\": {\"network\": null, \"txHash\": null, \"payer\": null, \"recipient\": null, \"amount\": null}}\n```",
       "tokensOut": 63,
       "anchored": true,
       "verifies": true,
       "anchorTx": "0x7776591baf7f5d9b28eba214d3133920074e86074934e678af75433f40d01264",
-      "passes": true,
-      "finishReason": "stop",
-      "usableAnswer": true,
-      "failedAttempts": 7
+      "passes": true
     },
     {
       "feedbackId": "56_153816_0xc7F5cdC8dd028E0b9aF2cA9d3891F135b23f4B92_2",
       "receiptHash": "0x2dab3f19993e3bbe6f9028aa7af076d535546ed8c50ce250a120651112eea52d",
       "httpStatus": 200,
-      "answer": null,
+      "answer": "<thought>*   Input: An ERC-8004 feedback document (JSON).\n    *   Task: Determine if it claims a payment happened.\n    *   Output Format: JSON with `claimsPayment` (boolean), `why` (string), and `fields` (object with paths to network, txHash, payer, recipient, amount).\n\n    *   `agentRegistry`: \"eip155:56:0x8004A169FB4a3325136EB29fA0ceB6D2e539a432\"\n    *   `agentId`: 153816\n    *   `createdAt`: \"2026-08-31T02:56:24.337Z\"\n    *   `value`: \"698\"\n    *   `valueDecimals`: 0\n    *   `tag1`: \"responseTime\"\n    *   `tag2`: \"3d\"\n    *   `endpoint`: \"https://api.bortagent.xyz/.well-known/agent-card.json\"\n    *   `reasoning`: \"Median round trip of 698 ms...\"\n    *   `method`: { ... \"medianMs\": 698 ... }\n\n    *   The document describes a \"responseTime\" measurement (698 ms).\n    *   There are no transaction hashes (`txHash`), no payer/recipient addresses, and no currency/amount associated with a financial transaction.\n    *   The `value` field refers to the response time in milliseconds, not a payment amount.\n\n    *   `claimsPayment`: false\n    *   `why`: \"The document reports a response time measurement (698 ms) rather than a financial transaction.\"\n    </thought>",
       "tokensOut": 0,
       "anchored": true,
       "verifies": true,
       "anchorTx": "0xfa91fd034441f3c636469881b285ce5b7fada4b924c36d46e2b2acf7bb4ce2d8",
-      "passes": true,
-      "finishReason": "length",
-      "usableAnswer": false,
-      "failedAttempts": 1
+      "passes": true
     },
     {
       "feedbackId": "56_342419_0x5e6cBAb6C130C21f329209697e050773f72F92c1_1",
       "receiptHash": "0x434dc03291fad4d6531af2f45e44c5a1305a1ac9e2436be7c6b3fb10322de12d",
       "httpStatus": 200,
-      "answer": null,
+      "answer": "<thought>*   Input: An ERC-8004 feedback document (JSON).\n    *   Task: Determine if it claims a payment happened.\n    *   Output Format: JSON with specific keys (`claimsPayment`, `why`, `fields`).\n    *   `fields` keys: `network`, `txHash`, `payer`, `recipient`, `amount`.\n    *   `path`: Dotted path to the value in the document or `null`.\n\n    *   `source`: \"winnow-mainnet-migration\"\n    *   `chainId`: 56\n    *   `tokenId`: 342419\n    *   `measured`: {\"liveness\": 32}\n    *   `note`: \"mainnet write-path proof\"\n\n    *   Does it mention a transaction hash? No.\n    *   Does it mention a payer or recipient? No.\n    *   Does it mention an amount of currency/tokens transferred? No.\n    *   The document seems to be a \"proof\" of \"liveness\" for a \"mainnet migration\" related to a specific `tokenId`. This is a state/liveness check, not a payment transaction.\n\n    *   `claimsPayment`: `false`\n    *   `why`: \"The document records a liveness measurement for a token migration, not a financial transaction.\"\n    *   `fields`: All `null` because no payment data exists.\n\n    *   `{\"claimsPayment\": false, \"why\": \"The document records a liveness measurement for a token migration, not a financial transaction.\", \"fields\": {\"network\": null, \"txHash\": null, \"payer\": null, \"recipient\": null, \"amount\": null}}`</thought>```json\n{\"claimsPayment\": false, \"why\": \"The document records a liveness measurement for a token migration rather",
       "tokensOut": 25,
       "anchored": true,
       "verifies": true,
       "anchorTx": "0x65f07ddb2b7cd4f1e8e459132116c8ced5eea327e621e24e84c595e6a485f3df",
-      "passes": true,
-      "finishReason": "length",
-      "usableAnswer": false,
-      "failedAttempts": 4
+      "passes": true
     }
   ],
-  "note": "All 5 receipts verify against ReceiptAnchor. 4 of 5 answers stopped at the 400-token cap the terms set, inside the model's reasoning, so they carry no final answer. The cap was the buyer's choice. Each unit is settled as the terms say."
+  "settlement": {
+    "deliverTx": "0x9f9055ff4d93857db334019de340754c945b485fafbb6efefb796a65576e6b9d",
+    "deliverableHash": "0x9fb7735f813f6b90b75d834b9d3573e789033290a09a6550eb333befeead041b",
+    "deliverableHashMatchesExpected": true,
+    "unitsPassing": 5,
+    "settleTx": "0x69aef08cc9f2afcde92f80ab9b367c9e23b11ca55c0a18ee08071feabadc2ec3",
+    "settleBlock": 111870492,
+    "paidUsdcUnits": 50000
+  }
 }

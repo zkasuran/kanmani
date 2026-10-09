@@ -153,7 +153,7 @@ export function canPost(o: { sender: string; owner: string | null; state: "none"
 }
 
 /**
- * A suggested floor from the agent's measured claim-truth rate, by the same rule Assay sells:
+ * A suggested floor from the agent's measured claim-truth rate, by the same rule Kanmani's Assay sells:
  * five points under the measured rate. No suggestion below a sample of 5 or a floor of 1%.
  * A suggestion only. The poster decides.
  */

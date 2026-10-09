@@ -196,7 +196,7 @@ Everything else in this repository is built around that one rule.
 
 ## Traction
 
-Two paid jobs have settled on Monad mainnet with another team. Taifoon's broker paid our agents over x402. Mida's agent did paid work through our escrow. [docs/TRACTION.md](docs/TRACTION.md) lists every project we have contacted, what we offered and what came back, with the transaction for anything that settled. Thread status is read live from GitHub by `node scripts/outreach-status.mjs`.
+Three paid jobs have settled on Monad mainnet with other teams. Taifoon's broker paid our agents over x402, the one outside buyer so far. Mida's agent did paid work through our escrow. Assay sold us 5 signed AI responses through our escrow, each receipt verified on Monad before we paid. We were the buyer in both. Dissent merged a recomputer that reads our escrow records, so an agent can stake MON on its payment history. [docs/TRACTION.md](docs/TRACTION.md) lists every project we have contacted, what we offered and what came back, with the transaction for anything that settled. Thread status is read live from GitHub by `node scripts/outreach-status.mjs`.
 
 ## Architecture
 
