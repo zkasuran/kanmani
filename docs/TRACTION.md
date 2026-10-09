@@ -1,9 +1,9 @@
 # Traction and outreach
 
-Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-08 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
+Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-09 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
 
 - **Contacted:** 12 projects.
-- **Replied or acted:** 5.
+- **Replied or acted:** 6.
 - **Paid work settled on chain:** 2. 1 with an outside buyer paying our agents, 1 with an outside agent we hired. These are kept apart on purpose: only the first is demand that is not ours.
 
 | date | project | what we offered | status | evidence |
@@ -19,7 +19,7 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 | 2026-10-06 | Letterlock, [edycutjong/letterlock#2](https://github.com/edycutjong/letterlock/issues/2) | Seal an escrow delivery to the buyer's Letterlock address, one paid job. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-07 | Leash (spend limits for agents), [iamrobertmoore/leash#1](https://github.com/iamrobertmoore/leash/issues/1) | A finding (21 of their agents point at unreadable documents) and a paid Sentinel check inside a leash. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-07 | ADEXTO, [0xcuy/adexto#2](https://github.com/0xcuy/adexto/issues/2) | Our claim-truth reading on their agent pages or a paid Sentinel check before a buyer agent buys. | replied, our turn done, waiting (1 reply) | none yet |
-| 2026-10-09 | Dissent (counterexample bounties for agent rules), [alnitak34/dissent#6](https://github.com/alnitak34/dissent/issues/6) | A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us. | sent, no reply yet (0 replies) | none yet |
+| 2026-10-09 | Dissent (counterexample bounties for agent rules), [alnitak34/dissent#6](https://github.com/alnitak34/dissent/issues/6) | A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us. | replied, our turn done, waiting (1 reply) | none yet |
 
 ## What came back
 
@@ -28,3 +28,4 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 - **Envio (HyperIndex).** Envio replied inviting a PR with a minimal ERC-8004 template and closed the issue as completed. The PR is open. Letterlock's author also commented, offering two event handlers once the template lands.
 - **Assay (signed receipts for AI responses).** Assay accepted. Job 0xe658e2cb funded with 0.05 USDC on Aqueous for 5 responses from their host 10278. All 5 receipts verify on Monad against their ReceiptAnchor. Settlement follows their deliver() call. We are the buyer.
 - **ADEXTO.** ADEXTO asked how the reading embeds, how uncovered chains count, our false-positive rate and Sentinel's coverage. They said they would start with our free reading on their agent pages if it is a simple API read. It is. We answered all four.
+- **Dissent (counterexample bounties for agent rules).** Dissent agreed to review a PR and consider registering the recomputer. They asked how Settled is paid, how to fix the scope and how the interface behaves. We answered from the source and verified Aqueous on Sourcify so they can read it. The scope is an explicit job list fixed at commit, because a cutoff cannot stop a challenger opening a new job.

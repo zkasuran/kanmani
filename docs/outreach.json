@@ -186,8 +186,8 @@
       "kind": "issue",
       "date": "2026-10-09",
       "offered": "A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us.",
-      "outcome": "sent",
-      "result": null,
+      "outcome": "replied",
+      "result": "Dissent agreed to review a PR and consider registering the recomputer. They asked how Settled is paid, how to fix the scope and how the interface behaves. We answered from the source and verified Aqueous on Sourcify so they can read it. The scope is an explicit job list fixed at commit, because a cutoff cannot stop a challenger opening a new job.",
       "evidence": [],
       "buyer": null
     }

@@ -847,3 +847,10 @@ section (the old studio) and the four-keys passkey demo. `/create`, `/create/age
 `/studio` redirect with 308. A session stored before the change still reads with `kind` dropped. Any other
 unexpected field still rejects the record. `scripts/e2e/account-unified.e2e.mjs` runs the whole path
 with a real passkey ceremony, including clearing storage and logging back into the same address.
+
+### Aqueous source verification, 2026-10-09
+
+Aqueous was not on Sourcify until today, although Sclera and the Cleanverse gate were. It is now an exact match on
+both creation and runtime bytecode: https://sourcify.dev/#/lookup/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32
+(chain 143). Compiler 0.8.24, evm shanghai, optimizer 20,000 runs, constructor `claimWindow = 259200`, deployed
+from commit `190e91f`. `contracts/src/Aqueous.sol` is unchanged since that commit.
