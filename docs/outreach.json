@@ -187,8 +187,11 @@
       "date": "2026-10-09",
       "offered": "A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us.",
       "outcome": "replied",
-      "result": "Dissent agreed to review a PR and consider registering the recomputer. They asked how Settled is paid, how to fix the scope and how the interface behaves. We answered from the source and verified Aqueous on Sourcify so they can read it. The scope is an explicit job list fixed at commit, because a cutoff cannot stop a challenger opening a new job.",
-      "evidence": [],
+      "result": "Dissent agreed to review a recomputer for our escrow and consider registering it. We built it as they specified: AqueousFlatDeliveryRecomputer, 22 Monad mainnet fork tests against the real Aqueous and DissentCore, deployed and Sourcify verified at 0x008652FF29d575F4009657805A1D0A0b161DCCd8. PR #7 waits on their review. No policy is registered and no commitment is made yet.",
+      "evidence": [
+        "https://github.com/alnitak34/dissent/pull/7",
+        "https://sourcify.dev/#/lookup/0x008652FF29d575F4009657805A1D0A0b161DCCd8"
+      ],
       "buyer": null
     }
   ]
