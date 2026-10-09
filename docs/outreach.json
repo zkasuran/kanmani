@@ -186,13 +186,14 @@
       "kind": "issue",
       "date": "2026-10-09",
       "offered": "A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us.",
-      "outcome": "replied",
-      "result": "Dissent reviewed our recomputer PR in detail and reproduced its fork tests. Their review found a real hole: a token that reports a transfer without paying could make a job count as paid. We pinned the token to Circle USDC, documented buyer control and timing, added a cold 32-job full-flow test and redeployed at 0x4d1A62869D16AB2Bac95408445129C4927f88457 (Sourcify verified). Their second review reran the 28 tests and a cold 32-job flow and confirmed the token fix. They asked for one wording change, which we made. Registration and a funded demonstration are to be agreed separately. No policy is registered yet.",
+      "outcome": "merged",
+      "result": "Dissent merged our recomputer for the Aqueous escrow (PR #7, merge 0f15d30) after two review rounds. Their CI passed. Their review found a real flaw (any token accepted), which we fixed by pinning Circle USDC. Recomputer 0x4d1A62869D16AB2Bac95408445129C4927f88457, Sourcify verified. They proposed a coordinated, reproducible demonstration on one flat USDC job. No policy is registered and nothing is funded yet.",
       "evidence": [
         "https://github.com/alnitak34/dissent/pull/7",
         "https://github.com/alnitak34/dissent/pull/7#issuecomment-6074894461",
         "https://sourcify.dev/#/lookup/0x4d1A62869D16AB2Bac95408445129C4927f88457",
-        "https://github.com/alnitak34/dissent/pull/7#issuecomment-6076169657"
+        "https://github.com/alnitak34/dissent/pull/7#issuecomment-6076169657",
+        "https://github.com/alnitak34/dissent/actions/runs/37897104514"
       ],
       "buyer": null
     }
