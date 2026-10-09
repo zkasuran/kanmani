@@ -866,3 +866,12 @@ Foundry 1.8.1 at block 111,776,000, including the whole commit, challenge and re
 DissentCore. Base gas is 34,406 for 1 listed job and 565,849 for 32. It is not live until Dissent's curator
 registers a policy. All four real Aqueous jobs so far are metered, which this rule excludes.
 
+Review round, same day. Alnitak reproduced the 22 fork tests and found that the claim admitted any token.
+Aqueous trusts a token's `transfer` return value, so a token that returns true without paying could make a
+job Settled while the agent received nothing. The revision (Dissent PR commit `8defcdd`) pins Circle USDC
+as an immutable `token` in both base and evidence paths. It also documents that release is the buyer's
+call, so a successful challenge shows a buyer paid early rather than agent misconduct. A 32-job commit and
+reveal now runs under the proposed caps: DissentCore measured 550,559 base gas. The new instance is
+`0x4d1A62869D16AB2Bac95408445129C4927f88457`. The first instance, `0x008652FF…CCd8`, has no token check
+and must not be registered. 28 fork tests pass, 195 in their repo.
+
