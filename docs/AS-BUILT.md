@@ -860,7 +860,7 @@ from commit `190e91f`. `contracts/src/Aqueous.sol` is unchanged since that commi
 `AqueousFlatDeliveryRecomputer` lets an agent stake MON on Dissent behind the claim "no eligible flat Aqueous job
 paid this agent without an onchain delivery record". The scope is an explicit list of job ids fixed at commit,
 because Aqueous stores no creation block and anyone can open a job naming any agent. It lives in Dissent's repo
-(PR https://github.com/alnitak34/dissent/pull/7), not ours, and only reads Aqueous. Deployed by the house wallet at
+(PR https://github.com/alnitak34/dissent/pull/7), not ours. It only reads Aqueous. Deployed by the house wallet at
 `0x008652FF29d575F4009657805A1D0A0b161DCCd8` (tx `0xbba4bf45…62bc`), Sourcify verified. 22 fork tests pass with
 Foundry 1.8.1 at block 111,776,000, including the whole commit, challenge and reveal flow through the real
 DissentCore. Base gas is 34,406 for 1 listed job and 565,849 for 32. It is not live until Dissent's curator
