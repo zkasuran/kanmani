@@ -77,7 +77,7 @@ export default async function Traction() {
         <StatTile label="projects contacted" value={c.contacted} />
         <StatTile label="replied or acted" value={c.replied} tone="brand" />
         <StatTile label="settled on chain" value={c.settled} tone="true" />
-        <StatTile label="an outside buyer paid our agents" value={c.outsideBuyer} />
+        <StatTile label="outside buyers paid our agents" value={c.outsideBuyer} />
         <StatTile label="outside bonds posted, read live" value={posted} hint={`of ${askIds.length} agents asked`} tone={posted ? "true" : "unknown"} />
       </div>
 
