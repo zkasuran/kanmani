@@ -15,7 +15,7 @@
 import { strict as assert } from "node:assert";
 import { describe, it } from "node:test";
 import { keccak256, toHex } from "viem";
-import { leashAtomic, leashPaymentRef, leashPriceUsd, leashProofMessage, leashRequest, LEASH_ACCEPTED_TOKENS, MAX_NONCE_LEN, MAX_PAYMENT_AGE_S, _resetLeashPayments, reserveLeashPayment, confirmLeashPayment, releaseLeashPayment } from "./leash.ts";
+import { leashAtomic, leashPaymentRef, leashResource, leashPriceUsd, leashProofMessage, leashRequest, LEASH_ACCEPTED_TOKENS, MAX_NONCE_LEN, MAX_PAYMENT_AGE_S, _resetLeashPayments, reserveLeashPayment, confirmLeashPayment, releaseLeashPayment } from "./leash.ts";
 
 const SELLER = "0xDB6c6340342e71A63cD11Ebac2185204b7777777";
 const USDC = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
@@ -347,5 +347,24 @@ describe("the nine checks each fire", () => {
     const noise = { address: OTHER_CONTRACT, data: "0x" as `0x${string}`, topics: [pad("0x01", { size: 32 })] as `0x${string}`[] };
     const r = await attempt({ reads: fakeReads({ logs: [noise, paidLog({})] }) });
     assert.equal(r.ok, true, JSON.stringify(r));
+  });
+});
+
+describe("the resource string is the one their client signs", () => {
+  it("is the pathname fetchWithLeash derives, not the absolute URL", () => {
+    // fetchWithLeash: `const resource = new URL(url).pathname`. Verifying against the absolute URL
+    // recovers a different signer for every honest request, so this assertion is the integration.
+    assert.equal(leashResource("sentinel"), new URL("https://kanmani.xyz/api/service/sentinel").pathname);
+    assert.equal(leashResource("assay"), new URL("https://kanmani.xyz/api/service/assay").pathname);
+  });
+
+  it("ignores a query string, the way pathname does", () => {
+    assert.equal(leashResource("sentinel"), new URL("https://kanmani.xyz/api/service/sentinel?x=1").pathname);
+  });
+
+  it("produces the ref their client pays", () => {
+    const nonce = "0xdeadbeef";
+    const theirs = keccak256(toHex(`leash:${SELLER.toLowerCase()}:${new URL("https://kanmani.xyz/api/service/sentinel").pathname}:${nonce}`));
+    assert.equal(leashPaymentRef(SELLER, leashResource("sentinel"), nonce), theirs);
   });
 });

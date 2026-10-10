@@ -137,6 +137,17 @@ export const leashPaymentRef = (seller: string, resource: string, nonce: string)
 /** The message an agent signs to prove it holds the key named in `x-leash-agent`. */
 export const leashProofMessage = (resource: string, nonce: string): string => `leash:${resource}:${nonce}`;
 
+/**
+ * The resource string for an agent, and the one detail that decides whether their client works.
+ *
+ * `fetchWithLeash` derives it as `new URL(url).pathname`, so it signs and pays against
+ * `/api/service/sentinel` rather than the absolute URL. Verifying against `${SITE}/api/service/...`
+ * instead would recover a different signer for every honest request and answer `bad_proof` forever,
+ * with nothing in either log saying why. So the path is the contract and it lives here, in one place,
+ * with the test below pinning it to the expression their client uses.
+ */
+export const leashResource = (slug: string): string => `/api/service/${slug}`;
+
 export type LeashRequest = { agent: string; nonce: string; proof: string; payment: string | null };
 
 /**

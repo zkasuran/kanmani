@@ -26,6 +26,7 @@ import {
   confirmLeashPayment,
   leashPriceUsd,
   leashRequest,
+  leashResource,
   releaseLeashPayment,
   reserveLeashPayment,
   verifyLeashPayment,
@@ -225,7 +226,7 @@ async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): 
   // rather than an authorization. Only `x-leash-agent` switches paths, so every x402 client is
   // untouched. See lib/leash for the nine checks and for why the network's test dollar is refused.
   const leashed = leashRequest(headers);
-  if (leashed) return serveLeashed(s, body, leashed, resource);
+  if (leashed) return serveLeashed(s, body, leashed, leashResource(s.slug));
 
   const o = await offers(s.priceAtomic);
   const ask = (reason: string) => json(challenge(resource, reason, o.accepts), { status: 402 });
