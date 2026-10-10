@@ -22,6 +22,15 @@ import {
   verifyPayment,
   type PaymentRequirements,
 } from "@/lib/x402.ts";
+import {
+  confirmLeashPayment,
+  leashPriceUsd,
+  leashRequest,
+  releaseLeashPayment,
+  reserveLeashPayment,
+  verifyLeashPayment,
+  type LeashRequest,
+} from "@/lib/leash.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -212,6 +221,12 @@ async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): 
     }
   }
 
+  // A leashed agent pays by direct transfer and cannot sign EIP-3009, so it arrives with a receipt
+  // rather than an authorization. Only `x-leash-agent` switches paths, so every x402 client is
+  // untouched. See lib/leash for the nine checks and for why the network's test dollar is refused.
+  const leashed = leashRequest(headers);
+  if (leashed) return serveLeashed(s, body, leashed, resource);
+
   const o = await offers(s.priceAtomic);
   const ask = (reason: string) => json(challenge(resource, reason, o.accepts), { status: 402 });
   const payment = paymentFrom(headers, o.upto ? ["upto", "exact"] : ["exact"]);
@@ -329,6 +344,72 @@ async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): 
     },
     { headers: settled.transaction ? { "x-payment-response": paymentResponseHeader(settled) } : {} },
   );
+}
+
+/**
+ * The same priced call, paid through a Leash instead of x402.
+ *
+ * The money moved before the request arrived, so there is no settle step and nothing to sign. The
+ * order still matches the rest of this route: the receipt is reserved, the work runs, and the
+ * reservation is only consumed once an answer exists. A failure on our side releases it, so the
+ * buyer's payment still buys an answer on a retry rather than being burned by our bug.
+ */
+async function serveLeashed(s: Spec, body: Record<string, unknown>, req: LeashRequest, resource: string): Promise<Response> {
+  let v;
+  try {
+    v = await verifyLeashPayment({ req, resource, priceAtomic: s.priceAtomic });
+  } catch (e) {
+    console.error(`[/api/service/${s.slug}] leash check failed:`, (e as Error).message);
+    return problem(503, "We could not check your payment", "Monad could not be read just now. Nothing was charged.", { retryable: true, charged: false });
+  }
+  if (!v.ok) return json(v.body, { status: v.status });
+
+  const held = reserveLeashPayment(v.tx);
+  if (!held.ok) return json({ error: "payment_used", ref: v.ref, reason: held.reason }, { status: 402 });
+
+  let answer: unknown;
+  let meter;
+  try {
+    const r = await s.work(body, BigInt(v.paidAtomic));
+    answer = r.answer;
+    meter = r.meter;
+  } catch (e) {
+    releaseLeashPayment(v.tx);
+    if (isInput(e)) {
+      return problem(400, "Input not accepted", (e as Error).message, { expected: s.input, example: s.example, charged: false, note: "Your payment is untouched. Fix the input and retry with the same x-leash-payment." });
+    }
+    console.error(`[/api/service/${s.slug}] agent failed under leash:`, (e as Error).message);
+    return problem(500, "The agent did not complete", "The agent could not produce a result.", {
+      retryable: true,
+      charged: false,
+      note: "Your payment is untouched. Retry with the same x-leash-payment.",
+    });
+  }
+
+  confirmLeashPayment(v.tx);
+
+  return json({
+    agent: s.name,
+    chainId: 143,
+    blockMs: MONAD_BLOCK_MS,
+    payment: {
+      scheme: "leash",
+      settled: true,
+      transaction: v.tx,
+      ref: v.ref,
+      price: leashPriceUsd(s.priceAtomic),
+      paid: v.paidUsd,
+      token: v.token,
+      payer: v.agent,
+      leashAccount: null,
+      remainingToday: v.remainingToday,
+      erc8004Id: v.erc8004Id,
+      blockNumber: v.blockNumber,
+      meter,
+      note: "Paid by direct transfer through a Leash account, inside the agent's spend limit. The ref binds this payment to this request, so it buys one answer.",
+    },
+    answer,
+  });
 }
 
 /* ------------------------------------------------------------------ A2A */
