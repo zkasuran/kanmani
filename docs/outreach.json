@@ -238,7 +238,7 @@
       "date": "2026-10-09",
       "offered": "A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us.",
       "outcome": "settled",
-      "result": "Dissent merged our recomputer for the Aqueous escrow (PR #7, merge 0f15d30) after two review rounds. Their CI passed. Their review found a real flaw (any token accepted), which we fixed by pinning Circle USDC. Recomputer 0x4d1A62869D16AB2Bac95408445129C4927f88457, Sourcify verified. We posted a fork rehearsal of all nine steps; Alnitak replayed it independently and found a launcher flaw that could hide a failed step, which we fixed in follow-up PR #8. Both are merged. The reviewed policy is now registered and active on Monad mainnet, policy id 0x52655800591f954bb48cfd67e41475ec394898cd8e2e1cd8a7fa3350f7c479f8. We read that registration off chain: deposit 0.1 MON, recompute 1,500,000, validate 200,000, maxEvidenceLen 32, which matches the reviewed parameters exactly. On 2026-10-10 the first coordinated case ran live on Monad mainnet, two parties each signing their own steps. Our agent committed a 0.75 MON bounty that no Aqueous job of ours is paid out before delivery (commitment 0x39cc82c881281f204b397f10ac173df54afc9d77e5f6385195c717e32e4aed8a). Our buyer then released a 0.10 USDC job early with no delivery recorded. Alnitak's challenger sealed, revealed and withdrew: ChallengeSucceeded, value 1 against threshold 0, 0.85 MON paid out (the bounty plus his 0.1 MON deposit back). He confirmed every receipt in the thread. Framing agreed by both sides: a coordinated early-release demonstration by one operator, not a discovered exploit and not agent misconduct.",
+      "result": "Dissent merged our recomputer for the Aqueous escrow (PR #7, merge 0f15d30) after two review rounds. Their CI passed. Their review found a real flaw (any token accepted), which we fixed by pinning Circle USDC. Recomputer 0x4d1A62869D16AB2Bac95408445129C4927f88457, Sourcify verified. We posted a fork rehearsal of all nine steps; Alnitak replayed it independently and found a launcher flaw that could hide a failed step, which we fixed in follow-up PR #8. Both are merged. The reviewed policy is now registered and active on Monad mainnet, policy id 0x52655800591f954bb48cfd67e41475ec394898cd8e2e1cd8a7fa3350f7c479f8. We read that registration off chain: deposit 0.1 MON, recompute 1,500,000, validate 200,000, maxEvidenceLen 32, which matches the reviewed parameters exactly. On 2026-10-10 the first coordinated case ran live on Monad mainnet, two parties each signing their own steps. Our agent committed a 0.75 MON bounty that no Aqueous job of ours is paid out before delivery (commitment 0x39cc82c881281f204b397f10ac173df54afc9d77e5f6385195c717e32e4aed8a). Our buyer then released a 0.10 USDC job early with no delivery recorded. Alnitak's challenger sealed, revealed and withdrew: ChallengeSucceeded, value 1 against threshold 0, 0.85 MON paid out (the bounty plus his 0.1 MON deposit back). He confirmed every receipt in the thread. Framing agreed by both sides: a coordinated early-release demonstration by one operator, not a discovered exploit and not agent misconduct. Dissent then published the case on its own site, crediting Kanmani's recomputer with links to the receipts.",
       "evidence": [
         {
           "label": "recomputer on Sourcify",
@@ -279,6 +279,10 @@
         {
           "label": "Alnitak's confirmation",
           "url": "https://github.com/alnitak34/dissent/pull/7#issuecomment-6094099779"
+        },
+        {
+          "label": "Dissent's write-up of the case",
+          "url": "https://dissent-henna.vercel.app/#collaboration"
         }
       ],
       "buyer": "joint",
