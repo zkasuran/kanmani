@@ -12,6 +12,7 @@ names.
 | [02-THESIS](02-THESIS.md) | why hash integrity is not claim truth, the one idea the whole project turns on |
 | [03-POPULATION](03-POPULATION.md) | what the registered agents on Monad actually are, measured |
 | [AS-BUILT](AS-BUILT.md) | what shipped, component by component |
+| [TRACTION](TRACTION.md) | every project contacted, what came back and the transaction for anything settled. Also at [kanmani.xyz/traction](https://kanmani.xyz/traction) |
 
 ## The verification ladder
 
@@ -63,6 +64,7 @@ names.
 |---|---|
 | [17-CONTRACT-AUDIT](17-CONTRACT-AUDIT.md) | the running security review, every finding stated as an exploit and a proof |
 | [18-BUGS-FIXED](18-BUGS-FIXED.md) | bugs found and fixed, with the exploit kept rather than summarised |
+| [SECURITY-AUDIT](SECURITY-AUDIT.md) | the 2026-10-10 full-surface audit: what was fixed in the tree and what needs a redeploy |
 
 ## Reference
 

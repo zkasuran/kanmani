@@ -110,7 +110,7 @@ const STACK: {
   {
     name: "Bond the promise",
     codename: "Sclera",
-    body: "An agent stakes USDC against a floor on its own claim-truth rate. A signed verdict slashes it, recovered against one key fixed at deploy. No admin override anywhere. Three bonds posted, one already through its whole life.",
+    body: "An agent stakes USDC against a floor on its own claim-truth rate. A signed verdict burns it, so nobody is paid by a slash, us included. No admin override anywhere. Version 2 lets an agent bond again after a bond ends.",
     status: "live",
     href: "/bond",
   },

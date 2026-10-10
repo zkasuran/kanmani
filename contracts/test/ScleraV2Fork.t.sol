@@ -10,7 +10,9 @@ import {IERC20} from "../src/Sclera.sol";
 /// chain can: that Circle USDC accepts a transfer to the burn address, and that the real registry
 /// gates a re-bond the same way it gates the first one.
 ///
-///   MONAD_RPC=https://rpc.monad.xyz forge test --match-contract ScleraV2Fork
+///   forge test --match-contract ScleraV2Fork --fork-url "$MONAD_RPC"
+///
+/// Without a fork URL it is skipped, like the other fork suites, so the default run stays offline.
 contract ScleraV2ForkTest is Test {
     address constant REGISTRY = 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432;
     address constant USDC = 0x754704Bc059F8C67012fEd69BC8A327a5aafb603;
@@ -27,7 +29,10 @@ contract ScleraV2ForkTest is Test {
     );
 
     function setUp() public {
-        vm.createSelectFork(vm.envOr("MONAD_RPC", string("https://rpc.monad.xyz")));
+        if (block.chainid != 143 || REGISTRY.code.length == 0) {
+            vm.skip(true);
+            return;
+        }
         sc = new ScleraV2(vm.addr(attestorKey), REGISTRY);
         (bool ok, bytes memory ret) = REGISTRY.staticcall(abi.encodeWithSignature("ownerOf(uint256)", AGENT_ID));
         require(ok, "ownerOf failed");

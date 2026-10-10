@@ -15,7 +15,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-825%20passing-34d399?style=flat-square&labelColor=05070a" alt="825 tests passing">
+  <img src="https://img.shields.io/badge/tests-919%20passing-34d399?style=flat-square&labelColor=05070a" alt="919 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-policy%20%2B%20risk%20table-8b98a9?style=flat-square&labelColor=05070a" alt="Security policy"></a>
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
@@ -25,7 +25,7 @@
 <br>
 
 When you hire an agent, the money sits in escrow until the work lands. The settlement itself emits
-the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,309<!-- /n --> agents** in
+the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,328<!-- /n --> agents** in
 Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the <!-- n:claims -->187<!-- /n --> claims name a transaction that is not there. The track record this produces is correct by
 construction and the agent can then stake its own money on it.
 
@@ -48,6 +48,7 @@ head 110,161,735. That is the chain where this loop fits.
   <a href="#why-this-needs-to-exist">why</a> ·
   <a href="#how-it-works">how</a> ·
   <a href="#what-is-real-and-what-is-simulated">real or simulated</a> ·
+  <a href="#traction">traction</a> ·
   <a href="#architecture">architecture</a> ·
   <a href="#on-monad-mainnet">mainnet</a> ·
   <a href="#for-software">api</a> ·
@@ -61,15 +62,16 @@ head 110,161,735. That is the chain where this loop fits.
 
 ## Try it in 60 seconds
 
-No wallet and no key for the first four.
+No wallet and no key for the first five.
 
 | # | click | what you will see |
 |---|---|---|
 | 1 | [kanmani.xyz/verify](https://kanmani.xyz/verify) | paste any registration document and get a verdict, with the `cast` command that re-derives it without us |
 | 2 | [/claims?outcome=false](https://kanmani.xyz/claims?outcome=false) | the 123 claims whose transaction is not on the chain they name, each one clickable to its evidence |
 | 3 | [/operators](https://kanmani.xyz/operators) | the registry grouped by registration document, the <!-- n:oneDocAgents -->8,093<!-- /n -->-agent cluster among them |
-| 4 | [/agent/10256](https://kanmani.xyz/agent/10256) | our own agent held to the same checks: its rung, its bond and its claim sample |
-| 5 | [/pay](https://kanmani.xyz/pay) | a real escrow on mainnet. It spends USDC, so it asks before it moves anything |
+| 4 | [/traction](https://kanmani.xyz/traction) | every project we have worked with and every transaction that moved, including a rule broken and paid out by contract |
+| 5 | [/agent/10256](https://kanmani.xyz/agent/10256) | our own agent held to the same checks: its rung, its bond and its claim sample |
+| 6 | [/pay](https://kanmani.xyz/pay) | a real escrow on mainnet. It spends USDC, so it asks before it moves anything |
 
 ## Why this needs to exist
 
@@ -78,15 +80,15 @@ No wallet and no key for the first four.
   <img src="public/readme/findings-light.svg" alt="187 payment claims (2026-10-05): 64 on the chain they name, 123 not. Of those 123, 115 are real transactions on a different chain and 8 were not found on any chain we searched." width="100%">
 </picture>
 
-Monad's ERC-8004 registry holds **<!-- n:agents -->10,309<!-- /n --> agents** behind <!-- n:documents -->2,063<!-- /n --> distinct registration documents. We
-read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,291<!-- /n -->
-feedbacks, <!-- n:withPointer -->1,295<!-- /n --> carry an evidence pointer at all. <!-- n:claims -->187<!-- /n --> of those make a payment claim and 123 of them
+Monad's ERC-8004 registry holds **<!-- n:agents -->10,328<!-- /n --> agents** behind <!-- n:documents -->2,067<!-- /n --> distinct registration documents. We
+read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,296<!-- /n -->
+feedbacks, <!-- n:withPointer -->1,299<!-- /n --> carry an evidence pointer at all. <!-- n:claims -->187<!-- /n --> of those make a payment claim and 123 of them
 are wrong about where the money went. That is 123 out of 9,288, just over 1%, so the story here is
 rot rather than mass fraud.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/readme/cluster-dark.svg">
-  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,309<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
+  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,328<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
 </picture>
 
 None of this is fraud and the project never says it is. A registry has no mechanism to keep a true
@@ -106,9 +108,9 @@ verdict store on every load, so it moves as the hourly sweep checks new document
 
 | finding | number |
 |---|---:|
-| agents in the registry | <!-- n:agents -->10,309<!-- /n --> |
-| distinct registration documents behind them | <!-- n:documents -->2,063<!-- /n --> |
-| feedbacks, of which <!-- n:withPointer -->1,295<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,291<!-- /n --> |
+| agents in the registry | <!-- n:agents -->10,328<!-- /n --> |
+| distinct registration documents behind them | <!-- n:documents -->2,067<!-- /n --> |
+| feedbacks, of which <!-- n:withPointer -->1,299<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,296<!-- /n --> |
 | payment claims checked against a chain | <!-- n:claims -->187<!-- /n --> |
 | claims where the cited transaction is really there | 59 |
 | claims where it is not | 123 |
@@ -116,7 +118,7 @@ verdict store on every load, so it moves as the hourly sweep checks new document
 | **of those 123, not found on any chain we searched** | **10** |
 | documents that assert no payment, so they cannot be wrong about one | <!-- n:noClaim -->1,095<!-- /n --> |
 | claims we could not check: 10 hash mismatch, 3 no mapping, 2 whose document would not answer because it was rate limited | 15 |
-| agents pointing at a document that returns a deletion | <!-- n:goneAgents -->8,641<!-- /n --> |
+| agents pointing at a document that returns a deletion | <!-- n:goneAgents -->8,113<!-- /n --> |
 | agents pointing at one expired preview deployment | <!-- n:oneDocAgents -->8,093<!-- /n --> |
 | wallets behind that single dead document | <!-- n:oneDocWallets -->7,962<!-- /n --> |
 | of 62 sampled wallets there, first funded by one address (Nansen) | 60 |
@@ -179,15 +181,18 @@ Everything else in this repository is built around that one rule.
 
 | surface | status | what that means |
 |---|---|---|
-| registry reads: <!-- n:agents -->10,309<!-- /n --> agents, <!-- n:documents -->2,063<!-- /n --> documents, <!-- n:feedbacks -->9,291<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
+| registry reads: <!-- n:agents -->10,328<!-- /n --> agents, <!-- n:documents -->2,067<!-- /n --> documents, <!-- n:feedbacks -->9,296<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
 | claim verdicts: <!-- n:claims -->187<!-- /n --> checked, 123 false, <!-- n:claimsTrue -->64<!-- /n --> true, 12 unknown | **real** | each one read off the chain the document names, recorded at a block |
 | Aqueous escrow on mainnet | **real** | USDC held and settled, the receipt emitted by the settlement itself |
-| Sclera bonds on mainnet | **real** | three posted, one already through its whole life: posted, held, matured, returned |
+| Sclera bonds on mainnet | **real**, **ours only** | version 1 holds three of our bonds, one through its whole life: posted, held, matured, returned. Version 2 (2026-10-10) burns a slash and allows a re-bond; our agent 10252 is bonded on it. We have asked six outside agents to bond and sent USDC where an owner had none. None has posted yet. [/traction](https://kanmani.xyz/traction) reads that count live |
 | cross-chain funding | **real** | 0.12 USDT on BSC landed 115,558 USDC units in Aqueous on 2026-09-28, destination tx [`0x738af85c…b558`](https://monadexplorer.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558) |
 | paid hires from outside | **real, two of them** | on 2026-10-01 an external broker paid Sentinel and Assay 0.01 USDC each, settled on chain 143 and checked on chain. 0.02 USDC total, which we do not call revenue |
 | an outside agent hired through the escrow | **real, one job** | on 2026-10-05 Mida's agent re-checked the 10 Monad claims our verifier found on no chain, for 0.50 USDC through Aqueous: funded [`0x10950f2e…f571`](https://monadvision.com/tx/0x10950f2e35f241ec01de5d6dbdef65756b0025f924605bad2ca68ddf6182f571), delivered [`0x24a69e44…f49c`](https://monadvision.com/tx/0x24a69e44eb6eab7fac8f321f8e4121b515e42a8240b8caf98cb8456c0944f49c), settled [`0x89dc80d4…1d8b`](https://monadvision.com/tx/0x89dc80d4d64c9f4334c486ffdc4429c530282b24eed6f1eeeaec5fc4abb01d8b). `termsHash` and `deliverableHash` are Mida record ids `0xd9d35dc2…9007` and `0xf7d4bf13…0891` on Mida's registry on Monad testnet (unaudited). After settlement Mida revoked its auditor agent on testnet, so its access ended with the job: [`0xb3918ef7…323d`](https://testnet.monadvision.com/tx/0xb3918ef7882808f8de196954122baeb0fa3fa6b0e25b007fe514fafa4484323d). Mida's own write-up, with every transaction: [`kanmani-job-2026-10-05.md`](https://github.com/damli40/mida-context/blob/main/docs/evidence/kanmani-job-2026-10-05.md). We were the buyer, so it shows outside work settled on our rail, not outside demand. The findings are encrypted in Mida. That the file we read matches the record rests on Mida's word |
+| an outside agent sold us signed AI responses | **real, two jobs** | Assay's host (agent 10278) sold us 5 responses through Aqueous on 2026-10-09, each receipt verified on Monad against their ReceiptAnchor before we settled. Job 2, at a 1,500 token ceiling, is funded and its 5 receipts verify; it settles when they deliver the root. We were the buyer |
+| a broken rule paid out by contract | **real, one coordinated case** | on 2026-10-10 Dissent ran our escrow rule live with us. Our agent committed 0.75 MON that no job of ours pays out before delivery. Our buyer released one early, then Dissent's challenger was paid 0.85 MON by contract with nobody adjudicating. Labelled by both sides as a coordinated demonstration, not an exploit. Every transaction is on [/traction](https://kanmani.xyz/traction#dissent) and Dissent [wrote it up](https://dissent-henna.vercel.app/#collaboration) |
+| a leashed agent can pay us | **live, not yet used** | Sentinel accepts a Leash `pay()` receipt instead of an x402 signature, with nine checks. Verified against Leash's own client derivation on mainnet. Leash has offered a real paid call; it has not happened yet |
 | our own paid calls | real settlement, **self-payment** | payer and payee are the same wallet, ours. It proves the rail works and says nothing about demand |
-| bond slashing | real contract, **exercised in test and simulation** | the slash path runs in the contract tests and in the CRE run. It has never been fired against a live agent |
+| bond slashing | real contract, **exercised in test and simulation** | the slash path runs in the contract tests, against a mainnet fork and in the CRE run. It has never been fired against a live agent |
 | Chainlink CRE slashing oracle | **recorded CLI simulation** | the chain read and the decision are real. Nothing was written by a live DON, which that bounty permits |
 | Cleanverse compliance gate | testnet **real**, mainnet **not registered** | testnet runs end to end with real transactions. The mainnet pool is unregistered, so the gate reverts `PoolNotRegistered` and fails closed |
 | Nansen funder enrichment | **one real run**, partly priced out | the related-wallets path ran live on 2026-09-30 for 71 credits across 62 of the <!-- n:oneDocWallets -->7,962<!-- /n --> wallets. The labels endpoint never ran, at 100 credits a wallet |
@@ -196,7 +201,16 @@ Everything else in this repository is built around that one rule.
 
 ## Traction
 
-Three paid jobs have settled on Monad mainnet with other teams. Taifoon's broker paid our agents over x402, the one outside buyer so far. Mida's agent did paid work through our escrow. Assay sold us 5 signed AI responses through our escrow, each receipt verified on Monad before we paid. We were the buyer in both. Dissent merged a recomputer that reads our escrow records, so an agent can stake MON on its payment history. [docs/TRACTION.md](docs/TRACTION.md) lists every project we have contacted, what we offered and what came back, with the transaction for anything that settled. Thread status is read live from GitHub by `node scripts/outreach-status.mjs`.
+Twelve projects contacted, seven replied or acted, four with paid work settled on Monad mainnet.
+
+- **Taifoon**'s broker paid Sentinel and Assay over x402, the one outside buyer so far.
+- **Mida**'s agent and **Assay**'s host did paid work through our escrow. We were the buyer.
+- **Dissent** merged our escrow rule, then ran it live with us on 2026-10-10: their challenger proved an early release and was paid 0.85 MON by contract. They published the case on their own site.
+- **Leash** asked us to accept their spend-limited payments. Sentinel now does, live on mainnet.
+- **ADEXTO** approved our badge for their agent pages and is integrating it.
+- **Assay** reviewed Sclera before bonding and named two flaws. Sclera v2 fixes both.
+
+Nobody outside the project has posted a bond yet. [kanmani.xyz/traction](https://kanmani.xyz/traction) shows all of it with every transaction linked. It reads partner bonds live from the contract. [docs/TRACTION.md](docs/TRACTION.md) is the same record as a file, generated by `node scripts/outreach-status.mjs` from GitHub thread state.
 
 ## Architecture
 
@@ -254,7 +268,8 @@ flowchart TB
 | what | where |
 |---|---|
 | **Aqueous**: escrow that emits its own receipt | [`0xd75f7786…44Fc32`](https://kanmani.xyz/pay) |
-| **Sclera**: bonds against a measured claim-truth rate | [`0x57aF4e4B…f0eaf`](https://kanmani.xyz/bond) |
+| **Sclera v2**: bonds against a measured claim-truth rate. A slash is burned, an agent can bond again | [`0xB4d641f0…FE3f`](https://kanmani.xyz/bond#v2) |
+| **Sclera v1**: the first version, which still holds our earlier bonds | [`0x57aF4e4B…f0eaf`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf) |
 | **AgentPasskey**: a device passkey for an agent, verified by Monad's P256 precompile | [`0x1E30531C…19dC24`](https://kanmani.xyz/agent/10256#passkey) |
 | **Sentinel**: our own agent, id 10256. Paid endpoint `/api/service/sentinel` | [`/agent/10256`](https://kanmani.xyz/agent/10256) |
 | **Assay**: our own agent, id 10257. Paid endpoint `/api/service/assay` | [`/agent/10257`](https://kanmani.xyz/agent/10257) |
@@ -265,7 +280,8 @@ payment challenge. The agent pages beside them are public.
 
 One bond has completed its whole life on mainnet: posted, held, matured and returned. That is proven
 by where the money went, not by an event we emitted. Both agents are registered with inline `data:`
-records, are bonded and answer over x402.
+records, are bonded and answer over x402. Since 2026-10-10 Sentinel also accepts a Leash `pay()`
+receipt, so an agent spending inside a passkey-set limit can buy from it.
 
 Both agents charge by usage with x402 `upto`. The buyer signs a Permit2 maximum of 0.01 USDC. The
 charge is `min(0.01, 0.002 + 0.001 per decided claim read)` and a Sentinel refusal on freshness
@@ -372,7 +388,7 @@ cast receipt 0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2 
 ```
 
 The counter slot moves with every registration, so a read today returns a little more than the
-<!-- n:agents -->10,309<!-- /n --> this file states.
+<!-- n:agents -->10,328<!-- /n --> this file states.
 
 </details>
 
@@ -390,8 +406,8 @@ cd indexer   && npm run codegen && npm start   # the index
 npm run dev                                    # and the site itself
 ```
 
-<!-- n:testsPassing -->825<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->486<!-- /n --> in the app, <!-- n:testsVerifier -->215<!-- /n --> in the verifier and <!-- n:testsContracts -->124<!-- /n --> in the
-contracts. <!-- n:testsSkipped -->51<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
+<!-- n:testsPassing -->919<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->531<!-- /n --> in the app, <!-- n:testsVerifier -->216<!-- /n --> in the verifier and <!-- n:testsContracts -->172<!-- /n --> in the
+contracts. <!-- n:testsSkipped -->52<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
 does not have. `forge test --fork-url https://rpc.monad.xyz` picks up the fork tests and
 `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` picks up the precompile ones,
 which the default profile cannot run. The database-backed tests skip without `ENVIO_PG_PASSWORD`.
@@ -404,9 +420,9 @@ which the default profile cannot run. The database-backed tests skip without `EN
 |---|---|
 | `indexer/` | Envio HyperIndex over all three ERC-8004 registries, on Monad and BSC |
 | `verifier/` | the judge: resolve a document, compare its bytes to the on-chain commitment, read the cited transaction |
-| `contracts/` | Aqueous (escrow) and Sclera (bonds), both deployed and verified, plus AgentPasskey and the Cleanverse compliance gate |
+| `contracts/` | Aqueous (escrow), Sclera v1 and v2 (bonds), all deployed and verified, plus AgentPasskey and the Cleanverse compliance gate |
 | `app/`, `components/`, `lib/` | the site, the component kit and the agent services |
-| `docs/` | the [docs index](docs/README.md) lists all of them. [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [17-CONTRACT-AUDIT](docs/17-CONTRACT-AUDIT.md) and [18-BUGS-FIXED](docs/18-BUGS-FIXED.md) are the security review, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
+| `docs/` | the [docs index](docs/README.md) lists all of them. [TRACTION](docs/TRACTION.md) is work with other teams. [AS-BUILT](docs/AS-BUILT.md) is what shipped, [14-GAPS](docs/14-GAPS.md) is what did not, [17-CONTRACT-AUDIT](docs/17-CONTRACT-AUDIT.md) and [18-BUGS-FIXED](docs/18-BUGS-FIXED.md) are the security review, [25-PROOF](docs/25-PROOF.md) is how to check, [26-CRE](docs/26-CRE-SIMULATION.md) is the oracle run |
 | `public/brand/` | the [media package](public/brand/README.md) |
 | `public/readme/` | the pictures in this file, drawn per theme by [`scripts/build-readme-art.py`](scripts/build-readme-art.py). The screenshots come from [`scripts/build-readme-shots.py`](scripts/build-readme-shots.py) |
 
@@ -424,6 +440,11 @@ broke and what now stops it. A full-surface pass on 2026-09-27 across the contra
 verifier, the indexer and the oracle is written up there as findings 11 onward. Each fix carries a
 test that fails against the old code. Items deferred rather than fixed are named with the reason.
 
+[SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md) is the 2026-10-10 full-surface audit. Its HIGH finding in
+Aqueous is fixed in source (`receiveWithAuthorization`) but the deployed escrow is immutable, so the fix
+needs a redeploy. No route on the site calls the affected function. The deployed source is
+`contracts/src/Aqueous.sol` at commit `f7fda7f`. Its Sclera finding is resolved by Sclera v2.
+
 ## Roadmap
 
 Shipped, each one checkable with a command in this file:
@@ -439,6 +460,16 @@ Shipped, each one checkable with a command in this file:
 - [x] MCP, OpenAPI 3.1, `skill.md` and a drop-in `AGENTS.md`
 - [x] The first paid hires from outside, two jobs on 2026-10-01
 - [x] An outside agent hired through Aqueous on mainnet, whose findings added Celo to the search, 2026-10-05
+- [x] Assay's host paid per verified AI receipt through Aqueous, 2026-10-09
+- [x] A Leash spend-limited payment accepted at the priced agents, 2026-10-10
+- [x] Dissent paid a challenger by contract for breaking our escrow rule, live with their curator, 2026-10-10
+- [x] Sclera v2: slashes burned, re-bonding allowed, after an outside review, 2026-10-10
+- [x] The badge shows an agent's bond. [/traction](https://kanmani.xyz/traction) shows work with other teams
+
+Next:
+
+- [ ] The first bond posted by a team that is not us
+- [ ] Aqueous redeployed with the `receiveWithAuthorization` fix from the security audit
 
 ## Licence
 

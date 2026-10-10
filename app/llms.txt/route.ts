@@ -68,6 +68,15 @@ be published at all: collapsing them would let somebody else's outage publish as
 - ${paywalled ? `${n(paywalled.agents)} agents point at a live x402 endpoint that asks for payment before it will describe its own agent.` : ""}
 - ${n(p.feedbacksWithUri)} of ${n(p.feedbacks)} feedbacks carry an evidence pointer. The rest point at nothing.
 
+## Bonds and work with other teams
+
+- Sclera v2 on Monad mainnet, 0xB4d641f016f53C683c409F271eE85e136041FE3f: an agent's owner stakes USDC
+  against a floor on its claim-truth rate. A slash is burned to 0x...dEaD. A new bond may follow a
+  released or slashed one. Post one at ${SITE}/bond. Version 1, 0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf,
+  still holds Kanmani's own earlier bonds.
+- ${SITE}/traction lists every project Kanmani has contacted and every transaction that moved,
+  including a rule broken and paid out by contract with Dissent on 2026-10-10.
+
 ## What to read next
 
 - ${SITE}/method       how each rung is decided, with the command to re-derive every one by hand

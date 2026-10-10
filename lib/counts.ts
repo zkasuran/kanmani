@@ -10,15 +10,15 @@
  */
 export const SUITES = {
   /** The app's own tests: `node --test` over `lib/**\/*.test.ts`. 15 skip without a database. */
-  site: { pass: 486, total: 501 },
+  site: { pass: 531, total: 546 },
   /** The verifier: `node --test` over `verifier/src/**\/*.test.ts`. 27 skip without a database. */
-  verifier: { pass: 215, total: 242 },
+  verifier: { pass: 216, total: 243 },
   /**
    * `forge test` in `contracts/`, default profile. 9 skip there: 6 fork tests that need an archive
    * node, 2 that need ffi and the AgentPasskey suite, which needs the P256 precompile and runs under
    * `FOUNDRY_PROFILE=p256` instead. `./verify.sh` runs all three tiers.
    */
-  contracts: { pass: 124, total: 133 },
+  contracts: { pass: 172, total: 182 },
 } as const;
 
 export const TESTS_PASSING = SUITES.site.pass + SUITES.verifier.pass + SUITES.contracts.pass;

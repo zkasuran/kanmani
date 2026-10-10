@@ -514,9 +514,9 @@ Small, real and better written here than discovered by a reader.
   and 9 skipped: six Aqueous fork tests without a fork URL, two cross-signing tests without `--ffi` and
   one that needs the P256 precompile profile. They skip rather than silently passing, but a reader
   should know the 124 is not the whole suite.
-* **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->242<!-- /n --> tests, <!-- n:testsVerifier -->215<!-- /n --> pass, <!-- n:testsVerifierSkipped -->27<!-- /n -->
-  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->501<!-- /n --> tests, <!-- n:testsApp -->486<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
-  **<!-- n:testsPassing -->825<!-- /n --> pass in total.**
+* **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->243<!-- /n --> tests, <!-- n:testsVerifier -->216<!-- /n --> pass, <!-- n:testsVerifierSkipped -->27<!-- /n -->
+  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->546<!-- /n --> tests, <!-- n:testsApp -->531<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
+  **<!-- n:testsPassing -->919<!-- /n --> pass in total.**
 * **Census figures and live figures differ because the registry keeps growing.** Documents written at
   census time say 10,252 agents and 2,012 distinct records. The live index now reads 10,276 and 2,053,
   because registrations have continued since the census and one of them is ours, agent 10252. Section 1

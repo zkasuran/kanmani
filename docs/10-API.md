@@ -190,7 +190,7 @@ Ordering is block number descending then id, which is stable. `next` is `null` o
 carries every filter you sent, so paging never quietly changes the query underneath you.
 
 Only feedbacks carrying a document are returned. A feedback with an empty `feedbackUri` has nothing
-to verify: <!-- n:withPointer -->1,295<!-- /n --> of Monad's <!-- n:feedbacks -->9,291<!-- /n --> feedbacks carry a pointer.
+to verify: <!-- n:withPointer -->1,299<!-- /n --> of Monad's <!-- n:feedbacks -->9,296<!-- /n --> feedbacks carry a pointer.
 
 Errors: `400` for an unknown `outcome`, an unknown `rung` or a non-numeric `agent`. Nothing else is
 refused.
@@ -242,6 +242,10 @@ unreachable chain returns `null` with no other bond fields, so a consumer must n
 unbonded. It is read live from the chain rather than from the index, because a window matures when a
 block passes and emits no event.
 
+`contract` says which Sclera holds it. Sclera v2 (`0xB4d641f016f53C683c409F271eE85e136041FE3f`) is read
+first because it takes every new bond. Version 1 (`0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`) is read
+only when v2 has none, so an agent that re-bonded on v2 shows its current bond rather than its old one.
+
 `passkey` is the device passkey bound to this agent, verified by Monad's P256 precompile when it
 signs. `state` is `bound`, `none` or `unknown`, where `unknown` means the chain could not be read.
 
@@ -251,7 +255,7 @@ labelled that way so a consumer never reads it as ours. We did not test that the
 
 `registration.state` is one of `onchain`, `answered`, `gone`, `paywalled`, `refused`, `nohost`,
 `malformed`, `unknown`. It is `null` when nothing has probed that document yet. Never-looked is a
-state. It is not `gone`. Monad has <!-- n:documents -->2,063<!-- /n --> distinct registration documents behind <!-- n:agents -->10,309<!-- /n --> agents. <!-- n:goneAgents -->8,641<!-- /n -->
+state. It is not `gone`. Monad has <!-- n:documents -->2,067<!-- /n --> distinct registration documents behind <!-- n:agents -->10,328<!-- /n --> agents. <!-- n:goneAgents -->8,113<!-- /n -->
 of those agents point at a document that answers with a deletion, one document behind <!-- n:oneDocAgents -->8,093<!-- /n --> of
 them. The live count in each `record_state` bucket moves with every probe run, so it is published on
 [`/status`](https://kanmani.xyz/status) rather than frozen here. The buckets themselves are defined in
