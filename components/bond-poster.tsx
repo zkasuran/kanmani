@@ -315,7 +315,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
               <button type="button" className="cta-ghost ml-1" disabled={busy !== null || facts.gas?.state === "short"} onClick={release} data-testid="bond-release">
                 {busy === "release" ? "releasing…" : "release it →"}
               </button>
-              <span className="mt-1 block text-[11.5px] text-faint">Releasing ends it for good: Sclera allows one bond per agent, so this agent cannot be bonded again.</span>
+              <span className="mt-1 block text-[11.5px] text-faint">Releasing returns the stake to whoever posted it. The owner can post a new bond afterwards.</span>
             </>
           ) : matured === false && facts.postedAt !== null && facts.windowBlocks !== null && facts.head !== null ? (
             <>It matures in {(facts.postedAt + facts.windowBlocks - facts.head).toLocaleString()} blocks.</>
@@ -335,7 +335,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
       )}
 
       <p className="text-[11.5px] leading-relaxed text-faint">
-        Before you sign: the USDC leaves your wallet for the whole window and comes back only by release, only if no verdict slashed it. Sclera allows one bond per agent, ever. The approval is for exactly this amount, never unlimited.
+        Before you sign: the USDC leaves your wallet for the whole window and comes back only by release, only if no verdict slashed it. A slashed bond is burned, so nobody is paid by it, us included. The approval is for exactly this amount, never unlimited.
       </p>
 
       {done.length ? (

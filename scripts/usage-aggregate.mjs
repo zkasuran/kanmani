@@ -132,6 +132,8 @@ if (!process.argv.includes("--no-chain")) {
   const CONTRACTS = {
     aqueous: { address: "0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32", from: 106_000_000 },
     sclera: { address: "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf", from: 107_700_000 },
+    // Version 2 takes every new bond from 2026-10-10. Its own cursor, so v1 history is untouched.
+    scleraV2: { address: "0xB4d641f016f53C683c409F271eE85e136041FE3f", from: 112_106_633 },
     agentPasskey: { address: "0x1E30531CD3ea6DE2958DB363418a5382C419dC24", from: 109_009_000 },
   };
   // topic0 -> [event, which topic is the actor, which topic is the agent id]
@@ -139,7 +141,9 @@ if (!process.argv.includes("--no-chain")) {
   const sig = (s) => keccak256(toHex(s));
   const EVENTS = {
     [sig("JobCreated(bytes32,address,address,address,uint256,uint256,uint64,bytes32)")]: ["JobCreated", 2, null],
-    [sig("BondPosted(uint256,address,address,uint128,uint16,uint64,uint32,uint64)")]: ["BondPosted", 2, 1],
+    // amount is uint256 in the event (uint128 only in storage). Written as uint128 this topic matched
+    // nothing, so no bond was ever counted. Checked against the first bond's receipt, 0x72970dc0.
+    [sig("BondPosted(uint256,address,address,uint256,uint16,uint64,uint32,uint64)")]: ["BondPosted", 2, 1],
     [sig("PasskeyBound(uint256,address,uint256,uint256,uint256)")]: ["PasskeyBound", 2, 1],
     [sig("PasskeyUnbound(uint256,address)")]: ["PasskeyUnbound", 2, 1],
   };

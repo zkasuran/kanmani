@@ -11,10 +11,13 @@ export const revalidate = 0;
 export const metadata = {
   title: "Bond",
   description:
-    "An agent stakes USDC against a floor on its own claim-truth rate. Live on Monad mainnet, immutable, slashed by a signed verdict with no admin override.",
+    "An agent stakes USDC against a floor on its own claim-truth rate. Live on Monad mainnet, immutable, no admin override. A slashed bond is burned, so nobody is paid by it.",
 };
 
-/** Deployed 2026-09-24. Immutable, no proxy, no admin function. */
+/** Version 2, deployed 2026-10-10. Takes every new bond. Immutable, no proxy, no admin function. */
+const SCLERA_V2 = "0xB4d641f016f53C683c409F271eE85e136041FE3f";
+const V2_DEPLOY = "0x191531adca3754d20961b021233828341053cbd7d1c7174d796d19d03c2b189c";
+/** Version 1, deployed 2026-09-24. Our earlier bonds live here, including the complete one below. */
 const SCLERA = "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf";
 const USDC = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
 const ATTESTOR = "0x358c591aD7D60aC36bC223472B41518A7FA7b44A";
@@ -56,8 +59,8 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
         lead={
           <>
             An agent locks USDC against a floor on its own future claim-truth rate. Stay above the floor
-            and the stake comes back. Fall below it and a signed verdict takes it. There is no admin
-            function and no override anywhere in that path.
+            and the stake comes back. Fall below it and a signed verdict burns it, so nobody is paid by a
+            slash, us included. There is no admin function and no override anywhere in that path.
           </>
         }
       />
@@ -70,6 +73,51 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
           subtitle="From the passkey or wallet that owns it. Every rule the contract enforces is checked here first, from live chain state, so the button only turns on for a send that can succeed."
         >
           <BondPoster initialAgent={initialAgent} />
+        </Panel>
+      </Reveal>
+
+      {/* ---------------------------------------------------------------- version 2 */}
+      <Reveal>
+        <Panel
+          id="v2"
+          title="version 2 · what changed on 10 october and why"
+          subtitle="Two changes an outside reviewer asked for. Nothing else in the contract moved."
+        >
+          <div className="space-y-3 text-[13px] leading-relaxed text-muted">
+            <p>
+              <span className="text-[var(--color-text)]">A slash pays nobody.</span> In version 1 a forfeit bond went to our own
+              agent wallet, while our attestor signs the verdicts. So the party deciding a slash was the party paid by it.{" "}
+              <a href="https://github.com/trudransh/Assay/issues/4#issuecomment-6094151253" target="_blank" rel="noreferrer noopener" className="text-[var(--color-brand)] hover:underline">
+                Assay&apos;s review
+              </a>{" "}
+              named that as the question a buyer would ask. Version 2 burns a slashed bond to <Mono>0x…dEaD</Mono>, a constant in the
+              bytecode rather than a deploy setting. A claim that does not resolve harms nobody the contract can identify on chain,
+              so there is no buyer to compensate. Burning is the one destination nobody in the decision path gains from.
+            </p>
+            <p>
+              <span className="text-[var(--color-text)]">An agent can bond again.</span> Version 1 allowed one bond per agent, ever, so
+              a team waiting until its agent had claims worth measuring was spending its only slot whenever it posted. Version 2 allows
+              a new bond once the last one is released or slashed. Verdict nonces carry across bonds and every verdict window must
+              start after the current bond was posted, so a verdict signed for an earlier bond cannot be replayed against a later one.
+            </p>
+            <p>
+              Contract{" "}
+              <a href={`https://monadexplorer.com/address/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline">
+                {SCLERA_V2}
+              </a>
+              , <Tx hash={V2_DEPLOY}>deployed at block 112,106,633</Tx>,{" "}
+              <a href={`https://sourcify.dev/#/lookup/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="text-[var(--color-brand)] hover:underline">
+                exact match on Sourcify
+              </a>
+              . Version 1&apos;s whole test suite runs against it unchanged, 39 tests, plus 8 for the two changes. Six deliberate
+              breaks of the new code were each caught. A mainnet fork test burns real Circle USDC and re-bonds a real agent.
+              Same attestor, same registry. Our earlier bonds stay on version 1 and are listed below with it.
+            </p>
+          </div>
+          <div className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
+            <pre className="sql">{`cast call ${SCLERA_V2} 'slashBeneficiary()(address)' --rpc-url https://rpc.monad.xyz
+# 0x000000000000000000000000000000000000dEaD`}</pre>
+          </div>
         </Panel>
       </Reveal>
 
@@ -89,6 +137,9 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <Mono className="w-16 shrink-0 text-[13px]">#{id}</Mono>
                   <span className="font-mono text-[13px] text-[var(--color-text)]">{b!.state}</span>
+                  <span className="font-mono text-[11.5px] text-muted">
+                    {b!.address.toLowerCase() === SCLERA_V2.toLowerCase() ? "v2" : "v1"}
+                  </span>
                   <Mono className="text-[13px]">{usdc(b!.amountAtomic)} USDC</Mono>
                   <span className="text-[11.5px] text-muted">
                     floor {(b!.minTruthRateBps / 100).toFixed(0)}% over {b!.minSampleSize} claims
@@ -200,7 +251,7 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
             <div className="layer__name">Settle</div>
             <p className="layer__body">
               Above the floor, the stake returns when the window matures and anyone may trigger it. Below
-              it, the bond is forfeit in the same transaction that decides.
+              it, the bond is burned in the same transaction that decides, so a slash pays nobody.
             </p>
           </div>
         </div>

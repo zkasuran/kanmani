@@ -203,15 +203,23 @@
     },
     "sclera": {
       "chainId": 143,
-      "address": "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf",
-      "what": "claim-truth bond, deployed 2026-09-24, source verified",
+      "address": "0xB4d641f016f53C683c409F271eE85e136041FE3f",
+      "what": "claim-truth bond version 2, deployed 2026-10-10, Sourcify exact match. Slashes are burned to 0x...dEaD, an agent may bond again after a release or a slash.",
       "attestor": "0x358c591aD7D60aC36bC223472B41518A7FA7b44A",
-      "slashBeneficiary": "0xDB6c6340342e71A63cD11Ebac2185204b7777777"
+      "slashBeneficiary": "0x000000000000000000000000000000000000dEaD",
+      "deployTx": "0x191531adca3754d20961b021233828341053cbd7d1c7174d796d19d03c2b189c"
     },
     "agentPasskey": {
       "chainId": 143,
       "address": "0x1E30531CD3ea6DE2958DB363418a5382C419dC24",
       "what": "binds an agent to a device passkey; WebAuthn verified by the P256 precompile at 0x0100, deployed 2026-09-29, source verified"
+    },
+    "scleraV1": {
+      "chainId": 143,
+      "address": "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf",
+      "what": "claim-truth bond version 1, deployed 2026-09-24, source verified. Slashes paid the operator's wallet, one bond per agent ever. Our own bonds remain here; new bonds go to sclera.",
+      "attestor": "0x358c591aD7D60aC36bC223472B41518A7FA7b44A",
+      "slashBeneficiary": "0xDB6c6340342e71A63cD11Ebac2185204b7777777"
     }
   },
   "$publicRpc": [

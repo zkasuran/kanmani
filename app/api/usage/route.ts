@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   return json(
     envelope(
       { ...u, notMeasured: NOT_MEASURED, method: "https://kanmani.xyz/status#usage" },
-      "On chain: eth_getLogs on 0xd75f7786…44Fc32, 0x57aF4e4B…f0eaf and 0x1E30531C…19dC24, actor != 0xDB6c…7777. Requests: scripts/usage-aggregate.mjs over the access log.",
+      "On chain: eth_getLogs on 0xd75f7786…44Fc32, 0x57aF4e4B…f0eaf, 0xB4d641f0…FE3f and 0x1E30531C…19dC24, actor != 0xDB6c…7777. Requests: scripts/usage-aggregate.mjs over the access log.",
     ),
   );
 }

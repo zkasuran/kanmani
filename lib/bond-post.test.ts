@@ -45,12 +45,14 @@ test("every contract revert is refused in the form first", () => {
   assert.ok(planBond({ ...good, minTruthRatePct: "100" }).ok);
 });
 
-test("only the owner may post, only once ever and an unreadable chain decides nothing", () => {
+test("only the owner may post, one active bond at a time, and an unreadable chain decides nothing", () => {
   const me = "0xDB6c6340342e71A63cD11Ebac2185204b7777777";
   assert.deepEqual(canPost({ sender: me, owner: me.toLowerCase(), state: "none" }), { ok: true });
   assert.match((canPost({ sender: me, owner: "0x0000000000000000000000000000000000000001", state: "none" }) as { reason: string }).reason, /Only its owner/);
-  for (const s of ["active", "released", "slashed"] as const) {
-    assert.match((canPost({ sender: me, owner: me, state: s }) as { reason: string }).reason, /one bond per agent, ever/);
+  assert.match((canPost({ sender: me, owner: me, state: "active" }) as { reason: string }).reason, /already has an active bond/);
+  // Sclera version 2: a released or slashed bond may be followed by a new one, as postBond allows.
+  for (const s of ["released", "slashed"] as const) {
+    assert.deepEqual(canPost({ sender: me, owner: me, state: s }), { ok: true }, s);
   }
   const u = canPost({ sender: me, owner: null, state: "none" });
   assert.equal(u.ok, false);

@@ -1,17 +1,17 @@
 /**
  * Posting and releasing a Sclera bond from a browser, as pure functions.
  *
- * Sclera (`0x57aF4e4B…f0eaf`, chain 143) holds a bond an agent's owner posts against its own claim
- * truth rate. The rules below mirror `postBond` in contracts/src/Sclera.sol line for line, so a form
+ * Sclera version 2 (`0xB4d641f0…FE3f`, chain 143) holds a bond an agent's owner posts against its own
+ * claim-truth rate. The rules below mirror `postBond` in contracts/src/ScleraV2.sol line for line, so a form
  * refuses exactly what the contract would revert on, before any gas is spent:
  *
  *   agentId != 0, amount != 0, minTruthRateBps <= 10000, windowBlocks != 0, minSampleSize != 0,
- *   no bond ever posted for this agent (state None), msg.sender == ownerOf(agentId).
+ *   no ACTIVE bond for this agent, msg.sender == ownerOf(agentId).
  *
  * Two facts a poster must see before signing, because neither can be undone:
  *
- *   - One bond per agent, ever. `postBond` reverts BondExists for any state but None, including
- *     Released. After a bond ends, that agent can never be bonded again.
+ *   - A slash is burned. It goes to 0x...dEaD, not to the operator or the attestor, so nobody in the
+ *     decision path is paid by one. A new bond can follow a released or slashed one.
  *   - The amount leaves the wallet for the whole window. It comes back only through `release`. Even then
  *     only if no verdict slashed it first.
  *
@@ -20,7 +20,9 @@
  */
 import { encodeFunctionData, erc20Abi } from "viem";
 
-export const SCLERA_ADDRESS = "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf" as const;
+export const SCLERA_ADDRESS = "0xB4d641f016f53C683c409F271eE85e136041FE3f" as const;
+/** Version 1, which still holds Kanmani's own earlier bonds. Read-only here: nothing new is posted to it. */
+export const SCLERA_V1_ADDRESS = "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf" as const;
 export const USDC_MONAD_ADDRESS = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603" as const;
 export const MONAD_BLOCK_MS = 266;
 
@@ -146,8 +148,8 @@ export function canPost(o: { sender: string; owner: string | null; state: "none"
   | { ok: false; reason: string; unknown?: true } {
   if (o.owner === null || o.state === null) return { ok: false, unknown: true, reason: "Could not read the registry or the bond contract, so nothing is decided. Try again." };
   if (o.owner.toLowerCase() !== o.sender.toLowerCase()) return { ok: false, reason: `This agent is owned by ${o.owner}. Only its owner can bond it.` };
-  if (o.state !== "none") {
-    return { ok: false, reason: `This agent already had a bond (${o.state}). Sclera allows one bond per agent, ever, so it cannot be bonded again.` };
+  if (o.state === "active") {
+    return { ok: false, reason: "This agent already has an active bond. A new one can be posted once it is released or slashed." };
   }
   return { ok: true };
 }

@@ -23,7 +23,11 @@ import { createPublicClient, http } from "viem";
 import { viemChain } from "./chains.ts";
 import RAW from "../shared/erc8004-chains.json" with { type: "json" };
 
-const SCLERA = (RAW as { ourContracts: { sclera: { address: string; chainId: number } } }).ourContracts.sclera;
+type Deployed = { address: string; chainId: number };
+const CONTRACTS = (RAW as { ourContracts: { sclera: Deployed; scleraV1: Deployed } }).ourContracts;
+/** Version 2 takes every new bond. Version 1 still holds our own earlier bonds, so it is read second. */
+const SCLERA = CONTRACTS.sclera;
+const SCLERA_V1 = CONTRACTS.scleraV1;
 
 /** Mirrors `struct Bond` field for field, in declaration order. */
 const BONDS_ABI = [
@@ -86,11 +90,17 @@ function client() {
  * the contract itself says so.
  */
 export async function bondFor(agentId: number): Promise<Bond | null> {
+  // An agent can hold a bond on either version. The newest contract answers first, because a bond
+  // posted there is the current commitment. Only when it has none is version 1 asked.
+  return (await bondOn(SCLERA, agentId)) ?? (await bondOn(SCLERA_V1, agentId));
+}
+
+async function bondOn(sclera: Deployed, agentId: number): Promise<Bond | null> {
   try {
     const c = client();
     const [r, head] = await Promise.all([
       c.readContract({
-        address: SCLERA.address as `0x${string}`,
+        address: sclera.address as `0x${string}`,
         abi: BONDS_ABI,
         functionName: "bonds",
         args: [BigInt(agentId)],
@@ -125,7 +135,7 @@ export async function bondFor(agentId: number): Promise<Bond | null> {
       maturesAtBlock: matures.toString(),
       matured: head === null ? null : head >= matures,
       postedBy: agent,
-      address: SCLERA.address,
+      address: sclera.address,
     };
   } catch {
     return null;
