@@ -32,6 +32,7 @@ import {
   verifyLeashPayment,
   type LeashRequest,
 } from "@/lib/leash.ts";
+import AGENT_IDS from "@/lib/agent-ids.json" with { type: "json" };
 
 export const dynamic = "force-dynamic";
 
@@ -358,7 +359,7 @@ async function serve(s: Spec, body: Record<string, unknown>, headers: Headers): 
 async function serveLeashed(s: Spec, body: Record<string, unknown>, req: LeashRequest, resource: string): Promise<Response> {
   let v;
   try {
-    v = await verifyLeashPayment({ req, resource, priceAtomic: s.priceAtomic });
+    v = await verifyLeashPayment({ req, resource, priceAtomic: s.priceAtomic, sellerAgentId: (AGENT_IDS as Record<string, number>)[s.slug] });
   } catch (e) {
     console.error(`[/api/service/${s.slug}] leash check failed:`, (e as Error).message);
     return problem(503, "We could not check your payment", "Monad could not be read just now. Nothing was charged.", { retryable: true, charged: false });

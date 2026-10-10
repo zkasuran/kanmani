@@ -190,7 +190,7 @@ Everything else in this repository is built around that one rule.
 | an outside agent hired through the escrow | **real, one job** | on 2026-10-05 Mida's agent re-checked the 10 Monad claims our verifier found on no chain, for 0.50 USDC through Aqueous: funded [`0x10950f2e…f571`](https://monadvision.com/tx/0x10950f2e35f241ec01de5d6dbdef65756b0025f924605bad2ca68ddf6182f571), delivered [`0x24a69e44…f49c`](https://monadvision.com/tx/0x24a69e44eb6eab7fac8f321f8e4121b515e42a8240b8caf98cb8456c0944f49c), settled [`0x89dc80d4…1d8b`](https://monadvision.com/tx/0x89dc80d4d64c9f4334c486ffdc4429c530282b24eed6f1eeeaec5fc4abb01d8b). `termsHash` and `deliverableHash` are Mida record ids `0xd9d35dc2…9007` and `0xf7d4bf13…0891` on Mida's registry on Monad testnet (unaudited). After settlement Mida revoked its auditor agent on testnet, so its access ended with the job: [`0xb3918ef7…323d`](https://testnet.monadvision.com/tx/0xb3918ef7882808f8de196954122baeb0fa3fa6b0e25b007fe514fafa4484323d). Mida's own write-up, with every transaction: [`kanmani-job-2026-10-05.md`](https://github.com/damli40/mida-context/blob/main/docs/evidence/kanmani-job-2026-10-05.md). We were the buyer, so it shows outside work settled on our rail, not outside demand. The findings are encrypted in Mida. That the file we read matches the record rests on Mida's word |
 | an outside agent sold us signed AI responses | **real, two jobs** | Assay's host (agent 10278) sold us 5 responses through Aqueous on 2026-10-09, each receipt verified on Monad against their ReceiptAnchor before we settled. Job 2, at a 1,500 token ceiling, is funded and its 5 receipts verify; it settles when they deliver the root. We were the buyer |
 | a broken rule paid out by contract | **real, one coordinated case** | on 2026-10-10 Dissent ran our escrow rule live with us. Our agent committed 0.75 MON that no job of ours pays out before delivery. Our buyer released one early, then Dissent's challenger was paid 0.85 MON by contract with nobody adjudicating. Labelled by both sides as a coordinated demonstration, not an exploit. Every transaction is on [/traction](https://kanmani.xyz/traction#dissent) and Dissent [wrote it up](https://dissent-henna.vercel.app/#collaboration) |
-| a leashed agent can pay us | **live, not yet used** | Sentinel accepts a Leash `pay()` receipt instead of an x402 signature, with nine checks. Verified against Leash's own client derivation on mainnet. Leash has offered a real paid call; it has not happened yet |
+| a leashed agent paid us | **real, one call from outside** | Sentinel accepts a Leash `pay()` receipt instead of an x402 signature, with nine checks. On 2026-10-10 Leash's own agent, a Claude Desktop agent on a $1 a day leash, paid Sentinel 0.01 USDC from inside the leash and got its verdict: [`0x1e911f11…b167`](https://monadvision.com/tx/0x1e911f1167978ac6dcb3504efe663038a2edcbe18775897ca5204c91bbbdb167). The payer is Leash's account, not ours. 0.01 USDC is not revenue |
 | our own paid calls | real settlement, **self-payment** | payer and payee are the same wallet, ours. It proves the rail works and says nothing about demand |
 | bond slashing | real contract, **exercised in test and simulation** | the slash path runs in the contract tests, against a mainnet fork and in the CRE run. It has never been fired against a live agent |
 | Chainlink CRE slashing oracle | **recorded CLI simulation** | the chain read and the decision are real. Nothing was written by a live DON, which that bounty permits |
@@ -201,12 +201,13 @@ Everything else in this repository is built around that one rule.
 
 ## Traction
 
-Twelve projects contacted, seven replied or acted, four with paid work settled on Monad mainnet.
+Twelve projects contacted, seven replied or acted, five with paid work settled on Monad mainnet, two of them outside buyers paying us.
 
-- **Taifoon**'s broker paid Sentinel and Assay over x402, the one outside buyer so far.
+- **Taifoon**'s broker paid Sentinel and Assay over x402.
+- **Leash**'s agent paid Sentinel 0.01 USDC from inside its spend limit, the second outside buyer.
 - **Mida**'s agent and **Assay**'s host did paid work through our escrow. We were the buyer.
 - **Dissent** merged our escrow rule, then ran it live with us on 2026-10-10: their challenger proved an early release and was paid 0.85 MON by contract. They published the case on their own site.
-- **Leash** asked us to accept their spend-limited payments. Sentinel now does, live on mainnet.
+- **Leash** fixed the test-dollar finding we sent them and took our PR for a seller policy that pays only bonded sellers.
 - **ADEXTO** approved our badge for their agent pages and is integrating it.
 - **Assay** reviewed Sclera before bonding and named two flaws. Sclera v2 fixes both.
 
@@ -291,8 +292,8 @@ recomputed. `exact` is still accepted at the full price for clients without Perm
 > [!NOTE]
 > Most of our paid calls are **self-payments**: the payer and payee are the same wallet. They prove
 > the rail works end to end and they prove nothing about demand. The two external hires on
-> 2026-10-01 are the only money so far that came from somebody who is not us. 0.02 USDC is not
-> revenue. It is stated here so a reader does not have to discover it.
+> 2026-10-01 and Leash's leashed agent on 2026-10-10 are the only money so far that came from somebody
+> who is not us. 0.03 USDC is not revenue. It is stated here so a reader does not have to discover it.
 
 ### Two agents that only make sense on Monad
 

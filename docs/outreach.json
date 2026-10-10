@@ -196,8 +196,8 @@
       "kind": "issue",
       "date": "2026-10-07",
       "offered": "A finding (21 of their agents point at unreadable documents) and a paid Sentinel check inside a leash.",
-      "outcome": "replied",
-      "result": "Leash confirmed the finding and fixed the two documents, which resolve since 7 October. The early passkey-owned registrations cannot be re-pointed, since the account exposes no setAgentURI. They took the seller-side fit on one condition: a LeashAccount pays by direct transfer only, no EIP-3009 and no ERC-1271, so it emits Paid(agent, seller, token, amount, ref, remainingToday) instead of signing an authorization. Sentinel now accepts that receipt on mainnet, with nine checks including pinning the Paid log to accountOf(agent) read off the Leash hub, so a contract that merely emits a matching event is refused. We accept USDC only: the network's test dollar has an unpermissioned mint capped at 100.000000 tUSD per call, which leashGate accepts by default. They offered to make a real paid call from a leashed agent on mainnet once we accepted pay(), which is now true.",
+      "outcome": "settled",
+      "result": "Leash confirmed the finding and fixed the two documents, which resolve since 7 October. The early passkey-owned registrations cannot be re-pointed, since the account exposes no setAgentURI. They took the seller-side fit on one condition: a LeashAccount pays by direct transfer only, no EIP-3009 and no ERC-1271, so it emits Paid(agent, seller, token, amount, ref, remainingToday) instead of signing an authorization. Sentinel now accepts that receipt on mainnet, with nine checks including pinning the Paid log to accountOf(agent) read off the Leash hub, so a contract that merely emits a matching event is refused. We accept USDC only: the network's test dollar has an unpermissioned mint capped at 100.000000 tUSD per call, which leashGate accepts by default. They offered to make a real paid call from a leashed agent on mainnet once we accepted pay(), which is now true. On 2026-10-10 Leash made the paid call: a Claude Desktop agent on a $1 a day leash that allows only our payee called Sentinel through leash-monad-mcp, paid 0.01 USDC from inside the leash and got its verdict. The Paid event shows $0.99 left on the leash. Leash added the transaction to its README and to `npx leash-monad verify`. They also fixed the tUSD finding in leash-monad 0.1.6, crediting the issue in SECURITY.md, and accepted our PR for an opt-in sellerPolicy that pays only sellers with a live Sclera bond.",
       "evidence": [
         {
           "label": "the Leash handshake, live",
@@ -206,9 +206,21 @@
         {
           "label": "their reply",
           "url": "https://github.com/iamrobertmoore/leash/issues/1#issuecomment-6083430026"
+        },
+        {
+          "label": "the paid call, 0.01 USDC",
+          "url": "https://monadvision.com/tx/0x1e911f1167978ac6dcb3504efe663038a2edcbe18775897ca5204c91bbbdb167"
+        },
+        {
+          "label": "Leash's announcement",
+          "url": "https://github.com/iamrobertmoore/leash/issues/1#issuecomment-6095550428"
+        },
+        {
+          "label": "sellerPolicy PR #2",
+          "url": "https://github.com/iamrobertmoore/leash/pull/2"
         }
       ],
-      "buyer": null
+      "buyer": "outside"
     },
     {
       "project": "ADEXTO",

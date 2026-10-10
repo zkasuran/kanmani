@@ -233,6 +233,19 @@ describe("the nine checks each fire", () => {
     assert.equal(r.body.error, "bad_agent");
   });
 
+  it("every 402 names the seller's ERC-8004 id, so a leash-monad sellerPolicy can check its bond", async () => {
+    const nonce = "x".repeat(MAX_NONCE_LEN + 1);
+    const proof = await AGENT.signMessage({ message: leashProofMessage(RESOURCE, nonce) });
+    const r = await verifyLeashPayment({
+      req: { agent: AGENT.address, nonce, proof, payment: null },
+      resource: RESOURCE, priceAtomic: PRICE, seller: SELLER, sellerAgentId: 10256, reads: fakeReads(),
+    });
+    assert.equal(r.ok, false);
+    assert.equal((r as { body: Record<string, unknown> }).body.sellerAgentId, "10256");
+    const without = refusal(await attempt({ nonce }));
+    assert.equal(without.body.sellerAgentId, undefined, "absent unless the caller passes one");
+  });
+
   it("1. refuses a nonce over the ceiling", async () => {
     const r = refusal(await attempt({ nonce: "x".repeat(MAX_NONCE_LEN + 1) }));
     assert.equal(r.status, 402);

@@ -3,8 +3,8 @@
   "counts": {
     "contacted": 12,
     "replied": 7,
-    "settled": 4,
-    "outsideBuyer": 1,
+    "settled": 5,
+    "outsideBuyer": 2,
     "weBought": 2
   },
   "rows": [
@@ -116,8 +116,8 @@
       "repo": "iamrobertmoore/leash",
       "number": 1,
       "date": "2026-10-07",
-      "status": "replied, our turn done, waiting",
-      "replies": 1,
+      "status": "settled on chain",
+      "replies": 2,
       "lastAt": "2026-10-10",
       "url": "https://github.com/iamrobertmoore/leash/issues/1",
       "pr": null
@@ -127,8 +127,8 @@
       "repo": "0xcuy/adexto",
       "number": 2,
       "date": "2026-10-07",
-      "status": "replied, our turn done, waiting",
-      "replies": 2,
+      "status": "replied, waiting on us",
+      "replies": 5,
       "lastAt": "2026-10-10",
       "url": "https://github.com/0xcuy/adexto/issues/2",
       "pr": null

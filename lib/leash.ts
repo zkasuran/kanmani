@@ -268,6 +268,9 @@ export async function verifyLeashPayment(args: {
   resource: string;
   priceAtomic: string;
   seller?: string;
+  /** The seller's ERC-8004 id, sent in every 402 as `sellerAgentId`. leash-monad's `sellerPolicy` reads it to check
+   *  the seller's Sclera bond before paying, after confirming on chain that this id belongs to `payTo`. */
+  sellerAgentId?: number;
   /** Test seam. Production passes nothing and gets the live Monad client. */
   reads?: LeashReads;
 }): Promise<LeashAccepted | LeashRefusal> {
@@ -275,6 +278,7 @@ export async function verifyLeashPayment(args: {
   const seller = args.seller ?? PAY_TO;
   const chain = args.reads ?? reads();
   const priceUsd = leashPriceUsd(priceAtomic);
+  const sellerId = args.sellerAgentId ? { sellerAgentId: String(args.sellerAgentId) } : {};
 
   if (!isAddress(req.agent)) {
     return { ok: false, status: 403, body: { error: "bad_agent", reason: "x-leash-agent is not an address." } };
@@ -289,6 +293,7 @@ export async function verifyLeashPayment(args: {
         error: "payment_required",
         price: priceUsd,
         payTo: seller,
+        ...sellerId,
         network: 143,
         howTo: `Send x-leash-agent, x-leash-nonce (at most ${MAX_NONCE_LEN} characters) and x-leash-proof, an agent signature over 'leash:<resource>:<nonce>'.`,
       },
@@ -303,6 +308,7 @@ export async function verifyLeashPayment(args: {
         error: "payment_required",
         price: priceUsd,
         payTo: seller,
+        ...sellerId,
         network: 143,
         howTo: "Send x-leash-proof, an agent signature over 'leash:<resource>:<nonce>'.",
       },
@@ -342,6 +348,7 @@ export async function verifyLeashPayment(args: {
         price: priceUsd,
         payTo: seller,
         ref,
+        ...sellerId,
         network: 143,
         leash: verdict,
         howTo: `Call pay(${seller}, ${priceAtomic}, ${ref}) on your Leash account, then retry with x-leash-payment set to the transaction hash.`,
