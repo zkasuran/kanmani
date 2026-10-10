@@ -106,7 +106,7 @@
       "date": "2026-10-06",
       "offered": "Pay their host per signed, anchored receipt through Aqueous.",
       "outcome": "settled",
-      "result": "Assay sold us 5 responses from their host (agent 10278) at 0.01 USDC each through Aqueous. All 5 receipts verify on Monad against their ReceiptAnchor. The delivery hash matched the Merkle root we computed in advance. Settled for 5 units, 0.05 USDC to their payee. We were the buyer. Our run also showed them that receipts on Google's endpoint count only visible output tokens, not thinking tokens, which they will document.",
+      "result": "Assay sold us 5 responses from their host (agent 10278) at 0.01 USDC each through Aqueous. All 5 receipts verify on Monad against their ReceiptAnchor and the delivery hash matched the Merkle root we published in advance. Settled for 5 units, 0.05 USDC to their payee. We were the buyer. Our run also showed them that receipts on Google's endpoint count only visible output tokens, not thinking tokens, which they will document. They have since asked us to grade their Kimi host from our own key, because every grade in their registry currently comes from their own verifier. They also offered a second job at a 1,500 token ceiling.",
       "evidence": [
         {
           "label": "funded",
@@ -170,9 +170,18 @@
       "kind": "issue",
       "date": "2026-10-07",
       "offered": "A finding (21 of their agents point at unreadable documents) and a paid Sentinel check inside a leash.",
-      "outcome": "sent",
-      "result": null,
-      "evidence": [],
+      "outcome": "replied",
+      "result": "Leash confirmed the finding and fixed the two documents, which resolve since 7 October. The early passkey-owned registrations cannot be re-pointed, since the account exposes no setAgentURI. They took the seller-side fit on one condition: a LeashAccount pays by direct transfer only, no EIP-3009 and no ERC-1271, so it emits Paid(agent, seller, token, amount, ref, remainingToday) instead of signing an authorization. Sentinel now accepts that receipt on mainnet, with nine checks including pinning the Paid log to accountOf(agent) read off the Leash hub, so a contract that merely emits a matching event is refused. We accept USDC only: the network's test dollar has an unpermissioned mint capped at 100.000000 tUSD per call, which leashGate accepts by default. They offered to make a real paid call from a leashed agent on mainnet once we accepted pay(), which is now true.",
+      "evidence": [
+        {
+          "label": "the Leash handshake, live",
+          "url": "https://kanmani.xyz/api/service/sentinel"
+        },
+        {
+          "label": "their reply",
+          "url": "https://github.com/iamrobertmoore/leash/issues/1#issuecomment-6083430026"
+        }
+      ],
       "buyer": null
     },
     {
@@ -183,7 +192,7 @@
       "date": "2026-10-07",
       "offered": "Our claim-truth reading on their agent pages or a paid Sentinel check before a buyer agent buys.",
       "outcome": "replied",
-      "result": "ADEXTO asked how the reading embeds, how uncovered chains count, our false-positive rate and Sentinel's coverage. They said they would start with our free reading on their agent pages if it is a simple API read. It is. We answered all four.",
+      "result": "ADEXTO asked how the reading embeds, how uncovered chains count, our false-positive rate and Sentinel's coverage. We answered all four. They chose the free reading and approved it for adexto.xyz/agents plus each agent detail page, beside their own on-chain Agent Score. Both their agents are indexed and both endpoints answer, so the badge is one script tag away on their side.",
       "evidence": [],
       "buyer": null
     },
@@ -195,7 +204,7 @@
       "date": "2026-10-09",
       "offered": "A recomputer for Aqueous records (an agent was never paid before delivering), sent as a PR, with the first rule committed and funded by us.",
       "outcome": "replied",
-      "result": "Dissent merged our recomputer for the Aqueous escrow (PR #7, merge 0f15d30) after two review rounds. Their CI passed. Their review found a real flaw (any token accepted), which we fixed by pinning Circle USDC. Recomputer 0x4d1A62869D16AB2Bac95408445129C4927f88457, Sourcify verified. They proposed a coordinated, reproducible demonstration on one flat USDC job. We posted a fork rehearsal of all nine steps (commit f20c5ab on our fork): base 0, early release, successful challenge, 0.6 MON withdrawn. Alnitak replayed it independently and found a launcher flaw that could hide a failed step. We fixed it in follow-up PR #8. No policy is registered and nothing is funded yet.",
+      "result": "Dissent merged our recomputer for the Aqueous escrow (PR #7, merge 0f15d30) after two review rounds. Their CI passed. Their review found a real flaw (any token accepted), which we fixed by pinning Circle USDC. Recomputer 0x4d1A62869D16AB2Bac95408445129C4927f88457, Sourcify verified. We posted a fork rehearsal of all nine steps; Alnitak replayed it independently and found a launcher flaw that could hide a failed step, which we fixed in follow-up PR #8. Both are merged. The reviewed policy is now registered and active on Monad mainnet, policy id 0x52655800591f954bb48cfd67e41475ec394898cd8e2e1cd8a7fa3350f7c479f8. We read that registration off chain: deposit 0.1 MON, recompute 1,500,000, validate 200,000, maxEvidenceLen 32, which matches the reviewed parameters exactly. Nothing is funded yet. The live run is two-party by design, so the bounty, the gas budget and a two hour window are being agreed in the thread before either side proceeds.",
       "evidence": [
         {
           "label": "recomputer on Sourcify",
@@ -212,6 +221,10 @@
         {
           "label": "follow-up PR #8",
           "url": "https://github.com/alnitak34/dissent/pull/8"
+        },
+        {
+          "label": "policy registration on mainnet",
+          "url": "https://monadscan.com/tx/0xa752ff8487beec4abdb79e59f89a6bfd839cc1112cc25dce4ae5e7b116045eaf"
         }
       ],
       "buyer": null,
