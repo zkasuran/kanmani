@@ -109,6 +109,38 @@ const SCRIPT = (origin: string) => `/* Kanmani trust badge. ${origin}/developers
     return s;
   }
 
+  /*
+   * Stake behind the claims. Only USDC on Monad gets an amount, because that is the one token whose
+   * decimals we know here. Any other token still says bonded, without a number we would have to guess.
+   */
+  var USDC_MONAD = "0x754704bc059f8c67012fed69bc8a327a5aafb603";
+  function bondChip(b) {
+    if (!b || !b.state || b.state === "none") return null;
+    var a = el("a", "t");
+    a.href = ORIGIN + "/bond?agent=" + agentId;
+    a.target = "_blank";
+    a.rel = "noreferrer noopener";
+    var floor = typeof b.minTruthRateBps === "number" ? (b.minTruthRateBps / 100) + "%" : "unknown";
+    var usdcAmt = b.token && String(b.token).toLowerCase() === USDC_MONAD && /^\\d+$/.test(String(b.amountAtomic))
+      ? (Number(b.amountAtomic) / 1e6).toLocaleString("en-US", { maximumFractionDigits: 6 }) + " USDC"
+      : null;
+    if (b.state === "active") {
+      a.textContent = usdcAmt ? "bonded " + usdcAmt : "bonded";
+      a.style.color = TRUE;
+      a.title = "Staked on Sclera against a " + floor + " floor on its claim-truth rate over at least " +
+        b.minSampleSize + " claims. Falls below it and a signed verdict takes the stake.";
+    } else if (b.state === "slashed") {
+      a.textContent = "bond slashed";
+      a.style.color = FALSE;
+      a.title = "Its claim-truth rate fell below the " + floor + " floor it staked on, and the bond was taken.";
+    } else if (b.state === "released") {
+      a.textContent = "bond returned";
+      a.style.color = C.unknown;
+      a.title = "Held its " + floor + " floor for the full window. The stake went back to the agent.";
+    } else return null;
+    return a;
+  }
+
   fetch(ORIGIN + "/api/agent/" + agentId, { headers: { accept: "application/json" } })
     .then(function (r) { return r.ok ? r.json() : null; })
     .then(function (body) {
@@ -145,6 +177,10 @@ const SCRIPT = (origin: string) => `/* Kanmani trust badge. ${origin}/developers
         q.title = "No payment claim by this agent has been checked yet. Unchecked is not clean.";
         wrap.appendChild(q);
       }
+
+      /* The Sclera bond, read live from the contract by /api/agent. No bond renders nothing. */
+      var bond = bondChip(d.bond);
+      if (bond) wrap.appendChild(bond);
     })
     .catch(function () { host.remove(); });
 })();
