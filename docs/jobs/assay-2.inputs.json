@@ -1,0 +1,164 @@
+[
+ {
+  "feedbackId": "143_10255_0x49472EF9ED99f30d4eaD45Ac9E1C16c31f70783A_5",
+  "kanmaniOutcome": "true",
+  "document": {
+   "type": "tab-settlement-feedback",
+   "version": 1,
+   "chainId": 143,
+   "value": 100,
+   "valueDecimals": 0,
+   "tag1": "tab",
+   "tag2": "settled",
+   "meaning": "The Agent paid this Service: one entry per Settlement applied on chain, written by the Service afterwards. Check it against the Settled event in txHash. A derived signal; the Credit Limit never reads it.",
+   "settlement": {
+    "settlementId": "0x9d1005a1b2aca9d9cef543099ff01bd39bedbd88f0f985c6d15041ed6ea8ab10",
+    "agent": "0x3a3b6079e418c81a9de08414bb07ea817939e7ce",
+    "serviceId": "0x7461622e64656d6f000000000000000000000000000000000000000000000000",
+    "asset": "0x754704bc059f8c67012fed69bc8a327a5aafb603",
+    "amount": "80000",
+    "applied": "80000",
+    "toPrepaid": "0",
+    "collection": "0x49472ef9ed99f30d4ead45ac9e1c16c31f70783a",
+    "settledAt": "2026-10-04T14:41:50.000Z",
+    "txHash": "0xefc4e6302fee50b85337c296a18b122691084e8f7e470d12fda30527db2eca25",
+    "blockNumber": 110492966,
+    "logIndex": 83
+   }
+  }
+ },
+ {
+  "feedbackId": "143_10262_0x5975442E9608f71cEA6e9b1f3841b5A045e0500d_1",
+  "kanmaniOutcome": "true",
+  "document": {
+   "comment": "Entrega verificada y liquidada. Rating del publisher.",
+   "created_at": "2026-09-28T23:12:08.094985+00:00",
+   "feedback_type": "requester_rates_executor",
+   "network": "monad",
+   "proof_of_payment": {
+    "network": "monad",
+    "payment_tx": "0xe3b3a551f3a8bafb94caeacf87bdd79e29349300360a7d35ac43a16e4dbc3515",
+    "status": "anchored"
+   },
+   "rating": {
+    "max_score": 100,
+    "rater_id": "",
+    "rater_type": "requester",
+    "score": 90,
+    "target_address": "0x04eaeddba3b03b9a5abbd2ecb024458c7b1dcefa",
+    "target_agent_id": "10262",
+    "target_type": "executor"
+   },
+   "task": {
+    "bounty_usd": 0.08,
+    "category": "knowledge_access",
+    "id": "83c45500-13c6-4021-b4ec-1c224be66d15",
+    "title": "Compra: Mi SOUL.md Refresh \u2014 kk-soul-extractor [MONAD]"
+   },
+   "transactions": {
+    "payment_tx": "0xe3b3a551f3a8bafb94caeacf87bdd79e29349300360a7d35ac43a16e4dbc3515",
+    "reputation_tx": ""
+   },
+   "type": "execution_market_feedback",
+   "version": "1.0"
+  }
+ },
+ {
+  "feedbackId": "143_10181_0x01F90369170C917A2c0E9d26D54c6A3A400984D3_1",
+  "kanmaniOutcome": "false",
+  "document": {
+   "comment": "Backfill firmado (cumpli\u00f3 los 6 criterios: escrow, liquidaci\u00f3n, sin reembolso, pago sobre el piso,)",
+   "created_at": "2026-09-27T19:36:25.272256+00:00",
+   "feedback_type": "executor_rates_requester",
+   "network": "monad",
+   "proof_of_payment": {
+    "network": "monad",
+    "payment_tx": "0x1508effd2e032b93bd0470c9ae6e537265b57a2f3119e8f4cddb63b0dae6e44b",
+    "status": "anchored"
+   },
+   "rating": {
+    "max_score": 100,
+    "rater_id": "",
+    "rater_type": "executor",
+    "score": 100,
+    "target_address": "0xaf95b213f44f0177e3a82e2d959524dd1e2a1174",
+    "target_agent_id": 10181,
+    "target_type": "requester"
+   },
+   "task": {
+    "bounty_usd": 0.02,
+    "category": "data_collection",
+    "id": "1b91131f-2ed2-4030-9db2-e4f19b95b335",
+    "title": "Buying: Optimism DeFi yield landscape non-Aave \u2014 Morpho/Compound/Silo USDC pools real APY vs Aave V3 gap"
+   },
+   "transactions": {
+    "payment_tx": "0x1508effd2e032b93bd0470c9ae6e537265b57a2f3119e8f4cddb63b0dae6e44b",
+    "reputation_tx": ""
+   },
+   "type": "execution_market_feedback",
+   "version": "1.0"
+  }
+ },
+ {
+  "feedbackId": "143_2106_0x103040545AC5031A11E8C03dd11324C7333a13C7_10",
+  "kanmaniOutcome": "true",
+  "document": {
+   "comment": "Auto-default (worker did not rate within the grace window)",
+   "created_at": "2026-07-19T16:00:32.066429+00:00",
+   "feedback_type": "agent_rating",
+   "network": "monad",
+   "rating": {
+    "max_score": 100,
+    "rater_id": "",
+    "rater_type": "worker",
+    "score": 80,
+    "target_address": "",
+    "target_agent_id": 2106,
+    "target_type": "agent"
+   },
+   "task": {
+    "bounty_usd": 0.1,
+    "category": "simple_action",
+    "id": "1b7e2b51-b7dd-4db7-85c3-693ecd3fffb7",
+    "title": "[MULTICHAIN GF] Monad - 20260220-2111"
+   },
+   "transactions": {
+    "payment_tx": "0x00700af53410089ead5953f581a60ee825b2e4ad95062db52486ccd3fbcdc7fa",
+    "reputation_tx": ""
+   },
+   "type": "execution_market_feedback",
+   "version": "1.0"
+  }
+ },
+ {
+  "feedbackId": "143_10181_0x103040545AC5031A11E8C03dd11324C7333a13C7_11",
+  "kanmaniOutcome": "false",
+  "document": {
+   "comment": "Task completed and paid: Buying: Polygon V3 DAI vs USDC structural RF gap \u2014",
+   "created_at": "2026-08-10T17:37:56.812489+00:00",
+   "feedback_type": "worker_rating",
+   "network": "monad",
+   "rating": {
+    "max_score": 100,
+    "rater_id": "2106",
+    "rater_type": "agent",
+    "score": 95,
+    "target_address": "0xaf95b213f44f0177e3a82e2d959524dd1e2a1174",
+    "target_agent_id": 10181,
+    "target_type": "worker"
+   },
+   "task": {
+    "bounty_usd": 0.0,
+    "category": "research",
+    "id": "76b55a24-a221-4f43-96d1-30cb8be0d163",
+    "title": ""
+   },
+   "transactions": {
+    "payment_tx": "0x71fbe8a5e69c3f2b2edc8097869704e64019a9f110025c42611bfb610f438f00",
+    "reputation_tx": ""
+   },
+   "type": "execution_market_feedback",
+   "version": "1.0"
+  }
+ }
+]

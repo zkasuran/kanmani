@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 /**
- * Assay job 1: send the five requests the terms name and keep what proving them needs.
+ * Assay jobs: send the five requests the terms name and keep what proving them needs.
+ *
+ *   ASSAY_JOB=2 node scripts/assay-job.mjs ...   picks job 2 (default 1). Each job has its own terms,
+ *                                                inputs, salts and results file, and its own max_tokens.
  *
  *   node scripts/assay-job.mjs send      five requests, one fresh 32-byte salt each
  *   node scripts/assay-job.mjs retry     resend only requests that got no receipt (upstream errors)
@@ -21,10 +24,13 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const HOST = "https://34-45-1-81.sslip.io/mainnet";
 const ANCHOR = "0x049A73755cA3508ef3Daa4752A3406f6e00CfB13";
 const AGENT_ID = 10278n;
-const MAX_TOKENS = 400;
-const SECRET = join(ROOT, ".hq/outreach/assay-job-1.salts.json");
-const PUBLIC = join(ROOT, "docs/jobs/assay-1.results.json");
-const inputs = JSON.parse(readFileSync(join(ROOT, "docs/jobs/assay-1.inputs.json"), "utf8"));
+const JOB = process.env.ASSAY_JOB ?? "1";
+/** Written into each job's terms before funding: 400 for job 1, 1,500 for job 2. */
+const MAX_TOKENS = { "1": 400, "2": 1500 }[JOB];
+if (!MAX_TOKENS) throw new Error(`no max_tokens agreed for Assay job ${JOB}`);
+const SECRET = join(ROOT, `.hq/outreach/assay-job-${JOB}.salts.json`);
+const PUBLIC = join(ROOT, `docs/jobs/assay-${JOB}.results.json`);
+const inputs = JSON.parse(readFileSync(join(ROOT, `docs/jobs/assay-${JOB}.inputs.json`), "utf8"));
 
 const prompt = (doc) =>
   "Here is one ERC-8004 feedback document. Does it claim that a payment happened? " +
@@ -114,7 +120,7 @@ async function check() {
   }
   const hashes = kept.map((k) => k.receiptHash).filter(Boolean);
   const expectedRoot = hashes.length === kept.length ? standardRoot(hashes) : null;
-  writeFileSync(PUBLIC, JSON.stringify({ terms: "docs/jobs/assay-1.terms.txt", expectedDeliverableHash: expectedRoot, units: out.filter((r) => r.passes).length, receipts: out }, null, 2) + "\n");
+  writeFileSync(PUBLIC, JSON.stringify({ terms: `docs/jobs/assay-${JOB}.terms.txt`, expectedDeliverableHash: expectedRoot, units: out.filter((r) => r.passes).length, receipts: out }, null, 2) + "\n");
   console.log(`expected deliverableHash ${expectedRoot}  passing units ${out.filter((r) => r.passes).length}/${kept.length}`);
 }
 
