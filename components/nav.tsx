@@ -89,6 +89,7 @@ const GROUPS: Group[] = [
     items: [
       { href: "/method", label: "method", hint: "how each rung is decided, reproducible by hand" },
       { href: "/validate", label: "validate", hint: "the on-chain validation registry" },
+      { href: "/traction", label: "with other teams", hint: "every project we contacted and what moved on chain" },
       { href: "/status", label: "coverage", hint: "what is measured, how fresh it is, what is missing" },
       { href: "/status#corrections", label: "corrections", hint: "every published claim we have had to withdraw" },
     ],

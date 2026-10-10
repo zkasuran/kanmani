@@ -125,7 +125,13 @@
           "url": "https://github.com/zkasuran/kanmani/blob/main/docs/jobs/assay-1.terms.txt"
         }
       ],
-      "buyer": "us"
+      "buyer": "us",
+      "bondAsk": {
+        "agents": [
+          10316
+        ],
+        "url": "https://github.com/trudransh/Assay/issues/4#issuecomment-6093713905"
+      }
     },
     {
       "project": "Prooflines Agent Trust",
@@ -137,7 +143,13 @@
       "outcome": "sent",
       "result": null,
       "evidence": [],
-      "buyer": null
+      "buyer": null,
+      "bondAsk": {
+        "agents": [
+          10253
+        ],
+        "url": "https://github.com/ColinkaMir/monad-agent-trust/issues/1#issuecomment-6093714439"
+      }
     },
     {
       "project": "MonadGuard",
@@ -149,7 +161,14 @@
       "outcome": "sent",
       "result": null,
       "evidence": [],
-      "buyer": null
+      "buyer": null,
+      "bondAsk": {
+        "agents": [
+          10274
+        ],
+        "url": "https://github.com/poteshniy/monadguard/issues/1#issuecomment-6093714733",
+        "sent": "0.01 USDC sent to the owner, tx 0xf9ff4115023e8b125a94ae1705176e878c2eb15a4dc54fbd708d644255cfe417"
+      }
     },
     {
       "project": "Letterlock",
@@ -161,7 +180,14 @@
       "outcome": "sent",
       "result": null,
       "evidence": [],
-      "buyer": null
+      "buyer": null,
+      "bondAsk": {
+        "agents": [
+          10260
+        ],
+        "url": "https://github.com/edycutjong/letterlock/issues/2#issuecomment-6093714929",
+        "sent": "0.01 USDC sent to the owner, tx 0x87d6672c99a0ee3f7d7f576306daac2ab96348337cf5e879092ed54eec8d9d14"
+      }
     },
     {
       "project": "Leash (spend limits for agents)",
@@ -194,7 +220,15 @@
       "outcome": "replied",
       "result": "ADEXTO asked how the reading embeds, how uncovered chains count, our false-positive rate and Sentinel's coverage. We answered all four. They chose the free reading and approved it for adexto.xyz/agents plus each agent detail page, beside their own on-chain Agent Score. Both their agents are indexed and both endpoints answer, so the badge is one script tag away on their side.",
       "evidence": [],
-      "buyer": null
+      "buyer": null,
+      "bondAsk": {
+        "agents": [
+          10251,
+          10298
+        ],
+        "url": "https://github.com/0xcuy/adexto/issues/2#issuecomment-6093713699",
+        "sent": "0.02 USDC sent to the owner, tx 0x3cf53bc675d5e2f991f3f4e45fcd1b99972392d7e9814618c3b571e7f499318b"
+      }
     },
     {
       "project": "Dissent (counterexample bounties for agent rules)",
@@ -247,7 +281,7 @@
           "url": "https://github.com/alnitak34/dissent/pull/7#issuecomment-6094099779"
         }
       ],
-      "buyer": null,
+      "buyer": "joint",
       "pr": {
         "repo": "alnitak34/dissent",
         "number": 7

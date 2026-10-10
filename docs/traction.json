@@ -1,0 +1,152 @@
+{
+  "generatedAt": "2026-10-10",
+  "counts": {
+    "contacted": 12,
+    "replied": 7,
+    "settled": 4,
+    "outsideBuyer": 1,
+    "weBought": 2
+  },
+  "rows": [
+    {
+      "project": "Taifoon (Jev grader and job broker)",
+      "repo": "taifoon-io/jev",
+      "number": 1,
+      "date": "2026-09-29",
+      "status": "settled on chain",
+      "replies": 4,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/taifoon-io/jev/issues/1",
+      "pr": null
+    },
+    {
+      "project": "Mida (encrypted agent context)",
+      "repo": null,
+      "number": null,
+      "date": "2026-10-05",
+      "status": "settled on chain",
+      "replies": null,
+      "lastAt": null,
+      "url": null,
+      "pr": null
+    },
+    {
+      "project": "Envio (HyperIndex)",
+      "repo": "enviodev/hyperindex",
+      "number": 1659,
+      "date": "2026-09-23",
+      "status": "replied; our PR is open, waiting on their review",
+      "replies": 2,
+      "lastAt": "2026-10-04",
+      "url": "https://github.com/enviodev/hyperindex/issues/1659",
+      "pr": {
+        "number": 1660,
+        "state": "open",
+        "url": "https://github.com/enviodev/hyperindex/pull/1660"
+      }
+    },
+    {
+      "project": "Ultravioleta DAO (describe SDK)",
+      "repo": "UltravioletaDAO/uvd-describe-sdk-typescript",
+      "number": 4,
+      "date": "2026-09-23",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/UltravioletaDAO/uvd-describe-sdk-typescript/issues/4",
+      "pr": null
+    },
+    {
+      "project": "The Agora",
+      "repo": "SakshiShah29/The-Agora",
+      "number": 3,
+      "date": "2026-09-23",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/SakshiShah29/The-Agora/issues/3",
+      "pr": null
+    },
+    {
+      "project": "Assay (signed receipts for AI responses)",
+      "repo": "trudransh/Assay",
+      "number": 4,
+      "date": "2026-10-06",
+      "status": "settled on chain",
+      "replies": 8,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/trudransh/Assay/issues/4",
+      "pr": null
+    },
+    {
+      "project": "Prooflines Agent Trust",
+      "repo": "ColinkaMir/monad-agent-trust",
+      "number": 1,
+      "date": "2026-10-06",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/ColinkaMir/monad-agent-trust/issues/1",
+      "pr": null
+    },
+    {
+      "project": "MonadGuard",
+      "repo": "poteshniy/monadguard",
+      "number": 1,
+      "date": "2026-10-06",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/poteshniy/monadguard/issues/1",
+      "pr": null
+    },
+    {
+      "project": "Letterlock",
+      "repo": "edycutjong/letterlock",
+      "number": 2,
+      "date": "2026-10-06",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/edycutjong/letterlock/issues/2",
+      "pr": null
+    },
+    {
+      "project": "Leash (spend limits for agents)",
+      "repo": "iamrobertmoore/leash",
+      "number": 1,
+      "date": "2026-10-07",
+      "status": "replied, our turn done, waiting",
+      "replies": 1,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/iamrobertmoore/leash/issues/1",
+      "pr": null
+    },
+    {
+      "project": "ADEXTO",
+      "repo": "0xcuy/adexto",
+      "number": 2,
+      "date": "2026-10-07",
+      "status": "replied, our turn done, waiting",
+      "replies": 2,
+      "lastAt": "2026-10-10",
+      "url": "https://github.com/0xcuy/adexto/issues/2",
+      "pr": null
+    },
+    {
+      "project": "Dissent (counterexample bounties for agent rules)",
+      "repo": "alnitak34/dissent",
+      "number": 6,
+      "date": "2026-10-09",
+      "status": "settled on chain",
+      "replies": 1,
+      "lastAt": "2026-10-09",
+      "url": "https://github.com/alnitak34/dissent/issues/6",
+      "pr": {
+        "number": 7,
+        "state": "merged",
+        "url": "https://github.com/alnitak34/dissent/pull/7"
+      }
+    }
+  ]
+}

@@ -23,6 +23,7 @@ export async function GET() {
     { loc: "/compare", priority: "0.6" },
     { loc: "/method", priority: "0.9" },
     { loc: "/status", priority: "0.7" },
+    { loc: "/traction", priority: "0.8" },
     { loc: "/blog", priority: "0.7" },
     { loc: "/blog/claim-truth", priority: "0.7" },
     { loc: "/blog/cleanverse", priority: "0.7" },

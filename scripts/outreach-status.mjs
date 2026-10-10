@@ -80,4 +80,21 @@ const out = [
   "",
 ];
 writeFileSync(join(ROOT, "docs/TRACTION.md"), out.join("\n"));
+// The same rows for the /traction page, so the site and the doc cannot disagree.
+writeFileSync(
+  join(ROOT, "docs/traction.json"),
+  JSON.stringify(
+    {
+      generatedAt: today,
+      counts: { contacted: rows.length, replied, settled: settled.length, outsideBuyer, weBought },
+      rows: rows.map(({ c, live, pr, status }) => ({
+        project: c.project, repo: c.repo, number: c.number ?? null, date: c.date, status,
+        replies: live?.replies ?? null, lastAt: live?.lastAt ?? null, url: live?.url ?? null,
+        pr: pr ? { number: c.pr.number, state: pr.state, url: pr.url } : null,
+      })),
+    },
+    null,
+    2,
+  ) + "\n",
+);
 console.log(`docs/TRACTION.md: ${rows.length} contacts, ${replied} replied or acted, ${settled.length} settled (${outsideBuyer} outside buyer, ${weBought} we bought)`);

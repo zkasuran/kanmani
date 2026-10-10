@@ -391,6 +391,13 @@ export default async function Home() {
               The agent in that run is ours, so this is evidence the machinery works in real USDC on
               mainnet. It is not evidence a stranger paid us. Both are stated wherever it appears.
             </p>
+            <p className="mt-3 text-[12px] leading-relaxed text-muted">
+              Work with other teams is on its own page, every transaction linked: an outside broker paying our agents, Dissent
+              paying a challenger from our bounty, and the bonds we have asked partners to post.{" "}
+              <Link href="/traction" className="text-[var(--color-brand)] hover:underline">
+                With other teams
+              </Link>
+            </p>
           </div>
           <div className="spot rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
             <p className="eyebrow">read it back yourself</p>
