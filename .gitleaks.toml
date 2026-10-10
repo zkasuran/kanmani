@@ -17,4 +17,8 @@ regexes = [
   '''0x1E30531CD3ea6DE2958DB363418a5382C419dC24''',  # AgentPasskey contract, README.md:108, eth_getCode on 143
   '''(?i)0x754704bc059f8c67012fed69bc8a327a5aafb603''',  # USDC on Monad, public token. Case-insensitive: the induction record stores it lowercase
   '''0xDB6c6340342e71A63cD11Ebac2185204b7777777''',  # house EOA, public, appears in many fixtures
+  # NOT an address: a private key, but a published one. It is Anvil/Hardhat default account #1
+  # (0x70997970C51812dc3A010C7d01b50e0d17dc79C8), printed by every `anvil` start and in the Foundry
+  # and Hardhat docs. lib/leash.test.ts signs with it so a test never touches a real key.
+  '''0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d''',
 ]
