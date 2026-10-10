@@ -12,6 +12,7 @@ ExecStart=/usr/bin/node --experimental-strip-types --no-warnings scripts/verdict
 Nice=10
 TimeoutStartSec=3600
 NoNewPrivileges=true
+DynamicUser=yes
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true

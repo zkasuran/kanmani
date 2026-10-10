@@ -25,7 +25,8 @@
  *
  * The three keys are independent in the sense that matters: recovering one gives no information
  * about the others, because HKDF-Expand is a PRF over the extracted pseudorandom key and the
- * `info` strings are distinct and length-prefixed by their own content. What it does NOT buy is
+ * `info` strings are distinct, versioned constants from a closed set (no attacker input, no shared
+ * prefix such as `optic.`/`optic-onchain.` that could collide). What it does NOT buy is
  * independence from the PRF output itself. Anyone holding the 32-byte PRF output holds all three
  * keys. That is true of per-salt derivation too, at a different point and it is the honest thing
  * to say rather than implying a compartmentalisation that does not exist.

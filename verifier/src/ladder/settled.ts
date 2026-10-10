@@ -99,6 +99,8 @@ export type SettlementClaim = {
   asset?: unknown;
   /** Atomic units, when the document wrote them that way. See the note on decimals above. */
   amount?: unknown;
+  /** The address the document says SENT the payment, when it states one. Used to flag self-funding. */
+  payer?: unknown;
 };
 
 /** One transfer read off the chain, normalised across the token rail and the native one. */
@@ -118,6 +120,14 @@ export type SettledOutcome =
       transfer: ObservedTransfer;
       /** False when the claim wrote an amount this rung refused to convert. Read the reason. */
       amountCompared: boolean;
+      /**
+       * True when the value reaching the recipient came from the recipient itself (a self-transfer)
+       * or from a payer the document itself names as the recipient. A self-funded transfer clears a
+       * transfer but is NOT evidence of an arm's-length payment, so a consumer that scores "real
+       * demand" must weigh it lower. It does NOT catch a two-wallet sybil wash, which is undetectable
+       * on chain without external identity.
+       */
+      selfFunded: boolean;
       checkedAtBlock: bigint;
       reason: string;
     }
@@ -362,6 +372,14 @@ export async function settledCheck(
     value: received,
   };
 
+  // Self-funded: the value reaching the recipient came from the recipient itself (every matched
+  // transfer was sent by it), or the document names the payer as the recipient. The transfer is real
+  // but it is not evidence that an independent party paid, so it is surfaced for a consumer to weigh.
+  const declaredPayer = String(claim.payer ?? "").trim().toLowerCase();
+  const selfFunded =
+    toRecipient.every((t) => sameAddress(t.from, recipient)) ||
+    (ADDRESS.test(declaredPayer) && sameAddress(declaredPayer, recipient));
+
   if (want !== null && received !== want) {
     return {
       settled: false,
@@ -391,10 +409,14 @@ export async function settledCheck(
     confirmations,
     transfer: observed,
     amountCompared,
+    selfFunded,
     checkedAtBlock: head,
     reason:
       `${received} atomic units of ${describeAsset(observed.asset)} reached ${recipient} on ` +
-      `${chain.displayName} at block ${receipt.blockNumber}, ${confirmations} blocks deep${gap}`,
+      `${chain.displayName} at block ${receipt.blockNumber}, ${confirmations} blocks deep${gap}` +
+      (selfFunded
+        ? ", self-funded: the recipient supplied the value, so this is not evidence of an arm's-length payment"
+        : ""),
   };
 }
 

@@ -4,7 +4,7 @@ pragma solidity 0.8.24;
 /// @notice Minimal EIP-3009 surface. USDC on Monad answers both of these, verified by
 ///         calling `authorizationState(0,0)` and reading `DOMAIN_SEPARATOR()` on chain 143.
 interface IERC3009 {
-    function transferWithAuthorization(
+    function receiveWithAuthorization(
         address from,
         address to,
         uint256 value,
@@ -271,7 +271,7 @@ contract Aqueous {
 
     /// @notice The EIP-3009 nonce a buyer must sign for a given set of terms.
     ///
-    /// Call this, sign a `TransferWithAuthorization` using the result as the nonce and the
+    /// Call this, sign a `ReceiveWithAuthorization` using the result as the nonce and the
     /// authorisation is then only usable for exactly these terms. A relayer that alters the agent,
     /// the deadline, the price or anything else produces a different nonce, so the token rejects the
     /// signature.
@@ -296,6 +296,10 @@ contract Aqueous {
     /// The buyer is the authorisation's `from`, never `msg.sender`, so the relayer gets no rights
     /// over the job it paid gas for. **And the nonce is derived from the terms rather than supplied**,
     /// so the relayer cannot change what the buyer agreed to. See `Authorization`.
+    ///
+    /// **The authorisation is a `ReceiveWithAuthorization`**, which the token lets only the payee
+    /// (`to`, this contract) redeem, so the escrow cannot be funded except from inside this call and
+    /// cannot be front-run away from the job it belongs to.
     function createJobWithAuthorization(Terms calldata t, Authorization calldata a)
         external
         nonReentrant
@@ -305,9 +309,14 @@ contract Aqueous {
 
         uint256 before = _balance(t.token);
 
-        // The token verifies the signature, the nonce and the window. A bad authorisation reverts
-        // in there, which is the correct place for it: we never reimplement signature checking.
-        IERC3009(t.token).transferWithAuthorization(
+        // receiveWithAuthorization, NOT transferWithAuthorization: the token also enforces
+        // msg.sender == to, so this contract is the only party that can redeem the buyer's
+        // authorisation, which keeps funding atomic with job creation. With the transfer variant the
+        // signed authorisation is a bearer instrument anyone could submit straight to the token,
+        // moving the escrow in with no job created and no recovery path. The token still verifies the
+        // signature, the nonce and the window; a bad authorisation reverts in there, which is the
+        // correct place for it: we never reimplement signature checking.
+        IERC3009(t.token).receiveWithAuthorization(
             a.from,
             address(this),
             t.amount,

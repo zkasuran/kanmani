@@ -17,6 +17,12 @@ COPY indexer/ ./
 # Fail at build time if the native binary is missing, rather than at 3am in a restart loop.
 RUN test -x node_modules/envio/bin.mjs || test -f node_modules/envio/bin.mjs
 
+# Drop root for the runtime. envio writes its cache under /app, so hand that to the unprivileged
+# `node` user the base image ships. The `npm ci` layer above stays root (correct); only the
+# long-lived process runs unprivileged.
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 9899
 
 # `start`, not `dev`: dev tries to manage its own Docker containers, which is exactly the

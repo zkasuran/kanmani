@@ -30,8 +30,8 @@ contract AqueousGaslessTest is Test {
     /// @dev secp256k1 group order, for building the malleable twin of a signature.
     uint256 internal constant N = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141;
 
-    bytes32 internal constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-        "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    bytes32 internal constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
     );
 
     function setUp() public {
@@ -294,7 +294,7 @@ contract AqueousGaslessTest is Test {
         uint256 validBefore = block.timestamp + 1 hours;
         bytes32 structHash = keccak256(
             abi.encode(
-                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+                RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
                 buyer,
                 address(target),
                 uint256(AMOUNT),

@@ -32,6 +32,10 @@ const config: NextConfig = {
     // would be enforced.
     const security = [
       { key: "x-content-type-options", value: "nosniff" },
+      // HSTS. `upgrade-insecure-requests` in the per-request CSP rewrites mixed content but does not
+      // stop an SSL-strip on the first navigation; this does, and `preload` covers the very first
+      // visit. The half-hourly canary already asserts this header, so once set it stays monitored.
+      { key: "strict-transport-security", value: "max-age=63072000; includeSubDomains; preload" },
       { key: "referrer-policy", value: "strict-origin-when-cross-origin" },
       // DENY, not SAMEORIGIN. Nothing here is ever framed: the badge in app/embed.js/route.ts
       // injects a shadow-DOM span into the host page rather than an iframe, and the repo contains

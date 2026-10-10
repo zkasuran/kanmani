@@ -46,7 +46,7 @@ contract MockUSDC is IERC20, IERC3009 {
         return true;
     }
 
-    function transferWithAuthorization(
+    function receiveWithAuthorization(
         address from,
         address to,
         uint256 value,
@@ -57,6 +57,7 @@ contract MockUSDC is IERC20, IERC3009 {
         bytes32,
         bytes32
     ) external {
+        require(msg.sender == to, "caller must be payee");
         require(block.timestamp > validAfter, "auth: too early");
         require(block.timestamp < validBefore, "auth: expired");
         require(!authorizationState[from][nonce], "auth: nonce used"); // replay guard

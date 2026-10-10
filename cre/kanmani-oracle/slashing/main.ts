@@ -20,7 +20,8 @@
  * a slashing on mainnet. `cre workflow simulate` is a dry run whose MockForwarder records a report
  * and never calls `onReport`, so the receiver's own checks are not exercised by a simulation. The
  * read, the decision and the report encoding are real. The settlement is not, until Sclera is
- * deployed and the workflow runs with `--broadcast`.
+ * deployed and the config sets `broadcast: true` (a value in the committed JSON config, NOT a CLI
+ * flag): nothing but editing that config turns the sign-and-submit path on.
  */
 import {
   bytesToHex,

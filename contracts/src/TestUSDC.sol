@@ -49,6 +49,13 @@ contract TestUSDC {
         "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
     );
 
+    /// @dev EIP-3009 receive. Identical fields, a different typehash, and the token enforces
+    ///      `msg.sender == to`, so only the payee can redeem it. This is the path Aqueous uses, so a
+    ///      buyer's signed authorisation can never be redeemed by anyone except the escrow it names.
+    bytes32 private constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    );
+
     bytes32 private constant EIP712_DOMAIN_TYPEHASH =
         keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
 
@@ -67,6 +74,7 @@ contract TestUSDC {
 
     error MainnetRefused();
     error MintTooLarge();
+    error CallerMustBePayee();
     error AuthorizationNotYetValid();
     error AuthorizationExpired();
     error AuthorizationAlreadyUsed();
@@ -171,6 +179,40 @@ contract TestUSDC {
 
         bytes32 structHash = keccak256(
             abi.encode(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)
+        );
+        bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR(), structHash));
+
+        address signer = ecrecover(digest, v, r, s);
+        if (signer == address(0) || signer != from) revert InvalidSignature();
+
+        authorizationState[from][nonce] = true;
+        emit AuthorizationUsed(from, nonce);
+
+        _transfer(from, to, value);
+    }
+
+    /// @notice EIP-3009 receive: like `transferWithAuthorization`, but the token requires
+    ///         `msg.sender == to`, so only the payee named in the signed authorisation can submit it.
+    ///         Aqueous uses this so a buyer's authorisation cannot be redeemed by a front-runner into
+    ///         the escrow with no job created.
+    function receiveWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint8 v,
+        bytes32 r,
+        bytes32 s
+    ) external {
+        if (msg.sender != to) revert CallerMustBePayee();
+        if (block.timestamp <= validAfter) revert AuthorizationNotYetValid();
+        if (block.timestamp >= validBefore) revert AuthorizationExpired();
+        if (authorizationState[from][nonce]) revert AuthorizationAlreadyUsed();
+
+        bytes32 structHash = keccak256(
+            abi.encode(RECEIVE_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)
         );
         bytes32 digest = keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR(), structHash));
 

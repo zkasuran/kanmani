@@ -26,6 +26,12 @@ contract TestUSDCTest is Test {
         "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
     );
 
+    /// @dev Aqueous funds through `receiveWithAuthorization`, so a signature for the relayed create
+    ///      path is built with THIS typehash. The direct-transfer tests below keep the transfer one.
+    bytes32 internal constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    );
+
     function setUp() public {
         // Deploy as testnet. The constructor refuses chain 143 on purpose.
         vm.chainId(10143);
@@ -242,7 +248,7 @@ contract TestUSDCTest is Test {
         uint256 validBefore = block.timestamp + 1 hours;
         bytes32 structHash = keccak256(
             abi.encode(
-                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+                RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
                 buyer,
                 address(esc),
                 uint256(t.amount),

@@ -78,11 +78,22 @@ test("the chain read is the one the document names, not a default", async () => 
   let asked = "";
   const r = await locate("arbitrum", HASH, (c) => {
     asked = c.key;
-    return reader({ getTransactionReceipt: async () => receipt({ blockNumber: 503_811_127n }) });
+    return reader({
+      getBlockNumber: async () => 503_811_200n,
+      getTransactionReceipt: async () => receipt({ blockNumber: 503_811_127n }),
+    });
   });
   assert.equal(asked, "arbitrum");
   assert.equal(r.found, true);
   if (r.found === true) assert.equal(r.chain.id, ARBITRUM.id);
+});
+
+test("a transaction too shallow to rely on is unknown, matching the settled rung's confirmation floor", async () => {
+  // head == blockNumber is one confirmation, below the two the check requires before relying on it.
+  const r = await locate("monad", HASH, () =>
+    reader({ getBlockNumber: async () => 900n, getTransactionReceipt: async () => receipt({ blockNumber: 900n }) }),
+  );
+  assert.equal(r.found, "unknown");
 });
 
 test("a reverted transaction is still found and says so", async () => {

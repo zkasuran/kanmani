@@ -38,8 +38,11 @@ try: print(json.load(sys.stdin).get("code","ok"))
 except Exception: print("ok")')
   echo "  track $t -> $code"
 
-  # Anonymous read. Envio adds chainId to every entity, so no column is filtered out.
-  p=$(meta "{\"type\":\"pg_create_select_permission\",\"args\":{\"source\":\"default\",\"table\":{\"schema\":\"public\",\"name\":\"$t\"},\"role\":\"public\",\"permission\":{\"columns\":\"*\",\"filter\":{},\"allow_aggregations\":true}}}")
+  # Anonymous read, bounded. A row LIMIT caps any single query, aggregations stay on for the counts
+  # the UI needs, and subscriptions are closed to the public role. Depth/node/complexity ceilings are
+  # Hasura EE/Cloud only, so on this CE image the row limit plus the Postgres statement_timeout plus
+  # the loopback binding behind the Next proxy are the controls. Envio adds chainId to every entity.
+  p=$(meta "{\"type\":\"pg_create_select_permission\",\"args\":{\"source\":\"default\",\"table\":{\"schema\":\"public\",\"name\":\"$t\"},\"role\":\"public\",\"permission\":{\"columns\":\"*\",\"filter\":{},\"limit\":1000,\"allow_aggregations\":true,\"query_root_fields\":[\"select\",\"select_by_pk\",\"select_aggregate\"],\"subscription_root_fields\":[]}}}")
   pcode=$(printf '%s' "$p" | python3 -c 'import json,sys;
 try: print(json.load(sys.stdin).get("code","ok"))
 except Exception: print("ok")')

@@ -12,6 +12,7 @@
  * So `LocateOutcome` has four cases and the code never takes a shortcut between them.
  */
 import { resolveChain, type Chain } from "../chains.ts";
+import { MIN_CONFIRMATIONS } from "./settled.ts";
 
 export type Receiptish = {
   /** Block the transaction landed in. */
@@ -102,6 +103,20 @@ export async function locate(
       chain,
       checkedAtBlock: head,
       reason: `no transaction with this hash on ${chain.displayName} at block ${head}`,
+    };
+  }
+
+  // Depth parity with the `settled` rung: a receipt too shallow to rely on gives the same answer
+  // whatever it says, because a reorg could remove it. Both paths that can emit `true` enforce the
+  // same floor, so a 0-1 block-deep tx is `unknown` here rather than a `true` a later read undoes.
+  const confirmations = head >= receipt.blockNumber ? head - receipt.blockNumber + 1n : 0n;
+  if (confirmations < MIN_CONFIRMATIONS) {
+    return {
+      found: "unknown",
+      chain,
+      reason:
+        `the cited transaction is ${confirmations} ${confirmations === 1n ? "block" : "blocks"} deep on ` +
+        `${chain.displayName}, below the ${MIN_CONFIRMATIONS} this check requires before relying on it`,
     };
   }
 

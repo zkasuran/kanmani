@@ -47,6 +47,14 @@ export type Verdict = {
   hashMatches?: boolean;
   computedHash?: string;
   foundOnChain?: { chain: string; chainId: number; blockNumber: string };
+  /** True only when the settlement rung matched a transfer to the recipient: the strong `true`. A
+   *  `true` from the tx-exists fallback (no recipient to match) sets this false. */
+  settlementChecked?: boolean;
+  /** From the settlement rung: the claimed amount was compared in atomic units. */
+  amountCompared?: boolean;
+  /** From the settlement rung: the value was supplied by the recipient itself, so it is not evidence
+   *  of an arm's-length payment. A consumer scoring real demand must weigh a self-funded true lower. */
+  selfFunded?: boolean;
   /** A verdict is a measurement at a time, so both of these are always recorded. */
   checkedAt: string;
   checkedAtBlock?: string;
@@ -149,6 +157,7 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
         recipient,
         asset: p.claim.token,
         amount: p.claim.amount,
+        payer: p.claim.payer,
       },
       input.settlementReaderFor,
     );
@@ -172,6 +181,9 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
       outcome: "true",
       checkedAtBlock: s.checkedAtBlock.toString(),
       foundOnChain: { chain: s.chain.displayName, chainId: s.chain.id, blockNumber: s.blockNumber.toString() },
+      settlementChecked: true,
+      amountCompared: s.amountCompared,
+      selfFunded: s.selfFunded,
       reason: s.reason,
     };
   }
@@ -213,6 +225,7 @@ export async function judge(input: VerdictInput): Promise<Verdict> {
       chainId: loc.chain.id,
       blockNumber: loc.blockNumber.toString(),
     },
+    settlementChecked: false,
     reason: `a successful transaction with this hash is on ${loc.chain.displayName} at block ${loc.blockNumber}`,
   };
 }

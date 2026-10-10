@@ -30,8 +30,8 @@ contract AqueousForkTest is Test {
 
     /// @dev EIP-3009. Fixed by the standard, not read from the token, so a token that disagreed
     ///      would fail the signature check rather than silently accept a different shape.
-    bytes32 internal constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
-        "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    bytes32 internal constant RECEIVE_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "ReceiveWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
     );
 
     Aqueous internal esc;
@@ -208,7 +208,7 @@ contract AqueousForkTest is Test {
         uint256 validBefore = block.timestamp + 1 hours;
         bytes32 structHash = keccak256(
             abi.encode(
-                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+                RECEIVE_WITH_AUTHORIZATION_TYPEHASH,
                 buyer,
                 address(esc),
                 uint256(t.amount),
