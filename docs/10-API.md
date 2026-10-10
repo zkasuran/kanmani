@@ -246,6 +246,11 @@ block passes and emits no event.
 first because it takes every new bond. Version 1 (`0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`) is read
 only when v2 has none, so an agent that re-bonded on v2 shows its current bond rather than its old one.
 
+`markets` lists token markets bound to the agent on ADEXTO, a separate project: `venue`, `symbol`,
+`name`, `token`, `curve` and a `url` to the market. The binding is read on chain from ADEXTO's Monad
+factories with `agentIdOf(token)` and joined with ADEXTO's MCP `list_markets`, cached ten minutes. An
+empty array means none was found or ADEXTO could not be read.
+
 `passkey` is the device passkey bound to this agent, verified by Monad's P256 precompile when it
 signs. `state` is `bound`, `none` or `unknown`, where `unknown` means the chain could not be read.
 

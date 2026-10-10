@@ -5,6 +5,7 @@ import { RecordStateBadge } from "@/components/record-state.tsx";
 import { agent, agentActions, claims, probedCluster, STATE_MEANING } from "@/lib/queries.ts";
 import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
 import { bondFor, usdc } from "@/lib/bonds.ts";
+import { adextoMarketsFor } from "@/lib/adexto.ts";
 import { AgentPasskeyPanel } from "@/components/agent-passkey.tsx";
 
 export const dynamic = "force-dynamic";
@@ -30,12 +31,13 @@ export default async function AgentPage({ params }: Props) {
   const a = await agent(decodeURIComponent(id));
   if (!a) notFound();
 
-  const [record, feedback, ownerLabel, trail, bond] = await Promise.all([
+  const [record, feedback, ownerLabel, trail, bond, markets] = await Promise.all([
     a.uriHash ? probedCluster(a.uriHash) : Promise.resolve(undefined),
     claims({ agentId: a.id, withUri: false, limit: 100 }),
     walletLabel(a.owner),
     agentActions(a.agentId),
     bondFor(Number(a.agentId)),
+    adextoMarketsFor(Number(a.agentId)),
   ]);
 
   const checked = feedback.rows.filter((c) => c.outcome !== null);
@@ -190,6 +192,30 @@ export default async function AgentPage({ params }: Props) {
               <Mono className="break-all">
                 cast call {bond.address} &apos;bonds(uint256)&apos; {a.agentId} --rpc-url https://rpc.monad.xyz
               </Mono>
+            </p>
+          </Panel>
+        ) : null}
+
+        {markets.length ? (
+          <Panel
+            id="markets"
+            title="this agent has a token market"
+            subtitle="On ADEXTO, a separate project. The binding is read from ADEXTO's factory on chain, agentIdOf(token), not from a list."
+          >
+            <ul className="space-y-1.5">
+              {markets.map((m) => (
+                <li key={m.token} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[13px]">
+                  <a href={m.url} target="_blank" rel="noreferrer noopener" className="font-mono text-[var(--color-brand)] hover:underline">
+                    ${m.symbol}
+                  </a>
+                  <span className="text-[var(--color-text)]">{m.name}</span>
+                  <Mono className="text-[11.5px] text-muted">{m.token.slice(0, 10)}…{m.token.slice(-4)}</Mono>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-3 text-[12px] leading-relaxed text-muted">
+              Before trading an agent&apos;s market, read the agent&apos;s record on this page: what its payment claims say and
+              whether they happened. That is all this panel is for. Kanmani does not rank, endorse or advise on any token.
             </p>
           </Panel>
         ) : null}

@@ -2,6 +2,7 @@ import { envelope, json, problem } from "@/lib/api.ts";
 import { agent, claims, probedCluster } from "@/lib/queries.ts";
 import { bondFor } from "@/lib/bonds.ts";
 import { passkeyBinding } from "@/lib/agent-passkey-read.ts";
+import { adextoMarketsFor } from "@/lib/adexto.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -19,13 +20,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     return problem(404, "No such agent", `Agent ${id} is not in this index. That is not the same as it not existing on chain.`);
   }
 
-  const [record, fb, bond, passkey] = await Promise.all([
+  const [record, fb, bond, passkey, markets] = await Promise.all([
     a.uriHash ? probedCluster(a.uriHash) : Promise.resolve(undefined),
     claims({ agentId: a.id, withUri: false, limit: 200 }),
     // Read live from Sclera rather than from an index. A window matures when a block number passes and
     // emits nothing, so an event-derived state would keep reporting "active" after maturity.
     bondFor(Number(a.agentId)),
     passkeyBinding(Number(a.agentId)),
+    adextoMarketsFor(Number(a.agentId)),
   ]);
 
   const checked = fb.rows.filter((c) => c.outcome !== null);
@@ -61,6 +63,9 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
         // The device passkey bound to this agent, verified by Monad's P256 precompile when it signs.
         // state is bound, none or unknown; unknown means the chain could not be read.
         passkey,
+        // Token markets bound to this agent on ADEXTO, a separate project. The binding is read from
+        // ADEXTO's factory on chain (agentIdOf), not taken from its list. [] when none or unreadable.
+        markets: markets.map((m) => ({ venue: "ADEXTO", symbol: m.symbol, name: m.name, token: m.token, curve: m.curve, url: m.url })),
         registration: record
           ? {
               uri: record.uri,
