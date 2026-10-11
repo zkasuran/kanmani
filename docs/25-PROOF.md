@@ -105,7 +105,7 @@ Kanmani proof run
   PASS  the index holds 10256's current on-chain document, so URIUpdated is being captured
         before this was wired, setAgentURI moved metadataUpdateCount and left the stored URI stale forever
   PASS  the optional Alchemy delivery path is deployed and answering (200)
-        healing does not depend on it. Zero deliveries have ever arrived and the layer is live anyway
+        healing does not depend on it. The index captures URIUpdated directly and the delivery path runs live on top of that
 10. AgentPasskey  ·  Monad's P256 precompile  ·  expected LIVE
   PASS  the P256 precompile at 0x0100 verifies the RIP-7212 reference signature on Monad mainnet
   PASS  AgentPasskey is deployed and agent 10256 has been bound and unbound through it (nonce 2)

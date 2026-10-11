@@ -196,7 +196,7 @@ fi
 WH=$(curl -fsS -o /dev/null -w '%{http_code}' "$SITE/api/webhooks/alchemy" 2>/dev/null || true)
 if [ "$WH" = "200" ] || [ "$WH" = "405" ] || [ "$WH" = "401" ]; then
   ok "the optional Alchemy delivery path is deployed and answering ($WH)"
-  note "healing does not depend on it. Zero deliveries have ever arrived and the layer is live anyway"
+  note "healing does not depend on it. The index captures URIUpdated directly and the delivery path runs live on top of that"
 else
   bad "the webhook route did not answer, got $WH"
 fi
