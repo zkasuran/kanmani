@@ -190,7 +190,7 @@ Ordering is block number descending then id, which is stable. `next` is `null` o
 carries every filter you sent, so paging never quietly changes the query underneath you.
 
 Only feedbacks carrying a document are returned. A feedback with an empty `feedbackUri` has nothing
-to verify: <!-- n:withPointer -->1,299<!-- /n --> of Monad's <!-- n:feedbacks -->9,296<!-- /n --> feedbacks carry a pointer.
+to verify: <!-- n:withPointer -->1,300<!-- /n --> of Monad's <!-- n:feedbacks -->9,300<!-- /n --> feedbacks carry a pointer.
 
 Errors: `400` for an unknown `outcome`, an unknown `rung` or a non-numeric `agent`. Nothing else is
 refused.
@@ -213,10 +213,10 @@ curl -sS 'https://kanmani.xyz/api/agent/10252'
   "declaresX402": true,
   "endpoints": ["https://kanmani.xyz/mcp", "https://kanmani.xyz/api/verify", "https://kanmani.xyz/openapi.json", "https://kanmani.xyz"],
   "bond": {
-    "state": "released", "amountAtomic": "0", "token": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
+    "state": "active", "amountAtomic": "10000", "token": "0x754704Bc059F8C67012fEd69BC8A327a5aafb603",
     "minTruthRateBps": 8000, "minSampleSize": 5,
-    "postedAtBlock": "107460188", "maturesAtBlock": "107676188", "matured": true,
-    "contract": "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf"
+    "postedAtBlock": "112109667", "maturesAtBlock": "112123201", "matured": true,
+    "contract": "0xB4d641f016f53C683c409F271eE85e136041FE3f"
   },
   "passkey": { "state": "none", "contract": "0x1E30531CD3ea6DE2958DB363418a5382C419dC24" },
   "registration": {
@@ -260,7 +260,7 @@ labelled that way so a consumer never reads it as ours. We did not test that the
 
 `registration.state` is one of `onchain`, `answered`, `gone`, `paywalled`, `refused`, `nohost`,
 `malformed`, `unknown`. It is `null` when nothing has probed that document yet. Never-looked is a
-state. It is not `gone`. Monad has <!-- n:documents -->2,067<!-- /n --> distinct registration documents behind <!-- n:agents -->10,328<!-- /n --> agents. <!-- n:goneAgents -->8,113<!-- /n -->
+state. It is not `gone`. Monad has <!-- n:documents -->2,112<!-- /n --> distinct registration documents behind <!-- n:agents -->10,375<!-- /n --> agents. <!-- n:goneAgents -->8,113<!-- /n -->
 of those agents point at a document that answers with a deletion, one document behind <!-- n:oneDocAgents -->8,093<!-- /n --> of
 them. The live count in each `record_state` bucket moves with every probe run, so it is published on
 [`/status`](https://kanmani.xyz/status) rather than frozen here. The buckets themselves are defined in
@@ -292,13 +292,13 @@ curl -sS 'https://kanmani.xyz/feed.json?limit=5'
 ```json
 {
   "summary": {
-    "paymentClaims": 185, "resolve": 62, "doNotResolve": 123, "assertNoPayment": 1095,
-    "couldNotCheck": { "total": 15, "documentWouldNotAnswer": 2,
-                       "bytesNoLongerMatchTheirCommitment": 10, "noMappingReadTheShape": 3 },
+    "paymentClaims": 187, "resolve": 64, "doNotResolve": 123, "assertNoPayment": 1095,
+    "couldNotCheck": { "total": 18, "documentWouldNotAnswer": 5,
+                       "bytesNoLongerMatchTheirCommitment": 13, "noMappingReadTheShape": 0 },
     "claimsWithAUriAndNoVerdict": 0
   },
   "note": "unknown is never false. A claim we could not check is not a claim we judged. If you aggregate these rows, carry the unknowns through rather than dropping them.",
-  "returned": 5, "totalCheckable": 1292, "items": []
+  "returned": 5, "totalCheckable": 1300, "items": []
 }
 ```
 
@@ -402,7 +402,7 @@ posts to it, so it answers with something readable rather than a 405. `OPTIONS /
 | `GET /llms.txt` | `text/plain` | the whole site as plain text with live numbers, for a model that will read one file and nothing else |
 | `GET /agents.md` | `text/markdown` | the safe-access contract, addressed to software |
 | `GET /sitemap.xml` | `application/xml` | capped at 200 operator clusters and 500 claims, with the cap stated in an XML comment inside the file so nobody mistakes it for completeness |
-| `GET /.well-known/agent-registration.json` | `application/json` | our own ERC-8004 record, protocol version 0.3.0, two skills, the registries we index, a `refuses` list |
+| `GET /.well-known/agent-registration.json` | `application/json` | our own ERC-8004 registration-v1 record: four `services` (MCP at protocol version `2025-06-18`, x402, OpenAPI `3.1.0`, web), the agent ids we registered on the Identity Registry, `supportedTrust` reputation and a `refuses` list |
 
 The last two JSON files carry no envelope. They describe rather than measure, so there is nothing
 to timestamp. Our own registration record asserts no payment claim, because we have not been paid
@@ -414,15 +414,16 @@ catalogued in [35-MACHINE-SURFACES](35-MACHINE-SURFACES.md).
 
 ### Every handler, in one table
 
-Twenty-six route handlers ship under `app/api`, plus twelve machine endpoints outside it. Four of
+Twenty-eight route handlers ship under `app/api`, plus twelve machine endpoints outside it. Four of
 them have a full section in this document: `/api/claims`, `/api/agent/{id}`, `/api/verify` and
-`/api/vault`. This table is all twenty-six, so nothing is reachable on the live site without a line
-here saying what it is. Reproduce the list with `find app -name route.ts`.
+`/api/vault`. This table is all twenty-eight, so nothing is reachable on the live site without a line
+here saying what it is. Reproduce the list with `find app/api -name route.ts`.
 
 | endpoint | methods | what it is | in full |
 |---|---|---|---|
 | `/api/claims` | GET | the claim feed, filtered | above |
 | `/api/agent/{id}` | GET | one agent, including what is not known about it | above |
+| `/api/agent/{id}/document` | GET | the registration document an agent declares, fetched server-side through the SSRF guard and returned as text/plain | |
 | `/api/verify` | GET, POST, OPTIONS | check a document. Paid, 0.01 USDC over x402 | above |
 | `/api/vault` | GET, PUT | AES-256-GCM ciphertext the server cannot read | above |
 | `/api/registration/check` | GET, POST, OPTIONS | **free.** Validate an ERC-8004 registration draft and get the exact `register()` calldata | [34](34-EVIDENCE-CHECK.md) |
@@ -447,6 +448,7 @@ here saying what it is. Reproduce the list with `find app -name route.ts`.
 | `/api/fund/recover` | POST | one-click recovery of funds left at the intermediary. `refund` or `withdraw` | [22](22-AURORA.md) |
 | `/api/fund/intermediary` | GET | a wallet's intermediary account with its live Monad USDC balance. Keyless | [22](22-AURORA.md) |
 | `/api/webhooks/alchemy` | GET, POST, OPTIONS | the signed Alchemy delivery that triggers a re-verify. GET describes it | [40](40-ALCHEMY.md) |
+| `/api/webhooks/tenderly` | GET, POST | the signed Tenderly delivery on the Identity Registry that triggers a re-verify. GET describes it | |
 
 Three rules hold across all of them, including the ones with their own doc.
 
@@ -910,7 +912,7 @@ What happens to a URI you hand us, because it shapes what comes back:
 | redirects | followed by hand, re-screened every hop, 3 maximum |
 | size cap | 64 KB, enforced on arriving bytes. `Content-Length` is never consulted |
 | timeout | 8 seconds per request |
-| `data:` URIs | decoded in process with no network call. Most of Monad's 1,292 checkable documents are these |
+| `data:` URIs | decoded in process with no network call. Most of Monad's 1,300 checkable documents are these |
 | `ipfs://` | through `https://ipfs.io/ipfs/`, so still a guarded fetch. The CID is validated segment by segment |
 
 A refusal comes back as `outcome: "unknown"` with the reason. Never a hang. Never `false`.

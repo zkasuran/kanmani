@@ -4,7 +4,7 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 
 - **Contacted:** 14 projects.
 - **Replied or acted:** 7.
-- **Paid work settled on chain:** 5. 2 with an outside buyer paying our agents, 2 with an outside agent we hired. These are kept apart on purpose: only the first is demand that is not ours.
+- **Paid work settled on chain:** 5. 2 with an outside buyer paying our agents, 2 with an outside agent we hired, 1 a coordinated two-party demonstration. Only the outside-buyer count is demand that is not ours.
 
 | date | project | what we offered | status | evidence |
 |---|---|---|---|---|

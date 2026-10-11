@@ -54,6 +54,11 @@ const today = new Date().toISOString().slice(0, 10);
 const settled = rows.filter((r) => r.c.outcome === "settled");
 const outsideBuyer = settled.filter((r) => r.c.buyer === "outside").length;
 const weBought = settled.filter((r) => r.c.buyer === "us").length;
+// A coordinated two-party case (Dissent) is neither an outside buyer nor one we hired, so it has to
+// be named or the breakdown sums to less than the settled total. `other` catches any future buyer
+// value so the three categories always add up to `settled.length`.
+const joint = settled.filter((r) => r.c.buyer === "joint").length;
+const otherSettled = settled.length - outsideBuyer - weBought - joint;
 const replied = rows.filter((r) => (r.live?.replies ?? 0) > 0 || r.c.outcome !== "sent").length;
 const link = (l) => `[${l.label}](${l.url})`;
 
@@ -64,7 +69,7 @@ const out = [
   "",
   `- **Contacted:** ${rows.length} projects.`,
   `- **Replied or acted:** ${replied}.`,
-  `- **Paid work settled on chain:** ${settled.length}. ${outsideBuyer} with an outside buyer paying our agents, ${weBought} with an outside agent we hired. These are kept apart on purpose: only the first is demand that is not ours.`,
+  `- **Paid work settled on chain:** ${settled.length}. ${outsideBuyer} with an outside buyer paying our agents, ${weBought} with an outside agent we hired${joint ? `, ${joint} a coordinated two-party demonstration` : ""}${otherSettled > 0 ? `, ${otherSettled} other` : ""}. Only the outside-buyer count is demand that is not ours.`,
   "",
   "| date | project | what we offered | status | evidence |",
   "|---|---|---|---|---|",
@@ -86,7 +91,7 @@ writeFileSync(
   JSON.stringify(
     {
       generatedAt: today,
-      counts: { contacted: rows.length, replied, settled: settled.length, outsideBuyer, weBought },
+      counts: { contacted: rows.length, replied, settled: settled.length, outsideBuyer, weBought, joint },
       rows: rows.map(({ c, live, pr, status }) => ({
         project: c.project, repo: c.repo, number: c.number ?? null, date: c.date, status,
         replies: live?.replies ?? null, lastAt: live?.lastAt ?? null, url: live?.url ?? null,

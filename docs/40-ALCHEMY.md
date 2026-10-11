@@ -3,7 +3,10 @@
 The verdict store has always been append-only. A repaired document was always meant to read as
 `false -> true` with both timestamps kept, `/status` already lists every verdict that moved and
 `/claim/<id>` already renders the history. What did not exist was anything to **start** the re-check,
-so it had to be started by hand. An Alchemy webhook on the ERC-8004 Identity Registry is that trigger.
+so it had to be started by hand. An Alchemy webhook on the ERC-8004 Identity Registry is that
+trigger. A Tenderly alert on the same registry is a second one into the same path. Alchemy is the
+provider this document was written against. Tenderly is the one driving the live deliveries today,
+after Alchemy paused its stream (see below).
 
 The code is `lib/rehydrate.ts`, where everything happens and everything is tested.
 `app/api/webhooks/alchemy/route.ts` is the Next.js surface and nothing else, the same split
@@ -141,11 +144,15 @@ the budgets and the last twenty deliveries from the ledger. The key itself is ne
 a ledger read that fails is reported as the fixed line "the delivery ledger could not be read" with a
 `503`, because the raw database error would hand a stranger our internals.
 
-**On the public deployment today `signingKeyConfigured` is `false`.** The endpoint therefore refuses
-every POST with the `503` above and the delivery ledger reads clean with zero deliveries. That is the
-fail-closed posture working: no key means no deliveries accepted rather than deliveries accepted
-without a signature check. The real-against-simulated accounting for this path is in
-[14-GAPS](14-GAPS.md).
+**On the public deployment today `signingKeyConfigured` is `true` and the ledger carries live
+deliveries.** The `503`-on-no-key row in the table above is the tested fail-closed behaviour, not the
+current state. The live trigger is a Tenderly alert on the Identity Registry rather than Alchemy.
+Alchemy delivered 4,907 signed webhooks on 2026-10-03, every one correctly ignored because the
+registered query was unfiltered so none carried a registry event, which used up the month's compute
+units and Alchemy paused the stream. Tenderly now posts to its own signed route,
+`/api/webhooks/tenderly`, which checks its signature and then runs this same shared re-verification
+path, so the last twenty deliveries read `TENDERLY_ALERT`. The real-against-simulated accounting for
+this path is in [14-GAPS](14-GAPS.md).
 
 ## Related
 

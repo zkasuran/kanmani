@@ -158,14 +158,14 @@ psql "$FOVEA_DATABASE_URL" -c \
 | `false` | `no transaction with this hash on Monad at block <n>` | 123 |
 | `noClaim` | `plain text the author wrote as text/plain, no payment asserted, so there is no payment claim to check` | 66 |
 | `true` | `a successful transaction with this hash is on Monad at block <n>` | 34 |
-| `true` | `<n> atomic units of <addr> reached <addr> on Monad at block <n>, <n> blocks deep` | 25 |
-| `unknown` | `the bytes served now do not match the hash committed on chain, so this document cannot be checked against what its author committed to` | 10 |
+| `true` | `<n> atomic units of <addr> reached <addr> on Monad at block <n>, <n> blocks deep` | 30 |
+| `unknown` | `the bytes served now do not match the hash committed on chain, so this document cannot be checked against what its author committed to` | 13 |
 | `unknown` | `no published mapping reads this document shape: no mapping matches this shape` | 0, was 3 until a mapping shipped on 2026-10-04 |
 | `noClaim` | `conversation rating, no payment asserted, so there is no payment claim to check` | 3 |
-| `unknown` | `evidence document could not be read: HTTP <n>` | 2 |
+| `unknown` | `evidence document could not be read: HTTP <n>` | 5 |
 
-Nine distinct strings over <!-- n:withPointer -->1,299<!-- /n --> claims. Two of them are `true`: one from `locate` finding the cited
-transaction, one from `settledCheck` watching the transfer reach the named recipient. Every one of them describes what was observed. None of them
+Nine distinct strings over <!-- n:withPointer -->1,300<!-- /n --> claims. Two of them are `true`: one from `locate` finding the cited
+transaction, one from `settledCheck` watching the transfer reach the named recipient. Those two counts sum to 64, which is the total numbers.json carries. It does not break 64 down by string, so the 34 and 30 are a snapshot of that split rather than a live count. Every one of them describes what was observed. None of them
 describes what anyone intended. That is enforced by a test, not by a review habit:
 
 ```ts
@@ -295,7 +295,7 @@ The atlas is six published mappings: five hand-written and one proposed by Qwen 
 
 | mapping | induced | reads | rows in corpus |
 |---|---|---|---|
-| `execution-market.v1` | 2026-09-19 | `proof_of_payment.payment_tx` | 110 `false`, 49 `true` |
+| `execution-market.v1` | 2026-09-19 | `proof_of_payment.payment_tx` | 110 `false`, 54 `true` |
 | `execution-market-transactions.v1` | 2026-09-19 | older shape, `transactions.payment_tx` | 13 `false`, 10 `true` |
 | `elo-record.v1` | 2026-09-19 | a game rating, no payment | 1,026 `noClaim` |
 | `conversation-score.v1` | 2026-09-19 | a conversation rating, no payment | 3 `noClaim` |
@@ -307,6 +307,8 @@ psql "$FOVEA_DATABASE_URL" -c \
   "select mapping, outcome, count(*) from fovea.verdict_latest
      group by mapping, outcome order by 3 desc;"
 ```
+
+The `true` counts here sum to 64 and the `false` counts to 123, the totals numbers.json carries. It does not split either total by mapping, so the per-mapping figures (54 and 10 for `true`) are a 2026-10-04 snapshot of that split.
 
 **These mappings are written against real documents, reviewed by a person, then published.** A reader re-running the pipeline
 executes them deterministically, with no model anywhere in the loop and gets the same numbers. A
@@ -340,7 +342,7 @@ over the live corpus left 23 documents unplaced and the keys said where to look.
 
 ### `noClaim` is a result, not a coverage gap
 
-<!-- n:noClaim -->1,095<!-- /n --> of <!-- n:withPointer -->1,299<!-- /n --> documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
+<!-- n:noClaim -->1,095<!-- /n --> of <!-- n:withPointer -->1,300<!-- /n --> documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
 at all.** A document that never asserted a payment cannot be wrong about one, so counting it as
 unparsed would inflate our own published gap number with documents that are perfectly well formed.
 
@@ -581,8 +583,8 @@ cd verifier && npm test
 ```
 
 ```
-# tests 225
-# pass 198
+# tests 243
+# pass 216
 # fail 0
 # skipped 27
 ```

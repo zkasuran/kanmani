@@ -189,9 +189,9 @@ real token was passing in an environment where the real token does not exist.
 Nothing in the output said so. The tell was the gas: roughly 2,400 per test, which is too small to have
 done anything at all.
 
-Fixed with `vm.skip`, which reports `[SKIP]` and is visible in the summary. The Aqueous suites now
-read `43 tests passed, 0 failed, 6 skipped` without a fork URL and the 6 are named. A bare `forge
-test` over the whole contracts project reads 124 passed, 0 failed and 9 skipped.
+Fixed with `vm.skip`, which reports `[SKIP]` and is visible in the summary. The fork tests that need a
+live RPC now show as `[SKIP]` without a fork URL rather than a green `[PASS]`, each one named. A bare
+`forge test` over the whole contracts project reads 172 passed, 0 failed and 10 skipped.
 
 **The transferable part:** a failure that looks like success is the worst kind and a skip must announce
 itself. Also, read the cost of a passing test occasionally. Work that did not happen is cheap.
@@ -358,7 +358,7 @@ so this page stays the whole list without duplicating them.
 
 ## Still open
 
-Nothing known and unfixed in the escrow.
+In the escrow, the source is fixed. One item is still live on chain pending a redeploy: the `receiveWithAuthorization` fix for gasless create is in source and tested, but the deployed Aqueous is immutable and still carries the transfer-variant behaviour until a redeploy updates the cited address. No app route calls `createJobWithAuthorization`, so nothing on the live site exposes it. The security audit tracks this as an open high.
 
 Nothing known and unfixed in the indexer either. The population sweep's failure rate went from every
 sweep, to about 70%, to **13 per full resync**. The remaining few are logged with whatever the RPC

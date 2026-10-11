@@ -165,7 +165,7 @@ escrow, so `contracts/src/TestUSDC.sol` deploys alongside it on testnet only. Ca
 | `symbol()` | `cast call $TU "symbol()(string)" --rpc-url $T` | `"tUSDC"` |
 
 It has an open mint, so anyone can get some. Its constructor contains
-`if (block.chainid == 143) revert MainnetRefused();` at `contracts/src/TestUSDC.sol` line 82, so this
+`if (block.chainid == 143) revert MainnetRefused();` at `contracts/src/TestUSDC.sol` line 90, so this
 bytecode cannot reach mainnet through a wrong `--rpc-url` or a stale env var. **tUSDC is not money
 and is not meant to look like it.**
 
@@ -191,26 +191,24 @@ special case. Deployer, owner, relayer and validator throughout is the EOA
 `0xDB6c6340342e71A63cD11Ebac2185204b7777777`.
 
 One metered job ran end to end in real USDC: 1.40 escrowed at 0.02 per call, 30 of 70 calls used.
-The balances it left are still readable.
+Read it off the settle receipt, which cannot change:
 
 ```bash
-B=0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92    # buyer
-A=0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52    # agent
-
-cast balance $B --rpc-url $R                                # 0        MON, at both ends
-cast call $U "balanceOf(address)(uint256)" $B  --rpc-url $R # 800000   0.80 USDC returned
-cast call $U "balanceOf(address)(uint256)" $A  --rpc-url $R # 600000   0.60 USDC earned
-cast call $U "balanceOf(address)(uint256)" $AQ --rpc-url $R # 115558   later jobs; this one retained nothing
+A=0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52    # agent, used once for this job
 
 cast receipt 0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5 --rpc-url $R
 # status 1 (success) / blockNumber 106463284
-# from 0xDB6c6340342e71A63cD11Ebac2185204b7777777 / to 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32
+# from 0xDB6c6340342e71A63cD11Ebac2185204b7777777 (relayer) / to 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 (Aqueous)
+# its two ERC-20 Transfer logs: escrow -> agent 0.60 USDC, escrow -> buyer 0.80 USDC
+
+cast call $U "balanceOf(address)(uint256)" $A --rpc-url $R   # 600000   0.60 USDC earned, wallet used once
 ```
 
-The settling transaction pays the agent and returns the remainder in one transaction. The buyer and
-agent addresses were used once for this job, so they still read as it left them. The escrow is one
-shared contract though, so its own balance moves on with every later job. The agent's 0.60 plus the
-buyer's 0.80 refund account for this job's whole 1.40, so this job retained nothing.
+The settling transaction pays the agent and returns the remainder in the same call. The relayer is
+the sender, never the buyer, so the buyer spent no gas. The agent wallet was used once for this job
+and still reads what it earned. The buyer and escrow wallets were reused for later jobs, so their
+live balances have moved on. The agent's 0.60 plus the buyer's 0.80 refund account for this job's
+whole 1.40, so this job retained nothing, which the receipt's two transfer logs show directly.
 
 **What this does not prove.** The agent in that run is ours. It is evidence the settlement machinery
 works on mainnet in real USDC. It is not evidence that an agent did paid work for a stranger.
@@ -253,7 +251,7 @@ does not prove a stranger paid us.
 ## 9. The Validation Registry authorization rule
 
 This one took a reverted transaction to learn. It explains a number we had measured and could not
-account for: the Reputation Registry held <!-- n:feedbacks -->9,296<!-- /n --> feedbacks while the Validation Registry held zero
+account for: the Reputation Registry held <!-- n:feedbacks -->9,300<!-- /n --> feedbacks while the Validation Registry held zero
 rows. **Only an agent's NFT owner can open a validation. They name the validator when they do.**
 
 Reproduce it with three simulated callers. Nothing is sent, nothing is signed, no key is needed.

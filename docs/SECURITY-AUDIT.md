@@ -22,7 +22,7 @@ verification paths, plus routine hardening. The most important of those are fixe
 rest are specified below with exact changes and the few that need a mainnet redeploy are called out
 as such because the live contracts are immutable.
 
-## Fixed in this tree (verified: `forge test` 125 pass, `npm test` 747 pass, `tsc` clean)
+## Fixed in this tree (verified: `forge test` 182 run, 172 pass, 10 skip, `npm test` 751 pass, `tsc` clean)
 
 | Area | Severity | What was wrong | The fix |
 |---|---|---|---|
@@ -51,10 +51,10 @@ as such because the live contracts are immutable.
   1 (`0x57aF4e4B…f0eaf`) the attestor and the slash beneficiary are the same operator, so the party that
   decides a slash also receives it. Version 2, `0xB4d641f016f53C683c409F271eE85e136041FE3f`
   (`contracts/src/ScleraV2.sol`, Sourcify exact match), fixes the beneficiary as a constant burn
-  address in the bytecode, so no deploy can point it at anyone, and allows a new bond after a release
+  address in the bytecode, so no deploy can point it at anyone. It also allows a new bond after a release
   or slash. Every new bond on the site goes to v2. Version 1 still holds Kanmani's own earlier bonds.
   What remains: the attestor can still sign a zero-truth verdict that slashes any active bond. It no
-  longer profits from doing so, and the CRE broadcast flag is off in staging and production, so no
+  longer profits from doing so. The CRE broadcast flag is off in staging and production, so no
   automatic slash runs. Publishing the sampled claim ids so a slash is independently recomputable is
   still open.
 - **AgentPasskey (LOW).** On-chain verification does not check the rpIdHash or the origin and the
@@ -103,7 +103,7 @@ and hold:
   before any transfer and carries a reentrancy guard. ECDSA recovery rejects a high `s`, a `v` outside
   {27, 28} and the zero address. EIP-712 domains bind the chain id plus the contract address and are
   rebuilt on a chain split. Fee-on-transfer tokens are rejected at deposit. The EIP-3009 relayer scope
-  is bound into the nonce so a relayer cannot change any term. 125 contract tests pass.
+  is bound into the nonce so a relayer cannot change any term. 172 contract tests pass.
 - The SSRF guard pins the screened address into the socket (so DNS cannot change under it), parses IPv6
   to eight groups (so an IPv4-mapped address is screened as the IPv4 it carries), screens every DNS
   answer, re-screens every redirect hop, blocks the cloud-metadata range by name and caps bytes, time,
@@ -131,7 +131,7 @@ and hold:
 ## Reproduce
 
 ```
-cd contracts && forge test        # 125 pass, 9 fork suites skipped without an RPC
+cd contracts && forge test        # 172 pass, 10 skipped without an RPC
 npm test                          # lib + verifier
 npm run typecheck
 cd indexer && npm audit           # proxy-addr clears after npm install regenerates the lockfile

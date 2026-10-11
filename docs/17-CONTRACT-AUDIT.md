@@ -1,8 +1,11 @@
 # 17. Security audit
 
-**Reviewed 2026-09-18, before any mainnet deployment.** The escrow has never been deployed to mainnet
-and has never held real user funds, so nothing in it was
-ever live and no user funds were ever at risk. The indexer and the deploy stack were running.
+**Reviewed 2026-09-18, before any mainnet deployment.** At that review the escrow had never been
+deployed to mainnet and had never held real user funds, so nothing in it was ever live and no user
+funds were at risk during the review. The indexer and the deploy stack were running. It has since
+been deployed to Monad mainnet at `0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`, immutable. The
+deployed source is the audited contract. The HIGH that remained at deploy time is tracked in
+[SECURITY-AUDIT](SECURITY-AUDIT.md).
 
 **The first review, on 2026-09-18, found eight issues and fixed them**, across all three components
 below. Later passes, findings 9 to 17, extended the review to Sclera, the compliance gate, the
@@ -25,8 +28,8 @@ field, which took about a minute each.
 |---|---|
 | Method | manual review, then a written exploit or a query for every candidate finding |
 | Reviewer | zkasuran, with AI assistance. See the disclosure at the end |
-| Status after fixes | the contract suite is 133 tests, 124 pass and 9 skip without a fork url or a profile, 0 compiler errors, indexer typecheck clean. The Aqueous family in this first pass was 61 of them, 55 pass and 6 fork skips |
-| Escrow deployed | Monad testnet `0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C`. Mainnet not yet |
+| Status after fixes | the contract suite is 182 tests, 172 pass and 10 skip without a fork url or a profile, 0 compiler errors, indexer typecheck clean. The counts here are the live whole-suite figures; the first pass covered the Aqueous family |
+| Escrow deployed | Monad mainnet `0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32` and testnet `0xba2B1709eC4C3E76126043B3C3ef43Cc5d4F328C` |
 
 ---
 
@@ -593,7 +596,7 @@ tempting response is to loosen the contract until the test passes.
 ```bash
 cd contracts
 forge install foundry-rs/forge-std
-forge test                                   # 124 pass, 9 skip without the fork url and profiles below
+forge test                                   # 172 pass, 10 skip without the fork url and profiles below
 forge test --fork-url "$MONAD_RPC"           # the fork tests run against real USDC and the live registry
 ```
 
@@ -610,8 +613,8 @@ To re-run the fix verification, make `authNonceFor` ignore `Terms` and confirm
 
 AI assistance (Claude, Anthropic) was used in writing this contract, its tests and this document. The
 design, the review and the decisions are the author's and every finding here was verified by an
-executable exploit rather than accepted as an assertion. Verified before publishing: 124 tests passing
-and 9 skipped without a fork url across the contract suite, 0 compiler errors and both fixes confirmed
+executable exploit rather than accepted as an assertion. Verified before publishing: 172 tests passing
+and 10 skipped without a fork url across the contract suite, 0 compiler errors and both fixes confirmed
 by reverting them and watching the
 regression tests fail.
 
@@ -619,7 +622,7 @@ regression tests fail.
 
 ## Finding 9: anyone can post a bond for an agent they do not own
 
-**Sclera. Found 2026-09-23 by the pre-deploy review. This is why Sclera is not deployed.**
+**Sclera. Found 2026-09-23 by the pre-deploy review. This blocked the Sclera deploy until it was fixed. Sclera v1 and v2 are now live on mainnet with the fix in place.**
 
 ### The bug
 

@@ -375,7 +375,8 @@ export default async function Home() {
           </h2>
           <p className="lead lead--wide mt-5 text-muted">
             1.40 escrowed at two cents a call, 30 of 70 used, 0.60 to the agent, 0.80 returned in the
-            same transaction that pays, 0 retained. The buyer held zero MON at every point.
+            same transaction that pays, 0 retained. The buyer signed one message and paid no gas; the
+            facilitator submitted the transaction.
           </p>
         </div>
         <div className="stagger mt-7 grid gap-5 lg:grid-cols-2">
@@ -393,7 +394,7 @@ export default async function Home() {
             </p>
             <p className="mt-3 text-[12px] leading-relaxed text-muted">
               Work with other teams is on its own page, every transaction linked: an outside broker paying our agents, Dissent
-              paying a challenger from our bounty, and the bonds we have asked partners to post.{" "}
+              paying a challenger from our bounty and the bonds we have asked partners to post.{" "}
               <Link href="/traction" className="text-[var(--color-brand)] ilink">
                 With other teams
               </Link>
@@ -402,9 +403,9 @@ export default async function Home() {
           <div className="spot rounded-[var(--radius-lg)] border border-[var(--color-line)] bg-[var(--color-panel)] p-5">
             <p className="eyebrow">read it back yourself</p>
             <div className="mt-3 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
-              <pre className="sql">{`# the buyer's MON balance, start to finish
-cast balance 0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92 \\
-  --rpc-url https://rpc.monad.xyz    # 0
+              <pre className="sql">{`# who paid the gas: the facilitator, not a wallet of ours
+cast tx 0xf044c7543ef4519d0db8d29c9cd5e6baa3a5611e735905d4173ce401ee526d8a from \\
+  --rpc-url https://rpc.monad.xyz    # 0x7f6a2850…Db86, the facilitator
 
 # the escrow, immutable, no admin function
 cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\

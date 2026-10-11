@@ -21,7 +21,7 @@ project at all.** They are the sections that carry the claims about money.
 
 The index queries need the indexer running locally, because Envio HyperIndex is self-hosted here.
 Sections 2 through 5 are those. Bringing it up is `cd indexer && npm ci && npm run dev` plus the
-sync time, which is the honest cost of reproducing a population census over <!-- n:agents -->10,328<!-- /n --> agents.
+sync time, which is the honest cost of reproducing a population census over <!-- n:agents -->10,375<!-- /n --> agents.
 
 ```bash
 export R=https://rpc.monad.xyz                                # chain 143, Monad mainnet
@@ -56,7 +56,7 @@ another Postgres already on the machine. There is no default password.
 
 ## 1. The population, from the registry's own counter slot
 
-**Published as: <!-- n:agents -->10,328<!-- /n --> agents.**
+**Published as: <!-- n:agents -->10,375<!-- /n --> agents.**
 
 `totalSupply()` reverts on this registry, so the token interface cannot answer how many agents
 exist. The count lives in a storage slot:
@@ -90,13 +90,14 @@ cast call $ID "ownerOf(uint256)(address)" 10276 --rpc-url $R
 Both halves agree. A wrong slot would not produce a boundary that lands exactly where the counter
 says.
 
-### Why you may read <!-- n:agents -->10,328<!-- /n --> where an older document says 10,252
+### Why you may read <!-- n:agents -->10,375<!-- /n --> where an older document says 10,252
 
 **This number grows and one of the increments is ours.** The population census ran when the slot
 read `10252`, so it covers ids `0` through `10251`. We then registered Optic as id `10252` in
 [`0x07f7211e…`](https://monadscan.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
 at block 106470711, which took the slot from `10252` to `10253` and the distinct-document count from
-2,012 to 2,013 at that moment. The slot reads `10276` today and the distinct-document count 2,053, the
+2,012 to 2,013 at that moment. By block 109,750,000 the slot read `10276` with 2,053 distinct
+documents. The live site shows <!-- n:agents -->10,375<!-- /n --> agents and <!-- n:documents -->2,112<!-- /n --> documents now, the
 rest of the growth being other people registering after us.
 
 So `03-POPULATION.md` says 10,252 and means it: that was the registry at census time and rerunning
@@ -109,11 +110,13 @@ never see it go down.
 
 ## 2. The population, from the index
 
-**Published as: <!-- n:agents -->10,328<!-- /n --> agents, <!-- n:documents -->2,067<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,296<!-- /n --> feedbacks, <!-- n:withPointer -->1,299<!-- /n --> of them
+**Published as: <!-- n:agents -->10,375<!-- /n --> agents, <!-- n:documents -->2,112<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,300<!-- /n --> feedbacks, <!-- n:withPointer -->1,300<!-- /n --> of them
 carrying an evidence document, 1 validation.**
 
 This is `POPULATION_SQL` from `lib/queries.ts`, with the chain id inlined and the `updatedAt` column
-dropped for brevity:
+dropped for brevity. The reading below is from block 109,750,000. The counts climb with every
+registration, so the live figures are the markers above and this shows the query shape rather than
+today's totals:
 
 ```sql
 SELECT
@@ -139,7 +142,7 @@ so the page must be able to say which of the two is happening. `counterSlotCount
 `indexer/schema.graphql` because a failed slot read has to publish as unknown rather than as a zero
 that would be a fabricated population.
 
-**<!-- n:withPointer -->1,299<!-- /n --> of <!-- n:feedbacks -->9,296<!-- /n --> is the number that governs the whole thesis.** Only 13.9% of Monad's ERC-8004
+**<!-- n:withPointer -->1,300<!-- /n --> of <!-- n:feedbacks -->9,300<!-- /n --> is the number that governs the whole thesis.** Only 13.9% of Monad's ERC-8004
 feedback carries an evidence document at all. The other 86% is a score with nothing behind it, which
 is a rung below `declared` and therefore never appears in any ratio about evidence.
 
@@ -147,7 +150,7 @@ is a rung below `declared` and therefore never appears in any ratio about eviden
 
 ## 3. The measurement
 
-**Published as: <!-- n:claims -->187<!-- /n --> payment claims, <!-- n:claimsTrue -->64<!-- /n --> resolve, 123 do not, <!-- n:noClaim -->1,095<!-- /n --> assert no payment, 12 unknown.**
+**Published as: <!-- n:claims -->187<!-- /n --> payment claims, <!-- n:claimsTrue -->64<!-- /n --> resolve, 123 do not, <!-- n:noClaim -->1,095<!-- /n --> assert no payment, <!-- n:unknown -->18<!-- /n --> unknown.**
 
 `MEASUREMENT_SQL`, against the `fovea.verdict_latest` view:
 
@@ -175,14 +178,14 @@ Check the arithmetic on that reading yourself: 185 + 1095 + 2 + 10 + 0 = 1292, w
 URI from section 2. Nothing is dropped between the two.
 
 **Read the denominator correctly.** The finding is about **<!-- n:claims -->187<!-- /n --> documents that assert a payment**. It
-is not about <!-- n:withPointer -->1,299<!-- /n --> documents, not about <!-- n:feedbacks -->9,296<!-- /n --> feedbacks and not about <!-- n:agents -->10,328<!-- /n --> agents. Any wider
+is not about <!-- n:withPointer -->1,300<!-- /n --> documents, not about <!-- n:feedbacks -->9,300<!-- /n --> feedbacks and not about <!-- n:agents -->10,375<!-- /n --> agents. Any wider
 phrasing is an overclaim and it is one I made myself before the full corpus was measured. The
 correction is in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md).
 
-**The 12 unknowns are split by how far the ladder got, because the causes are different.** Ten
+**The <!-- n:unknown -->18<!-- /n --> unknowns are split by how far the ladder got, because the causes are different.** <!-- n:unknownHash -->13<!-- /n -->
 stopped at `resolvable`: the URL still answers, the bytes no longer match the hash committed on
 chain, so reading a claim out of them would attribute it to an author who committed to something
-else. Two stopped at `declared`: `ipfs://` documents no gateway would serve. None stop at `intact` today. Three did until 2026-10-04: their bytes matched the on-chain hash but no published mapping read the shape. A Qwen-proposed mapping for that shape was reviewed and shipped. All three now read `true`.
+else. <!-- n:unknownRateLimited -->5<!-- /n --> stopped at `declared`: the document's host would not answer. None stop at `intact` today. Three did until 2026-10-04: their bytes matched the on-chain hash but no published mapping read the shape. A Qwen-proposed mapping for that shape was reviewed and shipped. All three now read `true`.
 
 **`unknown` is never counted as `false` and never rendered as `0`.** Collapsing them would let
 somebody else's outage publish as our accusation, at scale, with their name attached.
@@ -205,20 +208,20 @@ GROUP BY 1 ORDER BY 2 + 3 DESC;
 ```
  network | resolve | do_not_resolve
 ---------+---------+----------------
- monad   |      59 |            123
+ monad   |      64 |            123
 ```
 
 One row. Every claim names Monad. **The transaction usually is not on Monad, it is on another
-chain.** Of the 123 that do not resolve on the named chain, 113 cite a transaction that is a real
-mined transaction somewhere else, optimism, arbitrum, base and ethereum among them, while 10 are
+chain.** Of the 123 that do not resolve on the named chain, 115 cite a transaction that is a real
+mined transaction somewhere else, arbitrum, ethereum, optimism, base, polygon and celo among them, while 8 are
 found on no chain we read. That is the hypothesis the project was designed around and it is
 confirmed rather than killed, which is why `locate` reads seven chains rather than one.
 
-The multi-chain reader earns its place twice. It is what surfaces the 113, so it pays for itself on
-coverage. It is also what makes the 10 reportable at all, because **a "not found" means nothing
+The multi-chain reader earns its place twice. It is what surfaces the 115, so it pays for itself on
+coverage. It is also what makes the 8 reportable at all, because **a "not found" means nothing
 without the list of places it was looked for.** A chain with no endpoint configured returns null
 rather than a client pointed at a default, because a silent fallback would make an unconfigured chain
-look checked, so the 10 are reported as not found where we looked rather than as fabricated.
+look checked, so the 8 are reported as not found where we looked rather than as fabricated.
 
 ---
 
@@ -237,19 +240,19 @@ FROM fovea.verdict_latest GROUP BY 1, 2 ORDER BY 3 DESC;
  elo-record.v1                    | noClaim |  1026
  execution-market.v1              | false   |   110
  plain-text-comment.v1            | noClaim |    66
- execution-market.v1              | true    |    49
- (no mapping reached)             | unknown |    15
+ execution-market.v1              | true    |    54
+ (no mapping reached)             | unknown |    18
  execution-market-transactions.v1 | false   |    13
  execution-market-transactions.v1 | true    |    10
  conversation-score.v1            | noClaim |     3
 ```
 
 **1,026 of the documents are game ELO records, every one naming the game `melee`.** That single row is why the denominator is <!-- n:claims -->187<!-- /n --> and
-not <!-- n:withPointer -->1,299<!-- /n --> and why sampling the head of a list gave the opposite impression: ordering by block
+not <!-- n:withPointer -->1,300<!-- /n --> and why sampling the head of a list gave the opposite impression: ordering by block
 descending showed mostly HTTP documents, while the population is 85% `data:` URIs that decode
 locally and assert no payment at all.
 
-**Publishing the 15 as a coverage gap rather than folding them into `noClaim` is load bearing.** The
+**Publishing the <!-- n:unknown -->18<!-- /n --> as a coverage gap rather than folding them into `noClaim` is load bearing.** The
 first atlas, measured 2026-09-19, left 23 documents unparsed, all one shape: an older Execution
 Market layout with the hash under `transactions.payment_tx` instead of `proof_of_payment`. Adding
 that one mapping moved `true` from 2 to 12 at the time. **An incomplete parser does not merely produce unknowns, it
@@ -289,11 +292,13 @@ WHERE r."chainId" = 143 GROUP BY 1 ORDER BY agents DESC;
 ```
 
 **A boolean could not have carried this.** <!-- n:goneAgents -->8,113<!-- /n --> agents are `gone`, the host answered and the
-document is not there. 36 are `unknown`, mostly our own rate limiting rather than anyone's failure.
-Publishing the unknowns as dead would have been wrong about them. The probe pass ran later than the
-section-2 census, so its total is 10,277 against section 2's 10,276. That is one more registration
-arriving between two reads, which is the only direction this moves. Both reads print their own total,
-so a lost row could not hide in the difference.
+document is not there. The probe table above is the 2026-10-03 reading, where that bucket stood at
+8,641. The site reads the live count on every load, so the marker here and the dated snapshot differ
+by design. 36 are `unknown`, mostly our own rate limiting rather than anyone's failure. Publishing
+the unknowns as dead would have been wrong about them. The probe pass ran later than the section-2
+census, so its total is 10,277 against section 2's 10,276. That is one more registration arriving
+between two reads, which is the only direction this moves. Both reads print their own total, so a
+lost row could not hide in the difference.
 
 **We got the 402 classification wrong first. This is how it was caught.** An earlier pass read
 539 records as `paywalled`, meaning a host alive and asking for payment, because they answered HTTP
@@ -394,18 +399,19 @@ cast receipt 0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5 
 # 0xd75f7786…1044fc32 -> 0x27a8ae37…697c1f92  0.800000 USDC
 ```
 
-### The buyer held zero MON throughout
+### The buyer paid no gas
 
-Not "started with none and was topped up". Zero at every point, while creating an escrow and
-settling it:
+Not "started with none and was topped up". The escrow is funded through EIP-3009
+`receiveWithAuthorization`, so the buyer signs an authorization and a relayer submits it and pays the
+gas. Both transactions for this job read `from` the relayer, never the buyer:
 
 ```bash
-cast balance 0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92 --rpc-url $R    # 0
+cast tx 0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5 from --rpc-url $R
+# 0xdb6c6340…b7777777, the relayer, not the buyer
 ```
 
-The escrow is funded through EIP-3009 `receiveWithAuthorization`, so the buyer signs and a relayer
-pays the gas. The test asserts the zero balance rather than printing it, because a demo that
-happens to work with a funded account proves nothing about a buyer who has never touched Monad.
+The buyer wallet was reused for later jobs, so its live MON balance has moved on since. What proves
+the gasless path is the sender of the transaction, which cannot change, not a balance that can.
 
 ### The x402 payment was a self-payment, which limits what it proves
 

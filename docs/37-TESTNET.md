@@ -79,9 +79,10 @@ This is the first server-held signing key in the app, so it is scoped hard:
 - A dedicated testnet-only minter, never the house mainnet key.
 - It only ever calls `TestUSDC.mint` on chain 10143. The route reads `eth_chainId` before sending and
   returns `500 "Wrong chain"` if the configured RPC is anything else.
-- With no `TESTNET_MINTER_KEY` the route is inert and answers `503`, so a build that ships only
-  mainnet is safe by default. **The public deployment has no minter key wired, so a live POST returns
-  that 503 today.** That is the fail-closed posture, the same one `/api/fund/*` takes.
+- With no `TESTNET_MINTER_KEY` the route is inert and answers `503`, the same fail-closed posture
+  `/api/fund/*` takes, so a build that ships only mainnet is safe by default. **The public deployment
+  has the testnet minter key wired, so a live POST mints to an under-floor address and answers
+  `alreadyFunded` for one already at or above the floor.**
 - The minter key is never in an error. A failure is logged server-side and answered as
   `502 "The mint did not land"` with `retryable: true`.
 

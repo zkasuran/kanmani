@@ -21,8 +21,8 @@ cd contracts && forge test            # the contracts, fork and P256 tests skip 
 npx next build                        # compiles clean, every data route dynamic
 ```
 
-**<!-- n:testsPassing -->919<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
-carried forward: <!-- n:testsApp -->531<!-- /n --> of <!-- n:testsAppTotal -->546<!-- /n --> in the site suite, <!-- n:testsVerifier -->216<!-- /n --> of <!-- n:testsVerifierTotal -->243<!-- /n --> in the verifier, <!-- n:testsContracts -->172<!-- /n --> of <!-- n:testsContractsTotal -->182<!-- /n --> in contracts. The
+**<!-- n:testsPassing -->923<!-- /n --> tests pass across the three suites.** That is the number quoted on the site. Counted rather than
+carried forward: <!-- n:testsApp -->535<!-- /n --> of <!-- n:testsAppTotal -->550<!-- /n --> in the app suite, <!-- n:testsVerifier -->216<!-- /n --> of <!-- n:testsVerifierTotal -->243<!-- /n --> in the verifier, <!-- n:testsContracts -->172<!-- /n --> of <!-- n:testsContractsTotal -->182<!-- /n --> in contracts. The
 differences are <!-- n:testsSkipped -->52<!-- /n --> deliberate skips: database tests without a database and contract tests that need an
 archive node, ffi or the P256 profile. `scripts/refresh-numbers.mjs` keeps these figures in step with `lib/counts.ts`.
 
@@ -46,9 +46,9 @@ described as live would be the exact failure this project exists to attack.
 
 ### Retina, the index
 
-Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **<!-- n:agents -->10,328<!-- /n --> agents** at
-census time, matching the registry's own counter slot exactly, **<!-- n:documents -->2,067<!-- /n --> distinct registration
-documents** and **<!-- n:feedbacks -->9,296<!-- /n --> feedbacks**.
+Envio HyperIndex over all three ERC-8004 registries on Monad mainnet. Holds **<!-- n:agents -->10,375<!-- /n --> agents** at
+census time, matching the registry's own counter slot exactly, **<!-- n:documents -->2,112<!-- /n --> distinct registration
+documents** and **<!-- n:feedbacks -->9,300<!-- /n --> feedbacks**.
 
 The slot can only ever grow, so a later read shows the same figure or higher, never lower. We are
 inside that count: we registered ourselves as agent 10252 along the way.
@@ -65,18 +65,18 @@ incremented both, which made them provably equal and destroyed the only interest
 
 ### Fovea, the verdict ladder
 
-Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **<!-- n:withPointer -->1,299<!-- /n -->** documents carrying
+Five rungs: `declared`, `resolvable`, `intact`, `parsed`, `true`. All **<!-- n:withPointer -->1,300<!-- /n -->** documents carrying
 a URI have been taken through it. Four outcomes. `unknown` is never `false`.
 
 | outcome | count |
 |---|---|
 | `noClaim` | <!-- n:noClaim -->1,095<!-- /n --> |
 | `false` | 123 |
-| `true` | 59 |
-| `unknown` | 15 |
-| of those, the bytes no longer match their commitment | 10 |
-| of those, no mapping reads the shape | 3 |
-| of those, the document would not answer | 2 |
+| `true` | 64 |
+| `unknown` | 18 |
+| of those, the bytes no longer match their commitment | 13 |
+| of those, no mapping reads the shape | 0 |
+| of those, the document would not answer | 5 |
 
 Verdicts are append only, in their own `fovea` Postgres schema rather than Envio's `public`,
 because `public` is dropped and recreated on every resync. A re-check writes a new row, so a
@@ -84,7 +84,7 @@ document somebody repairs reads as `false` to `true` with both timestamps.
 
 ### The registration probe
 
-All **<!-- n:documents -->2,067<!-- /n -->** distinct documents asked once each, deduplicated by record hash so one dead URL is
+All **<!-- n:documents -->2,112<!-- /n -->** distinct documents asked once each, deduplicated by record hash so one dead URL is
 fetched once rather than <!-- n:oneDocAgents -->8,093<!-- /n --> times. Per host, serial, with a gap, because a handful of hosts carry
 most of them.
 
@@ -139,7 +139,7 @@ decrypts. A stranger holding the ciphertext gets an authentication failure. A fo
 Registered as **agent 10252** with the record written into `tokenURI` rather than hosted, because
 we had just measured that <!-- n:oneDocAgents -->8,093<!-- /n --> agents point at one document that returns a deletion.
 
-The registry held **zero** rows against the Reputation Registry's <!-- n:feedbacks -->9,296<!-- /n --> feedbacks. It holds one
+The registry held **zero** rows against the Reputation Registry's <!-- n:feedbacks -->9,300<!-- /n --> feedbacks. It holds one
 now. `getValidatorRequests`, `getAgentValidations` and `getSummary` all confirm it. The index
 that follows the contract went from 0 to 1.
 
@@ -184,7 +184,7 @@ nothing compared, so one could be half-added and still look integrated.
 ### Chiasm, the cross-chain merge, with data in it
 
 **BNB Smart Chain was backfilled on 2026-09-23** and the index now holds two chains: **362,682
-agents on BSC against <!-- n:agents -->10,328<!-- /n --> on Monad**, a separate population rather than a mirror. BSC grows daily,
+agents on BSC against <!-- n:agents -->10,375<!-- /n --> on Monad**, a separate population rather than a mirror. BSC grows daily,
 so that figure is a 2026-10-03 read of `/chains`.
 
 Chiasm merges the two on the content hash of the registration document, which is the only key that
@@ -202,7 +202,7 @@ the ones with no host to ask, because a self-contained document is the only kind
 
 The resync was the honest cost. Envio refused to start when the chain was added, rather than
 destroying data and named the three options. The reset then rebuilt Monad to exactly its previous
-figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,328<!-- /n --> and <!-- n:feedbacks -->9,296<!-- /n -->), while
+figures, 10,256 agents and 9,188 feedbacks on that day (since grown to <!-- n:agents -->10,375<!-- /n --> and <!-- n:feedbacks -->9,300<!-- /n -->), while
 **`fovea.verdict` kept all 2,384 rows** because it lives outside the schema Envio drops. That
 separation was designed for this and this is the first time it was load-bearing.
 
@@ -624,7 +624,7 @@ would slash an agent nobody has rated yet.
 ### The CRE slashing workflow
 
 ```bash
-wc -l cre/kanmani-oracle/slashing/main.ts     # 318
+wc -l cre/kanmani-oracle/slashing/main.ts     # 319
 ```
 
 Written against `@chainlink/cre-sdk`. It reads the endpoint above and signs a verdict. Not deployed
@@ -667,7 +667,7 @@ not run is a claim; an absent one is a boundary.
 ```bash
 wc -l contracts/src/CleanverseGate.sol          # 347
 ls indexer/src/handlers/                        # Retina.ts  Chiasm.ts
-wc -l lib/cleanverse.ts lib/intents.ts          # 189, 977
+wc -l lib/cleanverse.ts lib/intents.ts          # 189, 1015
 ```
 
 The compliance-gated release contract, the cross-chain handler and the Aurora Intents funding path
@@ -702,7 +702,7 @@ population was measured. This is the weakest part of the entry and it is not fix
 ### Submission artifacts
 
 The demo video, the pitch video and the logo do not exist yet. The repository is still private; the
-flip is scheduled for the day the submission window opens, 2026-10-02.
+flip is scheduled for the submission deadline, 2026-10-14.
 
 
 ---
@@ -715,7 +715,7 @@ The most useful entries, because each is a place the build was wrong and the dat
 chain while the payment sat on another. Every one of the <!-- n:claims -->187<!-- /n --> payment claims names Monad. The
 failure is simpler than the one designed for, so the site says the simpler thing.
 
-**The denominator moved from <!-- n:feedbacks -->9,296<!-- /n --> to <!-- n:claims -->187<!-- /n -->.** Most ERC-8004 feedback on Monad is not a payment claim.
+**The denominator moved from <!-- n:feedbacks -->9,300<!-- /n --> to <!-- n:claims -->187<!-- /n -->.** Most ERC-8004 feedback on Monad is not a payment claim.
 1,026 documents are chess ELO records. Sampling recent-first had given the opposite impression,
 because the head of a list is never a random sample.
 
@@ -732,7 +732,7 @@ for anyone who is not the agent's owner. Optic became a responder rather than a 
 constraint explains the empty registry better than any theory about adoption.
 
 **80 agents were falling out of a join silently.** The state buckets summed to 10,172 against a
-registry of 10,252 at census time. No query failed and no test went red. The page now prints its own
+registry of 10,252 at that point. No query failed and no test went red. The page now prints its own
 sum next to the total.
 
 ---
@@ -754,7 +754,7 @@ Shipped 2026-09-25 and live on Monad mainnet.
 | Sentinel | 10256 | A pre-hire verdict stamped with the block it was measured at, refused if staler than the caller's bound | 10,000 atomic USDC, floor 8000bps |
 | Assay | 10257 | The bond an agent should post: a floor in bps plus a premium, from its measured claim-truth rate | 10,000 atomic USDC, floor 8000bps |
 
-The registry has <!-- n:agents -->10,328<!-- /n --> agents and most are not worth hiring, so adding another generic one would have
+The registry has <!-- n:agents -->10,375<!-- /n --> agents and most are not worth hiring, so adding another generic one would have
 been noise. A swap router or a chat wrapper also runs identically on any EVM chain, which is why neither
 is here: shipping one would demonstrate nothing about Monad beyond that it executes bytecode.
 
@@ -845,7 +845,7 @@ Two numbers on the site were contradicted by our own database: `/chains` said 35
 a real 357,444 and `/studio` said 2,012 distinct documents against 2,016. Neither was a calculation
 error. They were true on the day somebody typed them into a sentence, which is the same mechanism this
 project publishes findings about in other people's records. Both populations have grown since: the
-distinct-document count is <!-- n:documents -->2,067<!-- /n --> today.
+distinct-document count is <!-- n:documents -->2,112<!-- /n --> today.
 
 Every population figure now comes from a query, including one a client component had been asserting
 inline. `agentsByChain()` was added because no per-chain count existed, which is the root cause: the

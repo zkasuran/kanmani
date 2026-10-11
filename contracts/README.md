@@ -16,10 +16,10 @@ get wrong.
 
 ### One complete job, in real USDC, already settled on mainnet
 
-**The buyer held zero MON at every point in this, start to finish.** Not "started with none and we
-topped it up". Zero, throughout, while creating an escrow and settling it. The script asserts that
-at both ends rather than printing it, so if the claim ever stops being true the run fails instead
-of quietly passing.
+**The buyer paid zero MON for this job, start to finish.** Not "started with none and we topped it
+up". The escrow is funded by EIP-3009 `receiveWithAuthorization`, so the buyer signs an authorization
+and the relayer submits it and pays the gas. Both the escrow and the settle transactions read `from`
+the relayer, never the buyer, so the buyer never spent gas to create or settle this job.
 
 | step | transaction | what it did |
 |---|---|---|
@@ -40,19 +40,28 @@ used, so 0.60 is earned and **0.80 goes back in the same transaction that pays**
 | retained by the contract | 0 |
 | **MON spent by the buyer** | **0** |
 
-Read every one of those back yourself, no key needed:
+Read every one of those back yourself, no key needed. The buyer and escrow wallets were reused for
+later jobs, so their live balances have moved on. This job's own money movement is read off the
+settle receipt, which cannot change:
 
 ```bash
 R=https://rpc.monad.xyz
 U=0x754704Bc059F8C67012fEd69BC8A327a5aafb603
-B=0x27a8ae37f59BDcd147b09dDc1F35Ac64697c1F92   # buyer
-A=0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52   # agent
+A=0xafA4b628D7e8d5Ddb04cec0D24878D137f663B52   # agent, used once for this job
 
-cast balance $B --rpc-url $R                                  # 0, the whole claim
-cast call $U "balanceOf(address)(uint256)" $B --rpc-url $R     # 800000
-cast call $U "balanceOf(address)(uint256)" $A --rpc-url $R     # 600000
-cast call $U "balanceOf(address)(uint256)" \
-  0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 --rpc-url $R      # 0, retained nothing
+# the money this job moved, from the settle receipt's own Transfer logs
+cast receipt 0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5 \
+  --rpc-url $R --json \
+| jq -r '.logs[] | select(.topics[0]=="0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef")
+         | "0x\(.topics[1][26:]) -> 0x\(.topics[2][26:]) \(.data)"'
+# escrow -> agent 0.60 USDC and escrow -> buyer 0.80 USDC, so the contract retained nothing
+
+# who paid the gas: the relayer submitted it, the buyer only signed
+cast tx 0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5 from --rpc-url $R
+# 0xdb6c6340…b7777777, the relayer, never the buyer
+
+# the agent wallet was used once here and still reads exactly what it earned
+cast call $U "balanceOf(address)(uint256)" $A --rpc-url $R     # 600000, 0.60 USDC
 ```
 
 **What this does not prove**, said here so it never gets blurred in a writeup: the agent in this
@@ -170,8 +179,8 @@ Read from `docs.monad.xyz` before writing it, not after:
 ## Tests
 
 ```bash
-forge test                                        # 43 pass, the 6 fork tests report as skipped
-forge test --fork-url "$MONAD_RPC"                # 49 pass, the 6 against real USDC on mainnet
+forge test                                        # 172 pass, 10 skipped: the fork and P256 precompile tests
+forge test --fork-url "$MONAD_RPC"                # the fork tests now run, against real USDC on mainnet
 ```
 
 **The money path is now exercised three ways. Each answers something the others cannot.**

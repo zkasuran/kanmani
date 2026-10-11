@@ -19,7 +19,6 @@ const SCLERA_V2 = "0xB4d641f016f53C683c409F271eE85e136041FE3f";
 const V2_DEPLOY = "0x191531adca3754d20961b021233828341053cbd7d1c7174d796d19d03c2b189c";
 /** Version 1, deployed 2026-09-24. Our earlier bonds live here, including the complete one below. */
 const SCLERA = "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf";
-const USDC = "0x754704Bc059F8C67012fEd69BC8A327a5aafb603";
 const ATTESTOR = "0x358c591aD7D60aC36bC223472B41518A7FA7b44A";
 const FIRST_BOND = "0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c";
 const FIRST_RELEASE = "0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92";
@@ -124,8 +123,8 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
       {/* ---------------------------------------------------------------- it is live */}
       <Reveal>
         <Panel
-          title={`every bond we have posted · ${live.length}`}
-          subtitle="Read from Sclera on every load. State is the contract's, not an index's, because a window matures when a block number passes and emits nothing."
+          title={`the current bond on each agent · ${live.length}`}
+          subtitle="Read from Sclera on every load. State is the contract's, not an index's, because a window matures when a block number passes and emits nothing. One row per agent, its latest bond across v1 and v2."
         >
           <div className="space-y-px">
             {live.map(({ id, b }) => (
@@ -191,19 +190,15 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
           </dl>
 
           <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
-            Verified by where the money went rather than by an event we emitted. While the bond was open the
-            contract held 20,000 units and the agent was down by exactly that; on release both reversed.
-            The bond now reads state <Mono>3</Mono>, <Mono>Released</Mono>, with its amount zeroed and a
+            Verified by where the money went rather than by an event we emitted. While the bond was open 10252's
+            stake of 20,000 units sat in the contract and the agent was down by exactly that; on release both
+            reversed. The bond now reads state <Mono>3</Mono>, <Mono>Released</Mono>, with its amount zeroed and a
             second release reverts <Mono>WrongState()</Mono>.
           </p>
           <div className="mt-2 rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
-            <pre className="sql">{`# the contract holds nothing now, because it gave it back
-cast call ${USDC} 'balanceOf(address)(uint256)' \\
-  ${SCLERA} --rpc-url https://rpc.monad.xyz    # 0
-
-# and the bond is settled rather than open
+            <pre className="sql">{`# 10252's own stake, read off its bond rather than the shared balance
 cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
-# state 3 == Released, amount 0`}</pre>
+# state 3 == Released, amount 0, the stake returned in full`}</pre>
           </div>
           <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
             <span className="text-[var(--color-text)]">What the release does not prove:</span> the window ran

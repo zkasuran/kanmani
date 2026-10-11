@@ -140,13 +140,15 @@ endpoint, raw hex and a 27/28 `v`.
 Signed on 2026-09-28, verified locally to recover to our wallet before sending and the execution went
 to `SUCCESS` inside fifteen seconds. Destination transaction
 `0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558`, block 108,690,488: the
-intermediary moved 115,558 USDC units into Aqueous and 2,505 to Aurora as its fee. The escrow went from
-0 to 115,558. The layer only went live once the escrow funded, because that is what it promises.
+intermediary moved 115,558 USDC units into Aqueous and 2,505 to Aurora as its fee, keeping the
+remaining 1,192. That reconciles the two figures, since 115,558 plus 2,505 plus 1,192 is the 119,255
+that landed on 2026-09-25. The escrow went from 0 to 115,558. The layer only went live once the escrow
+funded, because that is what it promises.
 
 The corrected picture:
 
 ```bash
-ls contracts/src/          # AgentPasskey.sol  Aqueous.sol  CleanverseGate.sol  Sclera.sol  TestUSDC.sol
+ls contracts/src/          # AgentPasskey.sol  Aqueous.sol  CleanverseGate.sol  Sclera.sol  ScleraV2.sol  TestUSDC.sol
 wc -l contracts/src/Sclera.sol                          # 453
 cd contracts && forge test --match-path 'test/Sclera*'  # passes
 ls indexer/src/handlers/   # Retina.ts  Chiasm.ts
@@ -173,7 +175,7 @@ costs one atomic unit to fake is the thing this project exists to attack.
 **Fixed 2026-09-24.** `postBond` reads `ownerOf` from the ERC-8004 Identity Registry, which is an
 immutable constructor argument with no setter. Six new tests and the mutation that proves they matter:
 replacing the check with `if (false)` turns four of them red. Finding 10 is closed too. The contract
-suite is 133 tests, 124 passing, 9 skipped.
+suite is 182 tests, 172 passing, 10 skipped.
 
 **Deployed 2026-09-24** at `0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`, source verified `exact_match`, 0.250 MON of gas. The ownership
 check is proven on the live contract: `postBond` for an agent we do not own reverts `NotAgentOwner()`.
@@ -394,13 +396,16 @@ a contract we have not read.
 short-landing behaviour.
 
 The three targets are named because the whole population was measured, which is the one advantage
-here: I can name every payable agent on Monad because I checked all 10,276 and there are three.
+here: I checked all 10,276. Only one of them, ADEXTO, serves a real paid x402 challenge, so the
+payable third-party surface on Monad is one endpoint, not three. The other two are registered and
+listed without a live paid challenge behind the endpoint.
 
-1. **Execution Market / Ultravioleta DAO**, reachable through the contact they publish in their own
-   `/.well-known/x402`. Their claims are all 123 that do not resolve on the named chain. 115 of those 123 are real transactions on a different chain rather than missing payments. A per-document
-   pass or fail costs them nothing and fixes their record.
-2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, returns a real x402 challenge.
-3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations.
+1. **Execution Market / Ultravioleta DAO**, registered and listed with a contact in their own
+   `/.well-known/x402` rather than a live paid x402 challenge. Their claims are all 123 that do not
+   resolve on the named chain. 115 of those 123 are real transactions on a different chain rather than
+   missing payments. A per-document pass or fail costs them nothing and fixes their record.
+2. **ADEXTO**, agent 10247, `adexto-x402-edge.cucuvirtual.workers.dev`, the one endpoint that returns a real paid x402 challenge.
+3. **Mogmatic**, agents 8391 and 8392, one endpoint behind two registrations, registered but serving no paid x402 challenge.
 
 **Three contacts made, 2026-09-23 to 09-24.** All on GitHub, because `gh` is authenticated, a public
 issue is re-derivable where private mail is not and there are no mail credentials in this environment.
@@ -510,13 +515,13 @@ not happen.
 
 Small, real and better written here than discovered by a reader.
 
-* **Nine contract tests skip without their dependency.** `forge test` reports 133 tests, 124 passing
-  and 9 skipped: six Aqueous fork tests without a fork URL, two cross-signing tests without `--ffi` and
-  one that needs the P256 precompile profile. They skip rather than silently passing, but a reader
-  should know the 124 is not the whole suite.
+* **Ten contract tests skip without their dependency.** `forge test` reports 182 tests, 172 passing
+  and 10 skipped: Aqueous fork tests without a fork URL, cross-signing tests without `--ffi` and tests
+  that need the P256 precompile profile. They skip rather than silently passing, but a reader
+  should know the 172 is not the whole suite.
 * **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->243<!-- /n --> tests, <!-- n:testsVerifier -->216<!-- /n --> pass, <!-- n:testsVerifierSkipped -->27<!-- /n -->
-  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->546<!-- /n --> tests, <!-- n:testsApp -->531<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
-  **<!-- n:testsPassing -->919<!-- /n --> pass in total.**
+  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->550<!-- /n --> tests, <!-- n:testsApp -->535<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
+  **<!-- n:testsPassing -->923<!-- /n --> pass in total.**
 * **Census figures and live figures differ because the registry keeps growing.** Documents written at
   census time say 10,252 agents and 2,012 distinct records. The live index now reads 10,276 and 2,053,
   because registrations have continued since the census and one of them is ours, agent 10252. Section 1

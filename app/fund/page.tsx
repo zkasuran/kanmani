@@ -271,6 +271,9 @@ function FundBody({
           <Row label="fee">
             <Mono>2,505 units to Aurora</Mono> <span className="text-muted">carved out by the service, never added by us</span>
           </Row>
+          <Row label="left over">
+            <Mono>1,192 units stayed in the intermediary</Mono> <span className="text-muted">119,255 less the 115,558 escrowed and the 2,505 fee, in the account only you control</span>
+          </Row>
         </div>
         <p className="mt-4 text-[12px] leading-relaxed text-muted">
           It sat unsigned for three days first, because we deposited before signing. The bridge had
