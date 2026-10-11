@@ -45,8 +45,9 @@ the payment did not happen. It is evidence that we did not look.
 reason: evidence document could not be read: <what resolve said>
 ```
 
-Two claims in the live corpus sit here, both `HTTP 429`. The host was rate limiting us. That is our
-problem rather than theirs and the verdict says so.
+Five claims in the live corpus sit here: three returned `HTTP 403` and two `HTTP 429`. The host
+would not answer. A failure to read is not evidence either way, so the verdict says `unknown` and
+names the status.
 
 ### `resolvable`
 
@@ -71,9 +72,9 @@ be closed rather than guessed at.
 reason: no published mapping reads this document shape: <why>
 ```
 
-Three claims in the live corpus sit here today, each an intact document whose shape no published
-mapping reads yet. The count is published whether it is zero or three, because a coverage gap that
-only shows up once it is non-zero is not a measurement.
+No claims sit here in the live corpus today. Three did until a mapping shipped on 2026-10-04, each an
+intact document whose shape no published mapping read. The count is published whether it is zero or
+not, because a coverage gap that only shows up once it is non-zero is not a measurement.
 
 ### `parsed`
 
@@ -185,7 +186,7 @@ Three schemes appear in the corpus. They have nothing in common but the name "UR
 | scheme | count | how it resolves |
 |---|---|---|
 | `data:` | 1,095 | decoded in process, no network at all |
-| `http(s):` | 195 | fetched through the SSRF guard |
+| `http(s):` | 203 | fetched through the SSRF guard |
 | `ipfs://` | 2 | through a gateway, so still a guarded fetch |
 
 **`data:`** is RFC 2397, `data:[<mediatype>][;base64],<data>`. Both encodings appear. The size cap is
@@ -210,7 +211,7 @@ re-screened every hop. The size cap is enforced on the bytes as they arrive, nev
 `Content-Length`.
 
 **The guard is the most security-critical file in this build. It is also the one that almost never
-runs.** 1,095 of 1,292 claims are `data:` URIs, so 85% of this corpus touches no network at all. That
+runs.** 1,095 of 1,300 claims are `data:` URIs, so 84% of this corpus touches no network at all. That
 is stated plainly rather than left for a reader to work out, because a reader who assumes the guard
 is on the hot path will mis-weigh both the risk and the performance story. There is a test that
 proves the `data:` path cannot reach the network, by handing it a resolver that throws if called.
@@ -253,9 +254,9 @@ Two cases are `unknown` rather than `false`, because there is nothing to compare
 - the document is empty. `keccak256` of empty input is a real, well-known value, so without this
   branch an empty body would compare against it and read as a considered answer.
 
-### The ten on Monad
+### The thirteen on Monad
 
-Ten documents are in exactly this state right now. All ten are on one host:
+Thirteen documents are in exactly this state right now, across two hosts:
 
 ```bash
 psql "$FOVEA_DATABASE_URL" -c \
@@ -264,9 +265,10 @@ psql "$FOVEA_DATABASE_URL" -c \
 ```
 
 ```
-      host      | count
-----------------+-------
- grokandmon.com |    10
+             host              | count
+-------------------------------+-------
+ grokandmon.com                |    10
+ agenttrace-mainnet.vercel.app |     3
 ```
 
 The URL is stable. The bytes are not. Each commitment was made at a different time against different
@@ -284,7 +286,7 @@ The fix is not a rule about behaviour. It is content addressing or writing the r
 does the second one: 2,017 bytes inline, no host to go stale.
 
 There is a side effect worth naming. `agent-card.v1` is a published mapping in the atlas and it has
-**zero rows** in the corpus, because the only ten documents it was written from now stop one rung
+**zero rows** in the corpus, because the only ten grokandmon documents it was written from now stop one rung
 earlier. The mapping is real, it is tested and this corpus never exercises it.
 
 ---
@@ -596,27 +598,29 @@ checks, the Alchemy fallback probe in `rpc.test.ts`, the atlas proposer plus the
 All of them pass against their live dependency. Everything else runs with no network and no
 database.
 
-The ladder's own share is 144 of those tests, counting the seven files in `src/ladder/`. Per file,
+The ladder's own share is 147 of those tests, counting the seven files in `src/ladder/`. Per file,
 with `node --test --experimental-strip-types <file>`:
 
 | file | tests |
 |---|---|
 | `src/ladder/payable.test.ts` | 45, 3 skipped without a live endpoint |
 | `src/ladder/settled.test.ts` | 31, 4 skipped without a live endpoint |
-| `src/ladder/parse.test.ts` | 20 |
+| `src/ladder/parse.test.ts` | 22 |
 | `src/net/guard.test.ts` | 19 |
-| `src/ladder/locate.test.ts` | 14 |
+| `src/ladder/locate.test.ts` | 15 |
 | `src/ladder/verdict.test.ts` | 14 |
 | `src/ladder/resolve.test.ts` | 13 |
 | `src/atlas/induce.test.ts` | 10 |
+| `src/net/probe.test.ts` | 10 |
 | `src/atlas/propose.test.ts` | 9, 4 skipped without a live dependency |
 | `src/cli/nansen-enrich.test.ts` | 8, 4 skipped without a live dependency |
 | `src/optic.test.ts` | 8 |
 | `src/store/records.test.ts` | 8 |
 | `src/ladder/intact.test.ts` | 7 |
 | `src/cli/nansen-funders.test.ts` | 7, 5 skipped without a live dependency |
-| `src/rpc.test.ts` | 6, 1 skipped without a live fallback endpoint |
+| `src/rpc.test.ts` | 7, 1 skipped without a live fallback endpoint |
 | `src/store/store.test.ts` | 6, all skipped without a database |
+| `src/atlas/read-proposal.test.ts` | 4 |
 
 ### Mutation testing
 
