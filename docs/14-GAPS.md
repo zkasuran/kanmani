@@ -78,7 +78,7 @@ wired into the live ladder.
 
 | rung | state |
 |---|---|
-| `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all 1,292 documents through them |
+| `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all 1,300 documents through them |
 | `payable` | **written and tested, not wired.** A live x402 probe of an agent's own endpoint |
 | `settled` | **wired into `judge()` to strengthen the `true` rung's recipient match, not exposed as a separate rung.** A distinct "a payment to that agent cleared" rung is still absent |
 
@@ -489,20 +489,20 @@ previous entry of mine shipped a working paid service and died anyway on an unfi
 
 ## 10. Measurement we cannot complete and why it stays unknown
 
-Fifteen of the 1,292 documents have no verdict beyond `unknown`. Each stays that way deliberately.
+Eighteen of the 1,300 documents have no verdict beyond `unknown`. Each stays that way deliberately.
 
-**Ten documents whose bytes no longer match their on-chain commitment.** All on one host. Five
-feedbacks cite the same URL with five different committed hashes while the URL serves one identical
-thing today and four more do the same with a second path. The URL is stable, the bytes are not, so
-every historical commitment to that endpoint is now unverifiable.
+**Thirteen documents whose bytes no longer match their on-chain commitment.** Ten are on
+grokandmon.com and three on agenttrace-mainnet.vercel.app. Each committed hash was made against
+different content while the endpoint serves one thing today, so every historical commitment to those
+endpoints is now unverifiable. The URL is stable, the bytes are not.
 
 The ladder stops at `resolvable` there on purpose. Parsing onward would read a claim out of bytes the
 author never committed to and attribute it to them. **This is an argument about how ERC-8004 evidence
 should be stored rather than about anybody's conduct:** a live endpoint cannot keep a promise about
 its bytes, content addressing can. It is never written as an accusation.
 
-**Two `ipfs://` documents no gateway would serve.** The gateway answers HTTP 429. A working gateway
-would close these two and nothing else, so it is small and it is still open.
+**Five documents whose host would not answer.** Three returned HTTP 403 and two HTTP 429. A working
+endpoint would close these and nothing else, so this group is small and it is still open.
 
 **Closed 2026-10-04: three documents whose shape no published mapping read.** The ladder stopped at `intact` because no mapping read the record shape. It will not guess a claim out of a document it cannot parse. Qwen 3.8 Max proposed a mapping, one field changed in review and it shipped. All three now read `true`. See [27-ATLAS-INDUCTION](27-ATLAS-INDUCTION.md).
 
@@ -545,7 +545,7 @@ real time to understand.
 * **`noClaim` is 0 among the HTTP documents.** Agent cards are the only `noClaim` shape there and they
   are exactly the documents failing the intact check, so they stop before parse. It reads like a parser
   that never fires. It is not.
-* **The Validation Registry held zero rows against 9,288 feedbacks.** Not low adoption.
+* **The Validation Registry held zero rows against 9,300 feedbacks.** Not low adoption.
   `validationRequest` reverts `Not authorized` for anyone who is not the agent's owner, so nobody can
   publish a verdict about somebody else unilaterally. The constraint explains the empty registry better
   than any theory about uptake and learning it cost a reverted transaction.

@@ -215,20 +215,22 @@ be neither confirmed nor contradicted.
 | feedbacks | count | share |
 |---|---|---|
 | total | <!-- n:feedbacks -->9,300<!-- /n --> | 100% |
-| carrying a URI | <!-- n:withPointer -->1,300<!-- /n --> | 13.91% |
-| carrying nothing to check | 7,996 | 86.09% |
+| carrying a URI | <!-- n:withPointer -->1,300<!-- /n --> | 13.98% |
+| carrying nothing to check | 8,000 | 86.02% |
 
 | scheme, of the <!-- n:withPointer -->1,300<!-- /n --> | count | share | network calls to read them |
 |---|---|---|---|
-| `data:` | 1,095 | 84.75% | 0 |
-| `https://execution.market/...` | 182 | 14.09% | 182 |
+| `data:` | 1,095 | 84.23% | 0 |
+| `https://execution.market/...` | 182 | 14.00% | 182 |
 | `https://grokandmon.com/...` | 10 | 0.77% | 10 |
-| `https://gateway-mainnet-production.up.railway.app/...` | 3 | 0.23% | 3 |
+| `https://gateway-mainnet-production.up.railway.app/...` | 5 | 0.38% | 5 |
+| `https://agenttrace-mainnet.vercel.app/...` | 3 | 0.23% | 3 |
+| `https://monadvision.com/...` | 3 | 0.23% | 3 |
 | `ipfs://` | 2 | 0.15% | 2 |
 
-**1,095 of 1,292 documents are `data:` URIs decoded in process with no network call at all.** The
+**1,095 of 1,300 documents are `data:` URIs decoded in process with no network call at all.** The
 whole document is in the transaction. There is no host to go down, no deployment to expire, no
-certificate to lapse. Reading the entire evidence corpus costs 197 outbound requests.
+certificate to lapse. Reading the entire evidence corpus costs 205 outbound requests.
 
 ### The sampling trap
 
@@ -240,7 +242,7 @@ overwhelmingly self-contained JSON making no claim at all.
 
 > An earlier 500-feedback sample, taken recent-first, produced 68 fetchable evidence documents. All
 > 68 declared network `monad`. That pushed the early design toward hosted documents citing the wrong
-> chain. The full pass over all 1,292 says 84.75% are `data:` URIs citing no chain, no transaction,
+> chain. The full pass over all 1,300 says 84.23% are `data:` URIs citing no chain, no transaction,
 > no payment.
 
 The head of a list is never a random sample. Ordering by recency correlates with whatever changed

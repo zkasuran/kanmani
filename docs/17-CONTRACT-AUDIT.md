@@ -315,8 +315,10 @@ is the on-chain counter slot.
 
 ### The proof
 
-The aggregate query was run against the live endpoint anonymously and returns 10,276 agents and 9,288
-feedbacks, which matches the counter slot read independently from the chain.
+The aggregate query was run against the live endpoint anonymously and returned 10,276 agents and
+9,288 feedbacks at the time of this review, matching the counter slot read independently from the
+chain. Both numbers grow with the registry, so the proof is that the two independent reads agree
+rather than the exact figure.
 
 ---
 
