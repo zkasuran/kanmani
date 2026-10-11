@@ -339,7 +339,7 @@ export function Addr({ value, href }: { value: string; href?: string }) {
 
 /** A transaction hash on the chain it was actually found on, never assumed to be Monad. */
 export function TxLink({ hash, chainId }: { hash: string; chainId: number | null }) {
-  const explorer = chainId === 143 ? `https://monadexplorer.com/tx/${hash}` : null;
+  const explorer = chainId === 143 ? `https://monadscan.com/tx/${hash}` : null;
   const short = `${hash.slice(0, 10)}…${hash.slice(-8)}`;
   if (!explorer) return <Mono className="text-muted" >{short}</Mono>;
   return (

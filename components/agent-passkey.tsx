@@ -184,7 +184,7 @@ export function AgentPasskeyPanel({ agentId }: { agentId: number }) {
             <span className="text-muted">no passkey bound</span>
           )}
         </span>
-        <a className="text-[11px] text-muted hover:text-[var(--color-text)]" href={`https://monadexplorer.com/address/${AGENT_PASSKEY_ADDRESS}`} target="_blank" rel="noopener noreferrer">
+        <a className="text-[11px] text-muted hover:text-[var(--color-text)]" href={`https://monadscan.com/address/${AGENT_PASSKEY_ADDRESS}`} target="_blank" rel="noopener noreferrer">
           AgentPasskey ↗
         </a>
       </div>

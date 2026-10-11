@@ -17,11 +17,11 @@
       "evidence": [
         {
           "label": "Sentinel payment",
-          "url": "https://monadvision.com/tx/0x7ea89118e0ea54c7a88833df61ff4b0b41dee063fcd98ffcbc160073bfc54eed"
+          "url": "https://monadscan.com/tx/0x7ea89118e0ea54c7a88833df61ff4b0b41dee063fcd98ffcbc160073bfc54eed"
         },
         {
           "label": "Assay payment",
-          "url": "https://monadvision.com/tx/0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2"
+          "url": "https://monadscan.com/tx/0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2"
         },
         {
           "label": "Taifoon's article",
@@ -41,15 +41,15 @@
       "evidence": [
         {
           "label": "funded",
-          "url": "https://monadvision.com/tx/0x10950f2e35f241ec01de5d6dbdef65756b0025f924605bad2ca68ddf6182f571"
+          "url": "https://monadscan.com/tx/0x10950f2e35f241ec01de5d6dbdef65756b0025f924605bad2ca68ddf6182f571"
         },
         {
           "label": "delivered",
-          "url": "https://monadvision.com/tx/0x24a69e44eb6eab7fac8f321f8e4121b515e42a8240b8caf98cb8456c0944f49c"
+          "url": "https://monadscan.com/tx/0x24a69e44eb6eab7fac8f321f8e4121b515e42a8240b8caf98cb8456c0944f49c"
         },
         {
           "label": "settled",
-          "url": "https://monadvision.com/tx/0x89dc80d4d64c9f4334c486ffdc4429c530282b24eed6f1eeeaec5fc4abb01d8b"
+          "url": "https://monadscan.com/tx/0x89dc80d4d64c9f4334c486ffdc4429c530282b24eed6f1eeeaec5fc4abb01d8b"
         },
         {
           "label": "Mida's write-up",
@@ -110,15 +110,15 @@
       "evidence": [
         {
           "label": "funded",
-          "url": "https://monadvision.com/tx/0xa343ddb41fcde5e15118140de4203ceb57dd94cac539614d1f3237f96050c8e0"
+          "url": "https://monadscan.com/tx/0xa343ddb41fcde5e15118140de4203ceb57dd94cac539614d1f3237f96050c8e0"
         },
         {
           "label": "delivered",
-          "url": "https://monadvision.com/tx/0x9f9055ff4d93857db334019de340754c945b485fafbb6efefb796a65576e6b9d"
+          "url": "https://monadscan.com/tx/0x9f9055ff4d93857db334019de340754c945b485fafbb6efefb796a65576e6b9d"
         },
         {
           "label": "settled",
-          "url": "https://monadvision.com/tx/0x69aef08cc9f2afcde92f80ab9b367c9e23b11ca55c0a18ee08071feabadc2ec3"
+          "url": "https://monadscan.com/tx/0x69aef08cc9f2afcde92f80ab9b367c9e23b11ca55c0a18ee08071feabadc2ec3"
         },
         {
           "label": "terms",
@@ -197,7 +197,7 @@
       "date": "2026-10-07",
       "offered": "A finding (21 of their agents point at unreadable documents) and a paid Sentinel check inside a leash.",
       "outcome": "settled",
-      "result": "Leash confirmed the finding and fixed the two documents, which resolve since 7 October. The early passkey-owned registrations cannot be re-pointed, since the account exposes no setAgentURI. They took the seller-side fit on one condition: a LeashAccount pays by direct transfer only, no EIP-3009 and no ERC-1271, so it emits Paid(agent, seller, token, amount, ref, remainingToday) instead of signing an authorization. Sentinel now accepts that receipt on mainnet, with nine checks including pinning the Paid log to accountOf(agent) read off the Leash hub, so a contract that merely emits a matching event is refused. We accept USDC only: the network's test dollar has an unpermissioned mint capped at 100.000000 tUSD per call, which leashGate accepts by default. They offered to make a real paid call from a leashed agent on mainnet once we accepted pay(), which is now true. On 2026-10-10 Leash made the paid call: a Claude Desktop agent on a $1 a day leash that allows only our payee called Sentinel through leash-monad-mcp, paid 0.01 USDC from inside the leash and got its verdict. The Paid event shows $0.99 left on the leash. Leash added the transaction to its README and to `npx leash-monad verify`. They also fixed the tUSD finding in leash-monad 0.1.6, crediting the issue in SECURITY.md, and accepted our PR for an opt-in sellerPolicy that pays only sellers with a live Sclera bond.",
+      "result": "Leash confirmed the finding and fixed the two documents, which resolve since 7 October. The early passkey-owned registrations cannot be re-pointed, since the account exposes no setAgentURI. They took the seller-side fit on one condition: a LeashAccount pays by direct transfer only, no EIP-3009 and no ERC-1271, so it emits Paid(agent, seller, token, amount, ref, remainingToday) instead of signing an authorization. Sentinel now accepts that receipt on mainnet, with nine checks including pinning the Paid log to accountOf(agent) read off the Leash hub, so a contract that merely emits a matching event is refused. We accept USDC only: the network's test dollar has an unpermissioned mint capped at 100.000000 tUSD per call, which leashGate accepts by default. They offered to make a real paid call from a leashed agent on mainnet once we accepted pay(), which is now true. On 2026-10-10 Leash made the paid call: a Claude Desktop agent on a $1 a day leash that allows only our payee called Sentinel through leash-monad-mcp, paid 0.01 USDC from inside the leash and got its verdict. The Paid event shows $0.99 left on the leash. Leash added the transaction to its README and to `npx leash-monad verify`. They also fixed the tUSD finding in leash-monad 0.1.6, credited it in SECURITY.md and accepted our PR for an opt-in sellerPolicy that pays only sellers with a live Sclera bond.",
       "evidence": [
         {
           "label": "the Leash handshake, live",
@@ -209,7 +209,7 @@
         },
         {
           "label": "the paid call, 0.01 USDC",
-          "url": "https://monadvision.com/tx/0x1e911f1167978ac6dcb3504efe663038a2edcbe18775897ca5204c91bbbdb167"
+          "url": "https://monadscan.com/tx/0x1e911f1167978ac6dcb3504efe663038a2edcbe18775897ca5204c91bbbdb167"
         },
         {
           "label": "Leash's announcement",
@@ -274,19 +274,19 @@
         },
         {
           "label": "bounty committed",
-          "url": "https://monadvision.com/tx/0xc6cb96c6e8d7b7d81193ffe6b94faaf743c6c89ffceb4775115a23ba1a9b1ee9"
+          "url": "https://monadscan.com/tx/0xc6cb96c6e8d7b7d81193ffe6b94faaf743c6c89ffceb4775115a23ba1a9b1ee9"
         },
         {
           "label": "early release",
-          "url": "https://monadvision.com/tx/0x654e8d70f57fa6640eecb893cbf5f737a113db4bea7c4447f02acb10b2e9e91e"
+          "url": "https://monadscan.com/tx/0x654e8d70f57fa6640eecb893cbf5f737a113db4bea7c4447f02acb10b2e9e91e"
         },
         {
           "label": "challenge succeeded",
-          "url": "https://monadvision.com/tx/0x005fafd9cd2dac481ce8bcfab5b44b00bca1e4d429b3d673bc35e703a48e6f42"
+          "url": "https://monadscan.com/tx/0x005fafd9cd2dac481ce8bcfab5b44b00bca1e4d429b3d673bc35e703a48e6f42"
         },
         {
           "label": "challenger withdrawal",
-          "url": "https://monadvision.com/tx/0x76525e54404a680d50e1ecdf7f3e0c4836684eb5831c98da7fcdcda92b42be53"
+          "url": "https://monadscan.com/tx/0x76525e54404a680d50e1ecdf7f3e0c4836684eb5831c98da7fcdcda92b42be53"
         },
         {
           "label": "Alnitak's confirmation",
@@ -302,6 +302,17 @@
         "repo": "alnitak34/dissent",
         "number": 7
       }
+    },
+    {
+      "project": "Sente / Mandate SDK (passkey spend mandates)",
+      "repo": "IpastorSan/sente-monad-hackathon",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-11",
+      "offered": "The Sclera bond and claim-truth rate as inputs to sizing a mandate, a Sentinel pre-hire check on the payee, plus becoming one of their three integrators by accepting a mainnet PaymentAuthorized payment.",
+      "outcome": "sent",
+      "result": "Checked their mainnet work first: tx 0x11fec7 is a real 1 MON payment through PaymentGate with a PaymentAuthorized log, both contracts live on 143, the mandate a P-256 passkey signature. Pitched the bond as the other half of a mandate (authority granted versus collateral at stake) with two free reads an owner could size a mandate from, offered to be one of their three integrators on the Leash acceptance shape, then sent three code-read feedback points (native-MON-only settlement, netAmount versus gross in the event, a remaining() view). Sent, no reply yet. Also opened a companion issue on the SDK repo (chan30038917-hue/mandate-sdk#1), the SDK and contract half: the integrator offer plus three code-read notes I would PR (native-MON-only settlement, netAmount versus gross in the event, a remaining() view).",
+      "evidence": []
     }
   ]
 }

@@ -104,8 +104,8 @@ test("every evidence hash is a 66-char hex string", () => {
 });
 
 test("txHref builds a chain-aware explorer link and null for an unknown chain", () => {
-  assert.equal(txHref(10143, "0xabc"), "https://testnet.monadexplorer.com/tx/0xabc");
-  assert.equal(txHref(143, "0xabc"), "https://monadexplorer.com/tx/0xabc");
+  assert.equal(txHref(10143, "0xabc"), "https://testnet.monadscan.com/tx/0xabc");
+  assert.equal(txHref(143, "0xabc"), "https://monadscan.com/tx/0xabc");
   assert.equal(txHref(1, "0xabc"), null);
 });
 

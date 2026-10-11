@@ -197,7 +197,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
               <Num value={funder.topFunderWallets} /> of <Num value={funder.found} /> sampled wallets were first funded by{" "}
               <a
                 className="font-mono text-[var(--color-brand)] hover:underline"
-                href={`https://monadexplorer.com/address/${funder.topFunder}`}
+                href={`https://monadscan.com/address/${funder.topFunder}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -213,7 +213,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
                 one funding tx:{" "}
                 <a
                   className="hover:underline"
-                  href={`https://monadexplorer.com/tx/${funder.exampleTx}`}
+                  href={`https://monadscan.com/tx/${funder.exampleTx}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -226,7 +226,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
                 That funder was itself first funded by{" "}
                 <a
                   className="font-mono text-[var(--color-brand)] hover:underline"
-                  href={`https://monadexplorer.com/address/${reach.reachFunder}`}
+                  href={`https://monadscan.com/address/${reach.reachFunder}`}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

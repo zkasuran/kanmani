@@ -94,7 +94,7 @@ says.
 
 **This number grows and one of the increments is ours.** The population census ran when the slot
 read `10252`, so it covers ids `0` through `10251`. We then registered Optic as id `10252` in
-[`0x07f7211e…`](https://monadexplorer.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
+[`0x07f7211e…`](https://monadscan.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
 at block 106470711, which took the slot from `10252` to `10253` and the distinct-document count from
 2,012 to 2,013 at that moment. The slot reads `10276` today and the distinct-document count 2,053, the
 rest of the growth being other people registering after us.

@@ -260,7 +260,7 @@ function FundBody({
           <Row label="destination, Monad">
             <Mono>approve then createJob, run by the intermediary</Mono>{" "}
             <a className="text-[var(--color-brand)] hover:underline" target="_blank" rel="noopener"
-               href="https://monadexplorer.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558">
+               href="https://monadscan.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558">
               0x738af85c…a440b558
             </a>
           </Row>

@@ -98,7 +98,7 @@ export default async function Traction() {
             <li key={s.tx} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[13px]">
               <Mono className="w-5 shrink-0 text-muted">{s.step}</Mono>
               <span className={`w-14 shrink-0 font-mono text-[11.5px] ${s.who === "ours" ? "text-muted" : "text-[var(--color-brand)]"}`}>{s.who}</span>
-              <a href={`https://monadvision.com/tx/${s.tx}`} {...ext} className={`font-mono text-[12.5px] ${linkCls}`}>
+              <a href={`https://monadscan.com/tx/${s.tx}`} {...ext} className={`font-mono text-[12.5px] ${linkCls}`}>
                 {short(s.tx)}
               </a>
               <span className="text-[var(--color-text)]">{s.what}</span>
@@ -151,7 +151,7 @@ export default async function Traction() {
                     the ask
                   </a>
                   {a.bondAsk!.sent ? (
-                    <a href={`https://monadvision.com/tx/${a.bondAsk!.sent.split("tx ")[1]}`} {...ext} className={`text-[12px] ${linkCls}`}>
+                    <a href={`https://monadscan.com/tx/${a.bondAsk!.sent.split("tx ")[1]}`} {...ext} className={`text-[12px] ${linkCls}`}>
                       {a.bondAsk!.sent.split(",")[0]}
                     </a>
                   ) : null}

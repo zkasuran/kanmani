@@ -85,7 +85,7 @@ Every field of the request body:
 | \`chainId\` | next to \`draft\` | no | 143, the only chain with a registry here |
 
 The registry at \`${IDENTITY_REGISTRY}\` is a proxy (its own code is small by design). Check it on
-https://monadexplorer.com/address/${IDENTITY_REGISTRY} before sending if you want to verify it yourself.
+https://monadscan.com/address/${IDENTITY_REGISTRY} before sending if you want to verify it yourself.
 
 ## Step 2: sign and send it with the agent's own key
 

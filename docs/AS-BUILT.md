@@ -95,7 +95,7 @@ of those share one URL across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets.
 ### Aqueous, the escrow
 
 Live on Monad mainnet at
-[`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://monadexplorer.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32),
+[`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://monadscan.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32),
 10,901 bytes, immutable, no proxy, no admin function. Also on testnet with a test token, because
 neither USDC nor any registry exists on chain 10143.
 
@@ -112,7 +112,7 @@ any relayer. Both are published with their exploits in
 
 `POST /api/verify` answers 402 with an x402 v2 challenge, verifies through the Monad facilitator,
 does the work, then settles. Proven end to end against the live facilitator:
-[`0xf044c754…ee526d8a`](https://monadexplorer.com/tx/0xf044c7543ef4519d0db8d29c9cd5e6baa3a5611e735905d4173ce401ee526d8a),
+[`0xf044c754…ee526d8a`](https://monadscan.com/tx/0xf044c7543ef4519d0db8d29c9cd5e6baa3a5611e735905d4173ce401ee526d8a),
 block 106462031, submitted by the signer the facilitator's own `/supported` advertises.
 
 Then our own verifier read our own payment back and found it on Monad.
@@ -488,7 +488,7 @@ grep -rn 0x722cf70CbC5Ff80942A1274b0cc252E4DB2CaFdf contracts/ lib/
 ```
 
 **Deployed to Monad mainnet 2026-09-24** at
-[`0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), 8,477 bytes, source verified `exact_match`,
+[`0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf`](https://monadscan.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), 8,477 bytes, source verified `exact_match`,
 immutable with no admin function and no setter on any of its three constructor arguments.
 
 ```bash
@@ -522,7 +522,7 @@ against a floor of 80% claim truth over roughly one day of blocks with a minimum
 
 | | |
 |---|---|
-| transaction | [`0x72970dc0…26697e7c`](https://monadexplorer.com/tx/0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c) |
+| transaction | [`0x72970dc0…26697e7c`](https://monadscan.com/tx/0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c) |
 | block | 107460188, 261,828 gas |
 | locked | 20,000 units of USDC, held by the contract |
 | matures | block 107676188 |
@@ -541,7 +541,7 @@ A second bond on the same agent is refused with `BondExists()` (`0x2e01e311`), w
 one-bond-per-agent rule working on the live contract.
 
 **The bond completed its lifecycle on 2026-09-25.** It ran the full window with no slash and was
-released: [`0x06082587…1fb41b92`](https://monadexplorer.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92),
+released: [`0x06082587…1fb41b92`](https://monadscan.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92),
 block 107719555, 137,697 gas. The contract's USDC balance went 20,000 to 0 and the agent's 14,081 to
 34,081, so the exact amount came back. State reads `3` (`Released`), the amount field is zeroed. A
 second release reverts `WrongState()`.
@@ -583,12 +583,12 @@ bond per agent, ever, meant a team spent its only slot whenever it posted.
   bonds and `windowStart >= postedAt` is checked against the current bond, so a verdict signed for an
   earlier bond cannot slash a later one.
 
-Deployed at [`0xB4d641f016f53C683c409F271eE85e136041FE3f`](https://monadexplorer.com/address/0xB4d641f016f53C683c409F271eE85e136041FE3f),
-block 112,106,633, tx [`0x191531ad…189c`](https://monadexplorer.com/tx/0x191531adca3754d20961b021233828341053cbd7d1c7174d796d19d03c2b189c).
+Deployed at [`0xB4d641f016f53C683c409F271eE85e136041FE3f`](https://monadscan.com/address/0xB4d641f016f53C683c409F271eE85e136041FE3f),
+block 112,106,633, tx [`0x191531ad…189c`](https://monadscan.com/tx/0x191531adca3754d20961b021233828341053cbd7d1c7174d796d19d03c2b189c).
 Same attestor and registry as v1. Sourcify `exact_match`. Version 1's 39 tests run unchanged against
 it plus 8 for the changes, six deliberate breaks each fail the suite. A mainnet fork test burns
 real Circle USDC and re-bonds a real agent. Agent 10252 is bonded on it,
-[`0xbc2b4516…9e97`](https://monadvision.com/tx/0xbc2b45160e3d473f8b920dac825b8e9d20a3877d303b021d136d69f47a619e97),
+[`0xbc2b4516…9e97`](https://monadscan.com/tx/0xbc2b45160e3d473f8b920dac825b8e9d20a3877d303b021d136d69f47a619e97),
 which version 1 could never have allowed after that agent's first bond was released.
 
 ```bash

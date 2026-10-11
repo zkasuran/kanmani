@@ -50,7 +50,7 @@ const MAINNET: PayNet = {
   decimals: 6,
   priceAtomic: PRICE_ATOMIC,
   payTo: PAY_TO as `0x${string}`,
-  explorerTx: "https://monadexplorer.com/tx/",
+  explorerTx: "https://monadscan.com/tx/",
 };
 
 function testnet(): PayNet {

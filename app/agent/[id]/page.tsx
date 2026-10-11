@@ -493,7 +493,7 @@ export default async function AgentPage({ params }: Props) {
           compare with another →
         </Link>
         <a
-          href={`https://monadexplorer.com/token/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432?a=${a.agentId}`}
+          href={`https://monadscan.com/token/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432?a=${a.agentId}`}
           target="_blank"
           rel="noreferrer noopener"
           className="rounded border border-[var(--color-line)] px-3 py-1.5 text-muted hover:text-[var(--color-text)]"

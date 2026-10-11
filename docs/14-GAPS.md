@@ -155,7 +155,7 @@ wc -l lib/intents.ts lib/cleanverse.ts                  # 977, 189
 
 | planned | what it was for | state |
 |---|---|---|
-| **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **LIVE on Monad mainnet 2026-09-24**, [`0x57aF4e4B…`](https://monadexplorer.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), source verified |
+| **Sclera**, SLA bonds | an agent stakes against its promise, failure pays the buyer. This is what makes "trust becomes a price" a mechanism | **LIVE on Monad mainnet 2026-09-24**, [`0x57aF4e4B…`](https://monadscan.com/address/0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf), source verified |
 | **Chiasm**, cross-chain | BSC's agents indexed beside Monad's, standing merged on record hash | **shipped and live 2026-09-23.** 356,647 BSC agents indexed beside Monad's 10,276, 205,597 merged records, 3 documents referenced from both chains |
 | **CleanverseGate**, gated release | release conditioned on a compliance credential | **end to end on Monad testnet 2026-09-30**: registered with Cleanverse, a verified worker paid, an unverified one refused on chain. **Deployed on mainnet** at `0x4a21a5d8…544A`, waiting on production credentials to register; fails closed until then. See [20-CLEANVERSE.md](20-CLEANVERSE.md) section 6 |
 | **Cone**, odds market | a crowd price on whether an agent delivers | not started |
@@ -203,8 +203,8 @@ without a slash and was released on 2026-09-25:
 
 | step | transaction | effect |
 |---|---|---|
-| post | [`0x72970dc0…26697e7c`](https://monadexplorer.com/tx/0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c) | 20,000 units of USDC left the agent and were held by the contract |
-| release | [`0x06082587…1fb41b92`](https://monadexplorer.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92) | 20,000 returned to the agent, contract balance back to 0 |
+| post | [`0x72970dc0…26697e7c`](https://monadscan.com/tx/0x72970dc0428412d04c043877be6b8c979b245797cf275bcae683394026697e7c) | 20,000 units of USDC left the agent and were held by the contract |
+| release | [`0x06082587…1fb41b92`](https://monadscan.com/tx/0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7d1fb41b92) | 20,000 returned to the agent, contract balance back to 0 |
 
 Verified by balances rather than by events: the contract went 20,000 → 0 and the agent 14,081 → 34,081,
 which is exactly the amount back. The bond's state is now `3` (`Released`) and the amount field is zeroed.

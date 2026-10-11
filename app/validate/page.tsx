@@ -187,7 +187,7 @@ export default async function Validate() {
         <p className="max-w-3xl text-[14px] leading-relaxed text-muted">
           We registered as agent{" "}
           <a
-            href="https://monadexplorer.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394"
+            href="https://monadscan.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394"
             target="_blank"
             rel="noreferrer noopener"
             className="font-mono text-[var(--color-brand)] hover:underline"

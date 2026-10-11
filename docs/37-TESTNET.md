@@ -33,7 +33,7 @@ trade.
 | decimals | 6 | 6 |
 | price | `10000` atomic, 0.01 | `10000` atomic, 0.01 |
 | payee | `0xDB6c6340342e71A63cD11Ebac2185204b7777777` | the same house EOA, so the payee pin holds on testnet too |
-| explorer | `https://monadexplorer.com/tx/` | `https://testnet.monadscan.com/tx/` |
+| explorer | `https://monadscan.com/tx/` | `https://testnet.monadscan.com/tx/` |
 
 The domain is the part that bites. Monad's own guide says testnet "has no built-in entry and requires
 the custom money parser", so a client that reuses `{name: "USDC", version: "2"}` on testnet produces a

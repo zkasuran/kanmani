@@ -28,7 +28,7 @@ U=0x754704Bc059F8C67012fEd69BC8A327a5aafb603    # USDC on Monad mainnet
 | Monad mainnet chain id | `cast chain-id --rpc-url $R` | `143` |
 | Monad testnet chain id | `cast chain-id --rpc-url $T` | `10143` |
 
-Explorers are `https://monadexplorer.com` for mainnet and `https://testnet.monadscan.com` for
+Explorers are `https://monadscan.com` for mainnet and `https://testnet.monadscan.com` for
 testnet. Chain id is the only chain identifier that is not a matter of opinion, which is why the
 verifier resolves a document's declared network down to one before looking for anything.
 

@@ -465,7 +465,7 @@ function FundFlowView(p: ViewProps) {
           {p.status?.destinationTx ? (
             <a
               data-testid="fund-tx"
-              href={`https://monadexplorer.com/tx/${p.status.destinationTx}`}
+              href={`https://monadscan.com/tx/${p.status.destinationTx}`}
               target="_blank"
               rel="noreferrer noopener"
               className="mt-1 block break-all font-mono text-[12px] text-[var(--color-brand)] hover:underline"

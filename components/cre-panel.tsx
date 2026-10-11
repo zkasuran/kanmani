@@ -26,7 +26,7 @@ export function CrePanel() {
           <span className="text-[13px] text-muted">
             <Mono className="text-[12px]">bonds(uint256)</Mono> on Sclera{" "}
             <a
-              href={`https://monadexplorer.com/address/${SCLERA}`}
+              href={`https://monadscan.com/address/${SCLERA}`}
               target="_blank"
               rel="noreferrer noopener"
               className="font-mono text-[12px] text-[var(--color-brand)] hover:underline"

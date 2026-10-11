@@ -13,7 +13,7 @@
 import { formatUsdc } from "@/lib/pay.ts";
 import { type ScopedSession } from "@/lib/session.ts";
 
-const EXPLORER_ADDR = "https://monadexplorer.com/address/";
+const EXPLORER_ADDR = "https://monadscan.com/address/";
 /** Offer renew once under a minute is left, so a judge is never dropped mid-demo. */
 const RENEW_UNDER_MS = 60_000;
 

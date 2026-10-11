@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-10",
+  "generatedAt": "2026-10-11",
   "counts": {
-    "contacted": 12,
+    "contacted": 13,
     "replied": 7,
     "settled": 5,
     "outsideBuyer": 2,
@@ -14,8 +14,8 @@
       "number": 1,
       "date": "2026-09-29",
       "status": "settled on chain",
-      "replies": 4,
-      "lastAt": "2026-10-10",
+      "replies": 5,
+      "lastAt": "2026-10-11",
       "url": "https://github.com/taifoon-io/jev/issues/1",
       "pr": null
     },
@@ -127,9 +127,9 @@
       "repo": "0xcuy/adexto",
       "number": 2,
       "date": "2026-10-07",
-      "status": "replied, waiting on us",
+      "status": "replied, our turn done, waiting",
       "replies": 5,
-      "lastAt": "2026-10-10",
+      "lastAt": "2026-10-11",
       "url": "https://github.com/0xcuy/adexto/issues/2",
       "pr": null
     },
@@ -147,6 +147,17 @@
         "state": "merged",
         "url": "https://github.com/alnitak34/dissent/pull/7"
       }
+    },
+    {
+      "project": "Sente / Mandate SDK (passkey spend mandates)",
+      "repo": "IpastorSan/sente-monad-hackathon",
+      "number": 1,
+      "date": "2026-10-11",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/IpastorSan/sente-monad-hackathon/issues/1",
+      "pr": null
     }
   ]
 }

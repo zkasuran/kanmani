@@ -6,8 +6,8 @@ Money is held until the work lands and the receipt is emitted by the settlement 
 
 | | address |
 |---|---|
-| **Aqueous** | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://monadexplorer.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
-| **USDC** (real) | [`0x754704Bc059F8C67012fEd69BC8A327a5aafb603`](https://monadexplorer.com/address/0x754704Bc059F8C67012fEd69BC8A327a5aafb603) |
+| **Aqueous** | [`0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32`](https://monadscan.com/address/0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32) |
+| **USDC** (real) | [`0x754704Bc059F8C67012fEd69BC8A327a5aafb603`](https://monadscan.com/address/0x754704Bc059F8C67012fEd69BC8A327a5aafb603) |
 
 Chain 143, `claimWindow` 259200 seconds (3 days), 10,901 bytes of deployed code, from
 `0xDB6c6340342e71A63cD11Ebac2185204b7777777`. No token of its own: mainnet has real USDC, so the
@@ -23,11 +23,11 @@ of quietly passing.
 
 | step | transaction | what it did |
 |---|---|---|
-| fund | [`0x441886bf…f615ebe`](https://monadexplorer.com/tx/0x441886bf5f92e4d938f8604f728e968b71b9bcb934b502d7a37988156f615ebe) | 1.40 USDC to the buyer. USDC only, deliberately no MON |
-| escrow | [`0x2b879b52…417b57e`](https://monadexplorer.com/tx/0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e) | `createJobWithAuthorization`, buyer signed, relayer paid |
-| gas | [`0x9b5b16d6…3594ec`](https://monadexplorer.com/tx/0x9b5b16d6d2b19517ff4e6f3738328aef7a6ecd06cf18df27c9af6d8f723594ec) | 0.05 MON to the **agent**, which pays for its own work |
-| deliver | [`0xc259c7a6…82a6724`](https://monadexplorer.com/tx/0xc259c7a6067c051c01ed75a2b12d5c64380216275a43417ddf407913582a6724) | the agent delivers, from its own wallet |
-| settle | [`0x10d03f31…c9fce6c5`](https://monadexplorer.com/tx/0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5) | `settleMeteredWithAuthorization`, buyer signed, relayer paid |
+| fund | [`0x441886bf…f615ebe`](https://monadscan.com/tx/0x441886bf5f92e4d938f8604f728e968b71b9bcb934b502d7a37988156f615ebe) | 1.40 USDC to the buyer. USDC only, deliberately no MON |
+| escrow | [`0x2b879b52…417b57e`](https://monadscan.com/tx/0x2b879b52d51d1d2044b224da76fee3f041d8214940e3799599d132c1b417b57e) | `createJobWithAuthorization`, buyer signed, relayer paid |
+| gas | [`0x9b5b16d6…3594ec`](https://monadscan.com/tx/0x9b5b16d6d2b19517ff4e6f3738328aef7a6ecd06cf18df27c9af6d8f723594ec) | 0.05 MON to the **agent**, which pays for its own work |
+| deliver | [`0xc259c7a6…82a6724`](https://monadscan.com/tx/0xc259c7a6067c051c01ed75a2b12d5c64380216275a43417ddf407913582a6724) | the agent delivers, from its own wallet |
+| settle | [`0x10d03f31…c9fce6c5`](https://monadscan.com/tx/0x10d03f3155478f88ce90ae1deaa6a5fbd99af9ebaffa0512c9979367c9fce6c5) | `settleMeteredWithAuthorization`, buyer signed, relayer paid |
 
 The shape is a metered API at 2 cents a call. 1.40 USDC escrowed is a ceiling of 70 calls, 30 were
 used, so 0.60 is earned and **0.80 goes back in the same transaction that pays**.

@@ -343,7 +343,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
           {done.map((d) => (
             <li key={d.hash}>
               <span className="text-[var(--color-true)]">✓</span> {d.step} ·{" "}
-              <a className="font-mono text-[var(--color-brand)] hover:underline" href={`https://monadexplorer.com/tx/${d.hash}`} target="_blank" rel="noopener noreferrer">{d.hash.slice(0, 10)}…{d.hash.slice(-6)}</a>
+              <a className="font-mono text-[var(--color-brand)] hover:underline" href={`https://monadscan.com/tx/${d.hash}`} target="_blank" rel="noopener noreferrer">{d.hash.slice(0, 10)}…{d.hash.slice(-6)}</a>
             </li>
           ))}
         </ul>

@@ -8,7 +8,7 @@ export const metadata = {
     "Our escrow settles only to a wallet holding a Cleanverse Verified Identity, read on chain at the moment of payment. On Monad testnet a verified worker was paid and an unverified one was refused, both as real transactions.",
 };
 
-const TX = "https://testnet.monadexplorer.com/tx/";
+const TX = "https://testnet.monadscan.com/tx/";
 
 export default function Cleanverse() {
   return (

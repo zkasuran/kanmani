@@ -131,7 +131,7 @@ async function main() {
       funded: async (page) => {
         await page.waitForSelector('[data-testid="fund-tx"]', { timeout: 5_000 });
         const tx = await page.getAttribute('[data-testid="fund-tx"]', "href");
-        if (!tx || !tx.includes(`monadexplorer.com/tx/${DESTINATION_TX}`)) throw new Error("funded destination tx link missing");
+        if (!tx || !tx.includes(`monadscan.com/tx/${DESTINATION_TX}`)) throw new Error("funded destination tx link missing");
       },
     });
 

@@ -144,7 +144,7 @@ test("the coverage table lists every chain, so a reader sees what was not looked
 });
 
 test("a transaction link is built per chain, and unknown chains get null rather than a broken URL", () => {
-  assert.equal(txUrl(143, "0xabc"), "https://monadexplorer.com/tx/0xabc");
+  assert.equal(txUrl(143, "0xabc"), "https://monadscan.com/tx/0xabc");
   assert.equal(txUrl(999999, "0xabc"), null);
 });
 

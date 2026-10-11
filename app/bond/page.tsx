@@ -27,7 +27,7 @@ const FIRST_RELEASE = "0x06082587d73900d91f6dcd16408170dd322f316e9dc0acea27ae2a7
 function Tx({ hash, children }: { hash: string; children: React.ReactNode }) {
   return (
     <a
-      href={`https://monadexplorer.com/tx/${hash}`}
+      href={`https://monadscan.com/tx/${hash}`}
       target="_blank"
       rel="noreferrer noopener"
       className="font-mono text-[13px] text-[var(--color-brand)] hover:underline"
@@ -102,7 +102,7 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
             </p>
             <p>
               Contract{" "}
-              <a href={`https://monadexplorer.com/address/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline">
+              <a href={`https://monadscan.com/address/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline">
                 {SCLERA_V2}
               </a>
               , <Tx hash={V2_DEPLOY}>deployed at block 112,106,633</Tx>,{" "}
@@ -165,7 +165,7 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
           <dl className="space-y-1">
             <Row label="contract">
               <a
-                href={`https://monadexplorer.com/address/${SCLERA}`}
+                href={`https://monadscan.com/address/${SCLERA}`}
                 target="_blank"
                 rel="noreferrer noopener"
                 className="break-all font-mono text-[13px] text-[var(--color-brand)] hover:underline"

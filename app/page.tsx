@@ -633,7 +633,7 @@ function Proof({ k, tx }: { k: string; tx: string }) {
     <div className="proof-row">
       <span className="text-faint">{k}</span>
       <a
-        href={`https://monadexplorer.com/tx/${tx}`}
+        href={`https://monadscan.com/tx/${tx}`}
         target="_blank"
         rel="noreferrer noopener"
         className="text-[var(--color-brand)] hover:underline"

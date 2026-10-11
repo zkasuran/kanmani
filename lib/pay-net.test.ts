@@ -33,7 +33,7 @@ test("the testnet EIP-712 domain is TestUSDC's, not mainnet USDC's", () => {
 test("payNet carries the right explorer and payee per network", () => {
   const main = payNet("mainnet");
   const test = payNet("testnet");
-  assert.equal(main.explorerTx, "https://monadexplorer.com/tx/");
+  assert.equal(main.explorerTx, "https://monadscan.com/tx/");
   assert.equal(test.explorerTx, "https://testnet.monadscan.com/tx/");
   // The same house EOA is the payee on both chains.
   assert.equal(main.payTo, test.payTo);

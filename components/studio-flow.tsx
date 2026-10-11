@@ -877,7 +877,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
             {sent ? (
               <div className="mt-3 rounded border border-[var(--brand-line)] bg-[var(--color-panel)] p-3 text-[12.5px]">
                 <a
-                  href={`https://monadexplorer.com/tx/${sent.hash}`}
+                  href={`https://monadscan.com/tx/${sent.hash}`}
                   target="_blank"
                   rel="noreferrer noopener"
                   className="font-mono text-[var(--color-brand)] hover:underline"
@@ -986,7 +986,7 @@ function GasPanel({
   onTopUp: () => void;
   onCopy: () => void;
 }) {
-  const explorer = chainId === 143 ? `https://monadexplorer.com/address/${sender.address}` : chainId === 56 ? `https://bscscan.com/address/${sender.address}` : null;
+  const explorer = chainId === 143 ? `https://monadscan.com/address/${sender.address}` : chainId === 56 ? `https://bscscan.com/address/${sender.address}` : null;
   return (
     <div className="gas-panel" data-testid="gas-panel" data-state={gas?.state ?? "reading"}>
       <div className="flex flex-wrap items-baseline justify-between gap-2">

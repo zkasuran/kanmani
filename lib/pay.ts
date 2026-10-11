@@ -30,7 +30,7 @@ import { payNet, requirementsFor, usdcDomainFor, type PayNetName } from "./pay-n
 export const USDC_DECIMALS = 6;
 
 /** Monad's block explorer, the same one the rest of the app links transactions to. */
-export const MONAD_EXPLORER_TX = "https://monadexplorer.com/tx/";
+export const MONAD_EXPLORER_TX = "https://monadscan.com/tx/";
 
 /** Turn `eip155:143` into the numeric chain id the EIP-712 domain needs. */
 export function chainIdFromNetwork(network: string = NETWORK): number {

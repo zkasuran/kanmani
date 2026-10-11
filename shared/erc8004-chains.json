@@ -65,7 +65,7 @@
         "monadmainnet"
       ],
       "rpcEnv": "RPC_MONAD",
-      "explorer": "https://monadexplorer.com",
+      "explorer": "https://monadscan.com",
       "erc8004": {
         "startBlock": 0,
         "indexed": true,

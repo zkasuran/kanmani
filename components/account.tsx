@@ -179,7 +179,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
           ) : null}
         </div>
         <a
-          href={`https://monadexplorer.com/address/${address}`}
+          href={`https://monadscan.com/address/${address}`}
           target="_blank"
           rel="noopener noreferrer"
           className="shrink-0 font-mono text-[11px] text-muted hover:text-[var(--color-text)]"
