@@ -241,7 +241,7 @@ curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps 
               href="https://github.com/zkasuran/kanmani/blob/main/docs/19-NANSEN.md"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[var(--color-brand)] hover:underline"
+              className="text-[var(--color-brand)] ilink"
             >
               How the Nansen integration works
             </a>{" "}
@@ -262,7 +262,7 @@ curl -sS https://kanmani.xyz/api/sla/10182 | jq '{rateBps, sample}'   # rateBps 
             {CHAINS.length} chains declared, {registrable().length} carrying ERC-8004 registries. The
             registries are per-chain singletons sharing one address set, so a new chain needs no new
             addresses.{" "}
-            <Link href="/chains" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/chains" className="text-[var(--color-brand)] ilink">
               The coverage table →
             </Link>
           </p>
@@ -320,7 +320,7 @@ npm test    # conformance + drift and it names what is missing`} />
             evidence that a payment did not happen and collapsing the two would let somebody
             else&apos;s outage publish as an accusation, at scale, automatically. Every component here
             enforces that so you do not have to remember it.{" "}
-            <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/method" className="text-[var(--color-brand)] ilink">
               How each rung is decided →
             </Link>
           </p>

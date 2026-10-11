@@ -72,7 +72,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
                 This exact document is registered on {c.chainCount} chains ({c.chainIds.join(", ")}),
                 matched on its content hash, which is the only key that means the same thing on two
                 chains. The standing behind this agent did not start on Monad.{" "}
-                <Link href="/chains" className="text-[var(--color-brand)] hover:underline">
+                <Link href="/chains" className="text-[var(--color-brand)] ilink">
                   Which chains we read →
                 </Link>
               </span>
@@ -90,7 +90,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
                   href={c.uri}
                   target="_blank"
                   rel="noreferrer noopener nofollow"
-                  className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline"
+                  className="break-all font-mono text-[12.5px] text-[var(--color-brand)] ilink"
                 >
                   {c.uri}
                 </a>
@@ -196,7 +196,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
             <p className="text-[13.5px] leading-relaxed text-[var(--color-text)]">
               <Num value={funder.topFunderWallets} /> of <Num value={funder.found} /> sampled wallets were first funded by{" "}
               <a
-                className="font-mono text-[var(--color-brand)] hover:underline"
+                className="font-mono text-[var(--color-brand)] ilink"
                 href={`https://monadscan.com/address/${funder.topFunder}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -212,7 +212,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
               <p className="mt-1 font-mono text-[11.5px] text-faint">
                 one funding tx:{" "}
                 <a
-                  className="hover:underline"
+                  className="ilink"
                   href={`https://monadscan.com/tx/${funder.exampleTx}`}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -225,7 +225,7 @@ export default async function ClusterPage({ params, searchParams }: Props) {
               <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
                 That funder was itself first funded by{" "}
                 <a
-                  className="font-mono text-[var(--color-brand)] hover:underline"
+                  className="font-mono text-[var(--color-brand)] ilink"
                   href={`https://monadscan.com/address/${reach.reachFunder}`}
                   target="_blank"
                   rel="noopener noreferrer"

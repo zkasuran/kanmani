@@ -205,7 +205,7 @@ export default async function AgentPage({ params }: Props) {
             <ul className="space-y-1.5">
               {markets.map((m) => (
                 <li key={m.token} className="flex flex-wrap items-baseline gap-x-3 gap-y-0.5 text-[13px]">
-                  <a href={m.url} target="_blank" rel="noreferrer noopener" className="font-mono text-[var(--color-brand)] hover:underline">
+                  <a href={m.url} target="_blank" rel="noreferrer noopener" className="font-mono text-[var(--color-brand)] ilink">
                     ${m.symbol}
                   </a>
                   <span className="text-[var(--color-text)]">{m.name}</span>
@@ -317,7 +317,7 @@ export default async function AgentPage({ params }: Props) {
                       href={record.uri}
                       target="_blank"
                       rel="noreferrer noopener nofollow"
-                      className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline"
+                      className="break-all font-mono text-[12.5px] text-[var(--color-brand)] ilink"
                     >
                       {record.uri}
                     </a>
@@ -336,7 +336,7 @@ export default async function AgentPage({ params }: Props) {
                   {record.memberCount > 1 ? (
                     <Link
                       href={`/operators/${record.uriHash}`}
-                      className="text-[var(--color-brand)] hover:underline"
+                      className="text-[var(--color-brand)] ilink"
                     >
                       {(record.memberCount - 1).toLocaleString()} other agents across{" "}
                       {record.distinctOwners.toLocaleString()} wallets →
@@ -416,7 +416,7 @@ export default async function AgentPage({ params }: Props) {
               <p className="px-2 pt-3 text-[12px] text-faint">
                 {unchecked.length - UNCHECKED_SHOWN} more unchecked, not shown. Unchecked is not clean:
                 it means no verdict has been recorded yet.{" "}
-                <a href={`/api/claims?agent=${a.agentId}&limit=1000`} target="_blank" rel="noopener" className="text-[var(--color-brand)] hover:underline">
+                <a href={`/api/claims?agent=${a.agentId}&limit=1000`} target="_blank" rel="noopener" className="text-[var(--color-brand)] ilink">
                   every claim for this agent, as JSON →
                 </a>
               </p>
@@ -437,7 +437,7 @@ export default async function AgentPage({ params }: Props) {
             is optional and every change so far predates the feature. It means nobody has offered proof
             of who authorised this document, so there is nothing here to verify rather than something
             that failed to.{" "}
-            <Link href="/account#agents" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/account#agents" className="text-[var(--color-brand)] ilink">
               Sign one from your account →
             </Link>
           </p>

@@ -55,7 +55,7 @@ function ComposeRowView({ row }: { row: ComposeRow }) {
           href={href}
           target="_blank"
           rel="noreferrer"
-          className="break-all font-mono text-[11.5px] text-[var(--color-brand)] hover:underline"
+          className="break-all font-mono text-[11.5px] text-[var(--color-brand)] ilink"
         >
           {row.txHash}
         </a>
@@ -66,10 +66,10 @@ function ComposeRowView({ row }: { row: ComposeRow }) {
           </span>
           {row.href ? (
             <>
-              <Link href={row.href} className="font-mono text-[11.5px] text-[var(--color-brand)] hover:underline">
+              <Link href={row.href} className="font-mono text-[11.5px] text-[var(--color-brand)] ilink">
                 {row.href}
               </Link>
-              <Link href="/account" className="font-mono text-[11.5px] text-[var(--color-brand)] hover:underline">
+              <Link href="/account" className="font-mono text-[11.5px] text-[var(--color-brand)] ilink">
                 /account
               </Link>
             </>

@@ -395,7 +395,7 @@ function PayFlowView(p: ViewProps) {
             href={p.result.settlement.txUrl ?? "#"}
             target="_blank"
             rel="noreferrer"
-            className="mt-2 block break-all font-mono text-[12px] text-[var(--color-brand)] hover:underline"
+            className="mt-2 block break-all font-mono text-[12px] text-[var(--color-brand)] ilink"
           >
             {p.result.settlement.transaction}
           </a>
@@ -437,7 +437,7 @@ function PayFlowView(p: ViewProps) {
       <p className="max-w-3xl text-[12.5px] leading-relaxed text-faint">
         Nothing on this page is stored. Clear local storage, close the tab, open a fresh profile,
         then sign in again with the same passkey and the account and the session come back the same.{" "}
-        <Link href="/account" className="text-[var(--color-brand)] hover:underline">
+        <Link href="/account" className="text-[var(--color-brand)] ilink">
           The live storage readout is on the account page →
         </Link>
       </p>

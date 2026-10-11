@@ -73,7 +73,7 @@ export default async function Chains() {
                         href={chain.explorer}
                         target="_blank"
                         rel="noreferrer noopener"
-                        className="font-mono text-[13px] text-[var(--color-brand)] hover:underline"
+                        className="font-mono text-[13px] text-[var(--color-brand)] ilink"
                       >
                         {chain.displayName}
                       </a>
@@ -210,7 +210,7 @@ npm test                 # conformance + drift and it names what is missing`}</p
               Adding a chain can turn a <span className="text-[var(--color-false)]">false</span> into
               a <span className="text-[var(--color-true)]">true</span>, which is a correction with a
               before and an after rather than a number that quietly improves.{" "}
-              <Link href="/status" className="text-[var(--color-brand)] hover:underline">
+              <Link href="/status" className="text-[var(--color-brand)] ilink">
                 Verdicts that have changed →
               </Link>
             </li>
@@ -240,7 +240,7 @@ npm test                 # conformance + drift and it names what is missing`}</p
                 here. The {live.length - 1} other indexed chain
                 {live.length - 1 === 1 ? " is" : "s are"} present to enrich a Monad row, not to be a
                 second list: an operator whose document also appears elsewhere is marked on{" "}
-                <Link href="/operators" className="text-[var(--color-brand)] hover:underline">
+                <Link href="/operators" className="text-[var(--color-brand)] ilink">
                   /operators
                 </Link>
                 , matched on the document&apos;s content hash. Browsing BNB Smart Chain&apos;s own
@@ -255,7 +255,7 @@ npm test                 # conformance + drift and it names what is missing`}</p
             )}
           </p>
           <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-muted">
-            <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/method" className="text-[var(--color-brand)] ilink">
               How coverage decides a verdict →
             </Link>
           </p>

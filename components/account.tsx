@@ -206,7 +206,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
           ) : (
             <>
               signing keys: not in memory since the reload.{" "}
-              <button type="button" onClick={() => s.unlock()} disabled={s.busy !== null} className="text-[var(--color-brand)] hover:underline">
+              <button type="button" onClick={() => s.unlock()} disabled={s.busy !== null} className="text-[var(--color-brand)] ilink">
                 {s.busy === "unlock" ? "waiting for the passkey…" : "unlock with one prompt"}
               </button>
             </>
@@ -225,7 +225,7 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
         {data && data.agentCount === 0 ? (
           <p className="mt-1.5 text-[12px] leading-snug text-muted">
             This address owns no registered agent on Monad.{" "}
-            <Link href="/account#agents" onClick={onNavigate} className="text-[var(--color-brand)] hover:underline">register one</Link>
+            <Link href="/account#agents" onClick={onNavigate} className="text-[var(--color-brand)] ilink">register one</Link>
           </p>
         ) : null}
         {agentsShown.length ? (
@@ -238,9 +238,9 @@ export function AccountSummary({ compact = false, onNavigate }: { compact?: bool
                 <span className="flex shrink-0 gap-2 font-mono text-[11px] text-faint">
                   <span>{a.rung}</span>
                   {a.bond ? (
-                    <Link href={`/bond?agent=${a.agentId}#post`} onClick={onNavigate} className="text-[var(--color-true)] hover:underline">bond {a.bond}</Link>
+                    <Link href={`/bond?agent=${a.agentId}#post`} onClick={onNavigate} className="text-[var(--color-true)] ilink">bond {a.bond}</Link>
                   ) : (
-                    <Link href={`/bond?agent=${a.agentId}#post`} onClick={onNavigate} className="text-[var(--color-brand)] hover:underline">bond it</Link>
+                    <Link href={`/bond?agent=${a.agentId}#post`} onClick={onNavigate} className="text-[var(--color-brand)] ilink">bond it</Link>
                   )}
                 </span>
               </li>

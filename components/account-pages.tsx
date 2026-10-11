@@ -103,7 +103,7 @@ export function LoginTabs() {
               {tab === "login" ? (
                 <>
                   No account yet?{" "}
-                  <button type="button" onClick={() => select("create")} className="text-[var(--color-brand)] hover:underline">
+                  <button type="button" onClick={() => select("create")} className="text-[var(--color-brand)] ilink">
                     create one
                   </button>
                   .
@@ -111,7 +111,7 @@ export function LoginTabs() {
               ) : (
                 <>
                   Already have one?{" "}
-                  <button type="button" onClick={() => select("login")} className="text-[var(--color-brand)] hover:underline">
+                  <button type="button" onClick={() => select("login")} className="text-[var(--color-brand)] ilink">
                     log in
                   </button>
                   . Registering an agent comes after, from your account.

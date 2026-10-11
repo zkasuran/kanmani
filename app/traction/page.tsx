@@ -50,14 +50,10 @@ const DISSENT: { step: string; who: "ours" | "theirs"; tx: string; what: string 
 
 const short = (h: string) => `${h.slice(0, 10)}…${h.slice(-4)}`;
 const ext = { target: "_blank", rel: "noreferrer noopener" } as const;
-// Every proof link reads as a link at rest (brand colour plus a dimmed underline, so a tx hash is
-// not mistaken for the plain-coloured labels beside it) and lights up on hover (the underline goes
-// solid brand and a soft brand highlight fills behind the text). px/-mx keep the highlight padded
-// without shifting the row. Global `a` resets decoration to none, so the affordance lives here.
-const linkCls =
-  "text-[var(--color-brand)] underline decoration-[var(--color-brand-dim)] underline-offset-2 decoration-1 " +
-  "rounded px-1 -mx-1 transition-colors hover:bg-[var(--brand-soft)] hover:decoration-[var(--color-brand)] " +
-  "focus-visible:bg-[var(--brand-soft)] focus-visible:outline-none focus-visible:decoration-[var(--color-brand)]";
+// Brand colour plus the shared `.ilink` affordance (globals.css): a dimmed underline at rest so a
+// tx hash is not mistaken for the plain-coloured labels beside it, a solid underline and a soft
+// highlight on hover and keyboard focus. One definition for the whole site now lives in the class.
+const linkCls = "text-[var(--color-brand)] ilink";
 
 export default async function Traction() {
   const asks = contacts.filter((c) => c.bondAsk);

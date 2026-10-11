@@ -30,7 +30,7 @@ function Tx({ hash, children }: { hash: string; children: React.ReactNode }) {
       href={`https://monadscan.com/tx/${hash}`}
       target="_blank"
       rel="noreferrer noopener"
-      className="font-mono text-[13px] text-[var(--color-brand)] hover:underline"
+      className="font-mono text-[13px] text-[var(--color-brand)] ilink"
     >
       {children}
     </a>
@@ -87,7 +87,7 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
             <p>
               <span className="text-[var(--color-text)]">A slash pays nobody.</span> In version 1 a forfeit bond went to our own
               agent wallet, while our attestor signs the verdicts. So the party deciding a slash was the party paid by it.{" "}
-              <a href="https://github.com/trudransh/Assay/issues/4#issuecomment-6094151253" target="_blank" rel="noreferrer noopener" className="text-[var(--color-brand)] hover:underline">
+              <a href="https://github.com/trudransh/Assay/issues/4#issuecomment-6094151253" target="_blank" rel="noreferrer noopener" className="text-[var(--color-brand)] ilink">
                 Assay&apos;s review
               </a>{" "}
               named that as the question a buyer would ask. Version 2 burns a slashed bond to <Mono>0x…dEaD</Mono>, a constant in the
@@ -102,11 +102,11 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
             </p>
             <p>
               Contract{" "}
-              <a href={`https://monadscan.com/address/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline">
+              <a href={`https://monadscan.com/address/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="break-all font-mono text-[12.5px] text-[var(--color-brand)] ilink">
                 {SCLERA_V2}
               </a>
               , <Tx hash={V2_DEPLOY}>deployed at block 112,106,633</Tx>,{" "}
-              <a href={`https://sourcify.dev/#/lookup/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="text-[var(--color-brand)] hover:underline">
+              <a href={`https://sourcify.dev/#/lookup/${SCLERA_V2}`} target="_blank" rel="noreferrer noopener" className="text-[var(--color-brand)] ilink">
                 exact match on Sourcify
               </a>
               . Version 1&apos;s whole test suite runs against it unchanged, 39 tests, plus 8 for the two changes. Six deliberate
@@ -168,7 +168,7 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
                 href={`https://monadscan.com/address/${SCLERA}`}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="break-all font-mono text-[13px] text-[var(--color-brand)] hover:underline"
+                className="break-all font-mono text-[13px] text-[var(--color-brand)] ilink"
               >
                 {SCLERA}
               </a>
@@ -287,7 +287,7 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
           <p className="mt-3 max-w-3xl text-[13.5px] leading-relaxed text-muted">
             That attestor is a passkey-derived key that <span className="text-[var(--color-text)]">owns nothing</span>{" "}
             and can only sign verdicts.{" "}
-            <Link href="/account" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/account" className="text-[var(--color-brand)] ilink">
               How the four keys separate →
             </Link>
           </p>
@@ -314,7 +314,7 @@ cast call ${SCLERA} 'bonds(uint256)' 10252 --rpc-url https://rpc.monad.xyz
             so anyone could bond anyone and a stranger could have created an unslashable bond that made
             an agent read as staked. A badge that costs one atomic unit to fake is the thing this project
             exists to attack, so the fix is enforced by the registry and mutation-tested.{" "}
-            <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/method" className="text-[var(--color-brand)] ilink">
               How a verdict is decided →
             </Link>
           </p>

@@ -41,7 +41,7 @@ export default function Hire() {
         <div className="px-5 py-4 text-[12.5px] leading-relaxed text-muted">
           Every agent here carries an ERC-8004 registration-v1 document on chain as a data: URI, so it cannot go dead.
           Each document is its own, names its protocol (A2A, with a real agent card), points back to its agent id and
-          states its trust model. <Link href="/self-audit.json" className="text-[var(--color-brand)] hover:underline">The self-audit</Link>{" "}
+          states its trust model. <Link href="/self-audit.json" className="text-[var(--color-brand)] ilink">The self-audit</Link>{" "}
           runs our own Doctor, Linter and registration check against all of them: document on chain byte for byte, spec
           consequences met, no shared document, indexed correctly, A2A hireable, x402 settleable and each one doing its
           published example. <Mono>node scripts/self-audit.mjs</Mono> reruns it.
@@ -62,7 +62,7 @@ export default function Hire() {
                   <p className="mt-1.5 text-[13px] leading-relaxed text-[var(--color-text)]">{r.sells}</p>
                   <p className="mt-1.5 text-[12px] leading-relaxed text-muted">{r.why}</p>
                   <div className="mt-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 font-mono text-[11.5px]">
-                    <a href={`/api/service/${slug}`} className="text-[var(--color-brand)] hover:underline" target="_blank" rel="noopener">
+                    <a href={`/api/service/${slug}`} className="text-[var(--color-brand)] ilink" target="_blank" rel="noopener">
                       /api/service/{slug}
                     </a>
                     {id ? (

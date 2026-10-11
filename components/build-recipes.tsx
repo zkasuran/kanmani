@@ -69,7 +69,7 @@ export function BuildRecipes() {
                     {r.name}
                     <span className="ml-2 text-[10.5px] uppercase tracking-wide text-faint">{r.kind}</span>
                   </span>
-                  <button type="button" onClick={() => copy(key, r.code)} className="font-mono text-[11px] text-[var(--color-brand)] hover:underline" aria-label={`copy the ${r.name} snippet`}>
+                  <button type="button" onClick={() => copy(key, r.code)} className="font-mono text-[11px] text-[var(--color-brand)] ilink" aria-label={`copy the ${r.name} snippet`}>
                     {copied === key ? "copied" : "copy"}
                   </button>
                 </div>

@@ -468,7 +468,7 @@ function FundFlowView(p: ViewProps) {
               href={`https://monadscan.com/tx/${p.status.destinationTx}`}
               target="_blank"
               rel="noreferrer noopener"
-              className="mt-1 block break-all font-mono text-[12px] text-[var(--color-brand)] hover:underline"
+              className="mt-1 block break-all font-mono text-[12px] text-[var(--color-brand)] ilink"
             >
               {p.status.destinationTx}
             </a>

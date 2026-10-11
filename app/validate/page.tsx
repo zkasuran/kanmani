@@ -177,7 +177,7 @@ export default async function Validate() {
           <span className="text-[var(--color-text)]">We will refuse to answer</span> if we hold no
           decided verdict about your agent and the refusal is silent on chain rather than a zero.
           Writing a number for an agent we could not check would be permanent and wrong.{" "}
-          <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+          <Link href="/method" className="text-[var(--color-brand)] ilink">
             How each verdict is decided →
           </Link>
         </p>
@@ -190,7 +190,7 @@ export default async function Validate() {
             href="https://monadscan.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394"
             target="_blank"
             rel="noreferrer noopener"
-            className="font-mono text-[var(--color-brand)] hover:underline"
+            className="font-mono text-[var(--color-brand)] ilink"
           >
             10252
           </a>{" "}

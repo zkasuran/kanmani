@@ -95,7 +95,7 @@ export default async function Verify({ searchParams }: Props) {
       {fromClaim ? (
         <p className="font-mono text-[12px] text-muted">
           checking claim{" "}
-          <Link href={`/claim/${encodeURIComponent(fromClaim.id)}`} className="text-[var(--color-brand)] hover:underline">
+          <Link href={`/claim/${encodeURIComponent(fromClaim.id)}`} className="text-[var(--color-brand)] ilink">
             {fromClaim.id}
           </Link>{" "}
           with its on-chain commitment
@@ -156,7 +156,7 @@ function Result({ r }: { r: Awaited<ReturnType<typeof check>> }) {
             </Row>
             <Row label="mapping">
               {v.mapping ? (
-                <Link href={`/method#${v.mapping}`} className="font-mono text-[13px] text-[var(--color-brand)] hover:underline">
+                <Link href={`/method#${v.mapping}`} className="font-mono text-[13px] text-[var(--color-brand)] ilink">
                   {v.mapping}
                 </Link>
               ) : (

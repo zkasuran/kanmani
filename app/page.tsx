@@ -394,7 +394,7 @@ export default async function Home() {
             <p className="mt-3 text-[12px] leading-relaxed text-muted">
               Work with other teams is on its own page, every transaction linked: an outside broker paying our agents, Dissent
               paying a challenger from our bounty, and the bonds we have asked partners to post.{" "}
-              <Link href="/traction" className="text-[var(--color-brand)] hover:underline">
+              <Link href="/traction" className="text-[var(--color-brand)] ilink">
                 With other teams
               </Link>
             </p>
@@ -498,7 +498,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
             <span className="text-[var(--color-false)]">false</span> and never zero, because these rows
             carry real operators&apos; names and a failure on our side to look is not evidence a
             payment did not happen.{" "}
-            <Link href="/method" className="text-[var(--color-brand)] hover:underline">How each rung is decided →</Link>
+            <Link href="/method" className="text-[var(--color-brand)] ilink">How each rung is decided →</Link>
           </p>
           <Derivation sql={m.sql} note="One row per claim, latest verdict only. The full history of every re-check stays in fovea.verdict." />
         </div>
@@ -636,7 +636,7 @@ function Proof({ k, tx }: { k: string; tx: string }) {
         href={`https://monadscan.com/tx/${tx}`}
         target="_blank"
         rel="noreferrer noopener"
-        className="text-[var(--color-brand)] hover:underline"
+        className="text-[var(--color-brand)] ilink"
       >
         {tx.slice(0, 10)}…{tx.slice(-8)}
       </a>

@@ -32,9 +32,9 @@ export function UsagePanel({ u }: { u: Usage }) {
             <ul className="mt-2 flex flex-col gap-1 font-mono text-[11.5px]">
               {u.onchain.others.slice(0, 8).map((o) => (
                 <li key={o.tx}>
-                  <a className="text-[var(--color-brand)] hover:underline" href={`https://monadscan.com/tx/${o.tx}`} target="_blank" rel="noopener noreferrer">{o.tx.slice(0, 10)}…</a>{" "}
+                  <a className="text-[var(--color-brand)] ilink" href={`https://monadscan.com/tx/${o.tx}`} target="_blank" rel="noopener noreferrer">{o.tx.slice(0, 10)}…</a>{" "}
                   {CONTRACT[o.contract] ?? o.contract} {o.event}
-                  {o.agentId ? <> · <Link href={`/agent/${o.agentId}`} className="hover:underline">#{o.agentId}</Link></> : null}
+                  {o.agentId ? <> · <Link href={`/agent/${o.agentId}`} className="ilink">#{o.agentId}</Link></> : null}
                 </li>
               ))}
             </ul>

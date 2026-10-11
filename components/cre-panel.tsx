@@ -29,7 +29,7 @@ export function CrePanel() {
               href={`https://monadscan.com/address/${SCLERA}`}
               target="_blank"
               rel="noreferrer noopener"
-              className="font-mono text-[12px] text-[var(--color-brand)] hover:underline"
+              className="font-mono text-[12px] text-[var(--color-brand)] ilink"
             >
               {SCLERA}
             </a>{" "}
@@ -44,7 +44,7 @@ export function CrePanel() {
               href={sim.featured.liveCheck}
               target="_blank"
               rel="noreferrer noopener"
-              className="font-mono text-[12px] text-[var(--color-brand)] hover:underline"
+              className="font-mono text-[12px] text-[var(--color-brand)] ilink"
             >
               check agent {sim.featured.agentId} live
             </a>
@@ -89,7 +89,7 @@ export function CrePanel() {
           href={sim.docsHref}
           target="_blank"
           rel="noreferrer noopener"
-          className="text-[var(--color-brand)] hover:underline"
+          className="text-[var(--color-brand)] ilink"
         >
           full recorded run →
         </a>

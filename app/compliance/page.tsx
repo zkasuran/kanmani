@@ -160,7 +160,7 @@ export default async function CompliancePage() {
                     </td>
                     <td className="py-2 pr-3 align-top">
                       {href ? (
-                        <a href={href} target="_blank" rel="noreferrer noopener" className="font-mono text-[11.5px] text-[var(--color-brand)] hover:underline">
+                        <a href={href} target="_blank" rel="noreferrer noopener" className="font-mono text-[11.5px] text-[var(--color-brand)] ilink">
                           {short}
                         </a>
                       ) : (
@@ -223,8 +223,8 @@ identity gate             CVI tier 20, issued 0x6ae7f07b…f148aef057`}
             real with no page change, because the page reads the chain live rather than a stored answer.
           </p>
           <p className="mt-3 text-[12px] text-faint">
-            See <Link href="/claims" className="text-[var(--color-brand)] hover:underline">claims</Link> and{" "}
-            <Link href="/verify" className="text-[var(--color-brand)] hover:underline">verify</Link> for the rest of the ladder.
+            See <Link href="/claims" className="text-[var(--color-brand)] ilink">claims</Link> and{" "}
+            <Link href="/verify" className="text-[var(--color-brand)] ilink">verify</Link> for the rest of the ladder.
           </p>
         </Panel>
       </div>

@@ -259,6 +259,36 @@ a {
   text-decoration: none;
 }
 
+/*
+ * The one inline-link affordance, used everywhere a link sits in body text or a data row.
+ *
+ * The problem it fixes: links were brand colour with an underline only on hover, so a tx hash read
+ * as plain text next to the plain-coloured labels beside it, and nothing happened until the cursor
+ * was already on it. `.ilink` gives a link a dimmed underline at rest, so it is recognisable without
+ * hovering, then on hover (and keyboard focus) the underline goes solid and a soft highlight fills
+ * behind the text. It keys off `currentColor`, so it keeps whatever colour the element already has
+ * (brand, true, unknown) rather than forcing one, and composes with any Tailwind size or layout
+ * class. `box-decoration-break: clone` keeps the highlight whole when a long link wraps.
+ */
+.ilink {
+  text-decoration: underline;
+  text-decoration-color: color-mix(in oklab, currentColor 42%, transparent);
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+  border-radius: 4px;
+  padding: 0.5px 3px;
+  margin: 0 -3px;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  transition: background-color 0.12s ease, text-decoration-color 0.12s ease, color 0.12s ease;
+}
+.ilink:hover,
+.ilink:focus-visible {
+  text-decoration-color: currentColor;
+  background: color-mix(in oklab, currentColor 15%, transparent);
+  outline: none;
+}
+
 /* The selection colour has to stay legible in both modes, so it takes the theme's own dim brand as
    the fill and the theme's own text colour on top rather than a hardcoded white. */
 ::selection {

@@ -252,7 +252,7 @@ export default async function Operators() {
                 <p className="break-all font-mono text-[12px] text-muted">{c.uri}</p>
                 <p className="mt-1 text-[13.5px] leading-relaxed text-[var(--color-text)]">
                   <Num value={c.topFunderWallets} /> of <Num value={c.found} /> sampled wallets were first funded by{" "}
-                  <a className="font-mono text-[var(--color-brand)] hover:underline" href={`https://monadscan.com/address/${c.topFunder}`} target="_blank" rel="noopener noreferrer">
+                  <a className="font-mono text-[var(--color-brand)] ilink" href={`https://monadscan.com/address/${c.topFunder}`} target="_blank" rel="noopener noreferrer">
                     {c.topFunder ? `${c.topFunder.slice(0, 6)}…${c.topFunder.slice(-4)}` : "?"}
                   </a>
                   {c.topFunderLabel ? <span className="text-muted"> ({c.topFunderLabel})</span> : null}.{" "}
@@ -265,7 +265,7 @@ export default async function Operators() {
                 {c.exampleTx ? (
                   <p className="mt-1 font-mono text-[11.5px] text-faint">
                     one funding tx:{" "}
-                    <a className="hover:underline" href={`https://monadscan.com/tx/${c.exampleTx}`} target="_blank" rel="noopener noreferrer">
+                    <a className="ilink" href={`https://monadscan.com/tx/${c.exampleTx}`} target="_blank" rel="noopener noreferrer">
                       {c.exampleTx.slice(0, 12)}…
                     </a>
                   </p>

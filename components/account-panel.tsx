@@ -223,7 +223,7 @@ export function AccountPanel() {
         </p>
         <p className="mt-3 text-[12.5px] leading-relaxed text-muted">
           This same passkey pays.{" "}
-          <Link href="/pay" className="text-[var(--color-brand)] hover:underline">
+          <Link href="/pay" className="text-[var(--color-brand)] ilink">
             Open a scoped signing session and send a gasless Monad transaction →
           </Link>
         </p>

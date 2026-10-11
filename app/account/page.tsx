@@ -128,7 +128,7 @@ export default async function AccountPage() {
               verdict is not a scarlet letter. Repoint the document and the{" "}
               <code className="font-mono">MetadataUpdate</code> re-runs the ladder so the record
               corrects itself with both readings kept.{" "}
-              <Link href="/status" className="text-[var(--color-brand)] hover:underline">
+              <Link href="/status" className="text-[var(--color-brand)] ilink">
                 Verdicts that have changed →
               </Link>
             </li>
@@ -156,7 +156,7 @@ export default async function AccountPage() {
             <code className="font-mono">tokenURI</code> rather than hosting it, a day after measuring
             that. Hosting is still offered here, because a hosted document is a legitimate choice and
             the point is that the consequence is visible rather than hidden.{" "}
-            <Link href="/operators" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/operators" className="text-[var(--color-brand)] ilink">
               The clusters behind that number →
             </Link>
           </p>
@@ -267,7 +267,7 @@ content    = HKDF(prfOutput, info="kanmani.vitreous.v1")      -> AES-256-GCM key
           A database breach here exposes no key material, because there is none to expose. That is
           a stronger property than most applications have and it falls out of the constraint rather
           than being bolted on.{" "}
-          <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+          <Link href="/method" className="text-[var(--color-brand)] ilink">
             How the rest of it is decided →
           </Link>
         </p>

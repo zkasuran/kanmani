@@ -114,7 +114,7 @@ export default async function Compare({ searchParams }: Props) {
                 </th>
                 {sides.map((s) => (
                   <th key={s.agent.id} className="border-b border-[var(--color-line)] px-3 pb-2 text-left">
-                    <Link href={`/agent/${s.agent.agentId}`} className="hover:underline">
+                    <Link href={`/agent/${s.agent.agentId}`} className="ilink">
                       <Mono className="text-[14px] text-[var(--color-text)]">#{s.agent.agentId}</Mono>
                       <span className="ml-2 text-[12px] text-muted">{s.agent.name ?? "unnamed"}</span>
                     </Link>
@@ -162,7 +162,7 @@ export default async function Compare({ searchParams }: Props) {
                   ) : (
                     <Link
                       href={`/operators/${s.record.uriHash}`}
-                      className="font-mono text-[12px] text-[var(--color-unknown)] hover:underline"
+                      className="font-mono text-[12px] text-[var(--color-unknown)] ilink"
                     >
                       {(s.record.memberCount - 1).toLocaleString()} others
                     </Link>

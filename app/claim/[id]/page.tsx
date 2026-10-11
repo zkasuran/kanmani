@@ -79,7 +79,7 @@ export default async function ClaimPage({ params }: Props) {
             </Row>
             <Row label="read by mapping">
               {c.mapping ? (
-                <Link href={`/method#${c.mapping}`} className="font-mono text-[13px] text-[var(--color-brand)] hover:underline">
+                <Link href={`/method#${c.mapping}`} className="font-mono text-[13px] text-[var(--color-brand)] ilink">
                   {c.mapping}
                 </Link>
               ) : (
@@ -99,7 +99,7 @@ export default async function ClaimPage({ params }: Props) {
                   href={c.feedbackUri}
                   target="_blank"
                   rel="noreferrer noopener nofollow"
-                  className="break-all font-mono text-[12.5px] text-[var(--color-brand)] hover:underline"
+                  className="break-all font-mono text-[12.5px] text-[var(--color-brand)] ilink"
                 >
                   {c.feedbackUri}
                 </a>
@@ -188,7 +188,7 @@ export default async function ClaimPage({ params }: Props) {
         <div className="grid gap-x-8 sm:grid-cols-2">
           <dl>
             <Row label="about agent">
-              <Link href={`/agent/${c.agentNumber}`} className="text-[var(--color-brand)] hover:underline">
+              <Link href={`/agent/${c.agentNumber}`} className="text-[var(--color-brand)] ilink">
                 #{c.agentNumber}
                 {c.agentName ? ` · ${c.agentName}` : ""}
               </Link>
@@ -233,7 +233,7 @@ export default async function ClaimPage({ params }: Props) {
                   href={c.responseUri}
                   target="_blank"
                   rel="noreferrer noopener nofollow"
-                  className="break-all font-mono text-[12px] text-[var(--color-brand)] hover:underline"
+                  className="break-all font-mono text-[12px] text-[var(--color-brand)] ilink"
                 >
                   {c.responseUri}
                 </a>

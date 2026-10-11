@@ -57,7 +57,7 @@ export function SessionScope({
               href={`${EXPLORER_ADDR}${payTo}`}
               target="_blank"
               rel="noreferrer"
-              className="break-all font-mono text-[13px] text-[var(--color-brand)] hover:underline"
+              className="break-all font-mono text-[13px] text-[var(--color-brand)] ilink"
             >
               {payTo}
             </a>

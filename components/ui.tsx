@@ -343,7 +343,7 @@ export function TxLink({ hash, chainId }: { hash: string; chainId: number | null
   const short = `${hash.slice(0, 10)}…${hash.slice(-8)}`;
   if (!explorer) return <Mono className="text-muted" >{short}</Mono>;
   return (
-    <a href={explorer} target="_blank" rel="noreferrer noopener" className="font-mono text-[13px] text-[var(--color-brand)] hover:underline">
+    <a href={explorer} target="_blank" rel="noreferrer noopener" className="font-mono text-[13px] text-[var(--color-brand)] ilink">
       {short}
     </a>
   );

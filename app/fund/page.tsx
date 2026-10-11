@@ -249,7 +249,7 @@ function FundBody({
         <div className="space-y-px">
           <Row label="source, BSC">
             <Mono>0.12 USDT sent to the Aurora deposit address</Mono>{" "}
-            <a className="text-[var(--color-brand)] hover:underline" target="_blank" rel="noopener"
+            <a className="text-[var(--color-brand)] ilink" target="_blank" rel="noopener"
                href="https://bscscan.com/tx/0xcebbdd3a9dbcd586bfa2c0a6ec848eb0eb8ec9b9715c99327112a14e85463469">
               0xcebbdd3a…85463469
             </a>
@@ -259,7 +259,7 @@ function FundBody({
           </Row>
           <Row label="destination, Monad">
             <Mono>approve then createJob, run by the intermediary</Mono>{" "}
-            <a className="text-[var(--color-brand)] hover:underline" target="_blank" rel="noopener"
+            <a className="text-[var(--color-brand)] ilink" target="_blank" rel="noopener"
                href="https://monadscan.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558">
               0x738af85c…a440b558
             </a>
@@ -288,7 +288,7 @@ function FundBody({
           which needs an Intents Connect API key wired server side, so those numbers are not fetched on
           this public page. A funded deposit spends real money across a real bridge and is run from
           the operator&apos;s wallet, not from here. See{" "}
-          <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+          <Link href="/method" className="text-[var(--color-brand)] ilink">
             the method
           </Link>{" "}
           for how each figure is checked.

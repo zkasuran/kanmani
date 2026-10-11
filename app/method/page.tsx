@@ -185,7 +185,7 @@ export default async function Method() {
             <Num value={gap.unparsed} /> intact document{gap.unparsed === 1 ? "" : "s"} no mapping reads
             right now. <Num value={gap.pendingProposals} /> converged proposal
             {gap.pendingProposals === 1 ? "" : "s"} wait here to close that.{" "}
-            <Link href="/claims?outcome=unknown&rung=intact" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/claims?outcome=unknown&rung=intact" className="text-[var(--color-brand)] ilink">
               see the unmapped claims →
             </Link>
           </p>
@@ -288,7 +288,7 @@ export default async function Method() {
           <Mono className="text-[var(--color-true)]">true</Mono> with both timestamps, rather than as
           a number quietly improving with no trace we ever said otherwise. Every claim page carries
           its full verification history for that reason.{" "}
-          <Link href="/status" className="text-[var(--color-brand)] hover:underline">
+          <Link href="/status" className="text-[var(--color-brand)] ilink">
             Claims whose verdict has changed →
           </Link>
         </p>

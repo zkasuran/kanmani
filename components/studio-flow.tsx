@@ -521,7 +521,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         <p className="mt-2 text-[11.5px] leading-relaxed text-muted">
           Only chains where the ERC-8004 registries are actually deployed are offered, read from the
           chain registry rather than hardcoded.{" "}
-          <Link href="/chains" className="text-[var(--color-brand)] hover:underline">
+          <Link href="/chains" className="text-[var(--color-brand)] ilink">
             Which chains and what it takes to add one →
           </Link>{" "}
           Your identity lives here; the work can settle on any chain we can read.
@@ -566,7 +566,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
             `setAgentURI` reverts for anyone who is not the owner, so this can only work on an agent
             you hold. Read what we already measured about it on{" "}
             {agentId ? (
-              <Link href={`/agent/${agentId}`} className="text-[var(--color-brand)] hover:underline">
+              <Link href={`/agent/${agentId}`} className="text-[var(--color-brand)] ilink">
                 /agent/{agentId}
               </Link>
             ) : (
@@ -617,7 +617,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
             <button
               type="button"
               onClick={() => setDraft({ ...draft, skills: [...draft.skills, { id: "", endpoint: "", x402: false }] })}
-              className="mt-2 font-mono text-[11px] text-[var(--color-brand)] hover:underline"
+              className="mt-2 font-mono text-[11px] text-[var(--color-brand)] ilink"
             >
               + another skill
             </button>
@@ -684,7 +684,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
             <div className="rounded border border-[var(--color-line)] bg-[var(--color-ink)] p-3">
               <div className="flex items-baseline justify-between gap-2">
                 <span className={LABEL}>{door === "create" ? "register(agentURI)" : "setAgentURI(agentId, newURI)"}</span>
-                <button type="button" onClick={() => copy(calldata, "Calldata")} className="font-mono text-[11px] text-[var(--color-brand)] hover:underline">
+                <button type="button" onClick={() => copy(calldata, "Calldata")} className="font-mono text-[11px] text-[var(--color-brand)] ilink">
                   copy
                 </button>
               </div>
@@ -806,7 +806,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
                     <button
                       type="button"
                       onClick={() => copy(JSON.stringify({ ...receipt.receipt, signature: receipt.signature }, null, 2), "Receipt")}
-                      className="font-mono text-[11px] text-[var(--color-brand)] hover:underline"
+                      className="font-mono text-[11px] text-[var(--color-brand)] ilink"
                     >
                       copy
                     </button>
@@ -814,7 +814,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
                       type="button"
                       onClick={publish}
                       disabled={busy === "publish" || published !== "no"}
-                      className="font-mono text-[11px] text-[var(--color-brand)] hover:underline disabled:opacity-50 disabled:hover:no-underline"
+                      className="font-mono text-[11px] text-[var(--color-brand)] ilink disabled:opacity-50 disabled:hover:no-underline"
                     >
                       {busy === "publish"
                         ? "publishing…"
@@ -880,7 +880,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
                   href={`https://monadscan.com/tx/${sent.hash}`}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="font-mono text-[var(--color-brand)] hover:underline"
+                  className="font-mono text-[var(--color-brand)] ilink"
                 >
                   {sent.hash.slice(0, 12)}…{sent.hash.slice(-10)}
                 </a>
@@ -911,7 +911,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
             {sender.kind === "passkey"
               ? "The key comes from the passkey rather than from anything stored here, so the same passkey on another device reaches the same agent. "
               : "It is your wallet's own address, so the agent is held wherever that wallet is. "}
-            <Link href="/account" className="text-[var(--color-brand)] hover:underline">
+            <Link href="/account" className="text-[var(--color-brand)] ilink">
               What the four keys are →
             </Link>
           </p>
@@ -937,7 +937,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         a{" "}
         <code className="font-mono">MetadataUpdate</code> re-runs the ladder for that agent, so a
         repointed document updates its own verdict with both timestamps kept.{" "}
-        <Link href="/method" className="text-[var(--color-brand)] hover:underline">
+        <Link href="/method" className="text-[var(--color-brand)] ilink">
           How each rung is decided →
         </Link>
       </p>

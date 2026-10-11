@@ -509,7 +509,7 @@ function CrossChainPanel({ cc }: { cc: Sourced<CrossChainMerge | null> }) {
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <Link
                       href={`/agent/${d.presence[0]!.firstAgentId}`}
-                      className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-[var(--color-brand)] hover:underline"
+                      className="min-w-0 flex-1 truncate font-mono text-[11.5px] text-[var(--color-brand)] ilink"
                     >
                       {d.uri || hash}
                     </Link>

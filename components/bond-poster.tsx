@@ -217,7 +217,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
     return (
       <div className="px-5 py-4 text-[13px] leading-relaxed text-muted">
         Log in with the passkey or wallet that owns the agent. Only the owner can bond it.{" "}
-        <Link href="/login" className="text-[var(--color-brand)] hover:underline">log in →</Link>
+        <Link href="/login" className="text-[var(--color-brand)] ilink">log in →</Link>
       </div>
     );
   }
@@ -275,7 +275,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
         <p className="text-[12px] leading-relaxed text-muted" data-testid="bond-suggestion">
           {suggestion.floorPct ? (
             <>
-              Suggested floor <button type="button" className="font-mono text-[var(--color-brand)] hover:underline" onClick={() => setDraft({ ...draft, minTruthRatePct: suggestion.floorPct! })}>{suggestion.floorPct}%</button>. {suggestion.why}
+              Suggested floor <button type="button" className="font-mono text-[var(--color-brand)] ilink" onClick={() => setDraft({ ...draft, minTruthRatePct: suggestion.floorPct! })}>{suggestion.floorPct}%</button>. {suggestion.why}
             </>
           ) : (
             suggestion.why
@@ -343,7 +343,7 @@ export function BondPoster({ initialAgent }: { initialAgent: string | null }) {
           {done.map((d) => (
             <li key={d.hash}>
               <span className="text-[var(--color-true)]">✓</span> {d.step} ·{" "}
-              <a className="font-mono text-[var(--color-brand)] hover:underline" href={`https://monadscan.com/tx/${d.hash}`} target="_blank" rel="noopener noreferrer">{d.hash.slice(0, 10)}…{d.hash.slice(-6)}</a>
+              <a className="font-mono text-[var(--color-brand)] ilink" href={`https://monadscan.com/tx/${d.hash}`} target="_blank" rel="noopener noreferrer">{d.hash.slice(0, 10)}…{d.hash.slice(-6)}</a>
             </li>
           ))}
         </ul>
