@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-10-11",
   "counts": {
-    "contacted": 13,
+    "contacted": 14,
     "replied": 7,
     "settled": 5,
     "outsideBuyer": 2,
@@ -149,7 +149,7 @@
       }
     },
     {
-      "project": "Sente / Mandate SDK (passkey spend mandates)",
+      "project": "Sente (passkey trading agent, the Mandate app)",
       "repo": "IpastorSan/sente-monad-hackathon",
       "number": 1,
       "date": "2026-10-11",
@@ -157,6 +157,17 @@
       "replies": 0,
       "lastAt": null,
       "url": "https://github.com/IpastorSan/sente-monad-hackathon/issues/1",
+      "pr": null
+    },
+    {
+      "project": "Mandate SDK (passkey spend limits, the SDK repo)",
+      "repo": "chan30038917-hue/mandate-sdk",
+      "number": 1,
+      "date": "2026-10-11",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/chan30038917-hue/mandate-sdk/issues/1",
       "pr": null
     }
   ]
