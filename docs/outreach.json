@@ -106,19 +106,27 @@
       "date": "2026-10-06",
       "offered": "Pay their host per signed, anchored receipt through Aqueous.",
       "outcome": "settled",
-      "result": "Assay sold us 5 responses from their host (agent 10278) at 0.01 USDC each through Aqueous. All 5 receipts verify on Monad against their ReceiptAnchor and the delivery hash matched the Merkle root we published in advance. Settled for 5 units, 0.05 USDC to their payee. We were the buyer. Our run also showed them that receipts on Google's endpoint count only visible output tokens, not thinking tokens, which they will document. They have since asked us to grade their Kimi host from our own key, because every grade in their registry currently comes from their own verifier. They also offered a second job at a 1,500 token ceiling.",
+      "result": "Assay sold us two metered jobs from their host (agent 10278) through Aqueous, five anchored responses each at 0.01 USDC. Every receipt verifies on Monad against their ReceiptAnchor and both delivery roots matched the Merkle root we published in advance before any money moved. We settled both, 0.10 USDC to their payee across the two jobs. We were the buyer. Our first run showed them that receipts on Google's endpoint count only the visible output tokens, not the thinking tokens, which they are documenting. After their review of our bond contract we shipped Sclera v2, where a slash burns to 0x...dEaD rather than paying anyone and an agent can re-bond once its previous bond is released. Our own agent 10252 is bonded on it. They will bond a host on v2 once it publishes claims the contract can measure.",
       "evidence": [
         {
-          "label": "funded",
+          "label": "job 1 funded",
           "url": "https://monadscan.com/tx/0xa343ddb41fcde5e15118140de4203ceb57dd94cac539614d1f3237f96050c8e0"
         },
         {
-          "label": "delivered",
-          "url": "https://monadscan.com/tx/0x9f9055ff4d93857db334019de340754c945b485fafbb6efefb796a65576e6b9d"
+          "label": "job 1 settled",
+          "url": "https://monadscan.com/tx/0x69aef08cc9f2afcde92f80ab9b367c9e23b11ca55c0a18ee08071feabadc2ec3"
         },
         {
-          "label": "settled",
-          "url": "https://monadscan.com/tx/0x69aef08cc9f2afcde92f80ab9b367c9e23b11ca55c0a18ee08071feabadc2ec3"
+          "label": "job 2 funded",
+          "url": "https://monadscan.com/tx/0x3cf74da9ca1712664786eedb22170107e01db4832d691736b7eaf29b93f40c6d"
+        },
+        {
+          "label": "job 2 settled",
+          "url": "https://monadscan.com/tx/0xd74d97dc3de0a489767f5750a6e58dfe95793654791fa819f20d80fa937a46c3"
+        },
+        {
+          "label": "Sclera v2",
+          "url": "https://monadscan.com/address/0xB4d641f016f53C683c409F271eE85e136041FE3f"
         },
         {
           "label": "terms",

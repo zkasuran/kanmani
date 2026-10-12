@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-11",
+  "generatedAt": "2026-10-12",
   "counts": {
     "contacted": 14,
     "replied": 7,
@@ -74,8 +74,8 @@
       "number": 4,
       "date": "2026-10-06",
       "status": "settled on chain",
-      "replies": 8,
-      "lastAt": "2026-10-10",
+      "replies": 9,
+      "lastAt": "2026-10-12",
       "url": "https://github.com/trudransh/Assay/issues/4",
       "pr": null
     },
