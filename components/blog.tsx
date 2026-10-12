@@ -21,7 +21,7 @@ export function H2({ id, children }: { id?: string; children: ReactNode }) {
 }
 
 export function Code({ children }: { children: ReactNode }) {
-  return <code className="rounded bg-[var(--color-panel-2)] px-1.5 py-0.5 font-mono text-[13px]">{children}</code>;
+  return <code className="rounded bg-[var(--color-panel-2)] px-1.5 py-0.5 font-mono text-[13px] [overflow-wrap:anywhere]">{children}</code>;
 }
 
 /** A screenshot of the live site, in both themes, with a caption that says what to look at. */
