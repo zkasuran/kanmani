@@ -393,7 +393,7 @@ export default async function AgentPage({ params }: Props) {
                   <span className="w-28 shrink-0">
                     <Addr value={c.clientAddress} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">
+                  <span className="min-w-0 flex-1 basis-full sm:basis-auto sm:truncate text-[12.5px] text-muted">
                     {c.outcome === "false" && c.foundChain ? (
                       <>
                         real payment on <span className="text-[var(--color-brand)]">{c.foundChain}</span>, document

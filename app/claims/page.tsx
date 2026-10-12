@@ -189,7 +189,7 @@ export default async function Claims({ searchParams }: Props) {
                 <span className="w-44 shrink-0">
                   <RungLadder rung={c.rung} />
                 </span>
-                <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">
+                <span className="min-w-0 flex-1 basis-full sm:basis-auto sm:truncate text-[12.5px] text-muted">
                   {c.reason ?? <span className="unknown-value">no verdict recorded</span>}
                 </span>
                 <Mono className="shrink-0 text-[11px] text-faint">
@@ -197,7 +197,7 @@ export default async function Claims({ searchParams }: Props) {
                 </Mono>
               </div>
               {c.declaredTx ? (
-                <p className="mt-0.5 truncate pl-[5.5rem] font-mono text-[11px] text-faint">
+                <p className="mt-0.5 pl-0 font-mono text-[11px] text-faint sm:truncate sm:pl-[5.5rem]">
                   cites {c.declaredTx} on {c.declaredNetwork ?? "an unnamed chain"}
                 </p>
               ) : null}
