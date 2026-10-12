@@ -133,13 +133,7 @@
           "url": "https://github.com/zkasuran/kanmani/blob/main/docs/jobs/assay-1.terms.txt"
         }
       ],
-      "buyer": "us",
-      "bondAsk": {
-        "agents": [
-          10316
-        ],
-        "url": "https://github.com/trudransh/Assay/issues/4#issuecomment-6093713905"
-      }
+      "buyer": "us"
     },
     {
       "project": "Prooflines Agent Trust",
