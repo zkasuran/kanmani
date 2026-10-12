@@ -62,7 +62,7 @@ const CHAIN_OPTIONS = registrable();
 
 const FIELD =
   "mt-1 w-full rounded border border-[var(--color-line-bright)] bg-[var(--color-ink)] px-2.5 py-1.5 font-mono text-[12.5px] text-[var(--color-text)] outline-none focus:border-[var(--color-brand)]";
-const LABEL = "font-mono text-[10.5px] uppercase tracking-[0.12em] text-faint";
+const LABEL = "font-mono text-[11px] uppercase tracking-[0.12em] text-faint";
 
 /**
  * `hostedFailureAgents` is measured, not typed. This copy used to state a figure inline, which meant a

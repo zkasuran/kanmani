@@ -86,7 +86,7 @@ export function ThemeToggle() {
       // present for layout but does not announce a state it has not confirmed.
       aria-label={ready ? `Theme: ${LABEL[choice]}. Click to change.` : "Theme"}
       title={ready ? `Theme: ${LABEL[choice]}` : "Theme"}
-      className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] text-[12px] leading-none text-muted transition-colors hover:border-[var(--brand-line)] hover:text-[var(--color-text)]"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[var(--color-line)] text-[13px] leading-none text-muted transition-colors hover:border-[var(--brand-line)] hover:text-[var(--color-text)] md:h-8 md:w-8 md:text-[12px]"
     >
       <span aria-hidden>{ready ? ICON[choice] : ICON.system}</span>
     </button>

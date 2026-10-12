@@ -54,7 +54,7 @@ export default async function Chains() {
           }
         >
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[46rem] text-sm">
+            <table className="table-cards w-full min-w-[46rem] text-sm">
               <thead>
                 <tr className="border-b border-[var(--color-line)] text-left font-mono text-[11px] uppercase tracking-wide text-faint">
                   <th className="pb-2">chain</th>
@@ -68,7 +68,7 @@ export default async function Chains() {
               <tbody>
                 {rows.map(({ chain, configured, registries }) => (
                   <tr key={chain.id} className="border-b border-[var(--color-line)]/50 last:border-0">
-                    <td className="py-2">
+                    <td className="py-2" data-label="chain">
                       <a
                         href={chain.explorer}
                         target="_blank"
@@ -78,22 +78,22 @@ export default async function Chains() {
                         {chain.displayName}
                       </a>
                     </td>
-                    <td className="py-2 font-mono text-[12px] text-muted">{chain.id}</td>
-                    <td className="py-2">
+                    <td className="py-2 font-mono text-[12px] text-muted" data-label="id">{chain.id}</td>
+                    <td className="py-2" data-label="readable">
                       {configured ? (
                         <span className="chip chip--live">yes</span>
                       ) : (
                         <span className="unknown-value font-mono text-[11px]">no endpoint</span>
                       )}
                     </td>
-                    <td className="py-2">
+                    <td className="py-2" data-label="erc-8004">
                       {registries ? (
                         <span className="chip chip--live">deployed</span>
                       ) : (
                         <span className="font-mono text-[11px] text-faint">none</span>
                       )}
                     </td>
-                    <td className="py-2 font-mono text-[11px]">
+                    <td className="py-2 font-mono text-[11px]" data-label="indexed">
                       {chain.erc8004?.indexed ? (
                         <span className="text-[var(--color-true)]">live</span>
                       ) : registries ? (
@@ -102,7 +102,7 @@ export default async function Chains() {
                         <span className="text-faint">{/* voice-gate:allow empty-cell glyph */ "\u2014"}</span>
                       )}
                     </td>
-                    <td className="py-2 font-mono text-[11px] text-faint">{chain.aliases.join(" · ")}</td>
+                    <td className="py-2 font-mono text-[11.5px] text-faint" data-label="names">{chain.aliases.join(" · ")}</td>
                   </tr>
                 ))}
               </tbody>

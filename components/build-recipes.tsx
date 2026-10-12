@@ -59,23 +59,23 @@ export function BuildRecipes() {
 
       <div role="tabpanel" id={`panel-${g.id}`} aria-labelledby={`tab-${g.id}`} className="mt-3">
         <p className="max-w-3xl text-[13px] leading-relaxed text-muted">{g.lead}</p>
-        <div className="mt-3 grid gap-3 lg:grid-cols-2">
+        <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
           {g.recipes.map((r) => {
             const key = `${g.id}:${r.name}`;
             return (
-              <div key={key} className="recipe rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] p-3">
+              <div key={key} className="recipe min-w-0 rounded border border-[var(--color-line)] bg-[var(--color-panel-2)] p-3">
                 <div className="flex items-baseline justify-between gap-3">
                   <span className="font-mono text-[12.5px] text-[var(--color-text)]">
                     {r.name}
-                    <span className="ml-2 text-[10.5px] uppercase tracking-wide text-faint">{r.kind}</span>
+                    <span className="ml-2 text-[11px] uppercase tracking-wide text-faint">{r.kind}</span>
                   </span>
                   <button type="button" onClick={() => copy(key, r.code)} className="font-mono text-[11px] text-[var(--color-brand)] ilink" aria-label={`copy the ${r.name} snippet`}>
                     {copied === key ? "copied" : "copy"}
                   </button>
                 </div>
-                <pre className="sql mt-2 max-h-56 overflow-auto whitespace-pre text-[11.5px]">{r.code}</pre>
+                <pre className="sql mt-2 max-h-56 overflow-auto whitespace-pre-wrap [overflow-wrap:anywhere] text-[11.5px] sm:whitespace-pre">{r.code}</pre>
                 {r.note ? <p className="mt-2 text-[11.5px] leading-snug text-muted">{r.note}</p> : null}
-                <p className="mt-1.5 font-mono text-[10.5px] text-faint">checked against {r.source}</p>
+                <p className="mt-1.5 font-mono text-[11px] text-faint">checked against {r.source}</p>
               </div>
             );
           })}

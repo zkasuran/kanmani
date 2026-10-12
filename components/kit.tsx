@@ -177,7 +177,7 @@ export function Ladder({ rung }: { rung: Rung | null }) {
           }}
         />
       ))}
-      <span style={{ marginLeft: "5px", fontFamily: "ui-monospace, monospace", fontSize: "10.5px", opacity: 0.7 }}>
+      <span style={{ marginLeft: "5px", fontFamily: "ui-monospace, monospace", fontSize: "11px", opacity: 0.7 }}>
         {rung ?? "unchecked"}
       </span>
     </span>

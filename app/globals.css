@@ -2227,3 +2227,70 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
   :root:not([data-theme]) .shot-dark { display: none; }
 }
 .blog-prose a { color: var(--color-brand); text-decoration: underline; text-underline-offset: 3px; }
+
+/* ==========================================================================================
+ * Responsive data tables. A wide table (`min-w-[46rem]`) is readable on a laptop and a cramped,
+ * half-cut, horizontally-scrolling strip on a phone. Below 40rem a table carrying `.table-cards`
+ * stops being a grid and becomes one card per row: the column head is dropped and every cell
+ * labels itself from `data-label`, so no data is clipped and nothing scrolls sideways. The desktop
+ * table is untouched. Add `data-label` to each `<td>` and the class to the `<table>`.
+ * ======================================================================================== */
+@media (max-width: 40rem) {
+  .table-cards,
+  .table-cards thead,
+  .table-cards tbody,
+  .table-cards tr,
+  .table-cards th,
+  .table-cards td {
+    display: block;
+    width: auto;
+  }
+  /* The laptop min-width would otherwise force the sideways scroll this whole block removes. */
+  .table-cards {
+    min-width: 0 !important;
+  }
+  /* Column heads are dropped on the phone because every cell carries its own data-label. */
+  .table-cards thead {
+    display: none;
+  }
+  .table-cards tbody tr {
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius);
+    background: var(--glass-strong, var(--color-panel-2));
+    padding: 0.55rem 0.85rem;
+    margin-bottom: 0.6rem;
+  }
+  .table-cards tbody tr:last-child {
+    margin-bottom: 0;
+  }
+  .table-cards td {
+    display: grid;
+    grid-template-columns: 6.25rem minmax(0, 1fr);
+    gap: 0.5rem 0.9rem;
+    align-items: baseline;
+    padding: 0.3rem 0 !important;
+    border: 0 !important;
+  }
+  .table-cards td + td {
+    border-top: 1px solid color-mix(in oklab, var(--color-line) 55%, transparent) !important;
+    margin-top: 0.15rem;
+    padding-top: 0.4rem !important;
+  }
+  .table-cards td::before {
+    content: attr(data-label);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-faint);
+    line-height: 1.5;
+  }
+  /* A cell with no data-label (or an empty one) spans the full width instead of leaving a dead
+     label column. */
+  .table-cards td:not([data-label]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .table-cards td:not([data-label])::before {
+    content: none;
+  }
+}

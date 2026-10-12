@@ -190,7 +190,7 @@ export default async function Bond({ searchParams }: { searchParams: Promise<{ a
           </dl>
 
           <p className="mt-4 max-w-3xl text-[13px] leading-relaxed text-muted">
-            Verified by where the money went rather than by an event we emitted. While the bond was open 10252's
+            Verified by where the money went rather than by an event we emitted. While the bond was open 10252&apos;s
             stake of 20,000 units sat in the contract and the agent was down by exactly that; on release both
             reversed. The bond now reads state <Mono>3</Mono>, <Mono>Released</Mono>, with its amount zeroed and a
             second release reverts <Mono>WrongState()</Mono>.

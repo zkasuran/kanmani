@@ -128,7 +128,7 @@ export default async function CompliancePage() {
       {/* 4. pass and refuse, on chain */}
       <Panel title="the pass and the refuse, on chain" subtitle="The end-to-end testnet run. A verified worker is paid, an unverified wallet is refused and no money moves. The escrowed asset is labelled on every row.">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-[12.5px]">
+          <table className="table-cards w-full text-left text-[12.5px]">
             <thead>
               <tr className="border-b border-[var(--color-line)] font-mono text-[11px] uppercase tracking-wide text-faint">
                 <th className="py-2 pr-3">step</th>
@@ -143,7 +143,7 @@ export default async function CompliancePage() {
                 const short = `${r.txHash.slice(0, 10)}…${r.txHash.slice(-8)}`;
                 return (
                   <tr key={r.txHash} className="border-b border-[var(--color-line)]/60 last:border-0">
-                    <td className="py-2 pr-3 align-top">
+                    <td className="py-2 pr-3 align-top" data-label="step">
                       {r.kind === "setup" ? (
                         <span className="font-mono text-[12px] text-muted">{r.step}</span>
                       ) : (
@@ -153,12 +153,12 @@ export default async function CompliancePage() {
                         </span>
                       )}
                     </td>
-                    <td className="py-2 pr-3 align-top font-mono text-[11.5px] text-muted">{r.asset}</td>
-                    <td className="py-2 pr-3 align-top text-muted">
+                    <td className="py-2 pr-3 align-top font-mono text-[11.5px] text-muted" data-label="asset">{r.asset}</td>
+                    <td className="py-2 pr-3 align-top text-muted" data-label="outcome">
                       {r.outcome}
                       {r.revert ? <span className="ml-1 font-mono text-[11px] text-[var(--color-false)]">{r.revert}</span> : null}
                     </td>
-                    <td className="py-2 pr-3 align-top">
+                    <td className="py-2 pr-3 align-top" data-label="tx">
                       {href ? (
                         <a href={href} target="_blank" rel="noreferrer noopener" className="font-mono text-[11.5px] text-[var(--color-brand)] ilink">
                           {short}
