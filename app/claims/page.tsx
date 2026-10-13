@@ -198,7 +198,13 @@ export default async function Claims({ searchParams }: Props) {
               </div>
               {c.declaredTx ? (
                 <p className="mt-0.5 pl-0 font-mono text-[11px] text-faint sm:truncate sm:pl-[5.5rem]">
-                  cites {c.declaredTx} on {c.declaredNetwork ?? "an unnamed chain"}
+                  {/* A phone shows the hash shortened, so the row never runs past its card. The full
+                      hash is one tap away on the claim page and in full on anything wider. */}
+                  cites{" "}
+                  <span className="sm:hidden" title={c.declaredTx}>
+                    {c.declaredTx.length > 20 ? `${c.declaredTx.slice(0, 10)}…${c.declaredTx.slice(-8)}` : c.declaredTx}
+                  </span>
+                  <span className="hidden sm:inline">{c.declaredTx}</span> on {c.declaredNetwork ?? "an unnamed chain"}
                 </p>
               ) : null}
             </Link>

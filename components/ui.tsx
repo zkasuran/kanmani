@@ -254,8 +254,8 @@ export function StatTile({
             ? "text-[var(--color-unknown)]"
             : "text-[var(--color-text)]";
   return (
-    <div className="spot rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3.5" title={hint}>
-      <div className={`stat-value text-[length:var(--step-3)] ${toneClass}`}>
+    <div className="stat-tile spot rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel)] px-4 py-3.5" title={hint}>
+      <div className={`stat-value stat-value--fit ${toneClass}`}>
         <Num value={value} suffix={suffix} title={hint} />
       </div>
       <div className="mt-1.5 text-[12px] leading-snug text-muted">{label}</div>

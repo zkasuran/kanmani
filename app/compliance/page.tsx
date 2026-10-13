@@ -97,7 +97,7 @@ export default async function CompliancePage() {
         <ol className="flex flex-col gap-2" aria-label="settlement flow">
           {seq.map((s, i) => (
             <li key={s.key} className="rounded-[var(--radius)] border border-[var(--color-line)] bg-[var(--color-panel-2)]/40 px-4 py-3">
-              <div className="flex items-baseline gap-2">
+              <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
                 <span className="font-mono text-[11px] text-faint">{i + 1}</span>
                 <span className="font-mono text-[12.5px] text-[var(--color-text)]">{s.title}</span>
                 {"fn" in s && s.fn ? <Mono className="text-[var(--color-brand)]">{s.fn}()</Mono> : null}

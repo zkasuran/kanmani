@@ -246,6 +246,20 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   font-feature-settings: "tnum" 1;
+  /* A 42-character address or a 66-character hash inside a sentence is one unbreakable word. On a
+     phone it would run past its card. break-word only breaks it when it cannot fit any other way,
+     so ordinary prose is untouched. */
+  overflow-wrap: break-word;
+}
+
+/* A grid with no column utility gets one implicit `auto` track. An auto track grows to fit
+   its widest unbreakable line: an address, a hash, a calldata blob. On a phone that pushed whole
+   columns past the screen edge. minmax(0, 1fr) is the same single column with a floor of zero.
+   It sits in the base layer, so every grid-cols-* utility still overrides it. */
+@layer base {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Numbers line up in columns. On a page that is mostly counts, proportional digits make two
@@ -403,6 +417,19 @@ details[open] > summary::before {
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1;
+}
+
+/* A stat tile's figure scales with the tile, not only with the viewport. --step-3 follows vw, so
+   a six-digit count in a narrow tile (three across half a laptop screen) ran past the border. A number
+   must never wrap mid-figure either. The tile is a size container; the figure takes the smaller
+   of the usual step and a quarter of the tile, on one line. Every tile sits in a grid
+   track, so the container never sizes itself from its own content. */
+.stat-tile {
+  container-type: inline-size;
+}
+.stat-value--fit {
+  font-size: min(var(--step-3), 24cqi);
+  white-space: nowrap;
 }
 
 /* Calls to action. The brand one glows, the ghost one is quiet. Both lift a hair on hover so a
@@ -2292,5 +2319,13 @@ a.strata__link:focus-visible { outline: 2px solid var(--color-brand); outline-of
   }
   .table-cards td:not([data-label])::before {
     content: none;
+  }
+  /* A blank cell is a zero the desktop grid leaves empty on purpose. As a card it would be a label
+     with nothing beside it, so it is dropped. Values sit beside their label, not pushed right. */
+  .table-cards td:empty {
+    display: none;
+  }
+  .table-cards td {
+    text-align: left;
   }
 }
