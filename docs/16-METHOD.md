@@ -21,7 +21,7 @@ project at all.** They are the sections that carry the claims about money.
 
 The index queries need the indexer running locally, because Envio HyperIndex is self-hosted here.
 Sections 2 through 5 are those. Bringing it up is `cd indexer && npm ci && npm run dev` plus the
-sync time, which is the honest cost of reproducing a population census over <!-- n:agents -->10,375<!-- /n --> agents.
+sync time, which is the honest cost of reproducing a population census over <!-- n:agents -->10,390<!-- /n --> agents.
 
 ```bash
 export R=https://rpc.monad.xyz                                # chain 143, Monad mainnet
@@ -56,7 +56,7 @@ another Postgres already on the machine. There is no default password.
 
 ## 1. The population, from the registry's own counter slot
 
-**Published as: <!-- n:agents -->10,375<!-- /n --> agents.**
+**Published as: <!-- n:agents -->10,390<!-- /n --> agents.**
 
 `totalSupply()` reverts on this registry, so the token interface cannot answer how many agents
 exist. The count lives in a storage slot:
@@ -90,14 +90,14 @@ cast call $ID "ownerOf(uint256)(address)" 10276 --rpc-url $R
 Both halves agree. A wrong slot would not produce a boundary that lands exactly where the counter
 says.
 
-### Why you may read <!-- n:agents -->10,375<!-- /n --> where an older document says 10,252
+### Why you may read <!-- n:agents -->10,390<!-- /n --> where an older document says 10,252
 
 **This number grows and one of the increments is ours.** The population census ran when the slot
 read `10252`, so it covers ids `0` through `10251`. We then registered Optic as id `10252` in
 [`0x07f7211e…`](https://monadscan.com/tx/0x07f7211e2699b9516bfb746c5d5bf2c8c1fe3768a7d2dc5b09cfd5e7e2b3c394)
 at block 106470711, which took the slot from `10252` to `10253` and the distinct-document count from
 2,012 to 2,013 at that moment. By block 109,750,000 the slot read `10276` with 2,053 distinct
-documents. The live site shows <!-- n:agents -->10,375<!-- /n --> agents and <!-- n:documents -->2,112<!-- /n --> documents now, the
+documents. The live site shows <!-- n:agents -->10,390<!-- /n --> agents and <!-- n:documents -->2,119<!-- /n --> documents now, the
 rest of the growth being other people registering after us.
 
 So `03-POPULATION.md` says 10,252 and means it: that was the registry at census time and rerunning
@@ -110,8 +110,9 @@ never see it go down.
 
 ## 2. The population, from the index
 
-**Published as: <!-- n:agents -->10,375<!-- /n --> agents, <!-- n:documents -->2,112<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,300<!-- /n --> feedbacks, <!-- n:withPointer -->1,300<!-- /n --> of them
-carrying an evidence document, 1 validation.**
+**Published as: <!-- n:agents -->10,390<!-- /n --> agents, <!-- n:documents -->2,119<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,328<!-- /n --> feedbacks, <!-- n:withPointer -->1,307<!-- /n --> of them
+carrying an evidence document. The validation count is live on [/validate](https://kanmani.xyz/validate): 1 when
+this reading was taken, 5 on 2026-10-13.**
 
 This is `POPULATION_SQL` from `lib/queries.ts`, with the chain id inlined and the `updatedAt` column
 dropped for brevity. The reading below is from block 109,750,000. The counts climb with every
@@ -142,7 +143,7 @@ so the page must be able to say which of the two is happening. `counterSlotCount
 `indexer/schema.graphql` because a failed slot read has to publish as unknown rather than as a zero
 that would be a fabricated population.
 
-**<!-- n:withPointer -->1,300<!-- /n --> of <!-- n:feedbacks -->9,300<!-- /n --> is the number that governs the whole thesis.** Only 13.9% of Monad's ERC-8004
+**<!-- n:withPointer -->1,307<!-- /n --> of <!-- n:feedbacks -->9,328<!-- /n --> is the number that governs the whole thesis.** Only about 14% of Monad's ERC-8004
 feedback carries an evidence document at all. The other 86% is a score with nothing behind it, which
 is a rung below `declared` and therefore never appears in any ratio about evidence.
 
@@ -150,7 +151,7 @@ is a rung below `declared` and therefore never appears in any ratio about eviden
 
 ## 3. The measurement
 
-**Published as: <!-- n:claims -->187<!-- /n --> payment claims, <!-- n:claimsTrue -->64<!-- /n --> resolve, 123 do not, <!-- n:noClaim -->1,095<!-- /n --> assert no payment, <!-- n:unknown -->18<!-- /n --> unknown.**
+**Published as: <!-- n:claims -->197<!-- /n --> payment claims, <!-- n:claimsTrue -->74<!-- /n --> resolve, 123 do not, <!-- n:noClaim -->1,095<!-- /n --> assert no payment, <!-- n:unknown -->15<!-- /n --> unknown.**
 
 `MEASUREMENT_SQL`, against the `fovea.verdict_latest` view:
 
@@ -177,15 +178,15 @@ Read on 2026-10-04, after the tab-settlement mapping shipped. Run the query for 
 Check the arithmetic on that reading yourself: 185 + 1095 + 2 + 10 + 0 = 1292, which is every document carrying a
 URI from section 2. Nothing is dropped between the two.
 
-**Read the denominator correctly.** The finding is about **<!-- n:claims -->187<!-- /n --> documents that assert a payment**. It
-is not about <!-- n:withPointer -->1,300<!-- /n --> documents, not about <!-- n:feedbacks -->9,300<!-- /n --> feedbacks and not about <!-- n:agents -->10,375<!-- /n --> agents. Any wider
+**Read the denominator correctly.** The finding is about **<!-- n:claims -->197<!-- /n --> documents that assert a payment**. It
+is not about <!-- n:withPointer -->1,307<!-- /n --> documents, not about <!-- n:feedbacks -->9,328<!-- /n --> feedbacks and not about <!-- n:agents -->10,390<!-- /n --> agents. Any wider
 phrasing is an overclaim and it is one I made myself before the full corpus was measured. The
 correction is in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md).
 
-**The <!-- n:unknown -->18<!-- /n --> unknowns are split by how far the ladder got, because the causes are different.** <!-- n:unknownHash -->13<!-- /n -->
+**The <!-- n:unknown -->15<!-- /n --> unknowns are split by how far the ladder got, because the causes are different.** <!-- n:unknownHash -->13<!-- /n -->
 stopped at `resolvable`: the URL still answers, the bytes no longer match the hash committed on
 chain, so reading a claim out of them would attribute it to an author who committed to something
-else. <!-- n:unknownRateLimited -->5<!-- /n --> stopped at `declared`: the document's host would not answer. None stop at `intact` today. Three did until 2026-10-04: their bytes matched the on-chain hash but no published mapping read the shape. A Qwen-proposed mapping for that shape was reviewed and shipped. All three now read `true`.
+else. <!-- n:unknownRateLimited -->2<!-- /n --> stopped at `declared`: the document's host would not answer. None stop at `intact` today. Three did until 2026-10-04: their bytes matched the on-chain hash but no published mapping read the shape. A Qwen-proposed mapping for that shape was reviewed and shipped. All three now read `true`.
 
 **`unknown` is never counted as `false` and never rendered as `0`.** Collapsing them would let
 somebody else's outage publish as our accusation, at scale, with their name attached.
@@ -194,7 +195,7 @@ somebody else's outage publish as our accusation, at scale, with their name atta
 
 ## 4. Which chain the claims name
 
-**Published as: every one of the <!-- n:claims -->187<!-- /n --> claims names Monad.**
+**Published as: every one of the <!-- n:claims -->197<!-- /n --> claims names Monad**, five of them by chain id `143` rather than by name.
 
 ```sql
 SELECT coalesce(declared_network, '(none stated)') AS network,
@@ -208,10 +209,11 @@ GROUP BY 1 ORDER BY 2 + 3 DESC;
 ```
  network | resolve | do_not_resolve
 ---------+---------+----------------
- monad   |      64 |            123
+ monad   |      69 |            123
+ 143     |       5 |              0
 ```
 
-One row. Every claim names Monad. **The transaction usually is not on Monad, it is on another
+Two rows, one chain, read 2026-10-13. Every claim names Monad. **The transaction usually is not on Monad, it is on another
 chain.** Of the 123 that do not resolve on the named chain, 115 cite a transaction that is a real
 mined transaction somewhere else, arbitrum, ethereum, optimism, base, polygon and celo among them, while 8 are
 found on no chain we read. That is the hypothesis the project was designed around and it is
@@ -227,7 +229,8 @@ look checked, so the 8 are reported as not found where we looked rather than as 
 
 ## 5. Parse coverage, in the open
 
-**Published as: six mappings, three unparsed.**
+**Published as: six mappings in the atlas plus the explorer-link reader, none unparsed today.** Three
+were unparsed until a mapping shipped on 2026-10-04.
 
 ```sql
 SELECT coalesce(mapping, '(no mapping reached)') AS mapping, outcome, count(*)
@@ -240,19 +243,21 @@ FROM fovea.verdict_latest GROUP BY 1, 2 ORDER BY 3 DESC;
  elo-record.v1                    | noClaim |  1026
  execution-market.v1              | false   |   110
  plain-text-comment.v1            | noClaim |    66
- execution-market.v1              | true    |    54
- (no mapping reached)             | unknown |    18
+ execution-market.v1              | true    |    49
+ (no mapping reached)             | unknown |    15
  execution-market-transactions.v1 | false   |    13
  execution-market-transactions.v1 | true    |    10
+ explorer-tx-link.v1              | true    |    10
+ tab-settlement-feedback.v1       | true    |     5
  conversation-score.v1            | noClaim |     3
 ```
 
-**1,026 of the documents are game ELO records, every one naming the game `melee`.** That single row is why the denominator is <!-- n:claims -->187<!-- /n --> and
-not <!-- n:withPointer -->1,300<!-- /n --> and why sampling the head of a list gave the opposite impression: ordering by block
-descending showed mostly HTTP documents, while the population is 85% `data:` URIs that decode
+**1,026 of the documents are game ELO records, every one naming the game `melee`.** That single row is why the denominator is <!-- n:claims -->197<!-- /n --> and
+not <!-- n:withPointer -->1,307<!-- /n --> and why sampling the head of a list gave the opposite impression: ordering by block
+descending showed mostly HTTP documents, while the population is 84% `data:` URIs that decode
 locally and assert no payment at all.
 
-**Publishing the <!-- n:unknown -->18<!-- /n --> as a coverage gap rather than folding them into `noClaim` is load bearing.** The
+**Publishing the <!-- n:unknown -->15<!-- /n --> as a coverage gap rather than folding them into `noClaim` is load bearing.** The
 first atlas, measured 2026-09-19, left 23 documents unparsed, all one shape: an older Execution
 Market layout with the hash under `transactions.payment_tx` instead of `proof_of_payment`. Adding
 that one mapping moved `true` from 2 to 12 at the time. **An incomplete parser does not merely produce unknowns, it
@@ -447,7 +452,8 @@ any relayer. Both are published with working exploits in
 
 ## 8. The Validation Registry row
 
-**Published as: the registry held zero rows. It holds one now.**
+**Published as: the registry held zero rows. Ours was the first. It held 5 on 2026-10-13, one of them ours;
+[/validate](https://kanmani.xyz/validate) reads the count live.**
 
 ```bash
 cast call $VAL "getAgentValidations(uint256)(bytes32[])" 10252 --rpc-url $R
@@ -504,7 +510,7 @@ part of reading the site correctly.
 |---|---|---|
 | agents, distinct records | **grows** | the registry is open. Ours is one of the increments |
 | feedbacks, feedbacks with a URI | **grows** | anyone can write one |
-| the <!-- n:claims -->187<!-- /n --> / <!-- n:claimsTrue -->64<!-- /n --> / 123 split | **can move either way** | a repaired document flips `false` to `true`. That is the point |
+| the <!-- n:claims -->197<!-- /n --> / <!-- n:claimsTrue -->74<!-- /n --> / 123 split | **can move either way** | a repaired document flips `false` to `true`. That is the point |
 | the eight probe states | **moves on re-probe** | a host that was down can answer next week |
 
 **Verdicts are append only. There is no update path anywhere in the code.** A re-check writes a new

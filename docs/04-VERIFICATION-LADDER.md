@@ -9,9 +9,10 @@ question the one before it cannot. A claim stops at the first rung it fails and 
 which rung that was. **A rung never exceeds its evidence.** If the document could not be fetched,
 nothing downstream of `resolvable` gets an opinion about it.
 
-The code is `verifier/src/ladder/`, seven source files: five that back the output rungs
-(`resolve.ts`, `intact.ts`, `parse.ts`, `locate.ts`, `verdict.ts`) plus the two check modules
-`payable.ts` and `settled.ts` that are not rungs, with `verifier/src/chains.ts` for the chain list.
+The code is `verifier/src/ladder/`, eight source files: five that back the output rungs
+(`resolve.ts`, `intact.ts`, `parse.ts`, `locate.ts`, `verdict.ts`), the two check modules
+`payable.ts` and `settled.ts` that are not rungs and `explorer.ts`, which reads a feedback URI that is
+itself a block explorer link to one transaction, with `verifier/src/chains.ts` for the chain list.
 Every rung below names the file that implements it.
 
 ---
@@ -160,13 +161,16 @@ psql "$FOVEA_DATABASE_URL" -c \
 | `noClaim` | `plain text the author wrote as text/plain, no payment asserted, so there is no payment claim to check` | 66 |
 | `true` | `a successful transaction with this hash is on Monad at block <n>` | 34 |
 | `true` | `<n> atomic units of <addr> reached <addr> on Monad at block <n>, <n> blocks deep` | 30 |
+| `true` | `the evidence is a monadvision.com link to a successful transaction on Monad at block <n>. The link names no recipient, so who was paid is not checked` | 10 |
 | `unknown` | `the bytes served now do not match the hash committed on chain, so this document cannot be checked against what its author committed to` | 13 |
 | `unknown` | `no published mapping reads this document shape: no mapping matches this shape` | 0, was 3 until a mapping shipped on 2026-10-04 |
 | `noClaim` | `conversation rating, no payment asserted, so there is no payment claim to check` | 3 |
-| `unknown` | `evidence document could not be read: HTTP <n>` | 5 |
+| `unknown` | `evidence document could not be read: HTTP <n>` | 2 |
 
-Nine distinct strings over <!-- n:withPointer -->1,300<!-- /n --> claims. Two of them are `true`: one from `locate` finding the cited
-transaction, one from `settledCheck` watching the transfer reach the named recipient. Those two counts sum to 64, which is the total numbers.json carries. It does not break 64 down by string, so the 34 and 30 are a snapshot of that split rather than a live count. Every one of them describes what was observed. None of them
+Nine distinct strings over <!-- n:withPointer -->1,307<!-- /n --> claims. Three of them are `true`: one from `locate` finding the cited
+transaction, one from `settledCheck` watching the transfer reach the named recipient and one from
+`explorer.ts` reading a block explorer link to a single transaction, which names no recipient. Those
+three counts sum to <!-- n:claimsTrue -->74<!-- /n -->, the total numbers.json carries. It does not break that total down by string, so the 34, 30 and 10 are a 2026-10-13 snapshot of the split, read from `/api/claims`, rather than a live count. Every one of them describes what was observed. None of them
 describes what anyone intended. That is enforced by a test, not by a review habit:
 
 ```ts
@@ -211,7 +215,7 @@ re-screened every hop. The size cap is enforced on the bytes as they arrive, nev
 `Content-Length`.
 
 **The guard is the most security-critical file in this build. It is also the one that almost never
-runs.** 1,095 of 1,300 claims are `data:` URIs, so 84% of this corpus touches no network at all. That
+runs.** 1,095 of <!-- n:withPointer -->1,307<!-- /n --> claims are `data:` URIs, so 84% of this corpus touches no network at all. That
 is stated plainly rather than left for a reader to work out, because a reader who assumes the guard
 is on the hot path will mis-weigh both the risk and the performance story. There is a test that
 proves the `data:` path cannot reach the network, by handing it a resolver that throws if called.
@@ -293,16 +297,21 @@ earlier. The mapping is real, it is tested and this corpus never exercises it.
 
 ## Parse and the atlas
 
-The atlas is six published mappings: five hand-written and one proposed by Qwen 3.8 Max, then reviewed. Each carries a name, the date it was added from real documents (the code field is named `induced`) and a note. A test enforces the date and the note, because a mapping can move a verdict.
+The atlas is six published mappings: five hand-written and one proposed by Qwen 3.8 Max, then reviewed. The table adds `plain-text-comment.v1`, which names the text/plain documents that never reach the atlas because they are not JSON. Each carries a name, the date it was added from real documents (the code field is named `induced`) and a note. A test enforces the date and the note, because a mapping can move a verdict.
 
 | mapping | induced | reads | rows in corpus |
 |---|---|---|---|
-| `execution-market.v1` | 2026-09-19 | `proof_of_payment.payment_tx` | 110 `false`, 54 `true` |
+| `execution-market.v1` | 2026-09-19 | `proof_of_payment.payment_tx` | 110 `false`, 49 `true` |
 | `execution-market-transactions.v1` | 2026-09-19 | older shape, `transactions.payment_tx` | 13 `false`, 10 `true` |
 | `elo-record.v1` | 2026-09-19 | a game rating, no payment | 1,026 `noClaim` |
 | `conversation-score.v1` | 2026-09-19 | a conversation rating, no payment | 3 `noClaim` |
 | `agent-card.v1` | 2026-09-19 | an ERC-8004 capability card, no payment | 0 |
 | `plain-text-comment.v1` | 2026-09-19 | prose, no payment | 66 `noClaim` |
+| `tab-settlement-feedback.v1` | 2026-10-04 | `settlement.txHash`, proposed by Qwen | 5 `true` |
+
+One more reader sits outside the atlas. `explorer-tx-link.v1` in `verifier/src/ladder/explorer.ts`
+reads a feedback whose URI is itself a block explorer link to one transaction, so there is no
+document shape to map. It decides 10 `true` today, each without a recipient check.
 
 ```bash
 psql "$FOVEA_DATABASE_URL" -c \
@@ -310,7 +319,7 @@ psql "$FOVEA_DATABASE_URL" -c \
      group by mapping, outcome order by 3 desc;"
 ```
 
-The `true` counts here sum to 64 and the `false` counts to 123, the totals numbers.json carries. It does not split either total by mapping, so the per-mapping figures (54 and 10 for `true`) are a 2026-10-04 snapshot of that split.
+The `true` counts here, with the explorer reader, sum to <!-- n:claimsTrue -->74<!-- /n --> and the `false` counts to 123, the totals numbers.json carries. It does not split either total by mapping, so the per-mapping figures (49, 10, 5 and 10 for `true`) are a 2026-10-13 snapshot of that split, read from `/api/claims`.
 
 **These mappings are written against real documents, reviewed by a person, then published.** A reader re-running the pipeline
 executes them deterministically, with no model anywhere in the loop and gets the same numbers. A
@@ -344,7 +353,7 @@ over the live corpus left 23 documents unplaced and the keys said where to look.
 
 ### `noClaim` is a result, not a coverage gap
 
-<!-- n:noClaim -->1,095<!-- /n --> of <!-- n:withPointer -->1,300<!-- /n --> documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
+<!-- n:noClaim -->1,095<!-- /n --> of <!-- n:withPointer -->1,307<!-- /n --> documents assert no payment. **Most ERC-8004 feedback on Monad is not a payment claim
 at all.** A document that never asserted a payment cannot be wrong about one, so counting it as
 unparsed would inflate our own published gap number with documents that are perfectly well formed.
 
@@ -467,7 +476,7 @@ Two consequences follow and both are load-bearing:
    is append only for the same reason: a re-check writes a new row, so a fixed document shows as
    `false -> true` with both timestamps.
 
-On the live corpus, all seven chains are configured. Every one of the <!-- n:claims -->187<!-- /n --> payment claims names
+On the live corpus, all seven chains are configured. Every one of the <!-- n:claims -->197<!-- /n --> payment claims names
 `monad`, so the other six carried no traffic in this sweep. They are in the table anyway, because the
 table is what a `false` is relative to.
 
@@ -585,8 +594,8 @@ cd verifier && npm test
 ```
 
 ```
-# tests 243
-# pass 216
+# tests 247
+# pass 220
 # fail 0
 # skipped 27
 ```
@@ -598,7 +607,7 @@ checks, the Alchemy fallback probe in `rpc.test.ts`, the atlas proposer plus the
 All of them pass against their live dependency. Everything else runs with no network and no
 database.
 
-The ladder's own share is 147 of those tests, counting the seven files in `src/ladder/`. Per file,
+The ladder's own share is 151 of those tests, counting the eight files in `src/ladder/`. Per file,
 with `node --test --experimental-strip-types <file>`:
 
 | file | tests |
@@ -621,6 +630,7 @@ with `node --test --experimental-strip-types <file>`:
 | `src/rpc.test.ts` | 7, 1 skipped without a live fallback endpoint |
 | `src/store/store.test.ts` | 6, all skipped without a database |
 | `src/atlas/read-proposal.test.ts` | 4 |
+| `src/ladder/explorer.test.ts` | 4 |
 
 ### Mutation testing
 
