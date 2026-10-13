@@ -16,6 +16,7 @@ import { intactCheck } from "./intact.ts";
 import { parseDocument, type ParseOutcome } from "./parse.ts";
 import { locate, type LocateOutcome, type ReaderFor } from "./locate.ts";
 import { settledCheck, type SettlementReaderFor } from "./settled.ts";
+import { EXPLORER_TX_MAPPING, explorerTx } from "./explorer.ts";
 
 /** How far down the ladder this claim got. */
 export type Rung = "declared" | "resolvable" | "intact" | "parsed" | "true";
@@ -78,6 +79,39 @@ export type VerdictInput = {
 export async function judge(input: VerdictInput): Promise<Verdict> {
   const checkedAt = (input.now?.() ?? new Date()).toISOString();
   const base = { checkedAt };
+
+  // Evidence that is a block explorer link to one transaction. The URI is the commitment, so there is
+  // no document to fetch or hash: read the chain the explorer belongs to for that hash. See explorer.ts.
+  const ex = explorerTx(input.feedbackUri);
+  if (ex) {
+    const declared = {
+      declaredNetwork: ex.network,
+      declaredTx: ex.txHash,
+      mapping: EXPLORER_TX_MAPPING,
+    };
+    const loc: LocateOutcome = await locate(ex.network, ex.txHash, input.readerFor);
+    if (loc.found === "unknown") return { ...base, ...declared, rung: "parsed", outcome: "unknown", reason: loc.reason };
+    if (loc.found === false) {
+      return {
+        ...base, ...declared, rung: "parsed", outcome: "false", checkedAtBlock: loc.checkedAtBlock.toString(),
+        reason: `the evidence is a ${ex.host} link to a transaction that is not on ${loc.chain.displayName}: ${loc.reason}`,
+      };
+    }
+    if (loc.status === "reverted") {
+      return {
+        ...base, ...declared, rung: "parsed", outcome: "false", checkedAtBlock: loc.checkedAtBlock.toString(),
+        reason: `the evidence is a ${ex.host} link to a transaction that reverted on ${loc.chain.displayName} at block ${loc.blockNumber}, so no payment was effected`,
+      };
+    }
+    return {
+      ...base, ...declared, rung: "true", outcome: "true", checkedAtBlock: loc.checkedAtBlock.toString(),
+      foundOnChain: { chain: loc.chain.displayName, chainId: loc.chain.id, blockNumber: loc.blockNumber.toString() },
+      settlementChecked: false,
+      reason:
+        `the evidence is a ${ex.host} link to a successful transaction on ${loc.chain.displayName} at block ` +
+        `${loc.blockNumber}. The link names no recipient, so who was paid is not checked`,
+    };
+  }
 
   // resolvable
   if (!input.fetched.ok) {
