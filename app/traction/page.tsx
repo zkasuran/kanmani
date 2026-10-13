@@ -81,7 +81,15 @@ export default async function Traction() {
         <StatTile label="replied or acted" value={c.replied} tone="brand" />
         <StatTile label="settled on chain" value={c.settled} tone="true" />
         <StatTile label="outside buyers paid our agents" value={c.outsideBuyer} />
-        <StatTile label="outside bonds posted, read live" value={posted} hint={`of ${askIds.length} agents asked`} tone={posted ? "true" : "unknown"} />
+        {/* Fifth of five: on the two-column phone grid it spans the row instead of sitting alone. */}
+        <div className="col-span-2 lg:col-span-1 [&>*]:h-full">
+          <StatTile
+            label={`outside bonds posted of ${askIds.length} asked, read live`}
+            value={posted}
+            hint={`of ${askIds.length} agents asked`}
+            tone={posted ? "true" : "unknown"}
+          />
+        </div>
       </div>
 
       <Panel
@@ -108,7 +116,10 @@ export default async function Traction() {
             </li>
           ))}
         </ol>
-        <p className="mt-4 text-[12px] leading-relaxed text-muted">
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">
+          Step 1 has no row: no transaction touched either of our wallets between steps 0 and 2.
+        </p>
+        <p className="mt-3 text-[12px] leading-relaxed text-muted">
           Nobody adjudicated anything. The recomputer read the job back from Aqueous, counted one payout before delivery against a
           claim of at most zero. The contract then paid the challenger from our own bounty. Their curator confirmed every receipt{" "}
           <a href="https://github.com/alnitak34/dissent/pull/7#issuecomment-6094099779" {...ext} className={linkCls}>

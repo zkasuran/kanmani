@@ -28,7 +28,7 @@
  *
  * ## Why `data:` is the default here
  *
- * We probed all 2,012 distinct registration documents on Monad. **8,640 agents point at a document
+ * When we first probed all 2,012 distinct registration documents on Monad, **8,640 agents pointed at a document
  * whose host answered and said it is not there**, 8,093 of them sharing one expired preview
  * deployment across 7,962 wallets. Those registrations are still perfectly valid on chain, with a
  * valid owner and a valid URI and they will stay that way forever while describing nothing.
@@ -279,7 +279,7 @@ export function consequences(d: RegistrationDraft, kind: UriKind, hostedAt = "")
       met: kind === "data",
       why:
         kind === "data"
-          ? "A data: URI has no host to ask, so it cannot 404. 8,640 agents on Monad point at a document whose host says it is not there."
+          ? "A data: URI has no host to ask, so it cannot 404. More than 8,000 agents on Monad point at a document whose host says it is not there (live count at /operators)."
           : "A hosted document can stop answering. It is a valid choice and it is the failure mode we measured most.",
     },
     {

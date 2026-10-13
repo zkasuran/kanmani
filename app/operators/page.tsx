@@ -292,7 +292,7 @@ export default async function Operators() {
         title="hosts, by how many agents depend on them"
         subtitle="A host nobody chose together is still a single point of failure they share."
       >
-        <table className="w-full text-sm">
+        <table className="table-cards w-full text-sm">
           <thead>
             <tr className="border-b border-[var(--color-line)] text-left font-mono text-[11px] uppercase tracking-wide text-faint">
               <th className="pb-2">host</th>
@@ -308,18 +308,18 @@ export default async function Operators() {
           <tbody>
             {hs.rows.map((r) => (
               <tr key={r.host} className="border-b border-[var(--color-line)]/50 last:border-0">
-                <td className="py-2 font-mono text-[12.5px] break-all">{r.host}</td>
-                <td className="py-2 text-right font-mono">
+                <td data-label="host" className="py-2 font-mono text-[12.5px] break-all">{r.host}</td>
+                <td data-label="agents" className="py-2 text-right font-mono">
                   <Num value={r.agents} />
                 </td>
-                <td className="py-2 text-right font-mono text-muted">
+                <td data-label="documents" className="py-2 text-right font-mono text-muted">
                   <Num value={r.records} />
                 </td>
-                <td className="py-2 text-right font-mono text-[var(--color-true)]">{r.answered || ""}</td>
-                <td className="py-2 text-right font-mono text-[var(--color-false)]">{r.gone || ""}</td>
-                <td className="py-2 text-right font-mono text-[var(--color-brand)]">{r.paywalled || ""}</td>
-                <td className="py-2 text-right font-mono text-muted">{r.other || ""}</td>
-                <td className="py-2 text-right font-mono unknown-value">{r.notProbed || ""}</td>
+                <td data-label="answered" className="py-2 text-right font-mono text-[var(--color-true)]">{r.answered || ""}</td>
+                <td data-label="gone" className="py-2 text-right font-mono text-[var(--color-false)]">{r.gone || ""}</td>
+                <td data-label="402" className="py-2 text-right font-mono text-[var(--color-brand)]">{r.paywalled || ""}</td>
+                <td data-label="other" className="py-2 text-right font-mono text-muted">{r.other || ""}</td>
+                <td data-label="not asked" className="py-2 text-right font-mono unknown-value">{r.notProbed || ""}</td>
               </tr>
             ))}
           </tbody>

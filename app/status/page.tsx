@@ -265,8 +265,9 @@ export default async function Status() {
             server error or a document past our own size cap. Ours, not theirs.
           </Gap>
           <Gap n={p.validations}>
-            validation requests exist in the Validation Registry on Monad. Nobody is writing there
-            yet, so that half of ERC-8004 is empty rather than unmeasured.
+            validation requests exist in the Validation Registry on Monad, against{" "}
+            {p.feedbacks.toLocaleString()} feedbacks. Only an agent&apos;s owner can open one, which is
+            why this half of ERC-8004 stays nearly empty next to the feedback half.
           </Gap>
         </ul>
       </Panel>

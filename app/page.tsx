@@ -103,7 +103,7 @@ const STACK: {
   {
     name: "Answer on chain",
     codename: "Optic",
-    body: "The first and only row in Monad's ERC-8004 Validation Registry. A verdict written where the protocol expects it, not just on our own page.",
+    body: "The first row in Monad's ERC-8004 Validation Registry. A verdict written where the protocol expects it, not just on our own page.",
     status: "live",
     href: "/validate",
   },
@@ -542,7 +542,7 @@ cast code 0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32 \\
               </div>
             </div>
           </div>
-          <div className="mt-6 border-t border-[var(--color-line)] pt-4">
+          <div className="mt-6">
             <Derivation sql={shape.sql} note="The cluster shape, from the registry's own records." />
           </div>
         </div>

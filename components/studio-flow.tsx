@@ -577,9 +577,11 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         </label>
       ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* grid-cols-1 is minmax(0, 1fr): an unbreakable address or calldata line inside a column
+          would otherwise widen the implicit auto track past a phone's screen. */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* -------------------------------------------------------------- compose */}
-        <div className="flex flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-3">
           <p className="eyebrow">the document</p>
 
           <label className="block">
@@ -645,7 +647,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
         </div>
 
         {/* -------------------------------------------------------------- consequences and bytes */}
-        <div className="flex flex-col gap-3">
+        <div className="flex min-w-0 flex-col gap-3">
           <p className="eyebrow">
             {adopted ? "what your record currently does" : "what this document would mean"}
           </p>
@@ -688,7 +690,7 @@ export function StudioFlow({ hostedFailureAgents }: { hostedFailureAgents: numbe
                   copy
                 </button>
               </div>
-              <p className="mt-1 font-mono text-[11px] text-faint">
+              <p className="mt-1 break-all font-mono text-[11px] text-faint">
                 to {identityRegistryFor(chainId) ?? "no registry on this chain"} on chain {chainId}
               </p>
               <pre className="sql mt-2 max-h-28 overflow-auto break-all">{calldata}</pre>
