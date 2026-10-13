@@ -17,3 +17,8 @@ production-settings:
   rpcs:
     - chain-name: monad-mainnet
       url: https://rpc.monad.xyz
+
+v2-settings:
+  rpcs:
+    - chain-name: monad-mainnet
+      url: https://rpc.monad.xyz

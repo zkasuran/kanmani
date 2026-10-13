@@ -34,3 +34,11 @@ production-settings:
     workflow-path: "./main.ts"
     config-path: "./config.production.json"
     secrets-path: ""
+# Sclera v2 (0xB4d641f0…FE3f, 2026-10-10): same Bond struct and verdict domain, only the address differs.
+v2-settings:
+  user-workflow:
+    workflow-name: "slashing-v2"
+    deployment-registry: "private"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.v2.json"
