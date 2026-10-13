@@ -31,7 +31,7 @@ You never give Kanmani a key. It returns the exact transaction and you sign it w
    little MON: \`data.gas.need\` in step 1 says how much, measured at the moment you ask.
 2. **Never paste a private key into a chat, a prompt, a file in the repo or a log.** Read it from an
    environment variable (\`AGENT_PRIVATE_KEY\`) or a keystore. Add the env file to \`.gitignore\`.
-3. **Put the document on chain** (\`kind: "data"\`, the default). 8,640 Monad agents point at hosted
+3. **Put the document on chain** (\`kind: "data"\`, the default). More than 8,000 Monad agents point at hosted
    documents that now return a deletion. A \`data:\` URI cannot go dead.
 4. **Evidence must name the network the payment settled on.** Most Monad claims that fail name
    \`monad\` for a payment made on another chain (live counts at /claims). Check every evidence document before publishing.

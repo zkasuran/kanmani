@@ -5,6 +5,17 @@ import { settledJobs } from "@/lib/settled-jobs.ts";
 export const dynamic = "force-dynamic";
 
 /**
+ * Bullets that only exist when their data does. Each present line ends in a newline, so an absent
+ * one leaves nothing behind rather than an empty "- " bullet in the middle of a list.
+ */
+function optionalLines(...lines: (string | false | undefined)[]): string {
+  return lines
+    .filter((l): l is string => typeof l === "string" && l.length > 0)
+    .map((l) => `${l}\n`)
+    .join("");
+}
+
+/**
  * The whole site in plain text, for a model that will read one file and nothing else.
  *
  * Written so that a reader who stops after the first paragraph still has the correct headline and
@@ -64,9 +75,12 @@ be published at all: collapsing them would let somebody else's outage publish as
 
 - ${n(p.agentsIndexed)} agents indexed. The registry's own counter slot says ${p.counterSlotCount === null ? "unknown" : n(p.counterSlotCount)}.
 - ${n(s.records)} distinct registration documents behind those agents.
-- ${gone ? `${n(gone.agents)} agents point at a document that returns a deletion. ${n(s.largestMemberCount)} of them share ONE document, registered by ${n(s.largestDistinctOwners)} distinct wallets.` : ""}
-- ${paywalled ? `${n(paywalled.agents)} agents point at a live x402 endpoint that asks for payment before it will describe its own agent.` : ""}
-- ${n(p.feedbacksWithUri)} of ${n(p.feedbacks)} feedbacks carry an evidence pointer. The rest point at nothing.
+${optionalLines(
+    gone &&
+      `- ${n(gone.agents)} agents point at a document that returns a deletion. ${n(s.largestMemberCount)} of them share ONE document, registered by ${n(s.largestDistinctOwners)} distinct wallets.`,
+    paywalled &&
+      `- ${n(paywalled.agents)} agents point at a live x402 endpoint that asks for payment before it will describe its own agent.`,
+  )}- ${n(p.feedbacksWithUri)} of ${n(p.feedbacks)} feedbacks carry an evidence pointer. The rest point at nothing.
 
 ## Bonds and work with other teams
 
