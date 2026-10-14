@@ -350,6 +350,18 @@
       "result": null,
       "evidence": [],
       "buyer": null
+    },
+    {
+      "project": "Signal Passport (portable evidence for agents)",
+      "repo": "shaythegay13/signal-passport-monad",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-14",
+      "offered": "A live Sclera bond and the claim-truth reading as two optional Passport observation sources (PR offered), and a sponsored bond if they register a mainnet agent. Their agents are on testnet, so no bond ask was possible.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
     }
   ]
 }

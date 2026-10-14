@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-10-14",
   "counts": {
-    "contacted": 16,
+    "contacted": 17,
     "replied": 7,
     "settled": 5,
     "outsideBuyer": 2,
@@ -191,6 +191,17 @@
       "replies": 0,
       "lastAt": "2026-10-13",
       "url": "https://github.com/ygk94/ancre/issues/1",
+      "pr": null
+    },
+    {
+      "project": "Signal Passport (portable evidence for agents)",
+      "repo": "shaythegay13/signal-passport-monad",
+      "number": 1,
+      "date": "2026-10-14",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/shaythegay13/signal-passport-monad/issues/1",
       "pr": null
     }
   ]

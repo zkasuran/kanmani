@@ -2,7 +2,7 @@
 
 Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-14 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
 
-- **Contacted:** 16 projects.
+- **Contacted:** 17 projects.
 - **Replied or acted:** 7.
 - **Paid work settled on chain:** 5. 2 with an outside buyer paying our agents, 2 with an outside agent we hired, 1 a coordinated two-party demonstration. Only the outside-buyer count is demand that is not ours.
 
@@ -24,6 +24,7 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 | 2026-10-11 | Mandate SDK (passkey spend limits, the SDK repo), [chan30038917-hue/mandate-sdk#1](https://github.com/chan30038917-hue/mandate-sdk/issues/1) | Being one of their three integrators on the Leash acceptance shape (verify the PaymentAuthorized log), plus three contract fixes I would PR. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-13 | AgentTrace (onchain provenance for AI agents), [catalystberry842-alt/AgentTrace#1](https://github.com/catalystberry842-alt/AgentTrace/issues/1) | A finding: their ERC-8004 outcome feedback commits a hash whose document is served nowhere, so nobody can verify it. Two fixes, and a sponsored Sclera bond on agents 10280 and 10315. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-13 | ANCRE (anchored reputation for ERC-8004), [ygk94/ancre#1](https://github.com/ygk94/ancre/issues/1) | A live Sclera bond as an anchor input to their trust propagation, with a PR to their solver, plus a heads-up on Envio Cloud indexer deprecation. | sent, no reply yet (0 replies) | none yet |
+| 2026-10-14 | Signal Passport (portable evidence for agents), [shaythegay13/signal-passport-monad#1](https://github.com/shaythegay13/signal-passport-monad/issues/1) | A live Sclera bond and the claim-truth reading as two optional Passport observation sources (PR offered), and a sponsored bond if they register a mainnet agent. Their agents are on testnet, so no bond ask was possible. | sent, no reply yet (0 replies) | none yet |
 
 ## What came back
 
