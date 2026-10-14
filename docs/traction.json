@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-12",
+  "generatedAt": "2026-10-14",
   "counts": {
-    "contacted": 14,
+    "contacted": 16,
     "replied": 7,
     "settled": 5,
     "outsideBuyer": 2,
@@ -74,7 +74,7 @@
       "number": 4,
       "date": "2026-10-06",
       "status": "settled on chain",
-      "replies": 10,
+      "replies": 11,
       "lastAt": "2026-10-12",
       "url": "https://github.com/trudransh/Assay/issues/4",
       "pr": null
@@ -169,6 +169,28 @@
       "replies": 0,
       "lastAt": null,
       "url": "https://github.com/chan30038917-hue/mandate-sdk/issues/1",
+      "pr": null
+    },
+    {
+      "project": "AgentTrace (onchain provenance for AI agents)",
+      "repo": "catalystberry842-alt/AgentTrace",
+      "number": 1,
+      "date": "2026-10-13",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/catalystberry842-alt/AgentTrace/issues/1",
+      "pr": null
+    },
+    {
+      "project": "ANCRE (anchored reputation for ERC-8004)",
+      "repo": "ygk94/ancre",
+      "number": 1,
+      "date": "2026-10-13",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": "2026-10-13",
+      "url": "https://github.com/ygk94/ancre/issues/1",
       "pr": null
     }
   ]

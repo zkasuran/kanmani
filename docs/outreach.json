@@ -326,6 +326,30 @@
       "outcome": "sent",
       "result": "The SDK and contract half of the Mandate outreach, to the SDK author, a different maintainer from the Sente app. Offered to accept a mainnet PaymentAuthorized payment on our agent the way we accept Leash, then sent three code-read notes I would open PRs for: native-MON-only settlement though the registry models a token, the recipient getting net while the event emits gross, plus no view for remaining headroom. Sent, no reply yet.",
       "evidence": []
+    },
+    {
+      "project": "AgentTrace (onchain provenance for AI agents)",
+      "repo": "catalystberry842-alt/AgentTrace",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-13",
+      "offered": "A finding: their ERC-8004 outcome feedback commits a hash whose document is served nowhere, so nobody can verify it. Two fixes, and a sponsored Sclera bond on agents 10280 and 10315.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
+    },
+    {
+      "project": "ANCRE (anchored reputation for ERC-8004)",
+      "repo": "ygk94/ancre",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-13",
+      "offered": "A live Sclera bond as an anchor input to their trust propagation, with a PR to their solver, plus a heads-up on Envio Cloud indexer deprecation.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [],
+      "buyer": null
     }
   ]
 }
