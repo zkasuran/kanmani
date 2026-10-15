@@ -75,13 +75,70 @@ export type SettlementReceipt = {
 };
 
 /** A native transfer has no log, so its value comes off the transaction itself. */
-export type NativeTransfer = { to: string | null; value: bigint };
+export type NativeTransfer = {
+  to: string | null;
+  value: bigint;
+  /**
+   * The transaction carried calldata, so it ran contract code. Such a transaction can move native
+   * value through internal calls that its own `value` field never shows (a payout contract paying a
+   * withdrawal is the case that found this). Absent is read as "no calldata".
+   */
+  hasInput?: boolean;
+};
+
+/** One native value movement inside a transaction, read from a call trace. */
+export type InternalNativeTransfer = { from: string; to: string; value: bigint };
+
+/** A node's `callTracer` frame, as little of it as is needed. */
+export type CallFrame = {
+  type?: string;
+  from?: string;
+  to?: string | null;
+  value?: string;
+  error?: string;
+  revertReason?: string;
+  calls?: CallFrame[];
+};
+
+/**
+ * Native value that really moved inside a transaction, below its top-level call.
+ *
+ * Only a CALL (or a SELFDESTRUCT) moves value. A DELEGATECALL or STATICCALL frame can carry a value
+ * field without transferring anything, so it is skipped. A frame that errored is skipped together
+ * with everything under it, because its whole subtree was reverted: counting a payout inside a
+ * failed call would report money that never moved. The top-level frame is skipped too, because the
+ * transaction's own value is read separately.
+ */
+export function effectiveNativeCalls(root: CallFrame): InternalNativeTransfer[] {
+  const out: InternalNativeTransfer[] = [];
+  const walk = (f: CallFrame, top: boolean) => {
+    if (f.error || f.revertReason) return;
+    if (!top && (f.type === "CALL" || f.type === "SELFDESTRUCT") && f.to && f.from && f.value) {
+      let v = 0n;
+      try {
+        v = BigInt(f.value);
+      } catch {
+        v = 0n;
+      }
+      if (v > 0n) out.push({ from: f.from.toLowerCase(), to: f.to.toLowerCase(), value: v });
+    }
+    for (const c of f.calls ?? []) walk(c, false);
+  };
+  walk(root, true);
+  return out;
+}
 
 /** Just the reads this rung needs, so a test can supply them without a chain. */
 export type SettlementReader = {
   getBlockNumber(): Promise<bigint>;
   getReceipt(hash: `0x${string}`): Promise<SettlementReceipt | null>;
   getNativeTransfer(hash: `0x${string}`): Promise<NativeTransfer | null>;
+  /**
+   * Native value moved by internal calls, from a call trace. Resolves null when the provider cannot
+   * give a trace, which is a gap and not an empty list: the caller must not read it as "nothing moved".
+   * Optional so a reader without trace support still works, and is then treated as unable to see.
+   */
+  getInternalNativeTransfers?(hash: `0x${string}`): Promise<InternalNativeTransfer[] | null>;
 };
 
 export type SettlementReaderFor = (chain: Chain) => SettlementReader | null;
@@ -324,6 +381,7 @@ export async function settledCheck(
   // The native rail. Read when the claim names native. Read too when it named nothing and no
   // log matched, because a claim with no asset could be on either rail.
   const needNative = wantAsset === NATIVE || (wantAsset === undefined && transfers.length === 0);
+  let internalUnseen = false;
   if (needNative) {
     let native: NativeTransfer | null;
     try {
@@ -338,9 +396,31 @@ export async function settledCheck(
     if (native && native.to !== null && native.value > 0n) {
       transfers.push({ asset: NATIVE, from: receipt.from, to: native.to.toLowerCase(), value: native.value });
     }
+    // A transaction that ran contract code can pay through internal calls its own value never shows.
+    // Read them from a call trace. With no trace the movement is unseen, which is unknown and not false.
+    if (native?.hasInput) {
+      let internal: InternalNativeTransfer[] | null = null;
+      try {
+        internal = reader.getInternalNativeTransfers ? await reader.getInternalNativeTransfers(hash as `0x${string}`) : null;
+      } catch {
+        internal = null;
+      }
+      if (internal === null) internalUnseen = true;
+      else for (const t of internal) transfers.push({ asset: NATIVE, from: t.from, to: t.to, value: t.value });
+    }
   }
 
   const toRecipient = transfers.filter((t) => sameAddress(t.to, recipient));
+  if (toRecipient.length === 0 && internalUnseen) {
+    return {
+      settled: "unknown",
+      chain,
+      reason:
+        `the cited transaction ran contract code on ${chain.displayName} at block ${receipt.blockNumber} and this ` +
+        `reader could not read its internal native transfers (no call trace from the provider), so whether any ` +
+        `value reached ${recipient} is not known. That is a gap in what could be read, not evidence that nothing moved`,
+    };
+  }
   if (toRecipient.length === 0) {
     return {
       settled: false,
@@ -380,6 +460,15 @@ export async function settledCheck(
     toRecipient.every((t) => sameAddress(t.from, recipient)) ||
     (ADDRESS.test(declaredPayer) && sameAddress(declaredPayer, recipient));
 
+  if (want !== null && received !== want && internalUnseen) {
+    return {
+      settled: "unknown",
+      chain,
+      reason:
+        `${received} atomic units reached ${recipient} directly but the transaction also ran contract code whose ` +
+        `internal native transfers could not be read, so the stated ${want} cannot be confirmed or refuted`,
+    };
+  }
   if (want !== null && received !== want) {
     return {
       settled: false,

@@ -20,7 +20,9 @@
 import { createPublicClient, http } from "viem";
 import type { Chain } from "./chains.ts";
 import type { ChainReader, Receiptish } from "./ladder/locate.ts";
+import { effectiveNativeCalls } from "./ladder/settled.ts";
 import type {
+  CallFrame,
   NativeTransfer,
   SettlementReader,
   SettlementReceipt,
@@ -88,11 +90,25 @@ function settlementReaderOf(client: RpcClient): SettlementReader {
     async getNativeTransfer(hash) {
       try {
         const t = await client.getTransaction({ hash });
-        return { to: t.to, value: t.value } satisfies NativeTransfer;
+        return { to: t.to, value: t.value, hasInput: t.input !== "0x" } satisfies NativeTransfer;
       } catch (e) {
         const name = (e as { name?: string })?.name ?? "";
         if (name === "TransactionNotFoundError") return null;
         throw e;
+      }
+    },
+    // Internal native transfers, from the node's call trace. Any failure, including a provider that
+    // does not offer debug_traceTransaction, is null: the rung then answers unknown rather than guessing.
+    async getInternalNativeTransfers(hash) {
+      try {
+        const trace = (await (client as unknown as { request(a: { method: string; params: unknown[] }): Promise<unknown> }).request({
+          method: "debug_traceTransaction",
+          params: [hash, { tracer: "callTracer" }],
+        })) as CallFrame | null;
+        if (!trace || typeof trace !== "object") return null;
+        return effectiveNativeCalls(trace);
+      } catch {
+        return null;
       }
     },
   };
@@ -169,6 +185,12 @@ export function settlementReaderWithFallback(parts: FallbackParts<SettlementRead
     getBlockNumber: () => run(() => primary.getBlockNumber(), () => fallback.getBlockNumber()),
     getReceipt: (hash) => run(() => primary.getReceipt(hash), () => fallback.getReceipt(hash)),
     getNativeTransfer: (hash) => run(() => primary.getNativeTransfer(hash), () => fallback.getNativeTransfer(hash)),
+    getInternalNativeTransfers: async (hash) => {
+      // A trace gap on the primary is a null, not an error, so ask the fallback explicitly before giving up.
+      const a = primary.getInternalNativeTransfers ? await primary.getInternalNativeTransfers(hash).catch(() => null) : null;
+      if (a !== null) return a;
+      return fallback.getInternalNativeTransfers ? await fallback.getInternalNativeTransfers(hash).catch(() => null) : null;
+    },
   };
 }
 
