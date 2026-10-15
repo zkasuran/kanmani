@@ -1,0 +1,24 @@
+[
+  {
+    "type": "dissent-withdrawal-receipt",
+    "version": 1,
+    "chainId": 143,
+    "txHash": "0xf2378b1d2b3bb6420c0894c6d760576c35adb393bc71d0fce69852a4ddf8e336",
+    "core": "0x9d673a8b5efe76d42593b45972fa0426648967e1",
+    "recipient": "0x00cf6cec697e3dcb88a5972ef083b423dfc00a02",
+    "asset": "native",
+    "amountAtomic": "3100000000000000000",
+    "note": "Historical compatibility fixture only. Not published ERC-8004 feedback; not an eligible future Sclera sample."
+  },
+  {
+    "type": "dissent-withdrawal-receipt",
+    "version": 1,
+    "chainId": 143,
+    "txHash": "0x76525e54404a680d50e1ecdf7f3e0c4836684eb5831c98da7fcdcda92b42be53",
+    "core": "0x9d673a8b5efe76d42593b45972fa0426648967e1",
+    "recipient": "0x00cf6cec697e3dcb88a5972ef083b423dfc00a02",
+    "asset": "native",
+    "amountAtomic": "850000000000000000",
+    "note": "Historical compatibility fixture only. Not published ERC-8004 feedback; not an eligible future Sclera sample."
+  }
+]

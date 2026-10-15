@@ -370,8 +370,9 @@ so this page stays the whole list without duplicating them.
   calldata, the answer is `unknown` with a reason that says the gap is in what could be read. A plain
   transfer with no calldata still answers `false` without a trace. Both withdrawals now settle through
   the real reader on mainnet. Tests: `verifier/src/ladder/settled-internal.test.ts`, 11 unit and 2 live.
-  Four deliberate breaks each fail at least one. Their reproduction package and the proposed
-  receipt format are the open follow-up, tracked with them rather than here.
+  Four deliberate breaks each fail at least one. Their proposed receipt format, with its own tests,
+  was reviewed and adopted as `dissent-withdrawal-receipt.v1` (see the mapping's comment in `parse.ts`).
+  Adopting it publishes nothing: no feedback and no bond exist for it yet.
 
 ## Still open
 

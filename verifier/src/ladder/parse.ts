@@ -221,11 +221,68 @@ export const tabSettlementFeedback: Mapping = {
   },
 };
 
+/**
+ * Dissent withdrawal receipts. Proposed and tested by Alnitak (alnitak34/dissent, commit 64ef961,
+ * docs/demo/kanmani-parser-proposal.md) after their reviewer found the settled rung could not see an
+ * internal native payout. Adopted here with the semantics they wrote down:
+ *
+ * - One receipt object per feedback URI, native on Monad (chain 143), version 1.
+ * - `amountAtomic` is a positive integer string holding the exact total that moved. A reward and
+ *   returned-deposit split is never inferred from a transfer, so a document that wants one shown has to
+ *   say so in extra fields, which the rung ignores.
+ * - Every required field must be present and well formed. An incomplete receipt is `unparsed`. It is
+ *   never downgraded to a weaker transaction-exists check.
+ * - `core` is carried as `payer`, which is metadata. The settled rung does not enforce the claimed payer,
+ *   so this mapping does not certify who paid.
+ *
+ * Hand-written from a published, versioned shape, not induced by a model. The date is when it was agreed.
+ */
+export const dissentWithdrawalReceipt: Mapping = {
+  name: "dissent-withdrawal-receipt.v1",
+  induced: "2026-10-15",
+  note: "Dissent withdrawal receipts. Exact total native amount on Monad 143. The reward and deposit split is not verified",
+  matches: (d) => d.type === "dissent-withdrawal-receipt",
+  extract(d) {
+    const address = (v: unknown) =>
+      typeof v === "string" && /^0x[0-9a-fA-F]{40}$/.test(v) && !/^0x0{40}$/i.test(v);
+    if (
+      d.version !== 1 ||
+      d.chainId !== 143 ||
+      d.asset !== "native" ||
+      typeof d.txHash !== "string" ||
+      !/^0x[0-9a-fA-F]{64}$/.test(d.txHash) ||
+      !address(d.core) ||
+      !address(d.recipient) ||
+      typeof d.amountAtomic !== "string" ||
+      !/^[1-9][0-9]*$/.test(d.amountAtomic)
+    ) {
+      return {
+        kind: "unparsed",
+        reason:
+          "a Dissent v1 receipt requires Monad 143, the native asset, valid addresses and hash, and a positive atomic integer string",
+      };
+    }
+    return {
+      kind: "claim",
+      mapping: this.name,
+      claim: {
+        network: d.chainId,
+        txHash: d.txHash,
+        recipient: d.recipient,
+        payer: d.core,
+        amount: d.amountAtomic,
+        token: d.asset,
+      },
+    };
+  },
+};
+
 /** The atlas. Order matters only in that a claim-bearing shape is tried before the generic ones. */
 export const ATLAS: readonly Mapping[] = [
   executionMarket,
   executionMarketTransactions,
   tabSettlementFeedback,
+  dissentWithdrawalReceipt,
   eloRecord,
   conversationScore,
   agentCard,

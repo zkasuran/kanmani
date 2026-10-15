@@ -147,9 +147,10 @@ test("the verdict pipeline imports nothing from the proposer or the review queue
     assert.ok(!/mapping_proposal/.test(src), `${name} must not reference mapping_proposal`);
     assert.ok(!/from ["'].*propose\.ts["']/.test(src), `${name} must not import the proposer`);
   }
-  // The shipped atlas is six mappings: five written by hand and one Qwen proposed that a person reviewed
-  // and added in code. A proposal row alone cannot change that count.
-  assert.equal(ATLAS.length, 6);
+  // The shipped atlas is seven mappings: six written by hand (one of them, dissent-withdrawal-receipt.v1,
+  // from a partner's published proposal that a person reviewed) and one Qwen proposed that a person
+  // reviewed and added in code. A proposal row alone cannot change that count.
+  assert.equal(ATLAS.length, 7);
   assert.equal(ATLAS.filter((m) => m.name === "tab-settlement-feedback.v1").length, 1);
 });
 
