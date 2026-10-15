@@ -3,8 +3,8 @@
  *
  * Written by Alnitak (alnitak34/dissent, commit 64ef961, docs/demo/kanmani-parser-proposal.md) against a
  * test-only atlas, then moved here unchanged except for paths and the registered mapping. The fixtures are
- * saved from two real mainnet withdrawals: receipts are reduced fields, traces are the original callTracer
- * output, and no log is kept because the tests rely on native internal calls and not on payment events.
+ * saved from two real mainnet withdrawals. Receipts are reduced fields and traces are the original callTracer
+ * output. No log is kept because the tests rely on native internal calls and not on payment events.
  */
 import { test } from "node:test";
 import assert from "node:assert/strict";

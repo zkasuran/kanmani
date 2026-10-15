@@ -259,7 +259,7 @@ export const dissentWithdrawalReceipt: Mapping = {
       return {
         kind: "unparsed",
         reason:
-          "a Dissent v1 receipt requires Monad 143, the native asset, valid addresses and hash, and a positive atomic integer string",
+          "a Dissent v1 receipt requires Monad 143 and the native asset, with valid addresses and hash plus a positive atomic integer string",
       };
     }
     return {
