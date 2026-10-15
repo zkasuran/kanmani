@@ -361,7 +361,7 @@ so this page stays the whole list without duplicating them.
 * **The settled rung called an internal native payout "no payment".** Dissent's reviewer re-ran two of
   their mainnet withdrawals (3.10 MON and 0.85 MON, both paid by DissentCore to the challenger)
   through `settledCheck` and got `settled: false`, "moved no the native token at all". Both payouts had
-  succeeded. A withdrawal is a zero-value call into a contract that pays with an internal CALL, and
+  succeeded. A withdrawal is a zero-value call into a contract that pays with an internal CALL.
   `getNativeTransfer` read only the outer transaction's `to` and `value`. That broke the rule this
   project holds hardest: failing to see a payment is `unknown`, never `false`. Fixed in three parts.
   The rung now reads internal CALLs from a `callTracer` trace (`effectiveNativeCalls`), skipping a
@@ -369,8 +369,8 @@ so this page stays the whole list without duplicating them.
   carry a value without moving it. If the provider gives no trace for a transaction that carried
   calldata, the answer is `unknown` with a reason that says the gap is in what could be read. A plain
   transfer with no calldata still answers `false` without a trace. Both withdrawals now settle through
-  the real reader on mainnet. Tests: `verifier/src/ladder/settled-internal.test.ts`, 11 unit and 2 live,
-  and four deliberate breaks each fail at least one. Their reproduction package and the proposed
+  the real reader on mainnet. Tests: `verifier/src/ladder/settled-internal.test.ts`, 11 unit and 2 live.
+  Four deliberate breaks each fail at least one. Their reproduction package and the proposed
   receipt format are the open follow-up, tracked with them rather than here.
 
 ## Still open
