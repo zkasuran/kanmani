@@ -73,7 +73,7 @@ four outcomes with no shortcut between them.
 
 ## 3. The measurement
 
-The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,390<!-- /n --> agents on Monad mainnet,
+The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,413<!-- /n --> agents on Monad mainnet,
 matching the registry's own counter slot exactly. `totalSupply()` reverts on the Identity Registry,
 so the slot is the only source of population truth:
 
@@ -83,7 +83,7 @@ cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
   --rpc-url https://rpc.monad.xyz    # the agent count above, as a hex word
 ```
 
-Those agents carry <!-- n:feedbacks -->9,328<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,307<!-- /n --> carry a URI. The rest point at nothing,
+Those agents carry <!-- n:feedbacks -->9,415<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,318<!-- /n --> carry a URI. The rest point at nothing,
 so there is nothing to fetch and nothing to check. The `/` page prints the SQL behind every one of
 these numbers. It is the same query the site runs:
 
@@ -94,14 +94,14 @@ SELECT
   (SELECT count(*) FROM "Feedback" WHERE "chainId" = $1 AND "feedbackUri" <> '') AS feedbacks_with_uri
 ```
 
-Those <!-- n:withPointer -->1,307<!-- /n --> documents were each walked down the ladder. Four outcomes, no fifth:
+Those <!-- n:withPointer -->1,318<!-- /n --> documents were each walked down the ladder. Four outcomes, no fifth:
 
 | outcome | count | meaning |
 |---|---|---|
 | `noClaim` | <!-- n:noClaim -->1,095<!-- /n --> | read fine, asserts no payment, so there is nothing to be right or wrong about |
 | `false` | 123 | we read the chain the document names and the transaction is not on it |
 | `true` | <!-- n:claimsTrue -->74<!-- /n --> | the cited transaction is on the chain the document names, at a block we record |
-| `unknown` | <!-- n:unknown -->15<!-- /n --> | we could not look or could not read what we fetched |
+| `unknown` | <!-- n:unknown -->26<!-- /n --> | we could not look or could not read what we fetched |
 
 Each row is one command, with the outcome swapped:
 
@@ -110,10 +110,10 @@ curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=1' | jq '.data.tota
 # outcome=true -> 74, outcome=noClaim -> 1095, outcome=unknown -> 15   (2026-10-13)
 ```
 
-**The denominator for the headline is <!-- n:claims -->197<!-- /n -->, not <!-- n:feedbacks -->9,328<!-- /n --> and not <!-- n:withPointer -->1,307<!-- /n -->.** <!-- n:claims -->197<!-- /n --> is `true` plus `false`: the
+**The denominator for the headline is <!-- n:claims -->197<!-- /n -->, not <!-- n:feedbacks -->9,415<!-- /n --> and not <!-- n:withPointer -->1,318<!-- /n -->.** <!-- n:claims -->197<!-- /n --> is `true` plus `false`: the
 documents that assert a payment and that we read all the way to a chain. 123 of <!-- n:claims -->197<!-- /n --> is 66%. 123 of
-<!-- n:feedbacks -->9,328<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
-framing is honest on its own, which is why the <!-- n:claims -->197<!-- /n --> and the <!-- n:withPointer -->1,307<!-- /n --> sit next to each other on the front
+<!-- n:feedbacks -->9,415<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
+framing is honest on its own, which is why the <!-- n:claims -->197<!-- /n --> and the <!-- n:withPointer -->1,318<!-- /n --> sit next to each other on the front
 page.
 
 <!-- n:noClaim -->1,095<!-- /n --> documents assert no payment because most ERC-8004 feedback on Monad is not about payment.
@@ -128,7 +128,7 @@ leftovers:
 | "noClaim"
 ```
 
-1,095 of the <!-- n:withPointer -->1,307<!-- /n --> are `data:` URIs, decoded in process with no network call at all. Worth knowing
+1,095 of the <!-- n:withPointer -->1,318<!-- /n --> are `data:` URIs, decoded in process with no network call at all. Worth knowing
 before anyone repeats this measurement: sampling the corpus recent-first gives the opposite
 impression, because the head of the list is mostly https.
 
@@ -237,8 +237,8 @@ Here are the reason strings, verbatim from the source. Nothing else ever reaches
 Every one describes what was observed. None describes what anyone meant. The difference between an
 observation and an accusation is the reason this measurement can be published at all.
 
-The same restraint covers the <!-- n:unknown -->15<!-- /n --> unknowns. <!-- n:unknownHash -->13<!-- /n --> serve bytes that no longer match their own on-chain
-hash, which happens when an author edits a document for perfectly good reasons. <!-- n:unknownRateLimited -->2<!-- /n --> would not answer at all. We do not know whether any of those <!-- n:unknown -->15<!-- /n --> assert a payment, because the ladder stopped before it found out, so none of them is counted in the <!-- n:claims -->197<!-- /n -->. There used to be 3 more, in a document shape no published mapping read. On 2026-10-04 Qwen 3.8 Max proposed a mapping for that shape, it was reviewed and shipped. All 3 checked out as `true`.
+The same restraint covers the <!-- n:unknown -->26<!-- /n --> unknowns. <!-- n:unknownHash -->10<!-- /n --> serve bytes that no longer match their own on-chain
+hash, which happens when an author edits a document for perfectly good reasons. <!-- n:unknownRateLimited -->7<!-- /n --> would not answer at all. We do not know whether any of those <!-- n:unknown -->26<!-- /n --> assert a payment, because the ladder stopped before it found out, so none of them is counted in the <!-- n:claims -->197<!-- /n -->. There used to be 3 more, in a document shape no published mapping read. On 2026-10-04 Qwen 3.8 Max proposed a mapping for that shape, it was reviewed and shipped. All 3 checked out as `true`.
 
 A verdict is a measurement at a time, never a permanent label. Every row carries `checkedAt` plus
 the chain head it was checked against. The store is append only, so a re-check writes a new row
@@ -247,9 +247,9 @@ record will show both readings.
 
 ## 7. Why this matters to somebody spending money
 
-An agent looking for another agent to pay has a registry with <!-- n:agents -->10,390<!-- /n --> entries and no way to tell a
+An agent looking for another agent to pay has a registry with <!-- n:agents -->10,413<!-- /n --> entries and no way to tell a
 working counterparty from a registration that has been dead for months. Measure it the cheapest
-possible way. All <!-- n:documents -->2,119<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,113<!-- /n --> agents point at a
+possible way. All <!-- n:documents -->2,141<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,113<!-- /n --> agents point at a
 document whose host answers and says it is not there. That is 78.2% of the registry. <!-- n:oneDocAgents -->8,093<!-- /n --> of those
 agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> distinct wallets, point at one single URL:
 

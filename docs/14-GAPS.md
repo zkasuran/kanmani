@@ -78,7 +78,7 @@ wired into the live ladder.
 
 | rung | state |
 |---|---|
-| `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all <!-- n:withPointer -->1,307<!-- /n --> documents through them |
+| `declared`, `resolvable`, `intact`, `parsed`, `true` | shipped, all <!-- n:withPointer -->1,318<!-- /n --> documents through them |
 | `payable` | **written and tested, not wired.** A live x402 probe of an agent's own endpoint |
 | `settled` | **wired into `judge()` to strengthen the `true` rung's recipient match, not exposed as a separate rung.** A distinct "a payment to that agent cleared" rung is still absent |
 
@@ -489,7 +489,7 @@ previous entry of mine shipped a working paid service and died anyway on an unfi
 
 ## 10. Measurement we cannot complete and why it stays unknown
 
-<!-- n:unknown -->15<!-- /n --> of the <!-- n:withPointer -->1,307<!-- /n --> documents have no verdict beyond `unknown`. Each stays that way deliberately.
+<!-- n:unknown -->26<!-- /n --> of the <!-- n:withPointer -->1,318<!-- /n --> documents have no verdict beyond `unknown`. Each stays that way deliberately.
 
 **Thirteen documents whose bytes no longer match their on-chain commitment.** Ten are on
 grokandmon.com and three on agenttrace-mainnet.vercel.app. Each committed hash was made against
@@ -501,7 +501,7 @@ author never committed to and attribute it to them. **This is an argument about 
 should be stored rather than about anybody's conduct:** a live endpoint cannot keep a promise about
 its bytes, content addressing can. It is never written as an accusation.
 
-**<!-- n:unknownRateLimited -->2<!-- /n --> documents whose host would not answer.** There were five on 2026-10-11: three returned HTTP
+**<!-- n:unknownRateLimited -->7<!-- /n --> documents whose host would not answer.** There were five on 2026-10-11: three returned HTTP
 403 and two HTTP 429. A working endpoint would close these and nothing else, so this group stays
 open until the hosts answer.
 
@@ -520,9 +520,9 @@ Small, real and better written here than discovered by a reader.
   and 10 skipped: Aqueous fork tests without a fork URL, cross-signing tests without `--ffi` and tests
   that need the P256 precompile profile. They skip rather than silently passing, but a reader
   should know the 172 is not the whole suite.
-* **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->247<!-- /n --> tests, <!-- n:testsVerifier -->220<!-- /n --> pass, <!-- n:testsVerifierSkipped -->27<!-- /n -->
-  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->550<!-- /n --> tests, <!-- n:testsApp -->535<!-- /n --> passing, <!-- n:testsAppSkipped -->15<!-- /n --> skipped.
-  **<!-- n:testsPassing -->927<!-- /n --> pass in total.**
+* **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->274<!-- /n --> tests, <!-- n:testsVerifier -->245<!-- /n --> pass, <!-- n:testsVerifierSkipped -->29<!-- /n -->
+  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->566<!-- /n --> tests, <!-- n:testsApp -->542<!-- /n --> passing, <!-- n:testsAppSkipped -->24<!-- /n --> skipped.
+  **<!-- n:testsPassing -->959<!-- /n --> pass in total.**
 * **Census figures and live figures differ because the registry keeps growing.** Documents written at
   census time say 10,252 agents and 2,012 distinct records. The live index now reads 10,276 and 2,053,
   because registrations have continued since the census and one of them is ours, agent 10252. Section 1
