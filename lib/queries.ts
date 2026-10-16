@@ -805,7 +805,7 @@ WHERE f."chainId" = $1
  * unchanged by this existing.
  *
  * Parameters: $1 chain, $2 agent, $3 from, $4 to, $5 publishers (lowercase text[] or null), $6 recipient
- * (`agent`, a lowercase address, or null). The latest settlement check per feedback is the recipient the
+ * (the word `agent` or a lowercase address; null for none). The latest settlement check per feedback is the recipient the
  * claim named, as the settled rung recorded it.
  */
 export const SCOPED_CLAIM_TRUTH_WINDOW_SQL = `
