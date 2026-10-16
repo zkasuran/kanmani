@@ -374,6 +374,37 @@ so this page stays the whole list without duplicating them.
   was reviewed and adopted as `dissent-withdrawal-receipt.v1` (see the mapping's comment in `parse.ts`).
   Adopting it publishes nothing: no feedback and no bond exist for it yet.
 
+## Found while answering a partner's bond questions, 2026-10-16
+
+Dissent asked how a bond on their challenger would actually work. Writing the answer meant reading the
+sampling query and the registry closely. Two things did not hold up.
+
+* **A bonded agent's sample could be moved by a stranger.** The measurement counts every feedback
+  about the agent from any wallet except its owner (the Reputation Registry reverts an owner
+  publishing about its own agent with "Self-feedback not allowed", checked with a read-only call).
+  It also never checked where the claimed payment went. So someone else could publish a false claim
+  about a bonded agent and lower its rate. Fixed as an option, not a change: `/api/sla/{agentId}` now
+  accepts `publishers` (up to 8 wallets) and `recipient` (an address, with `agent` meaning the agent's own
+  owner or wallet). With neither, the answer is the same as before, byte for byte apart from the
+  timestamp. The original SQL is pinned by hash in a test, an unscoped answer carries exactly the keys
+  it always had. The scoped statement is a separate one. Tested against a throwaway Postgres
+  (13 tests, four deliberate breaks each fail one). No schema change.
+  **What this does not fix:** the bonds already posted (Sentinel on agent 10256 plus the earlier ones)
+  are unscoped. `postBond` has no field for a scope and the contract is immutable, so a scope cannot be
+  recorded on chain. It is a public off-chain term that the oracle is told. A new bond should publish
+  its scope beside it before it is posted.
+
+## Still open (found the same day)
+
+* **A slash can lose a race with `release`.** The oracle workflow asks for a verdict over the whole
+  bond window. The contract rejects a window that ends in the future, so the earliest such a verdict can
+  land is the block at which anyone may call `release`. Whoever calls first wins. The contract does
+  accept a verdict ending at the current block, so a mid-window verdict is possible. The workflow does
+  not send one. It is not changed here because the workflow and its recorded simulation are part of the
+  filed submission.
+* **The one live v2 bond has measured nothing.** Sentinel's window holds zero feedbacks so far. No bond
+  has been slashed live. The slash path has only run on fork tests and a dry-run simulation.
+
 ## Still open
 
 In the escrow, the source is fixed. One item is still live on chain pending a redeploy: the `receiveWithAuthorization` fix for gasless create is in source and tested, but the deployed Aqueous is immutable and still carries the transfer-variant behaviour until a redeploy updates the cited address. No app route calls `createJobWithAuthorization`, so nothing on the live site exposes it. The security audit tracks this as an open high.
