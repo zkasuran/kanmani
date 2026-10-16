@@ -125,6 +125,18 @@ export function openapi(site: string) {
             { name: "agentId", in: "path", required: true, schema: { type: "string", pattern: "^\\d+$" } },
             { name: "fromBlock", in: "query", schema: { type: "string" } },
             { name: "toBlock", in: "query", schema: { type: "string" } },
+            {
+              name: "publishers",
+              in: "query",
+              description: "Optional scope. Comma list of up to 8 wallets. Only feedback published by one of them is sampled. Absent means every publisher.",
+              schema: { type: "string" },
+            },
+            {
+              name: "recipient",
+              in: "query",
+              description: 'Optional scope. A 20-byte address or "agent". Only claims whose payment was claimed to reach that address (or the agent\'s own owner or wallet) are sampled. Absent means any recipient.',
+              schema: { type: "string" },
+            },
           ],
           responses: { "200": ok("The rate and its sample.", envelope({ type: "object" })) },
         },

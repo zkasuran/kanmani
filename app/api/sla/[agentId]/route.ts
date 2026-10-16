@@ -1,5 +1,5 @@
 import { envelope, json, problem, SITE } from "@/lib/api.ts";
-import { claimTruthWindow } from "@/lib/queries.ts";
+import { claimTruthWindow, MAX_SCOPE_PUBLISHERS, type ClaimScope } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +41,28 @@ export async function GET(req: Request, { params }: { params: Promise<{ agentId:
     return problem(400, "Bad block range", "fromBlock must not be greater than toBlock");
   }
 
-  const w = await claimTruthWindow(agentId, fromBlock, toBlock);
+  // Optional scope. With neither parameter this is the original measurement, byte for byte. A bond's
+  // terms can name the wallets allowed to publish about the agent and the address the claimed payments
+  // must reach, so a stranger's feedback cannot move a bonded agent's rate.
+  const ADDR = /^0x[0-9a-fA-F]{40}$/;
+  const scope: ClaimScope = {};
+  const publishersRaw = u.searchParams.get("publishers");
+  if (publishersRaw !== null) {
+    const list = publishersRaw.split(",").map((x) => x.trim());
+    if (list.length === 0 || list.length > MAX_SCOPE_PUBLISHERS || !list.every((x) => ADDR.test(x))) {
+      return problem(400, "Bad publishers", `publishers is a comma list of 1 to ${MAX_SCOPE_PUBLISHERS} 20-byte addresses`);
+    }
+    scope.publishers = list;
+  }
+  const recipientRaw = u.searchParams.get("recipient");
+  if (recipientRaw !== null) {
+    if (recipientRaw !== "agent" && !ADDR.test(recipientRaw)) {
+      return problem(400, "Bad recipient", 'recipient is "agent" or a 20-byte address');
+    }
+    scope.recipient = recipientRaw;
+  }
+
+  const w = await claimTruthWindow(agentId, fromBlock, toBlock, scope.publishers || scope.recipient ? scope : undefined);
 
   return json(
     envelope(
@@ -58,6 +79,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ agentId:
         // Basis points so an on-chain reader compares integers. Null on an empty sample, which the
         // oracle must treat as "not enough to decide", never as a zero rate.
         rateBps: w.rows.rateBps,
+        // Only present for a scoped request, so an unscoped answer has exactly the keys it always had.
+        ...(w.rows.scope ? { scope: w.rows.scope, excludedByScope: w.rows.excludedByScope } : {}),
       },
       w.sql,
     ),

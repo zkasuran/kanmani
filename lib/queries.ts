@@ -760,7 +760,28 @@ export type ClaimTruthWindow = {
   noClaimCount: number;
   /** true / (true + false), in basis points. null when the sample is empty, never a misleading 0. */
   rateBps: number | null;
+  /**
+   * Present only when the caller asked for a scope. The default window counts every feedback about the
+   * agent from any wallet except its owner, so a third party can add a false claim to a bonded agent's
+   * sample. A scope narrows the sample to what the bond's terms say it covers. Absent means unscoped.
+   */
+  scope?: ClaimScope;
+  /** Feedbacks in the block window that the scope left out. Present only with a scope. */
+  excludedByScope?: number;
 };
+
+/**
+ * What a bond's sample is limited to. Both parts are optional and both are public terms: a reader can
+ * recompute the same sample from the same addresses.
+ *
+ * - `publishers`: only feedback published by one of these wallets (lowercased, sorted, at most 8).
+ * - `recipient`: only claims whose payment was claimed to reach this address. The value `"agent"` means the
+ *   agent's own registered owner or wallet. A claim that names no recipient is outside a recipient scope,
+ *   because a payment to nobody in particular is not evidence about this agent.
+ */
+export type ClaimScope = { publishers?: string[]; recipient?: string };
+
+export const MAX_SCOPE_PUBLISHERS = 8;
 
 export const CLAIM_TRUTH_WINDOW_SQL = `
 SELECT
@@ -778,11 +799,95 @@ WHERE f."chainId" = $1
   AND f."blockNumber" >= $3
   AND f."blockNumber" <= $4`;
 
+/**
+ * The same measurement, limited to a scope. A separate statement so the unscoped one above stays exactly
+ * what it was: the bonds already posted, the recorded simulation and every page that reads it are
+ * unchanged by this existing.
+ *
+ * Parameters: $1 chain, $2 agent, $3 from, $4 to, $5 publishers (lowercase text[] or null), $6 recipient
+ * (`agent`, a lowercase address, or null). The latest settlement check per feedback is the recipient the
+ * claim named, as the settled rung recorded it.
+ */
+export const SCOPED_CLAIM_TRUTH_WINDOW_SQL = `
+WITH base AS (
+  SELECT f.id,
+         f."feedbackUri" AS uri,
+         v.outcome,
+         (
+           ($5::text[] IS NULL OR lower(f."clientAddress") = ANY ($5::text[]))
+           AND (
+             $6::text IS NULL
+             OR EXISTS (
+               SELECT 1 FROM fovea.settlement_check_latest s
+               WHERE s.subject = f.id
+                 AND s.subject_kind = 'feedback'
+                 AND (
+                   ($6::text = 'agent' AND lower(s.recipient) IN (lower(a."owner"), lower(coalesce(a."agentWallet", ''))))
+                   OR ($6::text <> 'agent' AND lower(s.recipient) = $6::text)
+                 )
+             )
+           )
+         ) AS in_scope
+  FROM "Feedback" f
+  JOIN "Agent" a ON a.id = f.agent_id
+  LEFT JOIN fovea.verdict_latest v ON v.feedback_id = f.id
+  WHERE f."chainId" = $1
+    AND a."agentId"::text = $2
+    AND f."blockNumber" >= $3
+    AND f."blockNumber" <= $4
+)
+SELECT
+  count(*) FILTER (WHERE in_scope AND uri <> '')                          AS feedbacks,
+  count(*) FILTER (WHERE in_scope AND outcome IN ('true','false'))        AS sample_size,
+  count(*) FILTER (WHERE in_scope AND outcome = 'true')                   AS true_count,
+  count(*) FILTER (WHERE in_scope AND outcome = 'false')                  AS false_count,
+  count(*) FILTER (WHERE in_scope AND outcome = 'unknown')                AS unknown_count,
+  count(*) FILTER (WHERE in_scope AND outcome = 'noClaim')                AS no_claim_count,
+  count(*) FILTER (WHERE NOT in_scope)                                    AS excluded_count
+FROM base`;
+
+/** Lowercase, dedupe and sort so two callers asking for the same scope get the same rows. */
+export function normaliseScope(scope: ClaimScope): ClaimScope | null {
+  const publishers = scope.publishers && scope.publishers.length > 0 ? [...new Set(scope.publishers.map((x) => x.toLowerCase()))].sort() : undefined;
+  const recipient = scope.recipient ? scope.recipient.toLowerCase() : undefined;
+  if (!publishers && !recipient) return null;
+  return { ...(publishers ? { publishers } : {}), ...(recipient ? { recipient } : {}) };
+}
+
 export async function claimTruthWindow(
   agentId: string,
   fromBlock: bigint,
   toBlock: bigint,
+  scope?: ClaimScope,
 ): Promise<Sourced<ClaimTruthWindow>> {
+  const norm = scope ? normaliseScope(scope) : null;
+  if (norm) {
+    const r = await q1<Record<string, string>>(SCOPED_CLAIM_TRUTH_WINDOW_SQL, [
+      CHAIN_ID,
+      agentId,
+      fromBlock.toString(),
+      toBlock.toString(),
+      norm.publishers ?? null,
+      norm.recipient ?? null,
+    ]);
+    const n = (k: string) => Number(r?.[k] ?? 0);
+    const trueCount = n("true_count");
+    const sampleSize = n("sample_size");
+    return src(SCOPED_CLAIM_TRUTH_WINDOW_SQL, {
+      agentId: Number(agentId),
+      fromBlock: fromBlock.toString(),
+      toBlock: toBlock.toString(),
+      feedbacks: n("feedbacks"),
+      sampleSize,
+      trueCount,
+      falseCount: n("false_count"),
+      unknownCount: n("unknown_count"),
+      noClaimCount: n("no_claim_count"),
+      rateBps: sampleSize === 0 ? null : Math.round((trueCount / sampleSize) * 10_000),
+      scope: norm,
+      excludedByScope: n("excluded_count"),
+    });
+  }
   const r = await q1<Record<string, string>>(CLAIM_TRUTH_WINDOW_SQL, [
     CHAIN_ID,
     agentId,
