@@ -334,9 +334,22 @@
       "kind": "issue",
       "date": "2026-10-13",
       "offered": "A finding: their ERC-8004 outcome feedback commits a hash whose document is served nowhere, so nobody can verify it. Two fixes plus a sponsored Sclera bond on agents 10280 and 10315.",
-      "outcome": "sent",
-      "result": null,
-      "evidence": [],
+      "outcome": "replied",
+      "result": "They replied on 2026-10-15 and merged a fix (PR 2) so the feedbackURI route serves JSON. On 2026-10-16 production still returns 404 OUTCOME_NOT_FOUND for both of agent 10315's outcomes, so neither hash can be verified yet and both claims stay unknown.",
+      "evidence": [
+        {
+          "label": "Their reply",
+          "url": "https://github.com/catalystberry842-alt/AgentTrace/issues/1#issuecomment-6198705450"
+        },
+        {
+          "label": "Our re-check",
+          "url": "https://github.com/catalystberry842-alt/AgentTrace/issues/1#issuecomment-6209947051"
+        },
+        {
+          "label": "Their fix, PR 2",
+          "url": "https://github.com/catalystberry842-alt/AgentTrace/pull/2"
+        }
+      ],
       "buyer": null
     },
     {
