@@ -41,12 +41,18 @@ if (suites.length === 0) {
 
 console.log(`e2e: ${suites.length} suite(s) against ${url}\n`);
 
+// The site's flood guard allows 600 requests a minute per client and every suite here shares one IP.
+// Back to back, the heavier suites add up past that and the next page answers 429, which looks like a
+// broken site and is not. E2E_PAUSE_MS spaces the suites out. Zero by default, so a local run is unchanged.
+const pauseMs = Math.max(0, Number(process.env.E2E_PAUSE_MS ?? 0) || 0);
+
 let pass = 0;
 let fail = 0;
 let skip = 0;
 const failed = [];
 
-for (const suite of suites) {
+for (const [i, suite] of suites.entries()) {
+  if (i > 0 && pauseMs > 0) await new Promise((r) => setTimeout(r, pauseMs));
   console.log(`──────── ${suite}`);
   const r = spawnSync("node", [join(here, suite), url], { stdio: "inherit" });
   // A suite killed by a signal has no numeric code; treat that as a failure rather than a pass.

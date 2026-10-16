@@ -31,7 +31,10 @@ async function signCount() {
 
 await page.goto(`${url}/pay?net=testnet`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /connect a new passkey/i }).click();
-await page.getByText(/signing session open/i).waitFor({ timeout: 15_000 });
+// Exact, because the /pay intro paragraph also contains "signing session opens". A substring match
+// resolved to two elements whenever the paragraph rendered before the real label, which made this pass
+// or fail on timing alone.
+await page.getByText("signing session open", { exact: true }).waitFor({ timeout: 15_000 });
 
 // 1. Within scope: a pay signs through the open session with no new ceremony.
 const before = await signCount();

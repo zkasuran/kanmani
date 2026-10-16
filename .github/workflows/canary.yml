@@ -133,4 +133,7 @@ jobs:
       # with the reason (the cross-device passkey suite, because Chrome's virtual authenticator
       # exports no PRF seed), and the runner counts a SKIP as neither a pass nor a failure.
       - name: End to end against the deployed site
+        env:
+          # One runner IP drives every suite and the site caps a client at 600 requests a minute.
+          E2E_PAUSE_MS: "20000"
         run: node scripts/e2e/run.mjs "$SITE"

@@ -24,7 +24,10 @@ const check = (name, ok, detail = "") => {
 
 await page.goto(`${url}/pay?net=testnet`, { waitUntil: "networkidle" });
 await page.getByRole("button", { name: /connect a new passkey/i }).click();
-await page.getByText(/signing session open/i).waitFor({ timeout: 15_000 });
+// Exact, because the /pay intro paragraph also contains "signing session opens". A substring match
+// resolved to two elements whenever the paragraph rendered before the real label, which made this pass
+// or fail on timing alone.
+await page.getByText("signing session open", { exact: true }).waitFor({ timeout: 15_000 });
 await page.getByRole("button", { name: /pay .* and verify/i }).click();
 await page.waitForTimeout(2500);
 
