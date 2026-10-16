@@ -23,7 +23,8 @@
  *                                                 test counts match lib/counts.ts. verify.sh runs this
  *   node scripts/refresh-numbers.mjs --check --live   also fail if the snapshot no longer matches the
  *                                                 live site, allowing population counts to drift by
- *                                                 NUMBERS_DRIFT (default 0.5%). The canary runs this
+ *                                                 an allowance that grows with the snapshot's age, see
+ *                                                 scripts/numbers-drift.mjs. The canary runs this
  *   node scripts/refresh-numbers.mjs --mark FILE...   adopt markers: wrap the snapshot's distinctive
  *                                                 figures in FILE where they appear unmarked
  *
@@ -35,6 +36,7 @@ import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { execFileSync } from "node:child_process";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { driftVerdict } from "./numbers-drift.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SNAPSHOT = join(ROOT, "docs/numbers.json");
@@ -80,8 +82,6 @@ const KEYS = {
   testsRootPassing: "`npm test` at the root, which runs the app and verifier suites together",
 };
 
-/** Population counts that grow on their own as people register. Everything else is held exact. */
-const GROWING = ["agents", "documents", "feedbacks", "withPointer", "goneAgents", "oneDocAgents", "oneDocWallets"];
 
 /** Figures distinctive enough to adopt automatically with --mark. Small ones are marked by hand. */
 const AUTO_MARK = ["agents", "documents", "feedbacks", "withPointer", "goneAgents", "oneDocAgents", "oneDocWallets", "noClaim"];
@@ -292,22 +292,22 @@ if (CHECK) {
   bad.push(...r.bad);
 
   if (LIVE) {
-    // The registry grows by a handful of agents a day, so an exact match would fail every scheduled
-    // run and teach everyone to ignore it. Population counts may drift by DRIFT before this fails;
-    // the drift is still printed. Verdict and test figures have no tolerance: if one of those moves,
+    // The registry grows every day, so an exact match would fail every scheduled run and teach everyone to
+    // ignore it. The allowance grows with the age of the snapshot (see scripts/numbers-drift.mjs). The
+    // drift is still printed. Claim, settlement and test figures have no tolerance: if one of those moves,
     // a sentence built on it may have stopped being true.
-    const DRIFT = Number(process.env.NUMBERS_DRIFT ?? 0.005);
+    const ageDays = (Date.now() - Date.parse(snap.measuredAt)) / 86_400_000;
     const now = await live();
     const notes = [];
     for (const [k, v] of Object.entries(now.values)) {
       const was = snap.values[k];
       if (was === v) continue;
-      const rel = was === 0 ? Infinity : Math.abs(v - was) / was;
       const line = `${k} is ${fmt(v)} live at block ${now.atBlock}, the snapshot says ${fmt(was)}`;
-      if (GROWING.includes(k) && rel <= DRIFT) notes.push(line);
+      const d = driftVerdict(k, was, v, ageDays);
+      if (d.ok) notes.push(`${line}, within the ${(d.within * 100).toFixed(1)}% allowance for a ${ageDays.toFixed(1)} day old snapshot`);
       else bad.push(line);
     }
-    for (const n of notes) console.log(`note  ${n}, within the ${DRIFT * 100}% allowance`);
+    for (const n of notes) console.log(`note  ${n}`);
   }
 
   if (bad.length) {

@@ -521,8 +521,8 @@ Small, real and better written here than discovered by a reader.
   that need the P256 precompile profile. They skip rather than silently passing, but a reader
   should know the 172 is not the whole suite.
 * **Twenty-seven verifier tests skip without a live dependency.** Same shape: <!-- n:testsVerifierTotal -->274<!-- /n --> tests, <!-- n:testsVerifier -->245<!-- /n --> pass, <!-- n:testsVerifierSkipped -->29<!-- /n -->
-  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->566<!-- /n --> tests, <!-- n:testsApp -->542<!-- /n --> passing, <!-- n:testsAppSkipped -->24<!-- /n --> skipped.
-  **<!-- n:testsPassing -->959<!-- /n --> pass in total.**
+  need Postgres or a live endpoint and say so. The site suite is <!-- n:testsAppTotal -->577<!-- /n --> tests, <!-- n:testsApp -->553<!-- /n --> passing, <!-- n:testsAppSkipped -->24<!-- /n --> skipped.
+  **<!-- n:testsPassing -->970<!-- /n --> pass in total.**
 * **Census figures and live figures differ because the registry keeps growing.** Documents written at
   census time say 10,252 agents and 2,012 distinct records. The live index now reads 10,276 and 2,053,
   because registrations have continued since the census and one of them is ours, agent 10252. Section 1

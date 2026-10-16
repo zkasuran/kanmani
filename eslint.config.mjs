@@ -55,6 +55,8 @@ const config = [
       "contracts/**",
       "indexer/**",
       "cre/**",
+      // Type declarations for a plain .mjs script. The parser here reads them as JavaScript.
+      "scripts/*.d.mts",
       "verifier/node_modules/**",
       "public/**",
       "next-env.d.ts",
