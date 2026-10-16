@@ -389,6 +389,14 @@ sampling query and the registry closely. Two things did not hold up.
   timestamp. The original SQL is pinned by hash in a test, an unscoped answer carries exactly the keys
   it always had. The scoped statement is a separate one. Tested against a throwaway Postgres
   (13 tests, four deliberate breaks each fail one). No schema change.
+  A first deploy of this returned a 500 for every scoped request, because the recipient clause named a
+  view (`fovea.settlement_check_latest`) that production does not have. Postgres will not plan a
+  statement that names a missing relation even when the clause cannot run. The throwaway database I
+  tested against had the full schema, so it hid this. The unscoped path, which is what every page and
+  the recorded simulation use, was never affected. Fixed in a follow-up: a publishers-only statement no
+  longer mentions the view. A recipient scope answers 501 "Scope unavailable" on a deployment that
+  does not keep those records, instead of a 500 or an empty sample. A test pins the first. I checked
+  both against a scratch database with the view dropped, as production is.
   **What this does not fix:** the bonds already posted (Sentinel on agent 10256 plus the earlier ones)
   are unscoped. `postBond` has no field for a scope and the contract is immutable, so a scope cannot be
   recorded on chain. It is a public off-chain term that the oracle is told. A new bond should publish

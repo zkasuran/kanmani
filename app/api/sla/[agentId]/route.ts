@@ -1,5 +1,5 @@
 import { envelope, json, problem, SITE } from "@/lib/api.ts";
-import { claimTruthWindow, MAX_SCOPE_PUBLISHERS, type ClaimScope } from "@/lib/queries.ts";
+import { claimTruthWindow, MAX_SCOPE_PUBLISHERS, ScopeUnavailableError, type ClaimScope } from "@/lib/queries.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -62,7 +62,14 @@ export async function GET(req: Request, { params }: { params: Promise<{ agentId:
     scope.recipient = recipientRaw;
   }
 
-  const w = await claimTruthWindow(agentId, fromBlock, toBlock, scope.publishers || scope.recipient ? scope : undefined);
+  let w;
+  try {
+    w = await claimTruthWindow(agentId, fromBlock, toBlock, scope.publishers || scope.recipient ? scope : undefined);
+  } catch (e) {
+    // A scope this deployment cannot answer is said so. It is not a server fault and not an empty sample.
+    if (e instanceof ScopeUnavailableError) return problem(501, "Scope unavailable", e.message);
+    throw e;
+  }
 
   return json(
     envelope(

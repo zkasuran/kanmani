@@ -14,7 +14,14 @@ import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import pg from "pg";
-import { CLAIM_TRUTH_WINDOW_SQL, claimTruthWindow, normaliseScope, MAX_SCOPE_PUBLISHERS } from "./queries.ts";
+import {
+  CLAIM_TRUTH_WINDOW_SQL,
+  claimTruthWindow,
+  normaliseScope,
+  MAX_SCOPE_PUBLISHERS,
+  scopedClaimTruthWindowSql,
+  ScopeUnavailableError,
+} from "./queries.ts";
 import { CHAIN_ID } from "./db.ts";
 
 /* ----------------------------------------------------------------- the unscoped query is frozen */
@@ -42,6 +49,27 @@ test("a scope is lowercased, deduplicated and sorted so two callers get the same
 
 test("the publisher cap is a named constant", () => {
   assert.equal(MAX_SCOPE_PUBLISHERS, 8);
+});
+
+/* ----------------------------------------------------- a deployment without the settlement view */
+
+test("a publishers-only statement never mentions the settlement view", () => {
+  // Production does not keep fovea.settlement_check_latest. Postgres refuses to plan a statement that
+  // names a missing relation even when the clause is unreachable, which made every scoped request a 500
+  // on the first deploy. The view is only named when a recipient scope asks for it.
+  assert.equal(scopedClaimTruthWindowSql(false).includes("settlement_check"), false);
+  assert.equal(scopedClaimTruthWindowSql(true).includes("fovea.settlement_check_latest"), true);
+});
+
+test("a recipient-scope statement binds its sixth parameter and a publishers-only one does not", () => {
+  assert.equal(scopedClaimTruthWindowSql(true).includes("$6"), true);
+  assert.equal(scopedClaimTruthWindowSql(false).includes("$6"), false);
+});
+
+test("ScopeUnavailableError is a named error the route can turn into a 501", () => {
+  const e = new ScopeUnavailableError("x");
+  assert.equal(e instanceof Error, true);
+  assert.equal(e.name, "ScopeUnavailableError");
 });
 
 /* ---------------------------------------------------------------- store-backed scope behaviour */

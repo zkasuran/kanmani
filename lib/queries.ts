@@ -804,29 +804,33 @@ WHERE f."chainId" = $1
  * what it was: the bonds already posted, the recorded simulation and every page that reads it are
  * unchanged by this existing.
  *
- * Parameters: $1 chain, $2 agent, $3 from, $4 to, $5 publishers (lowercase text[] or null), $6 recipient
- * (the word `agent` or a lowercase address; null for none). The latest settlement check per feedback is the recipient the
- * claim named, as the settled rung recorded it.
+ * Parameters: $1 chain, $2 agent, $3 from, $4 to, $5 publishers (lowercase text[] or null). With a
+ * recipient scope there is also $6, the word `agent` or a lowercase address. The latest settlement check
+ * per feedback is the recipient the claim named, as the settled rung recorded it.
  */
-export const SCOPED_CLAIM_TRUTH_WINDOW_SQL = `
+export function scopedClaimTruthWindowSql(withRecipient: boolean): string {
+  // The recipient clause reads fovea.settlement_check_latest. Production does not have that view today
+  // (the sweep does not persist claim recipients), so a statement that does not ask for a recipient must
+  // not mention it. Postgres refuses to plan it otherwise, even when the clause could never be reached.
+  const recipientClause = withRecipient
+    ? `
+           AND EXISTS (
+             SELECT 1 FROM fovea.settlement_check_latest s
+             WHERE s.subject = f.id
+               AND s.subject_kind = 'feedback'
+               AND (
+                 ($6::text = 'agent' AND lower(s.recipient) IN (lower(a."owner"), lower(coalesce(a."agentWallet", ''))))
+                 OR ($6::text <> 'agent' AND lower(s.recipient) = $6::text)
+               )
+           )`
+    : "";
+  return `
 WITH base AS (
   SELECT f.id,
          f."feedbackUri" AS uri,
          v.outcome,
          (
-           ($5::text[] IS NULL OR lower(f."clientAddress") = ANY ($5::text[]))
-           AND (
-             $6::text IS NULL
-             OR EXISTS (
-               SELECT 1 FROM fovea.settlement_check_latest s
-               WHERE s.subject = f.id
-                 AND s.subject_kind = 'feedback'
-                 AND (
-                   ($6::text = 'agent' AND lower(s.recipient) IN (lower(a."owner"), lower(coalesce(a."agentWallet", ''))))
-                   OR ($6::text <> 'agent' AND lower(s.recipient) = $6::text)
-                 )
-             )
-           )
+           ($5::text[] IS NULL OR lower(f."clientAddress") = ANY ($5::text[]))${recipientClause}
          ) AS in_scope
   FROM "Feedback" f
   JOIN "Agent" a ON a.id = f.agent_id
@@ -845,6 +849,15 @@ SELECT
   count(*) FILTER (WHERE in_scope AND outcome = 'noClaim')                AS no_claim_count,
   count(*) FILTER (WHERE NOT in_scope)                                    AS excluded_count
 FROM base`;
+}
+
+/** Thrown when a scope asks for data this deployment does not keep. The route turns it into a 501. */
+export class ScopeUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ScopeUnavailableError";
+  }
+}
 
 /** Lowercase, dedupe and sort so two callers asking for the same scope get the same rows. */
 export function normaliseScope(scope: ClaimScope): ClaimScope | null {
@@ -862,18 +875,28 @@ export async function claimTruthWindow(
 ): Promise<Sourced<ClaimTruthWindow>> {
   const norm = scope ? normaliseScope(scope) : null;
   if (norm) {
-    const r = await q1<Record<string, string>>(SCOPED_CLAIM_TRUTH_WINDOW_SQL, [
+    const withRecipient = Boolean(norm.recipient);
+    if (withRecipient) {
+      const have = await q1<{ ok: boolean }>(`SELECT to_regclass('fovea.settlement_check_latest') IS NOT NULL AS ok`, []);
+      if (!have?.ok) {
+        throw new ScopeUnavailableError(
+          "a recipient scope needs the settlement records this deployment does not keep yet, so it cannot be answered",
+        );
+      }
+    }
+    const scopedSql = scopedClaimTruthWindowSql(withRecipient);
+    const r = await q1<Record<string, string>>(scopedSql, [
       CHAIN_ID,
       agentId,
       fromBlock.toString(),
       toBlock.toString(),
       norm.publishers ?? null,
-      norm.recipient ?? null,
+      ...(withRecipient ? [norm.recipient!] : []),
     ]);
     const n = (k: string) => Number(r?.[k] ?? 0);
     const trueCount = n("true_count");
     const sampleSize = n("sample_size");
-    return src(SCOPED_CLAIM_TRUTH_WINDOW_SQL, {
+    return src(scopedSql, {
       agentId: Number(agentId),
       fromBlock: fromBlock.toString(),
       toBlock: toBlock.toString(),
