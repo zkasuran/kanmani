@@ -25,8 +25,8 @@
 <br>
 
 When you hire an agent, the money sits in escrow until the work lands. The settlement itself emits
-the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,413<!-- /n --> agents** in
-Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the <!-- n:claims -->197<!-- /n --> claims name a transaction that is not there. The track record this produces is correct by
+the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,415<!-- /n --> agents** in
+Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the <!-- n:claims -->198<!-- /n --> claims name a transaction that is not there. The track record this produces is correct by
 construction and the agent can then stake its own money on it.
 
 Why now: a trust layer is a loop, measure a claim, judge it, then price or slash against that
@@ -80,15 +80,15 @@ No wallet and no key for the first five.
   <img src="public/readme/findings-light.svg" alt="197 payment claims (2026-10-13): 74 on the chain they name, 123 not. Of those 123, 115 are real transactions on a different chain and 8 were not found on any chain we searched." width="100%">
 </picture>
 
-Monad's ERC-8004 registry holds **<!-- n:agents -->10,413<!-- /n --> agents** behind <!-- n:documents -->2,141<!-- /n --> distinct registration documents. We
-read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,415<!-- /n -->
-feedbacks, <!-- n:withPointer -->1,318<!-- /n --> carry an evidence pointer at all. <!-- n:claims -->197<!-- /n --> of those make a payment claim and 123 of them
-are wrong about where the money went. That is 123 out of <!-- n:feedbacks -->9,415<!-- /n -->, just over 1%, so the story here is
+Monad's ERC-8004 registry holds **<!-- n:agents -->10,415<!-- /n --> agents** behind <!-- n:documents -->2,143<!-- /n --> distinct registration documents. We
+read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,421<!-- /n -->
+feedbacks, <!-- n:withPointer -->1,319<!-- /n --> carry an evidence pointer at all. <!-- n:claims -->198<!-- /n --> of those make a payment claim and 123 of them
+are wrong about where the money went. That is 123 out of <!-- n:feedbacks -->9,421<!-- /n -->, just over 1%, so the story here is
 rot rather than mass fraud.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/readme/cluster-dark.svg">
-  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,413<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
+  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,415<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
 </picture>
 
 None of this is fraud and the project never says it is. A registry has no mechanism to keep a true
@@ -108,11 +108,11 @@ verdict store on every load, so it moves as the hourly sweep checks new document
 
 | finding | number |
 |---|---:|
-| agents in the registry | <!-- n:agents -->10,413<!-- /n --> |
-| distinct registration documents behind them | <!-- n:documents -->2,141<!-- /n --> |
-| feedbacks, of which <!-- n:withPointer -->1,318<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,415<!-- /n --> |
-| payment claims checked against a chain | <!-- n:claims -->197<!-- /n --> |
-| claims where the cited transaction is really there | <!-- n:claimsTrue -->74<!-- /n --> |
+| agents in the registry | <!-- n:agents -->10,415<!-- /n --> |
+| distinct registration documents behind them | <!-- n:documents -->2,143<!-- /n --> |
+| feedbacks, of which <!-- n:withPointer -->1,319<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,421<!-- /n --> |
+| payment claims checked against a chain | <!-- n:claims -->198<!-- /n --> |
+| claims where the cited transaction is really there | <!-- n:claimsTrue -->75<!-- /n --> |
 | claims where it is not | 123 |
 | **of those 123, real transactions on a different chain** | **115** |
 | **of those 123, not found on any chain we searched** | **8** |
@@ -181,8 +181,8 @@ Everything else in this repository is built around that one rule.
 
 | surface | status | what that means |
 |---|---|---|
-| registry reads: <!-- n:agents -->10,413<!-- /n --> agents, <!-- n:documents -->2,141<!-- /n --> documents, <!-- n:feedbacks -->9,415<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
-| claim verdicts: <!-- n:claims -->197<!-- /n --> checked, 123 false, <!-- n:claimsTrue -->74<!-- /n --> true, <!-- n:unknown -->26<!-- /n --> unknown | **real** | each one read off the chain the document names, recorded at a block |
+| registry reads: <!-- n:agents -->10,415<!-- /n --> agents, <!-- n:documents -->2,143<!-- /n --> documents, <!-- n:feedbacks -->9,421<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
+| claim verdicts: <!-- n:claims -->198<!-- /n --> checked, 123 false, <!-- n:claimsTrue -->75<!-- /n --> true, <!-- n:unknown -->26<!-- /n --> unknown | **real** | each one read off the chain the document names, recorded at a block |
 | Aqueous escrow on mainnet | **real** | USDC held and settled, the receipt emitted by the settlement itself |
 | Sclera bonds on mainnet | **real**, **ours only** | version 1 holds three of our bonds, one through its whole life: posted, held, matured, returned. Version 2 (2026-10-10) burns a slash and allows a re-bond; our agent 10252 is bonded on it. We have asked five outside agents to bond and sent USDC where an owner had none. A sixth ask, to Assay, was superseded: they will bond a host on version 2 once it publishes claims the contract can measure. None has posted yet. [/traction](https://kanmani.xyz/traction) reads that count live |
 | cross-chain funding | **real** | 0.12 USDT on BSC landed 115,558 USDC units in Aqueous on 2026-09-28, destination tx [`0x738af85c…b558`](https://monadscan.com/tx/0x738af85c2f6717da15f1cee3a447b05d0fc7b3c924b8027678afdde0a440b558) |
@@ -389,7 +389,7 @@ cast receipt 0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2 
 ```
 
 The counter slot moves with every registration, so a read today returns a little more than the
-<!-- n:agents -->10,413<!-- /n --> this file states.
+<!-- n:agents -->10,415<!-- /n --> this file states.
 
 </details>
 
