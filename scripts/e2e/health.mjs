@@ -31,6 +31,10 @@ const ROUTES = [
 ];
 
 const url = argUrl();
+// 32 page loads in about a minute add up to more than the site's 600 requests a minute per client, so the
+// last routes answered 429 and the suite called the site broken. E2E_ROUTE_PAUSE_MS spaces them out.
+// Zero by default, so a local run is as fast as it was.
+const routePause = Math.max(0, Number(process.env.E2E_ROUTE_PAUSE_MS ?? 0) || 0);
 const c = checks("health");
 const browser = await launchChrome();
 
@@ -38,6 +42,7 @@ try {
   for (const scheme of ["light", "dark"]) {
     const context = await browser.newContext({ colorScheme: scheme, viewport: { width: 1360, height: 900 } });
     for (const route of ROUTES) {
+      if (routePause > 0) await new Promise((r) => setTimeout(r, routePause));
       const page = await context.newPage();
       const errors = collectPageErrors(page);
       let status = 0;

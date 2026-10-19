@@ -136,4 +136,6 @@ jobs:
         env:
           # One runner IP drives every suite and the site caps a client at 600 requests a minute.
           E2E_PAUSE_MS: "20000"
+          # health.mjs loads 32 pages. Without a gap the last ones are rate limited.
+          E2E_ROUTE_PAUSE_MS: "2500"
         run: node scripts/e2e/run.mjs "$SITE"
