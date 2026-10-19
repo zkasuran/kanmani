@@ -190,7 +190,7 @@ Ordering is block number descending then id, which is stable. `next` is `null` o
 carries every filter you sent, so paging never quietly changes the query underneath you.
 
 Only feedbacks carrying a document are returned. A feedback with an empty `feedbackUri` has nothing
-to verify: <!-- n:withPointer -->1,319<!-- /n --> of Monad's <!-- n:feedbacks -->9,421<!-- /n --> feedbacks carry a pointer.
+to verify: <!-- n:withPointer -->1,319<!-- /n --> of Monad's <!-- n:feedbacks -->9,422<!-- /n --> feedbacks carry a pointer.
 
 Errors: `400` for an unknown `outcome`, an unknown `rung` or a non-numeric `agent`. Nothing else is
 refused.
@@ -260,7 +260,7 @@ labelled that way so a consumer never reads it as ours. We did not test that the
 
 `registration.state` is one of `onchain`, `answered`, `gone`, `paywalled`, `refused`, `nohost`,
 `malformed`, `unknown`. It is `null` when nothing has probed that document yet. Never-looked is a
-state. It is not `gone`. Monad has <!-- n:documents -->2,143<!-- /n --> distinct registration documents behind <!-- n:agents -->10,415<!-- /n --> agents. <!-- n:goneAgents -->8,113<!-- /n -->
+state. It is not `gone`. Monad has <!-- n:documents -->2,144<!-- /n --> distinct registration documents behind <!-- n:agents -->10,416<!-- /n --> agents. <!-- n:goneAgents -->8,113<!-- /n -->
 of those agents point at a document that answers with a deletion, one document behind <!-- n:oneDocAgents -->8,093<!-- /n --> of
 them. The live count in each `record_state` bucket moves with every probe run, so it is published on
 [`/status`](https://kanmani.xyz/status) rather than frozen here. The buckets themselves are defined in

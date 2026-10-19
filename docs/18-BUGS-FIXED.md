@@ -413,6 +413,36 @@ sampling query and the registry closely. Two things did not hold up.
 * **The one live v2 bond has measured nothing.** Sentinel's window holds zero feedbacks so far. No bond
   has been slashed live. The slash path has only run on fork tests and a dry-run simulation.
 
+## Found while looking into two database timeout bursts, 2026-10-20
+
+The server log held two bursts of "timeout exceeded when trying to connect" and "canceling statement due
+to statement timeout": 262 errors in two minutes on 14 October, 48 in one minute on 19 October. Nothing
+else in seven days. The host was idle during both (load under 1, no CPU wait), so it was not a resource
+limit.
+
+* **The cause was one query on every agent page.** The access log put a backlink scraper
+  (SERankingBacklinksBot, one address) and Googlebot on `/agent/<id>` at the time. Timing each call the
+  page makes on the server showed `claims({ agentId, limit: 100 })` taking 1,419 ms while every other call
+  took under 110 ms. Two things made it slow. The agent filter was `f.agent_id = x OR a."agentId"::text =
+  x`, which spans two tables and a cast, so no index could serve it and Postgres compared every feedback
+  with every agent on both chains: 11.5 million candidate pairs. It also joined `fovea.verdict_latest`, a
+  `DISTINCT ON` over the whole verdict table that was sorted on disk on every call. The pool has eight
+  connections. A page holding one for 1.4 seconds caps the site at about five agent pages a second.
+  Eight pages at once reproduced the incident on demand: 15 of 16 failed.
+* **The fix returns the same rows.** The filter resolves the agent first and matches with `IN`. The
+  verdict is looked up per feedback through the existing index, with the view's own ordering. A count that
+  filters on nothing the verdict carries no longer joins it. On the real database that query went from
+  2,824 ms to 61 ms. The page's claims call went from about 1,430 ms to about 40 ms. An earlier version made
+  an unfiltered count slower (13 ms to 182 ms), which I caught by benchmarking every shared shape and fixed
+  before shipping. Old and new statements were compared row for row on production data across outcomes,
+  rungs, mappings, agents by id and by number, an unknown agent and a malformed id (9 tests, read-only).
+* **Two guard rails.** The site now serves a `robots.txt` (it returned the 404 page before). It turns away
+  the backlink and SEO scrapers and asks everyone else for a five second crawl delay. No search engine or
+  AI agent is listed. A test holds that. The pool also logs one line, at most every thirty seconds, when
+  three or more queries are waiting for a connection, so the next burst names its cause.
+* **What I tried and dropped.** A tighter per-client request cap. The two bots made 10 to 18 requests a
+  minute, far under any cap that would not also throttle a judge clicking through.
+
 ## Still open
 
 In the escrow, the source is fixed. One item is still live on chain pending a redeploy: the `receiveWithAuthorization` fix for gasless create is in source and tested, but the deployed Aqueous is immutable and still carries the transfer-variant behaviour until a redeploy updates the cited address. No app route calls `createJobWithAuthorization`, so nothing on the live site exposes it. The security audit tracks this as an open high.

@@ -576,7 +576,7 @@ export type ClaimRow = {
   checkedAtBlock: string | null;
 };
 
-const CLAIM_COLUMNS = `
+export const CLAIM_COLUMNS = `
 SELECT f.id, f.agent_id, f."clientAddress", f."feedbackIndex", f.value, f."valueDecimals",
        f.tag1, f.tag2, f.endpoint, f."feedbackUri", f."feedbackHash", f.revoked,
        f."responseUri", f.responder, f."blockNumber", f.timestamp, f."txHash",
@@ -635,7 +635,7 @@ export type ClaimFilter = {
 };
 
 /** Shared by the list and its count, for the same reason `agentSource` is. */
-function claimSource(f: ClaimFilter, params: unknown[]): string {
+export function claimSource(f: ClaimFilter, params: unknown[], opts: { forCount?: boolean } = {}): string {
   const where: string[] = [`f."chainId" = $${params.push(CHAIN_ID)}`];
   const p = (v: unknown) => `$${params.push(v)}`;
 
@@ -646,14 +646,38 @@ function claimSource(f: ClaimFilter, params: unknown[]): string {
   if (f.mapping) where.push(`v.mapping = ${p(f.mapping)}`);
   // Accepts either the internal key or the public on-chain agent id, so a link can carry the number
   // a reader actually sees on the page rather than an indexer implementation detail.
-  if (f.agentId) { const x = p(f.agentId); where.push(`(f.agent_id = ${x} OR a."agentId"::text = ${x})`); }
+  //
+  // Resolved to agent ids first and matched with IN, never `f.agent_id = x OR a."agentId"::text = x`. The OR
+  // spans two tables and a cast, so the planner could use no index and compared every feedback with every
+  // agent on both chains: 11.5 million candidate pairs for one agent's page, 2.8 seconds on the real
+  // database. Same rows, 61 ms.
+  if (f.agentId) {
+    const x = p(f.agentId);
+    where.push(`f.agent_id IN (SELECT id FROM "Agent" WHERE "chainId" = ${CHAIN_ID} AND (id = ${x} OR "agentId"::text = ${x}))`);
+  }
+
+  // A count that filters on nothing the verdict carries does not need the verdict. Joining it anyway cost
+  // 170 ms on 9,400 feedbacks, one probe each, for a number the join cannot change (it is a LEFT JOIN
+  // onto at most one row). The list still joins it because it returns the verdict's columns.
+  const needsVerdict = !opts.forCount || Boolean(f.outcome || f.rung || f.network || f.mapping);
 
   return `
 FROM "Feedback" f
-JOIN "Agent" a ON a.id = f.agent_id
-LEFT JOIN fovea.verdict_latest v ON v.feedback_id = f.id
+JOIN "Agent" a ON a.id = f.agent_id${needsVerdict ? `\n${LATEST_VERDICT_JOIN}` : ""}
 WHERE ${where.join(" AND ")}`;
 }
+
+/**
+ * The newest verdict for one feedback, looked up through the (feedback_id, checked_at DESC) index.
+ *
+ * It replaces `LEFT JOIN fovea.verdict_latest`. That view is `DISTINCT ON (feedback_id)` over the whole
+ * table, so every query that joined it sorted every verdict ever recorded (an external merge on disk) to
+ * use a handful of them. The ordering here is the view's own, `checked_at DESC, id DESC`, so the row
+ * chosen is the same one. The columns are the same too, since the view is `SELECT *`.
+ */
+export const LATEST_VERDICT_JOIN = `LEFT JOIN LATERAL (
+  SELECT * FROM fovea.verdict WHERE feedback_id = f.id ORDER BY checked_at DESC, id DESC LIMIT 1
+) v ON true`;
 
 export async function claims(f: ClaimFilter = {}): Promise<Sourced<ClaimRow[]>> {
   const params: unknown[] = [];
@@ -670,7 +694,7 @@ LIMIT ${p(Math.min(f.limit ?? 50, 1000))} OFFSET ${p(f.offset ?? 0)}`;
 
 export async function claimsCount(f: ClaimFilter = {}): Promise<number> {
   const params: unknown[] = [];
-  const source = claimSource(f, params);
+  const source = claimSource(f, params, { forCount: true });
   const r = await q1<{ count: string }>(`SELECT count(*) AS count${source}`, params);
   return Number(r?.count ?? 0);
 }
@@ -680,7 +704,7 @@ export async function claim(id: string): Promise<ClaimRow | undefined> {
     `${CLAIM_COLUMNS}
      FROM "Feedback" f
      JOIN "Agent" a ON a.id = f.agent_id
-     LEFT JOIN fovea.verdict_latest v ON v.feedback_id = f.id
+     ${LATEST_VERDICT_JOIN}
      WHERE f."chainId" = $1 AND f.id = $2 LIMIT 1`,
     [CHAIN_ID, id],
   );

@@ -85,11 +85,30 @@ function hostOf(cs: string): string {
   }
 }
 
+/**
+ * Whether to log that queries are queueing for a connection. Pure so a test can hold it.
+ *
+ * Two bursts of timeouts (14 and 19 October) left only "timeout exceeded when trying to connect" behind,
+ * which says the pool was full and not why. A line naming how many were waiting, at most one every thirty
+ * seconds, makes the next one diagnosable without adding noise to a healthy day.
+ */
+export const POOL_WARN_EVERY_MS = 30_000;
+export function shouldWarnPoolPressure(waiting: number, now: number, lastWarnAt: number): boolean {
+  return waiting >= 3 && now - lastWarnAt >= POOL_WARN_EVERY_MS;
+}
+let lastPoolWarn = 0;
+
 export async function q<T extends pg.QueryResultRow>(
   sql: string,
   params: readonly unknown[] = [],
 ): Promise<T[]> {
-  const r = await pool().query<T>(sql, params as unknown[]);
+  const p = pool();
+  const now = Date.now();
+  if (shouldWarnPoolPressure(p.waitingCount, now, lastPoolWarn)) {
+    lastPoolWarn = now;
+    console.warn(`[db] pool pressure: ${p.waitingCount} queries waiting, ${p.totalCount - p.idleCount} of ${p.options.max} connections busy`);
+  }
+  const r = await p.query<T>(sql, params as unknown[]);
   return r.rows;
 }
 
