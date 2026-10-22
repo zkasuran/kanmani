@@ -396,6 +396,33 @@
         }
       ],
       "buyer": null
+    },
+    {
+      "project": "Insight (pre-trade oracle safety for agents)",
+      "repo": "imokokok/Insight",
+      "number": 259,
+      "kind": "issue",
+      "date": "2026-10-22",
+      "offered": "A small Sclera bond on Insight's Monad agent 10414, with the limits of a bond stated first. Their live x402 challenge accepts Monad USDC. Only the agent's owner can post. Funding the 0.01 USDC if that is the obstacle.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [
+        {
+          "label": "Monad x402 challenge, unpaid GET",
+          "url": "https://www.oracleinsight.xyz/api/v1/safety/pre-trade?chainId=143"
+        },
+        {
+          "label": "Agent 10414 on Kanmani",
+          "url": "https://kanmani.xyz/agent/10414"
+        }
+      ],
+      "buyer": null,
+      "bondAsk": {
+        "agents": [
+          10414
+        ],
+        "url": "https://github.com/imokokok/Insight/issues/259"
+      }
     }
   ]
 }

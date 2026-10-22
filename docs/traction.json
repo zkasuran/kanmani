@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-10-22",
   "counts": {
-    "contacted": 18,
+    "contacted": 19,
     "replied": 8,
     "settled": 5,
     "outsideBuyer": 2,
@@ -213,6 +213,17 @@
       "replies": null,
       "lastAt": null,
       "url": null,
+      "pr": null
+    },
+    {
+      "project": "Insight (pre-trade oracle safety for agents)",
+      "repo": "imokokok/Insight",
+      "number": 259,
+      "date": "2026-10-22",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/imokokok/Insight/issues/259",
       "pr": null
     }
   ]
