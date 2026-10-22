@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-10-22",
   "counts": {
-    "contacted": 20,
+    "contacted": 19,
     "replied": 8,
     "settled": 5,
     "outsideBuyer": 2,
@@ -216,7 +216,7 @@
       "pr": null
     },
     {
-      "project": "Insight (pre-trade oracle safety for agents)",
+      "project": "Insight and PriorSeal (one founder, two products)",
       "repo": "imokokok/Insight",
       "number": 259,
       "date": "2026-10-22",
@@ -224,17 +224,6 @@
       "replies": 0,
       "lastAt": "2026-10-22",
       "url": "https://github.com/imokokok/Insight/issues/259",
-      "pr": null
-    },
-    {
-      "project": "PriorSeal (authorization and execution evidence)",
-      "repo": "imokokok/PriorSeal",
-      "number": 99,
-      "date": "2026-10-22",
-      "status": "sent, no reply yet",
-      "replies": 0,
-      "lastAt": null,
-      "url": "https://github.com/imokokok/PriorSeal/issues/99",
       "pr": null
     }
   ]

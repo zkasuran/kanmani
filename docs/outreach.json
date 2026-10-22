@@ -402,12 +402,12 @@
       "buyer": null
     },
     {
-      "project": "Insight (pre-trade oracle safety for agents)",
+      "project": "Insight and PriorSeal (one founder, two products)",
       "repo": "imokokok/Insight",
       "number": 259,
       "kind": "issue",
       "date": "2026-10-22",
-      "offered": "A small Sclera bond on Insight's Monad agent 10414, with the limits of a bond stated first. Their live x402 challenge accepts Monad USDC. Only the agent's owner can post. Funding the 0.01 USDC if that is the obstacle.",
+      "offered": "A small Sclera bond on Insight's Monad agent 10414, with the limits of a bond stated first. Their live x402 challenge accepts Monad USDC. Only the agent's owner can post. Funding the 0.01 USDC if that is the obstacle. A second issue on PriorSeal repeats the bond request and adds a finding: its ERC-8004 reputation reader never sees a feedback's evidence document.",
       "outcome": "sent",
       "result": null,
       "evidence": [
@@ -418,6 +418,14 @@
         {
           "label": "Agent 10414 on Kanmani",
           "url": "https://kanmani.xyz/agent/10414"
+        },
+        {
+          "label": "PriorSeal issue 99",
+          "url": "https://github.com/imokokok/PriorSeal/issues/99"
+        },
+        {
+          "label": "The reader, sdk/src/erc8004.ts",
+          "url": "https://github.com/imokokok/PriorSeal/blob/af889a7/sdk/src/erc8004.ts"
         }
       ],
       "buyer": null,
@@ -427,27 +435,6 @@
         ],
         "url": "https://github.com/imokokok/Insight/issues/259"
       }
-    },
-    {
-      "project": "PriorSeal (authorization and execution evidence)",
-      "repo": "imokokok/PriorSeal",
-      "number": 99,
-      "kind": "issue",
-      "date": "2026-10-22",
-      "offered": "A finding: PriorSeal's ERC-8004 reputation reader never sees a feedback's evidence document, since readFeedback returns no URI or hash and the SDK makes no fetch. Plus a read-only experiment and the same bond request as Insight's agent 10414.",
-      "outcome": "sent",
-      "result": null,
-      "evidence": [
-        {
-          "label": "The reader, sdk/src/erc8004.ts",
-          "url": "https://github.com/imokokok/PriorSeal/blob/af889a7/sdk/src/erc8004.ts"
-        },
-        {
-          "label": "Bond request thread",
-          "url": "https://github.com/imokokok/Insight/issues/259"
-        }
-      ],
-      "buyer": null
     }
   ]
 }
