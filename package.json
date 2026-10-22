@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@category-labs/mera": "0.2.0",
-    "@modelcontextprotocol/sdk": "1.31.0",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@scure/base": "2.2.0",
     "@x402/core": "2.27.0",
     "@x402/evm": "2.27.0",
