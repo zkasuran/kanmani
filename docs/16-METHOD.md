@@ -110,7 +110,7 @@ never see it go down.
 
 ## 2. The population, from the index
 
-**Published as: <!-- n:agents -->10,417<!-- /n --> agents, <!-- n:documents -->2,145<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,427<!-- /n --> feedbacks, <!-- n:withPointer -->1,319<!-- /n --> of them
+**Published as: <!-- n:agents -->10,417<!-- /n --> agents, <!-- n:documents -->2,145<!-- /n --> distinct registration documents, <!-- n:feedbacks -->9,428<!-- /n --> feedbacks, <!-- n:withPointer -->1,319<!-- /n --> of them
 carrying an evidence document. The validation count is live on [/validate](https://kanmani.xyz/validate): 1 when
 this reading was taken, 5 on 2026-10-13.**
 
@@ -143,7 +143,7 @@ so the page must be able to say which of the two is happening. `counterSlotCount
 `indexer/schema.graphql` because a failed slot read has to publish as unknown rather than as a zero
 that would be a fabricated population.
 
-**<!-- n:withPointer -->1,319<!-- /n --> of <!-- n:feedbacks -->9,427<!-- /n --> is the number that governs the whole thesis.** Only about 14% of Monad's ERC-8004
+**<!-- n:withPointer -->1,319<!-- /n --> of <!-- n:feedbacks -->9,428<!-- /n --> is the number that governs the whole thesis.** Only about 14% of Monad's ERC-8004
 feedback carries an evidence document at all. The other 86% is a score with nothing behind it, which
 is a rung below `declared` and therefore never appears in any ratio about evidence.
 
@@ -179,7 +179,7 @@ Check the arithmetic on that reading yourself: 185 + 1095 + 2 + 10 + 0 = 1292, w
 URI from section 2. Nothing is dropped between the two.
 
 **Read the denominator correctly.** The finding is about **<!-- n:claims -->198<!-- /n --> documents that assert a payment**. It
-is not about <!-- n:withPointer -->1,319<!-- /n --> documents, not about <!-- n:feedbacks -->9,427<!-- /n --> feedbacks and not about <!-- n:agents -->10,417<!-- /n --> agents. Any wider
+is not about <!-- n:withPointer -->1,319<!-- /n --> documents, not about <!-- n:feedbacks -->9,428<!-- /n --> feedbacks and not about <!-- n:agents -->10,417<!-- /n --> agents. Any wider
 phrasing is an overclaim and it is one I made myself before the full corpus was measured. The
 correction is in [`18-BUGS-FIXED.md`](18-BUGS-FIXED.md).
 

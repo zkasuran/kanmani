@@ -10,7 +10,7 @@
  */
 export const SUITES = {
   /** The app's own tests: `node --test` over `lib/**\/*.test.ts`. 15 skip without a database. */
-  site: { pass: 566, total: 595 },
+  site: { pass: 572, total: 601 },
   /** The verifier: `node --test` over `verifier/src/**\/*.test.ts`. 27 skip without a database. */
   verifier: { pass: 245, total: 274 },
   /**

@@ -464,6 +464,40 @@ Our index marked them revoked. The agent's page and API still counted them under
   public, not a silent change to a live measurement. Today only 2 feedbacks in the index are revoked, both
   `unknown`, so nothing is affected either way.
 
+## Found while checking who uses the site, 2026-10-22
+
+* **The status page called browser-like clients "people reading pages". Most were not.** The figure was
+  16,268 client-days over 19,305 page views. Those two stored counts alone prove at least 13,231 of the
+  client-days (81%) made exactly one request: if every client-day made one request or more, then
+  `single >= 2 * clients - requests`. Reading the access log directly showed the same shape: 94% of
+  browser-like clients made one request. Nearly all arrived with kanmani.xyz itself as the referrer,
+  which is how a scraper that follows links behaves. The label is now "browser-like clients (not a count of
+  people)", the 81% floor is shown beside it and recomputable from `/api/usage`. The not-measured list says
+  a browser-like client is not necessarily a person. The `people` key keeps its name so no consumer breaks.
+  **What is not claimed:** a count of real readers. About 230 clients saw three or more different page types
+  and about 400 came from a Google result, but those came from reading raw log lines once, which the
+  salted-hash pipeline cannot reproduce. They stay out of the public page.
+* **My own first count was wrong.** The server also hosts other sites. I counted a different project's
+  `/shelf/*` pages as Kanmani traffic until the referrers looked wrong. I filtered to the Kanmani hosts and
+  redid it.
+
+## Still open (found the same day, needs a decision)
+
+* **The schema step of every deploy fails partway and has done for some time.** `deploy-ec2.sh` applies
+  `verifier/src/store/schema.sql` with `ON_ERROR_STOP=1` and shows only the tail of its output. Run by hand it
+  stops at line 251, `CREATE INDEX ... ON fovea.agent_action`, with `must be owner of table agent_action`:
+  8 of the 18 `fovea` tables are owned by `postgres` and the app connects as `kanmani`. Nothing after that
+  line runs, so seven objects the file defines are missing in production: `payable_probe`,
+  `payable_probe_latest`, `payable_state`, `settlement_check`, `settlement_check_latest`, `wallet_label` and
+  `wallet_label_latest`. The one effect I confirmed is that the recipient scope on `/api/sla` answers 501. The
+  daily jobs report success, so I do not know what else, if anything, reads or writes those tables. The fix is
+  a production database change (hand the 8 tables to the app role or run the schema as the owner). It is
+  left for the operator.
+* **The usage aggregator on the server is older than the repo.** It lacks the Sclera v2 scan and the
+  `BondPosted` signature fix, whose comment says the old signature "matched nothing, so no bond was ever
+  counted". An outside bond on v2 would not show on the usage page's on-chain list. `deploy-ec2.sh` does not
+  ship `scripts/`, so it has to be copied by hand. Not done here.
+
 ## Still open
 
 In the escrow, the source is fixed. One item is still live on chain pending a redeploy: the `receiveWithAuthorization` fix for gasless create is in source and tested, but the deployed Aqueous is immutable and still carries the transfer-variant behaviour until a redeploy updates the cited address. No app route calls `createJobWithAuthorization`, so nothing on the live site exposes it. The security audit tracks this as an open high.

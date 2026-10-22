@@ -12,7 +12,7 @@ arithmetic rather than as a plausible-looking number. Section 9 reproduces all o
 |---|---|
 | agents | <!-- n:agents -->10,417<!-- /n --> |
 | distinct registration documents | <!-- n:documents -->2,145<!-- /n --> |
-| feedbacks | <!-- n:feedbacks -->9,427<!-- /n --> |
+| feedbacks | <!-- n:feedbacks -->9,428<!-- /n --> |
 | feedbacks carrying an evidence URI | <!-- n:withPointer -->1,319<!-- /n --> |
 | validations, before we wrote one | 0 |
 
@@ -208,13 +208,13 @@ documents written directly into `tokenURI` are the only ones that cannot acquire
 
 ## 7. The feedback population and the sampling trap
 
-The Reputation Registry holds **<!-- n:feedbacks -->9,427<!-- /n --> feedbacks**. Only **<!-- n:withPointer -->1,319<!-- /n -->** carry an evidence URI at all. A
+The Reputation Registry holds **<!-- n:feedbacks -->9,428<!-- /n --> feedbacks**. Only **<!-- n:withPointer -->1,319<!-- /n -->** carry an evidence URI at all. A
 feedback with no URI is not suspicious. There is nothing attached that anyone can verify, so it can
 be neither confirmed nor contradicted.
 
 | feedbacks | count | share |
 |---|---|---|
-| total | <!-- n:feedbacks -->9,427<!-- /n --> | 100% |
+| total | <!-- n:feedbacks -->9,428<!-- /n --> | 100% |
 | carrying a URI | <!-- n:withPointer -->1,319<!-- /n --> | 14.0% |
 | carrying nothing to check | 8,021 | 86.0% |
 
@@ -281,7 +281,7 @@ declaration order, because a verdict that depends on array position is not a ver
 The 1,095 `noClaim` rows are exactly the `data:` population: 1,026 plus 66 plus 3. The <!-- n:unknown -->26<!-- /n --> unknowns split into <!-- n:unknownHash -->10<!-- /n --> serving bytes that no longer match their own on-chain hash plus <!-- n:unknownRateLimited -->7<!-- /n --> whose host would not answer. Three more were in a shape no published mapping read until 2026-10-04, when a Qwen-proposed mapping was reviewed and shipped. All three now read `true`. Ten of the hash mismatches are the
 `grokandmon.com` documents, which an earlier pass read as agent cards before their bytes moved.
 
-**<!-- n:claims -->198<!-- /n --> of <!-- n:feedbacks -->9,427<!-- /n --> feedbacks assert a payment.** That is about 2%. On 2026-10-13, 182 came from one publisher, execution.market. Of the other 15, ten are monadvision.com links to a single transaction and five are tab-settlement receipts from a settlement gateway. Every one names Monad.
+**<!-- n:claims -->198<!-- /n --> of <!-- n:feedbacks -->9,428<!-- /n --> feedbacks assert a payment.** That is about 2%. On 2026-10-13, 182 came from one publisher, execution.market. Of the other 15, ten are monadvision.com links to a single transaction and five are tab-settlement receipts from a settlement gateway. Every one names Monad.
 
 So the honest description of this registry is not a commerce record with some noise in it. **It is a
 game leaderboard with <!-- n:claims -->198<!-- /n --> payment claims attached.** 1,026 melee ratings against <!-- n:claims -->198<!-- /n --> payment claims

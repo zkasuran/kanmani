@@ -74,8 +74,18 @@ export function UsagePanel({ u }: { u: Usage }) {
             <p className="mt-2"><Unknown /></p>
           ) : (
             <dl className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 font-mono text-[12px]">
-              <dt className="text-faint">people reading pages</dt>
-              <dd className="text-right text-[var(--color-text)]">{u.people ? `${n(u.people.visitorDays)} visitor-days` : "…"}</dd>
+              <dt className="text-faint">browser-like clients (not a count of people)</dt>
+              <dd className="text-right text-[var(--color-text)]">
+                {u.people ? `${n(u.people.visitorDays)} client-days · ${n(u.people.pageViews)} page views` : "…"}
+              </dd>
+              {u.people && u.people.visitorDays > 0 ? (
+                <>
+                  <dt className="text-faint">of those, made one request and left</dt>
+                  <dd className="text-right text-[var(--color-text)]">
+                    at least {n(u.people.singleRequestAtLeast)} ({Math.floor((100 * u.people.singleRequestAtLeast) / u.people.visitorDays)}%)
+                  </dd>
+                </>
+              ) : null}
               {machine.slice(0, 8).map((r) => (
                 <div key={r.surface} className="contents">
                   <dt className="text-faint">{r.surface}</dt>

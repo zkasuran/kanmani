@@ -14,7 +14,12 @@ import { CHAIN_ID, q } from "./db.ts";
 export type Usage = {
   window: { from: string; to: string; days: number } | null;
   requests: { surface: string; class: string; calls: number; clientDays: number }[] | null;
-  people: { visitorDays: number; pageViews: number } | null;
+  /**
+   * Browser-like clients reading pages. The key keeps its old name so nothing that reads /api/usage breaks, but
+   * it is not a count of people: a scraper that presents a browser user agent is counted here. `singleRequestAtLeast`
+   * is a floor derived from the two stored counts (see singleRequestFloor).
+   */
+  people: { visitorDays: number; pageViews: number; singleRequestAtLeast: number } | null;
   integrators: { kind: string; name: string; calls: number; days: number }[] | null;
   mcpTools: { name: string; calls: number }[] | null;
   onchain: {
@@ -31,6 +36,19 @@ async function safe<T>(f: () => Promise<T>): Promise<T | null> {
   } catch {
     return null;
   }
+}
+
+/**
+ * At least how many client-days made exactly one request, from the two counts the aggregator stores.
+ *
+ * Each client-day made one request or more. If `v` client-days made `p` requests between them and `k` of them
+ * made exactly one, the remaining `v - k` made at least two each, so `p >= k + 2(v - k)`, which gives
+ * `k >= 2v - p`. It is a floor, not an estimate. Anyone can recompute it from /api/usage. Clamped to
+ * `0..v` so a malformed pair can never print a negative or an impossible share.
+ */
+export function singleRequestFloor(visitorDays: number, pageViews: number): number {
+  if (!Number.isFinite(visitorDays) || !Number.isFinite(pageViews) || visitorDays <= 0) return 0;
+  return Math.min(visitorDays, Math.max(0, 2 * visitorDays - pageViews));
 }
 
 export async function usage(days = 7): Promise<Usage> {
@@ -60,7 +78,13 @@ export async function usage(days = 7): Promise<Usage> {
   return {
     window: w && w.f ? { from: w.f, to: w.t, days: Number(w.n) } : null,
     requests: req ? req.map((r) => ({ surface: r.surface, class: r.class, calls: Number(r.calls), clientDays: Number(r.clients) })) : null,
-    people: ppl?.[0] ? { visitorDays: Number(ppl[0].v), pageViews: Number(ppl[0].p) } : null,
+    people: ppl?.[0]
+      ? {
+          visitorDays: Number(ppl[0].v),
+          pageViews: Number(ppl[0].p),
+          singleRequestAtLeast: singleRequestFloor(Number(ppl[0].v), Number(ppl[0].p)),
+        }
+      : null,
     integrators: integ ? integ.map((r) => ({ kind: r.kind, name: r.name, calls: Number(r.calls), days: Number(r.days) })) : null,
     mcpTools: tools ? tools.map((r) => ({ name: r.name.replace(/^mcp:tool:/, ""), calls: Number(r.calls) })) : null,
     onchain:
@@ -77,6 +101,7 @@ export async function usage(days = 7): Promise<Usage> {
 
 export const NOT_MEASURED = [
   "Who anyone is. No IP, user agent string or cookie is stored; distinct clients are salted hashes that are unlinkable across days.",
+  "Whether a browser-like client is a person. Scrapers that present a browser user agent are counted with readers. Most of these clients make one request and leave. The floor shown is derived from the stored counts; it is not a count of people.",
   "Use that never reaches us: someone reading a copy of our data or running the verifier from the repo.",
   "Sites that embed us with a no-referrer policy: their calls count, their name does not.",
   "Registrations built with the studio or the API and then edited before sending: the URI no longer matches.",

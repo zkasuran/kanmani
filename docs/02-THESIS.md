@@ -83,7 +83,7 @@ cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
   --rpc-url https://rpc.monad.xyz    # the agent count above, as a hex word
 ```
 
-Those agents carry <!-- n:feedbacks -->9,427<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,319<!-- /n --> carry a URI. The rest point at nothing,
+Those agents carry <!-- n:feedbacks -->9,428<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,319<!-- /n --> carry a URI. The rest point at nothing,
 so there is nothing to fetch and nothing to check. The `/` page prints the SQL behind every one of
 these numbers. It is the same query the site runs:
 
@@ -110,9 +110,9 @@ curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=1' | jq '.data.tota
 # outcome=true -> 74, outcome=noClaim -> 1095, outcome=unknown -> 15   (2026-10-13)
 ```
 
-**The denominator for the headline is <!-- n:claims -->198<!-- /n -->, not <!-- n:feedbacks -->9,427<!-- /n --> and not <!-- n:withPointer -->1,319<!-- /n -->.** <!-- n:claims -->198<!-- /n --> is `true` plus `false`: the
+**The denominator for the headline is <!-- n:claims -->198<!-- /n -->, not <!-- n:feedbacks -->9,428<!-- /n --> and not <!-- n:withPointer -->1,319<!-- /n -->.** <!-- n:claims -->198<!-- /n --> is `true` plus `false`: the
 documents that assert a payment and that we read all the way to a chain. 123 of <!-- n:claims -->198<!-- /n --> is 66%. 123 of
-<!-- n:feedbacks -->9,427<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
+<!-- n:feedbacks -->9,428<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
 framing is honest on its own, which is why the <!-- n:claims -->198<!-- /n --> and the <!-- n:withPointer -->1,319<!-- /n --> sit next to each other on the front
 page.
 

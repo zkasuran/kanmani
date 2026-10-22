@@ -190,7 +190,7 @@ Ordering is block number descending then id, which is stable. `next` is `null` o
 carries every filter you sent, so paging never quietly changes the query underneath you.
 
 Only feedbacks carrying a document are returned. A feedback with an empty `feedbackUri` has nothing
-to verify: <!-- n:withPointer -->1,319<!-- /n --> of Monad's <!-- n:feedbacks -->9,427<!-- /n --> feedbacks carry a pointer.
+to verify: <!-- n:withPointer -->1,319<!-- /n --> of Monad's <!-- n:feedbacks -->9,428<!-- /n --> feedbacks carry a pointer.
 
 Errors: `400` for an unknown `outcome`, an unknown `rung` or a non-numeric `agent`. Nothing else is
 refused.
