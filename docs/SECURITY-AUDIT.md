@@ -41,8 +41,14 @@ as such because the live contracts are immutable.
 
 - **Aqueous (HIGH).** The `receiveWithAuthorization` fix is in source and tested, but the deployed
   Aqueous still carries the transfer-variant behaviour. Making the fix live needs a redeploy and an
-  update of the cited addresses. Until then the gasless-create path should be driven only by a trusted
-  relayer that never exposes a signed authorization to a public mempool. No app route calls
+  update of the cited addresses. **Decision, 2026-10-22: the redeploy waits until the hackathon results
+  are announced.** A second Aqueous address beside the live one would change what a judge sees while judging
+  is open. The exposure is dormant. Until then the gasless-create path should be driven only by a trusted
+  relayer that never exposes a signed authorization to a public mempool.
+  **Checked ahead of the redeploy:** the fixed source builds, its unit suite passes (including
+  `test_FIXED_directRedemptionCannotStrandTheEscrow`), the six fork tests pass against the real USDC on Monad,
+  and the token's on-chain `RECEIVE_WITH_AUTHORIZATION_TYPEHASH` equals the one the spec derives. A dry run of
+  `Deploy.s.sol` against chain 143 succeeds. Nothing has been broadcast. No app route calls
   `createJobWithAuthorization` today, so nothing on the site exposes one.
   **`contracts/src/Aqueous.sol` in this tree is therefore no longer the deployed source.** The source
   behind `0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32` is `contracts/src/Aqueous.sol` at commit

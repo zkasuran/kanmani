@@ -443,8 +443,11 @@ test that fails against the old code. Items deferred rather than fixed are named
 
 [SECURITY-AUDIT.md](docs/SECURITY-AUDIT.md) is the 2026-10-10 full-surface audit. Its HIGH finding in
 Aqueous is fixed in source (`receiveWithAuthorization`) but the deployed escrow is immutable, so the fix
-needs a redeploy. No route on the site calls the affected function. The deployed source is
-`contracts/src/Aqueous.sol` at commit `f7fda7f`. Its Sclera finding is resolved by Sclera v2.
+needs a redeploy. That redeploy is planned for **after the hackathon results are announced**: a second
+contract address beside the one the demo and judging use would change what a judge sees while judging is
+open. Until then the live escrow still carries the old behaviour. No route on the site calls the affected
+function. The fixed source builds, passes its unit suite and passes the fork suite against the real USDC
+on Monad. The deployed source is `contracts/src/Aqueous.sol` at commit `f7fda7f`. Its Sclera finding is resolved by Sclera v2.
 
 ## Roadmap
 
@@ -470,7 +473,7 @@ Shipped, each one checkable with a command in this file:
 Next:
 
 - [ ] The first bond posted by a team that is not us
-- [ ] Aqueous redeployed with the `receiveWithAuthorization` fix from the security audit
+- [ ] Aqueous redeployed with the `receiveWithAuthorization` fix from the security audit. Planned after the hackathon results are announced; until then the live escrow is the unfixed one
 
 ## Licence
 
