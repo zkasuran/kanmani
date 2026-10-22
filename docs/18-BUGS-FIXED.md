@@ -443,6 +443,27 @@ limit.
 * **What I tried and dropped.** A tighter per-client request cap. The two bots made 10 to 18 requests a
   minute, far under any cap that would not also throttle a judge clicking through.
 
+## Found when a partner revoked two feedbacks, 2026-10-22
+
+Defigent confirmed our finding about two malformed welcome feedbacks on agent 10411 and revoked both on
+chain, about an hour after we wrote to them (blocks 115612538 and 115612541, `isRevoked` true on both).
+Our index marked them revoked. The agent's page and API still counted them under "could not check".
+
+* **Display, fixed.** A feedback its author has revoked is withdrawn. It stays on chain and stays listed
+  with a revoked flag, but it is no longer counted as true, false or unknown. The API adds a `revoked`
+  count and a per-item `revoked` flag only when something was revoked, so every other agent's answer has
+  the keys it always had. Checked on production data for ten agents: only 10411, the one agent with a
+  revoked feedback, changed (could not check 2 to 0). A first comparison against my local database showed
+  differences for two other agents. That database holds no verdicts, so the comparison meant nothing. I
+  redid it against production.
+* **The bond sample, deliberately not changed.** `/api/sla` and the pinned `CLAIM_TRUTH_WINDOW_SQL` still
+  count revoked feedback. I first told the partner I would exclude it, then reversed that on reading the
+  consequence. If revocation removed a claim from the sample, a reviewer could delete true claims to push a
+  bonded agent under its floor. The same reviewer could delete false ones before the oracle reads. Counting them keeps the sample
+  append-only. A good-faith retraction is the opposite case. That is a rule to agree with bonded parties in
+  public, not a silent change to a live measurement. Today only 2 feedbacks in the index are revoked, both
+  `unknown`, so nothing is affected either way.
+
 ## Still open
 
 In the escrow, the source is fixed. One item is still live on chain pending a redeploy: the `receiveWithAuthorization` fix for gasless create is in source and tested, but the deployed Aqueous is immutable and still carries the transfer-variant behaviour until a redeploy updates the cited address. No app route calls `createJobWithAuthorization`, so nothing on the live site exposes it. The security audit tracks this as an open high.

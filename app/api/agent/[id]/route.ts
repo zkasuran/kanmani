@@ -3,6 +3,7 @@ import { agent, claims, probedCluster } from "@/lib/queries.ts";
 import { bondFor } from "@/lib/bonds.ts";
 import { passkeyBinding } from "@/lib/agent-passkey-read.ts";
 import { adextoMarketsFor } from "@/lib/adexto.ts";
+import { partitionRevoked } from "@/lib/claim-views.ts";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,10 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
     adextoMarketsFor(Number(a.agentId)),
   ]);
 
-  const checked = fb.rows.filter((c) => c.outcome !== null);
+  // A feedback its author has revoked is withdrawn: it stays listed and stays in the on-chain count, but it
+  // is not a claim to be judged (see lib/claim-views.ts).
+  const { live, revoked } = partitionRevoked(fb.rows);
+  const checked = live.filter((c) => c.outcome !== null);
   return json(
     envelope(
       {
@@ -79,12 +83,14 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
           : null,
         claims: {
           onChain: a.feedbackCount,
-          checkable: fb.rows.filter((c) => c.feedbackUri !== "").length,
+          checkable: live.filter((c) => c.feedbackUri !== "").length,
           checked: checked.length,
           resolve: checked.filter((c) => c.outcome === "true").length,
           doNotResolve: checked.filter((c) => c.outcome === "false").length,
           couldNotCheck: checked.filter((c) => c.outcome === "unknown").length,
           assertNoPayment: checked.filter((c) => c.outcome === "noClaim").length,
+          // Only present when something was revoked, so every other agent's answer has the keys it always had.
+          ...(revoked.length > 0 ? { revoked: revoked.length } : {}),
           items: fb.rows.map((c) => ({
             id: c.id,
             outcome: c.outcome,
@@ -96,6 +102,7 @@ export async function GET(_req: Request, ctx: { params: Promise<{ id: string }> 
             checkedAt: c.checkedAt,
             checkedAtBlock: c.checkedAtBlock,
             blockNumber: c.blockNumber,
+            ...(c.revoked ? { revoked: true } : {}),
           })),
         },
       },

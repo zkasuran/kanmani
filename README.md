@@ -15,7 +15,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
-  <img src="https://img.shields.io/badge/tests-979%20passing-34d399?style=flat-square&labelColor=05070a" alt="979 tests passing">
+  <img src="https://img.shields.io/badge/tests-983%20passing-34d399?style=flat-square&labelColor=05070a" alt="983 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
   <a href="SECURITY.md"><img src="https://img.shields.io/badge/security-policy%20%2B%20risk%20table-8b98a9?style=flat-square&labelColor=05070a" alt="Security policy"></a>
   <img src="https://img.shields.io/badge/kit-MIT-8b98a9?style=flat-square&labelColor=05070a" alt="Component kit is MIT">
@@ -25,7 +25,7 @@
 <br>
 
 When you hire an agent, the money sits in escrow until the work lands. The settlement itself emits
-the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,416<!-- /n --> agents** in
+the receipt, so the evidence cannot disagree with the payment. We read **all <!-- n:agents -->10,417<!-- /n --> agents** in
 Monad's ERC-8004 registry and checked every payment claim against the chain it names: 123 of the <!-- n:claims -->198<!-- /n --> claims name a transaction that is not there. The track record this produces is correct by
 construction and the agent can then stake its own money on it.
 
@@ -80,15 +80,15 @@ No wallet and no key for the first five.
   <img src="public/readme/findings-light.svg" alt="197 payment claims (2026-10-13): 74 on the chain they name, 123 not. Of those 123, 115 are real transactions on a different chain and 8 were not found on any chain we searched." width="100%">
 </picture>
 
-Monad's ERC-8004 registry holds **<!-- n:agents -->10,416<!-- /n --> agents** behind <!-- n:documents -->2,144<!-- /n --> distinct registration documents. We
-read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,422<!-- /n -->
+Monad's ERC-8004 registry holds **<!-- n:agents -->10,417<!-- /n --> agents** behind <!-- n:documents -->2,145<!-- /n --> distinct registration documents. We
+read every one of them and checked every payment claim against the chain it names. Of <!-- n:feedbacks -->9,427<!-- /n -->
 feedbacks, <!-- n:withPointer -->1,319<!-- /n --> carry an evidence pointer at all. <!-- n:claims -->198<!-- /n --> of those make a payment claim and 123 of them
-are wrong about where the money went. That is 123 out of <!-- n:feedbacks -->9,422<!-- /n -->, just over 1%, so the story here is
+are wrong about where the money went. That is 123 out of <!-- n:feedbacks -->9,427<!-- /n -->, just over 1%, so the story here is
 rot rather than mass fraud.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="public/readme/cluster-dark.svg">
-  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,416<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
+  <img src="public/readme/cluster-light.svg" alt="<!-- n:oneDocAgents -->8,093<!-- /n --> of <!-- n:agents -->10,417<!-- /n --> agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> wallets, share one registration document that no longer answers." width="100%">
 </picture>
 
 None of this is fraud and the project never says it is. A registry has no mechanism to keep a true
@@ -108,9 +108,9 @@ verdict store on every load, so it moves as the hourly sweep checks new document
 
 | finding | number |
 |---|---:|
-| agents in the registry | <!-- n:agents -->10,416<!-- /n --> |
-| distinct registration documents behind them | <!-- n:documents -->2,144<!-- /n --> |
-| feedbacks, of which <!-- n:withPointer -->1,319<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,422<!-- /n --> |
+| agents in the registry | <!-- n:agents -->10,417<!-- /n --> |
+| distinct registration documents behind them | <!-- n:documents -->2,145<!-- /n --> |
+| feedbacks, of which <!-- n:withPointer -->1,319<!-- /n --> carry an evidence pointer | <!-- n:feedbacks -->9,427<!-- /n --> |
 | payment claims checked against a chain | <!-- n:claims -->198<!-- /n --> |
 | claims where the cited transaction is really there | <!-- n:claimsTrue -->75<!-- /n --> |
 | claims where it is not | 123 |
@@ -181,7 +181,7 @@ Everything else in this repository is built around that one rule.
 
 | surface | status | what that means |
 |---|---|---|
-| registry reads: <!-- n:agents -->10,416<!-- /n --> agents, <!-- n:documents -->2,144<!-- /n --> documents, <!-- n:feedbacks -->9,422<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
+| registry reads: <!-- n:agents -->10,417<!-- /n --> agents, <!-- n:documents -->2,145<!-- /n --> documents, <!-- n:feedbacks -->9,427<!-- /n --> feedbacks | **real** | indexed from all three ERC-8004 registries on Monad and BSC |
 | claim verdicts: <!-- n:claims -->198<!-- /n --> checked, 123 false, <!-- n:claimsTrue -->75<!-- /n --> true, <!-- n:unknown -->26<!-- /n --> unknown | **real** | each one read off the chain the document names, recorded at a block |
 | Aqueous escrow on mainnet | **real** | USDC held and settled, the receipt emitted by the settlement itself |
 | Sclera bonds on mainnet | **real**, **ours only** | version 1 holds three of our bonds, one through its whole life: posted, held, matured, returned. Version 2 (2026-10-10) burns a slash and allows a re-bond; our agent 10252 is bonded on it. We have asked five outside agents to bond and sent USDC where an owner had none. A sixth ask, to Assay, was superseded: they will bond a host on version 2 once it publishes claims the contract can measure. None has posted yet. [/traction](https://kanmani.xyz/traction) reads that count live |
@@ -389,7 +389,7 @@ cast receipt 0xa4cf2aa04fdff4f3cc7566f0512a60201b443382636e0d875bc500a4374960f2 
 ```
 
 The counter slot moves with every registration, so a read today returns a little more than the
-<!-- n:agents -->10,416<!-- /n --> this file states.
+<!-- n:agents -->10,417<!-- /n --> this file states.
 
 </details>
 
@@ -407,7 +407,7 @@ cd indexer   && npm run codegen && npm start   # the index
 npm run dev                                    # and the site itself
 ```
 
-<!-- n:testsPassing -->979<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->562<!-- /n --> in the app, <!-- n:testsVerifier -->245<!-- /n --> in the verifier and <!-- n:testsContracts -->172<!-- /n --> in the
+<!-- n:testsPassing -->983<!-- /n --> tests pass across the three suites, <!-- n:testsApp -->566<!-- /n --> in the app, <!-- n:testsVerifier -->245<!-- /n --> in the verifier and <!-- n:testsContracts -->172<!-- /n --> in the
 contracts. <!-- n:testsSkipped -->68<!-- /n --> are skipped and every one of them is deliberate: they need something the default run
 does not have. `forge test --fork-url https://rpc.monad.xyz` picks up the fork tests and
 `FOUNDRY_PROFILE=p256 forge test --match-path test/AgentPasskey.t.sol` picks up the precompile ones,

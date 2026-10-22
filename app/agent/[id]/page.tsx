@@ -7,6 +7,7 @@ import { CATEGORY_META, walletLabel } from "@/lib/labels.ts";
 import { bondFor, usdc } from "@/lib/bonds.ts";
 import { adextoMarketsFor } from "@/lib/adexto.ts";
 import { AgentPasskeyPanel } from "@/components/agent-passkey.tsx";
+import { partitionRevoked } from "@/lib/claim-views.ts";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -40,7 +41,9 @@ export default async function AgentPage({ params }: Props) {
     adextoMarketsFor(Number(a.agentId)),
   ]);
 
-  const checked = feedback.rows.filter((c) => c.outcome !== null);
+  // Feedback its author withdrew is not a claim to judge. It stays listed, labelled, and is not counted.
+  const { live: liveRows, revoked: revokedRows } = partitionRevoked(feedback.rows);
+  const checked = liveRows.filter((c) => c.outcome !== null);
   const resolve = checked.filter((c) => c.outcome === "true").length;
   const doNot = checked.filter((c) => c.outcome === "false").length;
   // A false verdict splits in two once other chains are readable and the two deserve different
@@ -48,8 +51,8 @@ export default async function AgentPage({ params }: Props) {
   // corrected, which is the accusation, on the page an operator actually lands on.
   const elsewhere = checked.filter((c) => c.outcome === "false" && c.foundChain).length;
   const nowhere = doNot - elsewhere;
-  const unchecked = feedback.rows.filter((c) => c.outcome === null);
-  const decided = feedback.rows.filter((c) => c.outcome !== null);
+  const unchecked = liveRows.filter((c) => c.outcome === null);
+  const decided = liveRows.filter((c) => c.outcome !== null);
 
   return (
     <div className="flex flex-col gap-[var(--section-gap)]">
@@ -366,7 +369,7 @@ export default async function AgentPage({ params }: Props) {
       </div>
 
       <Panel
-        title={`feedback · ${a.feedbackCount} on chain, ${checked.length} checkable`}
+        title={`feedback · ${a.feedbackCount} on chain, ${checked.length} checkable${revokedRows.length > 0 ? `, ${revokedRows.length} withdrawn by its author` : ""}`}
         subtitle="Anyone can leave feedback about an agent. Only the ones pointing at a document can be checked against a chain."
       >
         {feedback.rows.length === 0 ? (

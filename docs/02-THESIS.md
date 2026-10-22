@@ -73,7 +73,7 @@ four outcomes with no shortcut between them.
 
 ## 3. The measurement
 
-The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,416<!-- /n --> agents on Monad mainnet,
+The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,417<!-- /n --> agents on Monad mainnet,
 matching the registry's own counter slot exactly. `totalSupply()` reverts on the Identity Registry,
 so the slot is the only source of population truth:
 
@@ -83,7 +83,7 @@ cast storage 0x8004A169FB4a3325136EB29fA0ceB6D2e539a432 \
   --rpc-url https://rpc.monad.xyz    # the agent count above, as a hex word
 ```
 
-Those agents carry <!-- n:feedbacks -->9,422<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,319<!-- /n --> carry a URI. The rest point at nothing,
+Those agents carry <!-- n:feedbacks -->9,427<!-- /n --> feedbacks. Of those, <!-- n:withPointer -->1,319<!-- /n --> carry a URI. The rest point at nothing,
 so there is nothing to fetch and nothing to check. The `/` page prints the SQL behind every one of
 these numbers. It is the same query the site runs:
 
@@ -110,9 +110,9 @@ curl -sS 'https://kanmani.xyz/api/claims?outcome=false&limit=1' | jq '.data.tota
 # outcome=true -> 74, outcome=noClaim -> 1095, outcome=unknown -> 15   (2026-10-13)
 ```
 
-**The denominator for the headline is <!-- n:claims -->198<!-- /n -->, not <!-- n:feedbacks -->9,422<!-- /n --> and not <!-- n:withPointer -->1,319<!-- /n -->.** <!-- n:claims -->198<!-- /n --> is `true` plus `false`: the
+**The denominator for the headline is <!-- n:claims -->198<!-- /n -->, not <!-- n:feedbacks -->9,427<!-- /n --> and not <!-- n:withPointer -->1,319<!-- /n -->.** <!-- n:claims -->198<!-- /n --> is `true` plus `false`: the
 documents that assert a payment and that we read all the way to a chain. 123 of <!-- n:claims -->198<!-- /n --> is 66%. 123 of
-<!-- n:feedbacks -->9,422<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
+<!-- n:feedbacks -->9,427<!-- /n --> would be just over 1%. Quoting it that way would be arithmetic dressed up as modesty. Neither
 framing is honest on its own, which is why the <!-- n:claims -->198<!-- /n --> and the <!-- n:withPointer -->1,319<!-- /n --> sit next to each other on the front
 page.
 
@@ -247,9 +247,9 @@ record will show both readings.
 
 ## 7. Why this matters to somebody spending money
 
-An agent looking for another agent to pay has a registry with <!-- n:agents -->10,416<!-- /n --> entries and no way to tell a
+An agent looking for another agent to pay has a registry with <!-- n:agents -->10,417<!-- /n --> entries and no way to tell a
 working counterparty from a registration that has been dead for months. Measure it the cheapest
-possible way. All <!-- n:documents -->2,144<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,113<!-- /n --> agents point at a
+possible way. All <!-- n:documents -->2,145<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,113<!-- /n --> agents point at a
 document whose host answers and says it is not there. That is 78.2% of the registry. <!-- n:oneDocAgents -->8,093<!-- /n --> of those
 agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> distinct wallets, point at one single URL:
 
