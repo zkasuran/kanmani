@@ -335,7 +335,7 @@
       "date": "2026-10-13",
       "offered": "A finding: their ERC-8004 outcome feedback commits a hash whose document is served nowhere, so nobody can verify it. Two fixes plus a sponsored Sclera bond on agents 10280 and 10315.",
       "outcome": "replied",
-      "result": "They replied on 2026-10-15 and merged a fix (PR 2) so the feedbackURI route serves JSON. On 2026-10-16 production still returns 404 OUTCOME_NOT_FOUND for both of agent 10315's outcomes, so neither hash can be verified yet and both claims stay unknown.",
+      "result": "They replied on 2026-10-15 and merged a fix (PR 2) so the feedbackURI route serves JSON. On 2026-10-22 production still returns 404 OUTCOME_NOT_FOUND for agent 10315's two feedbacks. Their code rebuilds the document from an in-memory table that starts empty on a cold start. We rebuilt both documents from their own repo, checked each hash against the posting transaction's calldata. We then opened PR 8 to serve them. Not merged, nothing verified yet. Agent 10280's document could not be rebuilt.",
       "evidence": [
         {
           "label": "Their reply",
@@ -348,6 +348,10 @@
         {
           "label": "Their fix, PR 2",
           "url": "https://github.com/catalystberry842-alt/AgentTrace/pull/2"
+        },
+        {
+          "label": "Our fix, PR 8",
+          "url": "https://github.com/catalystberry842-alt/AgentTrace/pull/8"
         }
       ],
       "buyer": null
