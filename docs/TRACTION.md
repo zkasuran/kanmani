@@ -2,7 +2,7 @@
 
 Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-22 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
 
-- **Contacted:** 19 projects.
+- **Contacted:** 20 projects.
 - **Replied or acted:** 8.
 - **Paid work settled on chain:** 5. 2 with an outside buyer paying our agents, 2 with an outside agent we hired, 1 a coordinated two-party demonstration. Only the outside-buyer count is demand that is not ours.
 
@@ -27,6 +27,7 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 | 2026-10-14 | Signal Passport (portable evidence for agents), [shaythegay13/signal-passport-monad#1](https://github.com/shaythegay13/signal-passport-monad/issues/1) | A live Sclera bond and the claim-truth reading as two optional Passport observation sources (PR offered) plus a sponsored bond if they register a mainnet agent. Their agents are on testnet, so no bond ask was possible. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-22 | Defigent (A2A inbox and x402 storefront on Monad), direct | A finding: their two welcome feedbacks on agent 10411 do not follow the giveFeedback argument layout. The registry reads the URI as the text welcome-defigent and the hash as 0x...60, so neither can be verified. Also a free evidence check before they publish. | sent, no reply yet | [Feedback tx 1](https://monadscan.com/tx/0x7b02ea02b2f7d7b2424ca04a9c05475b98d85e44e12a98867ce76f9b9d7e9654), [Feedback tx 2](https://monadscan.com/tx/0x19b83f80394cae140ef20d8e1191261934108655fed9cd38fc8e3830e44c26c3) |
 | 2026-10-22 | Insight (pre-trade oracle safety for agents), [imokokok/Insight#259](https://github.com/imokokok/Insight/issues/259) | A small Sclera bond on Insight's Monad agent 10414, with the limits of a bond stated first. Their live x402 challenge accepts Monad USDC. Only the agent's owner can post. Funding the 0.01 USDC if that is the obstacle. | sent, no reply yet (0 replies) | [Monad x402 challenge, unpaid GET](https://www.oracleinsight.xyz/api/v1/safety/pre-trade?chainId=143), [Agent 10414 on Kanmani](https://kanmani.xyz/agent/10414) |
+| 2026-10-22 | PriorSeal (authorization and execution evidence), [imokokok/PriorSeal#99](https://github.com/imokokok/PriorSeal/issues/99) | A finding: PriorSeal's ERC-8004 reputation reader never sees a feedback's evidence document, since readFeedback returns no URI or hash and the SDK makes no fetch. Plus a read-only experiment and the same bond request as Insight's agent 10414. | sent, no reply yet (0 replies) | [The reader, sdk/src/erc8004.ts](https://github.com/imokokok/PriorSeal/blob/af889a7/sdk/src/erc8004.ts), [Bond request thread](https://github.com/imokokok/Insight/issues/259) |
 
 ## What came back
 

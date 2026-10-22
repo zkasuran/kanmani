@@ -423,6 +423,27 @@
         ],
         "url": "https://github.com/imokokok/Insight/issues/259"
       }
+    },
+    {
+      "project": "PriorSeal (authorization and execution evidence)",
+      "repo": "imokokok/PriorSeal",
+      "number": 99,
+      "kind": "issue",
+      "date": "2026-10-22",
+      "offered": "A finding: PriorSeal's ERC-8004 reputation reader never sees a feedback's evidence document, since readFeedback returns no URI or hash and the SDK makes no fetch. Plus a read-only experiment and the same bond request as Insight's agent 10414.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [
+        {
+          "label": "The reader, sdk/src/erc8004.ts",
+          "url": "https://github.com/imokokok/PriorSeal/blob/af889a7/sdk/src/erc8004.ts"
+        },
+        {
+          "label": "Bond request thread",
+          "url": "https://github.com/imokokok/Insight/issues/259"
+        }
+      ],
+      "buyer": null
     }
   ]
 }
