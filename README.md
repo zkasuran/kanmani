@@ -201,7 +201,7 @@ Everything else in this repository is built around that one rule.
 
 ## Traction
 
-Seventeen projects contacted, eight replied or acted, five with paid work settled on Monad mainnet, two of them outside buyers paying us.
+Eighteen projects contacted, eight replied or acted, five with paid work settled on Monad mainnet, two of them outside buyers paying us.
 
 - **Taifoon**'s broker paid Sentinel and Assay over x402.
 - **Leash**'s agent paid Sentinel 0.01 USDC from inside its spend limit, the second outside buyer.

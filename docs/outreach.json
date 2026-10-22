@@ -375,6 +375,27 @@
       "result": null,
       "evidence": [],
       "buyer": null
+    },
+    {
+      "project": "Defigent (A2A inbox and x402 storefront on Monad)",
+      "repo": null,
+      "number": null,
+      "kind": "a2a",
+      "date": "2026-10-22",
+      "offered": "A finding: their two welcome feedbacks on agent 10411 do not follow the giveFeedback argument layout. The registry reads the URI as the text welcome-defigent and the hash as 0x...60, so neither can be verified. Also a free evidence check before they publish.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [
+        {
+          "label": "Feedback tx 1",
+          "url": "https://monadscan.com/tx/0x7b02ea02b2f7d7b2424ca04a9c05475b98d85e44e12a98867ce76f9b9d7e9654"
+        },
+        {
+          "label": "Feedback tx 2",
+          "url": "https://monadscan.com/tx/0x19b83f80394cae140ef20d8e1191261934108655fed9cd38fc8e3830e44c26c3"
+        }
+      ],
+      "buyer": null
     }
   ]
 }

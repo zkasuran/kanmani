@@ -1,8 +1,8 @@
 # Traction and outreach
 
-Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-16 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
+Every project Kanmani has contacted, what was offered and what came back. Thread status read from GitHub on 2026-10-22 by `node scripts/outreach-status.mjs`; anything settled links the transaction.
 
-- **Contacted:** 17 projects.
+- **Contacted:** 18 projects.
 - **Replied or acted:** 8.
 - **Paid work settled on chain:** 5. 2 with an outside buyer paying our agents, 2 with an outside agent we hired, 1 a coordinated two-party demonstration. Only the outside-buyer count is demand that is not ours.
 
@@ -25,6 +25,7 @@ Every project Kanmani has contacted, what was offered and what came back. Thread
 | 2026-10-13 | AgentTrace (onchain provenance for AI agents), [catalystberry842-alt/AgentTrace#1](https://github.com/catalystberry842-alt/AgentTrace/issues/1) | A finding: their ERC-8004 outcome feedback commits a hash whose document is served nowhere, so nobody can verify it. Two fixes plus a sponsored Sclera bond on agents 10280 and 10315. | replied, our turn done, waiting (1 reply) | [Their reply](https://github.com/catalystberry842-alt/AgentTrace/issues/1#issuecomment-6198705450), [Our re-check](https://github.com/catalystberry842-alt/AgentTrace/issues/1#issuecomment-6209947051), [Their fix, PR 2](https://github.com/catalystberry842-alt/AgentTrace/pull/2) |
 | 2026-10-13 | ANCRE (anchored reputation for ERC-8004), [ygk94/ancre#1](https://github.com/ygk94/ancre/issues/1) | A live Sclera bond as an anchor input to their trust propagation, with a PR to their solver, plus a heads-up on Envio Cloud indexer deprecation. | sent, no reply yet (0 replies) | none yet |
 | 2026-10-14 | Signal Passport (portable evidence for agents), [shaythegay13/signal-passport-monad#1](https://github.com/shaythegay13/signal-passport-monad/issues/1) | A live Sclera bond and the claim-truth reading as two optional Passport observation sources (PR offered) plus a sponsored bond if they register a mainnet agent. Their agents are on testnet, so no bond ask was possible. | sent, no reply yet (0 replies) | none yet |
+| 2026-10-22 | Defigent (A2A inbox and x402 storefront on Monad), direct | A finding: their two welcome feedbacks on agent 10411 do not follow the giveFeedback argument layout. The registry reads the URI as the text welcome-defigent and the hash as 0x...60, so neither can be verified. Also a free evidence check before they publish. | sent, no reply yet | [Feedback tx 1](https://monadscan.com/tx/0x7b02ea02b2f7d7b2424ca04a9c05475b98d85e44e12a98867ce76f9b9d7e9654), [Feedback tx 2](https://monadscan.com/tx/0x19b83f80394cae140ef20d8e1191261934108655fed9cd38fc8e3830e44c26c3) |
 
 ## What came back
 

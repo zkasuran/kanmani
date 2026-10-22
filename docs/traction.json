@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-16",
+  "generatedAt": "2026-10-22",
   "counts": {
-    "contacted": 17,
+    "contacted": 18,
     "replied": 8,
     "settled": 5,
     "outsideBuyer": 2,
@@ -202,6 +202,17 @@
       "replies": 0,
       "lastAt": null,
       "url": "https://github.com/shaythegay13/signal-passport-monad/issues/1",
+      "pr": null
+    },
+    {
+      "project": "Defigent (A2A inbox and x402 storefront on Monad)",
+      "repo": null,
+      "number": null,
+      "date": "2026-10-22",
+      "status": "sent, no reply yet",
+      "replies": null,
+      "lastAt": null,
+      "url": null,
       "pr": null
     }
   ]
