@@ -435,6 +435,27 @@
         ],
         "url": "https://github.com/imokokok/Insight/issues/259"
       }
+    },
+    {
+      "project": "PlugPort Agent Graph (verifiable memory for agents)",
+      "repo": "PlugPort-Protocol/plugport-agent-graph",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-22",
+      "offered": "A finding: their web viewer builds a read-only anchor client and passes the trusted anchorer only when ANCHOR_ADDRESS is set, so without it a root from any wallet reads as on-chain. Read from the code, not exploited. Plus a question about a mainnet ERC-8004 agent, since a bond needs one.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [
+        {
+          "label": "The verify line, anchor.ts",
+          "url": "https://github.com/PlugPort-Protocol/plugport-agent-graph/blob/bc72f11/packages/core/src/anchor.ts"
+        },
+        {
+          "label": "The viewer config, server.ts",
+          "url": "https://github.com/PlugPort-Protocol/plugport-agent-graph/blob/bc72f11/packages/web/src/lib/server.ts"
+        }
+      ],
+      "buyer": null
     }
   ]
 }

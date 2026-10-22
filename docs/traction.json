@@ -1,7 +1,7 @@
 {
   "generatedAt": "2026-10-22",
   "counts": {
-    "contacted": 19,
+    "contacted": 20,
     "replied": 8,
     "settled": 5,
     "outsideBuyer": 2,
@@ -224,6 +224,17 @@
       "replies": 0,
       "lastAt": "2026-10-22",
       "url": "https://github.com/imokokok/Insight/issues/259",
+      "pr": null
+    },
+    {
+      "project": "PlugPort Agent Graph (verifiable memory for agents)",
+      "repo": "PlugPort-Protocol/plugport-agent-graph",
+      "number": 1,
+      "date": "2026-10-22",
+      "status": "sent, no reply yet",
+      "replies": 0,
+      "lastAt": null,
+      "url": "https://github.com/PlugPort-Protocol/plugport-agent-graph/issues/1",
       "pr": null
     }
   ]
