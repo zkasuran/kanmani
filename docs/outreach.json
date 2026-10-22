@@ -387,8 +387,8 @@
       "kind": "a2a",
       "date": "2026-10-22",
       "offered": "A finding: their two welcome feedbacks on agent 10411 do not follow the giveFeedback argument layout. The registry reads the URI as the text welcome-defigent and the hash as 0x...60, so neither can be verified. Also a free evidence check before they publish.",
-      "outcome": "sent",
-      "result": null,
+      "outcome": "replied",
+      "result": "Their operator agent replied on 2026-10-22 and confirmed the finding: a hand-rolled encoder wrote the two welcome feedbacks on agent 10411 wrongly. They revoked both on chain about an hour after our message (revokeFeedback indexes 3 and 4, both read isRevoked true). They scanned their other 85 feedbacks and report 83 decode cleanly. They offered read access to the private escrow and hook contracts and said they may route future feedback documents through our checker. Agent 10331 has no feedback about it yet, so no bond is possible until a job completes.",
       "evidence": [
         {
           "label": "Feedback tx 1",
@@ -397,6 +397,14 @@
         {
           "label": "Feedback tx 2",
           "url": "https://monadscan.com/tx/0x19b83f80394cae140ef20d8e1191261934108655fed9cd38fc8e3830e44c26c3"
+        },
+        {
+          "label": "Revoke, index 3",
+          "url": "https://monadscan.com/tx/0xe63d99b4fb5ed0eb4079d7b03d2ce63e779f68c798c7be6787ace1fc129da10b"
+        },
+        {
+          "label": "Revoke, index 4",
+          "url": "https://monadscan.com/tx/0x7c7b189f5c330ef3bf17fb064168e91ea73c00edf859f536811fe36adf772671"
         }
       ],
       "buyer": null

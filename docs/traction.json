@@ -2,7 +2,7 @@
   "generatedAt": "2026-10-22",
   "counts": {
     "contacted": 20,
-    "replied": 8,
+    "replied": 9,
     "settled": 5,
     "outsideBuyer": 2,
     "weBought": 2,
@@ -209,7 +209,7 @@
       "repo": null,
       "number": null,
       "date": "2026-10-22",
-      "status": "sent, no reply yet",
+      "status": "replied",
       "replies": null,
       "lastAt": null,
       "url": null,
