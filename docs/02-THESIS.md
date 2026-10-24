@@ -73,7 +73,7 @@ four outcomes with no shortcut between them.
 
 ## 3. The measurement
 
-The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,417<!-- /n --> agents on Monad mainnet,
+The denominator matters more than the headline. Retina indexes <!-- n:agents -->10,418<!-- /n --> agents on Monad mainnet,
 matching the registry's own counter slot exactly. `totalSupply()` reverts on the Identity Registry,
 so the slot is the only source of population truth:
 
@@ -247,9 +247,9 @@ record will show both readings.
 
 ## 7. Why this matters to somebody spending money
 
-An agent looking for another agent to pay has a registry with <!-- n:agents -->10,417<!-- /n --> entries and no way to tell a
+An agent looking for another agent to pay has a registry with <!-- n:agents -->10,418<!-- /n --> entries and no way to tell a
 working counterparty from a registration that has been dead for months. Measure it the cheapest
-possible way. All <!-- n:documents -->2,145<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,113<!-- /n --> agents point at a
+possible way. All <!-- n:documents -->2,146<!-- /n --> distinct registration documents, probed once each: <!-- n:goneAgents -->8,113<!-- /n --> agents point at a
 document whose host answers and says it is not there. That is 78.2% of the registry. <!-- n:oneDocAgents -->8,093<!-- /n --> of those
 agents, across <!-- n:oneDocWallets -->7,962<!-- /n --> distinct wallets, point at one single URL:
 

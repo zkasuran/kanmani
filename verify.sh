@@ -235,7 +235,13 @@ banner "supply chain"
 # Production dependencies, at zero findings. This is the surface that is actually served, so it is
 # the one that gates. `--omit=dev` is what makes that split.
 echo "· root, production dependencies"
-npm audit --omit=dev --audit-level=high
+# Not a bare `npm audit`: one advisory on two nested paths cannot be fixed (no patched release in that major,
+# and the forced fix downgrades the payment library). scripts/audit-gate.mjs accepts exactly that and fails on
+# anything else. The reason and the evidence are in the script and in SECURITY.md known limits.
+# `npm audit` exits non-zero whenever it finds anything, allowed or not, and under pipefail that would abort here
+# even after the gate approved. The audit's own status is dropped and the gate's status is the one that counts. If
+# npm cannot run at all it prints an error object, which the gate turns into a failure.
+{ npm audit --omit=dev --json || true; } | node scripts/audit-gate.mjs
 echo "· verifier, production dependencies"
 (cd verifier && npm audit --omit=dev --audit-level=high)
 if [ -f indexer/package-lock.json ] && [ -d indexer/node_modules ]; then

@@ -127,8 +127,17 @@ Honest list. Each was confirmed still true against the code as it stands.
 - `envio` 3.10.0 in the indexer carries transitive advisories in its own express and ws tree. npm
   offers no non-breaking fix: the only suggested remedy is a major downgrade. The indexer is a
   server-side backfill process with no public HTTP surface. It is not part of the served app, so
-  the finding is recorded rather than treated as zero. The root and verifier production audits are
-  both clean.
+  the finding is recorded rather than treated as zero. The verifier production audit is clean. The root
+  production audit has one allowed finding, the next item.
+- `@x402/core` and `@x402/evm` 2.27.0 each carry a nested `zod` 3.25.76. `npm audit` flags it as high
+  (GHSA-mrhx-c7xc-m3w5, memory exhaustion validating a large array, fixed in zod 4.6.6) because the
+  advisory's range is `< 4.6.6`. The vulnerable code is the zod 4 `$ZodArray` implementation. In 3.25.76
+  `import "zod"` resolves to the v3 API, which contains no `handleArrayResult` (checked: 0 files). The two
+  files that do sit under the `zod/v4` subpath that these packages never import. No patched 3.x release
+  exists. The only remedy `npm audit fix --force` offers installs `@x402/evm` 0.0.1, which breaks the
+  payment path. Our own `zod` is 4.6.6 and is not affected. `scripts/audit-gate.mjs` accepts exactly this
+  advisory on exactly these two paths and fails on anything else, with tests that try to widen it. Look again
+  when `@x402/core` moves to zod 4. This is a judgement from reading the installed code, not from a scanner.
 - The lint toolchain pulls `braces` through `eslint-config-next`, which carries a stack-exhaustion
   advisory with no fixed version published. It is a development dependency, never served and never
   run against untrusted input. The gate audits production dependencies at zero findings and reports
