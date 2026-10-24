@@ -464,6 +464,27 @@
         }
       ],
       "buyer": null
+    },
+    {
+      "project": "Interlude (real-time engine for Monad apps)",
+      "repo": "Veenoway/interlude-sdk",
+      "number": 1,
+      "kind": "issue",
+      "date": "2026-10-24",
+      "offered": "A request for the roadmap, not a bond now: register an ERC-8004 agent on Monad mainnet (their own Agents page says ERC-8004 can say who the agent is), then post a small Sclera bond for it when it has paid usage on mainnet. Everything of theirs is on testnet and none of their addresses holds an ERC-8004 token, so there is nothing to bond today. We would fund the first 0.01 USDC.",
+      "outcome": "sent",
+      "result": null,
+      "evidence": [
+        {
+          "label": "Their Agents page",
+          "url": "https://interludelayer.xyz/docs/agents"
+        },
+        {
+          "label": "Their roadmap, on the home page",
+          "url": "https://interludelayer.xyz"
+        }
+      ],
+      "buyer": null
     }
   ]
 }
