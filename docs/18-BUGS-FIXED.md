@@ -481,22 +481,44 @@ Our index marked them revoked. The agent's page and API still counted them under
   `/shelf/*` pages as Kanmani traffic until the referrers looked wrong. I filtered to the Kanmani hosts and
   redid it.
 
-## Still open (found the same day, needs a decision)
+## Fixed on 24 October: the deploy schema step and the usage scanner
 
-* **The schema step of every deploy fails partway and has done for some time.** `deploy-ec2.sh` applies
-  `verifier/src/store/schema.sql` with `ON_ERROR_STOP=1` and shows only the tail of its output. Run by hand it
-  stops at line 251, `CREATE INDEX ... ON fovea.agent_action`, with `must be owner of table agent_action`:
-  8 of the 18 `fovea` tables are owned by `postgres` and the app connects as `kanmani`. Nothing after that
-  line runs, so seven objects the file defines are missing in production: `payable_probe`,
-  `payable_probe_latest`, `payable_state`, `settlement_check`, `settlement_check_latest`, `wallet_label` and
-  `wallet_label_latest`. The one effect I confirmed is that the recipient scope on `/api/sla` answers 501. The
-  daily jobs report success, so I do not know what else, if anything, reads or writes those tables. The fix is
-  a production database change (hand the 8 tables to the app role or run the schema as the owner). It is
-  left for the operator.
-* **The usage aggregator on the server is older than the repo.** It lacks the Sclera v2 scan and the
-  `BondPosted` signature fix, whose comment says the old signature "matched nothing, so no bond was ever
-  counted". An outside bond on v2 would not show on the usage page's on-chain list. `deploy-ec2.sh` does not
-  ship `scripts/`, so it has to be copied by hand. Not done here.
+Both were listed as open on 22 October. Neither showed on a page a visitor sees, but both were silent failures.
+
+* **The deploy's schema step had been failing for some time. The deploy hid it.** `deploy-ec2.sh` piped
+  `psql` through `tail -10`, which reports `tail`'s exit status and shows only the last notices. Run by hand,
+  the schema stopped at line 251 with `must be owner of table agent_action`. Eight `fovea` tables (and one
+  sequence) were owned by `postgres` and the app role is `kanmani`, which is not a superuser, so nothing after
+  that line ran and seven objects were never created: `payable_probe`, `payable_probe_latest`, `payable_state`,
+  `settlement_check`, `settlement_check_latest`, `wallet_label` and `wallet_label_latest`. Fixed in three steps.
+  A verified dump of the `fovea` schema first (4.6 MB, 18 tables, every row count matching live). One
+  transaction handing the eight tables and the sequence to `kanmani`. Then the schema re-applied as the app
+  role: exit 0, no errors, all seven objects present, no existing row changed. The deploy step now captures
+  `psql`'s own status and prints the error lines. It ends the deploy with a non-zero exit and a banner if the
+  schema failed. I tested that against a scratch database in the old broken state and it reproduced the
+  original error at line 251, then succeeded after the owner was restored. `/api/sla?recipient=` now answers
+  200 and no longer 501. The new tables are empty: nothing writes `settlement_check` yet, so the recipient
+  scope has nothing to match until something does.
+  *Checked while doing it:* the daily Nansen job was not wasting credits. Its flags write to `wallet_funder`,
+  which exists and gains five rows a day, not to the missing `wallet_label`.
+* **The usage scanner had two bugs. The server's copy was also old.** The event signature for
+  `BondPosted` said `uint128` where the contract emits `uint256`, so no bond was ever counted. And the Sclera v1
+  scan started at block 107,700,000 although v1 was deployed at 107,455,772, so the first bond ever posted
+  (agent 10252, block 107,460,188, later slashed) lay before the scan could begin. The server's copy lacked the
+  v2 scan as well. Fixed: the repo's script is on the server, byte for byte (md5 checked), the v1 start is the
+  deployment block. The v1 cursor was rewound so the history is counted. Tested first on a scratch database.
+  The live table now holds all five of our bonds at the blocks the chain reports: v1 agents 10252, 10256 and
+  10257, v2 agents 10252 and 10256, every one marked ours. A check of the classification expression shows a
+  bond from any other wallet would be recorded as others, so an outside bond now appears in the on-chain
+  list on `/status`. `/traction` never depended on this: it reads the contract directly.
+  A `--window` option was added for a one-off backfill on a provider that allows larger ranges. The timer
+  does not pass it, so its behaviour is unchanged.
+* **Mistakes made along the way, so they are not repeated.** My first backup was empty (a bad flag) and the
+  check I wrote to verify it was itself wrong, so I fixed the checker and confirmed every table. I sized the
+  backfill at about an hour and it was about three, so I replaced it with a targeted scan of the bond blocks.
+  A backfill process survived my first attempt to stop it and kept writing to the scratch database, so I
+  found the exact PID and killed that. My scratch database needed the same ownership fix the real one did. My
+  list of bonded agent ids was incomplete (agent 10257 was missing) and the scan found it.
 
 ## Still open
 

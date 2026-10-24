@@ -11,7 +11,7 @@
  * 2. Our contracts' events on Monad -> fovea.onchain_use, from a cursor, in 100-block windows (the
  *    public RPC's getLogs limit), capped per run so a backfill catches up across runs.
  *
- * Usage: node --experimental-strip-types scripts/usage-aggregate.mjs [--logs /var/log/caddy] [--no-chain]
+ * Usage: node --experimental-strip-types scripts/usage-aggregate.mjs [--logs /var/log/caddy] [--no-chain] [--window 100]
  * Needs: FOVEA_DATABASE_URL (or the ENVIO_PG_* variables lib/db.ts reads).
  */
 import { createHash, randomBytes } from "node:crypto";
@@ -131,7 +131,9 @@ console.log(`log: ${files.length} files, ${lines} counted requests, ${agg.size} 
 if (!process.argv.includes("--no-chain")) {
   const CONTRACTS = {
     aqueous: { address: "0xd75f7786D0DD42c8F161Bd78E87D37001044Fc32", from: 106_000_000 },
-    sclera: { address: "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf", from: 107_700_000 },
+    // Deployed at block 107,455,772. This used to start at 107,700,000, which skipped the first bond ever
+    // posted (agent 10252, block 107,460,188, later slashed). Start at the deployment block, never after it.
+    sclera: { address: "0x57aF4e4B482Ab1bb4f9d1aeb5206258a7Def0eaf", from: 107_455_772 },
     // Version 2 takes every new bond from 2026-10-10. Its own cursor, so v1 history is untouched.
     scleraV2: { address: "0xB4d641f016f53C683c409F271eE85e136041FE3f", from: 112_106_633 },
     agentPasskey: { address: "0x1E30531CD3ea6DE2958DB363418a5382C419dC24", from: 109_009_000 },
@@ -163,7 +165,10 @@ if (!process.argv.includes("--no-chain")) {
     }
   };
   const head = parseInt(await rpc("eth_blockNumber", []), 16);
-  const WINDOW = 100, PARALLEL = 4, MAX_WINDOWS = Number(arg("--max-windows", "3000"));
+  // 100 blocks is what the public RPC allows. A provider that allows more (Dwellir allows 500) can be used for a
+  // one-off backfill with --window. The timer never passes it, so its behaviour is unchanged.
+  const WINDOW = Number(arg("--window", "100")), PARALLEL = 4, MAX_WINDOWS = Number(arg("--max-windows", "3000"));
+  if (!Number.isInteger(WINDOW) || WINDOW < 1 || WINDOW > 1000) throw new Error(`--window must be an integer from 1 to 1000, got ${WINDOW}`);
   for (const [name, c] of Object.entries(CONTRACTS)) {
     const cur = await db.query("SELECT block FROM fovea.usage_cursor WHERE name = $1", [name]);
     let from = cur.rows[0] ? Number(cur.rows[0].block) + 1 : c.from;
