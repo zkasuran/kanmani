@@ -14,6 +14,7 @@
 </p>
 
 <p align="center">
+  <a href="https://hackathon.monad.xyz/winners"><img src="https://img.shields.io/badge/Monad%20Metropolis-1st%2C%20Cleanverse%20bounty-836ef9?style=flat-square&labelColor=05070a" alt="Monad Metropolis: first place in the Cleanverse bounty"></a>
   <img src="https://img.shields.io/badge/chain-Monad%20mainnet%20143-836ef9?style=flat-square&labelColor=05070a" alt="Monad mainnet">
   <img src="https://img.shields.io/badge/tests-1009%20passing-34d399?style=flat-square&labelColor=05070a" alt="1009 tests passing">
   <img src="https://img.shields.io/badge/contracts-verified%20on%20Sourcify-34d399?style=flat-square&labelColor=05070a" alt="Verified on Sourcify">
@@ -200,6 +201,11 @@ Everything else in this repository is built around that one rule.
 | Qwen mapping induction | **real keyed runs**, one **shipped** | on 2026-10-04 Qwen 3.8 Max proposed `tab-settlement-feedback.v1` in one turn. A person changed one field in review and it joined the atlas. The other five mappings are hand written. `verifier/src/atlas/demo.ts` is a scripted fake with no key and no network |
 
 ## Traction
+
+**Monad Metropolis:** first place in the Cleanverse bounty, Best Integration of Cleanverse Verified
+Identity & Assets, for $2,000. It was the only award in that bounty. The results went up on 2026-11-11
+at [hackathon.monad.xyz/winners](https://hackathon.monad.xyz/winners), where the list loads only after
+you sign in. What the entry built is in [docs/20-CLEANVERSE.md](docs/20-CLEANVERSE.md).
 
 Twenty-one projects contacted, nine replied or acted, five with paid work settled on Monad mainnet, two of them outside buyers paying us.
 
